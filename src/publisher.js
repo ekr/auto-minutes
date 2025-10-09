@@ -76,6 +76,11 @@ export async function generateIndex(sessions, outputDir = 'output') {
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
 
+  // Sort sessions alphabetically (case-insensitive)
+  const sortedSessions = [...sessions].sort((a, b) =>
+    a.toLowerCase().localeCompare(b.toLowerCase())
+  );
+
   // Generate index content
   let content = '# Meeting Minutes Index\n\n';
   content += `Generated: ${new Date().toISOString()}\n\n`;
@@ -83,7 +88,7 @@ export async function generateIndex(sessions, outputDir = 'output') {
 
   const generatedFiles = ['index.md'];
 
-  for (const sessionName of sessions) {
+  for (const sessionName of sortedSessions) {
     const sanitizedName = sanitizeSessionName(sessionName);
     const filename = `${sanitizedName}.md`;
     content += `- [${sessionName}](${filename})\n`;
