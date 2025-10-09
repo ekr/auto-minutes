@@ -129,8 +129,30 @@ async function main() {
         // Generate minutes
         const minutes = await generateMinutes(transcript, session.sessionName);
 
-        // Add session ID header and minutes
-        allMinutes.push(`<!-- Session ID: ${session.sessionId} -->\n\n${minutes}`);
+        // Parse date/time from session ID (format: IETFXXX-SESSIONNAME-YYYYMMDD-HHMM)
+        const sessionIdParts = session.sessionId.split('-');
+        const dateStr = sessionIdParts[sessionIdParts.length - 2]; // YYYYMMDD
+        const timeStr = sessionIdParts[sessionIdParts.length - 1]; // HHMM
+
+        let dateTimeHeader = '';
+        if (dateStr && timeStr && dateStr.length === 8 && timeStr.length === 4) {
+          const year = dateStr.substring(0, 4);
+          const month = dateStr.substring(4, 6);
+          const day = dateStr.substring(6, 8);
+          const hour = timeStr.substring(0, 2);
+          const minute = timeStr.substring(2, 4);
+
+          // Format as a readable date/time without timezone (it's local time)
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const monthName = monthNames[parseInt(month, 10) - 1];
+          const formattedDateTime = `${day} ${monthName} ${year} ${hour}:${minute}`;
+
+          dateTimeHeader = `**Session Date/Time:** ${formattedDateTime}\n\n`;
+        }
+
+        // Add date/time header and minutes
+        allMinutes.push(`${dateTimeHeader}${minutes}`);
 
         console.log(`  Completed ${session.sessionName} [${session.sessionId}]`);
       }
