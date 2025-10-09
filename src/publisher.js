@@ -54,11 +54,14 @@ export async function saveMinutes(sessionName, content, outputDir = "output") {
 
   // Create sanitized filename from session name
   const sanitizedName = sanitizeSessionName(sessionName);
+  const mdFilename = `${sanitizedName}.md`;
+
+  // Add markdown version link at the top
+  const contentWithLink = `[Markdown Version](${mdFilename})\n\n${content}`;
 
   // Write markdown file
-  const mdFilename = `${sanitizedName}.md`;
   const mdFilepath = path.join(outputDir, mdFilename);
-  await fs.writeFile(mdFilepath, content, "utf-8");
+  await fs.writeFile(mdFilepath, contentWithLink, "utf-8");
 
   // Write text file (same content)
   const txtFilename = `${sanitizedName}.txt`;
@@ -91,7 +94,8 @@ export async function generateIndex(sessions, outputDir = "output") {
   for (const sessionName of sortedSessions) {
     const sanitizedName = sanitizeSessionName(sessionName);
     const filename = `${sanitizedName}.html`;
-    content += `- [${sessionName}](${filename})\n`;
+    const mdFilename = `${sanitizedName}.md`;
+    content += `- [${sessionName}](${filename}) ([markdown](${mdFilename}))\n`;
 
     // Track both .md and .txt files
     generatedFiles.push(`${sanitizedName}.md`);
