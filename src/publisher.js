@@ -13,11 +13,20 @@ import path from 'path';
  * @param {string} outputDir - Directory to save files (default: 'output')
  */
 export async function saveMinutes(sessionName, content, outputDir = 'output') {
-  // TODO: Implement file writing
-  // Create sanitized filename from session name
   // Ensure output directory exists
+  await fs.mkdir(outputDir, { recursive: true });
 
-  throw new Error('Not yet implemented');
+  // Create sanitized filename from session name
+  const sanitizedName = sessionName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  const filename = `${sanitizedName}.md`;
+  const filepath = path.join(outputDir, filename);
+
+  // Write content to file
+  await fs.writeFile(filepath, content, 'utf-8');
 }
 
 /**
@@ -26,8 +35,25 @@ export async function saveMinutes(sessionName, content, outputDir = 'output') {
  * @param {string} outputDir - Directory to save index (default: 'output')
  */
 export async function generateIndex(sessions, outputDir = 'output') {
-  // TODO: Implement index.md generation
-  // Create links to all minute files
+  // Ensure output directory exists
+  await fs.mkdir(outputDir, { recursive: true });
 
-  throw new Error('Not yet implemented');
+  // Generate index content
+  let content = '# Meeting Minutes Index\n\n';
+  content += `Generated: ${new Date().toISOString()}\n\n`;
+  content += '## Sessions\n\n';
+
+  for (const sessionName of sessions) {
+    const sanitizedName = sessionName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    const filename = `${sanitizedName}.md`;
+    content += `- [${sessionName}](./${filename})\n`;
+  }
+
+  // Write index file
+  const filepath = path.join(outputDir, 'index.md');
+  await fs.writeFile(filepath, content, 'utf-8');
 }
