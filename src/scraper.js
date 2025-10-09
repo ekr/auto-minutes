@@ -38,17 +38,22 @@ async function ietfFetch(url) {
 export async function fetchMeetingSessions(meetingNumber) {
   let html;
 
+  // Fetch from server
+  const url = `https://datatracker.ietf.org/meeting/${meetingNumber}/proceedings`;
+  const response = await ietfFetch(url);
+  html = await response.text();
+
   // TEMPORARY: Check for local file first to avoid Cloudflare bot blocking
-  const localFile = `./IETF ${meetingNumber} Proceedings.html`;
-  try {
-    html = await fs.readFile(localFile, 'utf-8');
-    console.log(`Using local file: ${localFile}`);
-  } catch (err) {
-    // Fall back to fetching from server
-    const url = `https://datatracker.ietf.org/meeting/${meetingNumber}/proceedings`;
-    const response = await ietfFetch(url);
-    html = await response.text();
-  }
+  // const localFile = `./IETF ${meetingNumber} Proceedings.html`;
+  // try {
+  //   html = await fs.readFile(localFile, 'utf-8');
+  //   console.log(`Using local file: ${localFile}`);
+  // } catch (err) {
+  //   // Fall back to fetching from server
+  //   const url = `https://datatracker.ietf.org/meeting/${meetingNumber}/proceedings`;
+  //   const response = await ietfFetch(url);
+  //   html = await response.text();
+  // }
 
   const $ = cheerio.load(html);
 
