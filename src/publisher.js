@@ -5,6 +5,11 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Sanitize a session name to create a valid filename
@@ -84,4 +89,57 @@ export async function generateIndex(sessions, outputDir = 'output') {
   // Write index file
   const filepath = path.join(outputDir, 'index.md');
   await fs.writeFile(filepath, content, 'utf-8');
+}
+
+/**
+ * Generate root index.md for GitHub Pages from template
+ * Scans output/ directory for meeting folders and adds them to the index
+ * @param {string} outputDir - Base output directory (default: 'output')
+ * @param {string} destPath - Destination path for the index file
+ */
+export async function generateRootIndex(outputDir = 'output', destPath = 'gh-pages-repo/docs/index.md') {
+  // Read the template
+  const templatePath = path.join(__dirname, '..', 'templates', 'index.md');
+  let template = await fs.readFile(templatePath, 'utf-8');
+
+  // Scan output directory for ietf* folders
+  let meetings = [];
+  try {
+    const entries = await fs.readdir(outputDir, { withFileTypes: true });
+    meetings = entries
+      .filter(entry => entry.isDirectory() && entry.name.startsWith('ietf'))
+      .map(entry => {
+        // Extract meeting number from ietf123 format
+        const match = entry.name.match(/^ietf(\d+)$/);
+        return match ? parseInt(match[1], 10) : null;
+      })
+      .filter(num => num !== null)
+      .sort((a, b) => a - b); // Numerical order
+  } catch (error) {
+    console.warn('Could not read output directory:', error.message);
+  }
+
+  // Generate meeting links
+  let meetingsList = '';
+  if (meetings.length > 0) {
+    for (const meetingNum of meetings) {
+      meetingsList += `- [IETF ${meetingNum}](./ietf${meetingNum}/index.md)\n`;
+    }
+  } else {
+    meetingsList = 'No meetings processed yet.\n';
+  }
+
+  // Replace the meetings section (after "# Meetings")
+  const meetingsMarker = '# Meetings\n';
+  const markerIndex = template.indexOf(meetingsMarker);
+  if (markerIndex !== -1) {
+    const beforeMarker = template.substring(0, markerIndex + meetingsMarker.length);
+    template = beforeMarker + '\n' + meetingsList;
+  } else {
+    // If marker not found, append to end
+    template += '\n\n# Meetings\n\n' + meetingsList;
+  }
+
+  // Write the index file
+  await fs.writeFile(destPath, template, 'utf-8');
 }

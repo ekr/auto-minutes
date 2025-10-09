@@ -76,9 +76,20 @@ export async function fetchMeetingSessions(meetingNumber) {
 
     // Find the session name - typically in the same row or nearby heading
     const row = link.closest('tr');
-    const sessionName = row.find('td').first().text().trim() ||
-                       row.prevAll('tr').find('th').first().text().trim() ||
-                       `Session ${i + 1}`;
+    const firstTd = row.find('td').first();
+
+    // Try to get the session name from a link or div inside the td, excluding badges
+    let sessionName = firstTd.find('a').first().text().trim() ||
+                     firstTd.find('div').first().find('a').first().text().trim();
+
+    // Fallback to getting all text and cleaning it
+    if (!sessionName) {
+      sessionName = firstTd.clone()
+        .find('.badge').remove().end()  // Remove badge elements
+        .text().trim() ||
+        row.prevAll('tr').find('th').first().text().trim() ||
+        `Session ${i + 1}`;
+    }
 
     sessions.push({
       sessionName: sessionName,

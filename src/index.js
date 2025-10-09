@@ -8,7 +8,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { fetchMeetingSessions, downloadTranscript } from './scraper.js';
 import { initializeClaude, generateMinutes } from './generator.js';
-import { saveMinutes, generateIndex, minutesExist } from './publisher.js';
+import { saveMinutes, generateIndex, minutesExist, generateRootIndex } from './publisher.js';
 
 // Load environment variables
 dotenv.config();
@@ -289,7 +289,12 @@ async function publishToGitHub(meetingNumber, outputDir, noPush = false) {
       await fs.copyFile(sourceFile, destFile);
     }
 
-    // Step 4: Commit changes
+    // Step 4: Generate root index.md
+    console.log('Generating root index.md...');
+    const rootIndexPath = path.resolve(ghPagesDir, 'docs', 'index.md');
+    await generateRootIndex('output', rootIndexPath);
+
+    // Step 5: Commit changes
     console.log('Committing changes...');
     process.chdir(ghPagesDir);
 
@@ -299,6 +304,11 @@ async function publishToGitHub(meetingNumber, outputDir, noPush = false) {
       console.log(`  Adding ${gitPath} to git...`);
       execSync(`git add "${gitPath}"`, { stdio: 'inherit' });
     }
+
+    // Add root index.md
+    console.log('  Adding docs/index.md to git...');
+    execSync('git add docs/index.md', { stdio: 'inherit' });
+
     execSync(`git commit -m "Update minutes for IETF ${meetingNumber}"`, {
       stdio: 'inherit'
     });
