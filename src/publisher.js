@@ -3,10 +3,10 @@
  * Handles writing generated minutes to local filesystem
  */
 
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,8 +19,8 @@ const __dirname = dirname(__filename);
 export function sanitizeSessionName(sessionName) {
   return sessionName
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 /**
@@ -29,7 +29,7 @@ export function sanitizeSessionName(sessionName) {
  * @param {string} outputDir - Directory where minutes are saved
  * @returns {Promise<boolean>} True if minutes exist, false otherwise
  */
-export async function minutesExist(sessionName, outputDir = 'output') {
+export async function minutesExist(sessionName, outputDir = "output") {
   const sanitizedName = sanitizeSessionName(sessionName);
   const filename = `${sanitizedName}.md`;
   const filepath = path.join(outputDir, filename);
@@ -48,7 +48,7 @@ export async function minutesExist(sessionName, outputDir = 'output') {
  * @param {string} content - The markdown content
  * @param {string} outputDir - Directory to save files (default: 'output')
  */
-export async function saveMinutes(sessionName, content, outputDir = 'output') {
+export async function saveMinutes(sessionName, content, outputDir = "output") {
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
 
@@ -58,12 +58,12 @@ export async function saveMinutes(sessionName, content, outputDir = 'output') {
   // Write markdown file
   const mdFilename = `${sanitizedName}.md`;
   const mdFilepath = path.join(outputDir, mdFilename);
-  await fs.writeFile(mdFilepath, content, 'utf-8');
+  await fs.writeFile(mdFilepath, content, "utf-8");
 
   // Write text file (same content)
   const txtFilename = `${sanitizedName}.txt`;
   const txtFilepath = path.join(outputDir, txtFilename);
-  await fs.writeFile(txtFilepath, content, 'utf-8');
+  await fs.writeFile(txtFilepath, content, "utf-8");
 }
 
 /**
@@ -72,25 +72,25 @@ export async function saveMinutes(sessionName, content, outputDir = 'output') {
  * @param {string} outputDir - Directory to save index (default: 'output')
  * @returns {Promise<Array<string>>} List of generated files
  */
-export async function generateIndex(sessions, outputDir = 'output') {
+export async function generateIndex(sessions, outputDir = "output") {
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
 
   // Sort sessions alphabetically (case-insensitive)
   const sortedSessions = [...sessions].sort((a, b) =>
-    a.toLowerCase().localeCompare(b.toLowerCase())
+    a.toLowerCase().localeCompare(b.toLowerCase()),
   );
 
   // Generate index content
-  let content = '# Meeting Minutes Index\n\n';
+  let content = "# Meeting Minutes Index\n\n";
   content += `Generated: ${new Date().toISOString()}\n\n`;
-  content += '## Sessions\n\n';
+  content += "## Sessions\n\n";
 
-  const generatedFiles = ['index.md'];
+  const generatedFiles = ["index.md"];
 
   for (const sessionName of sortedSessions) {
     const sanitizedName = sanitizeSessionName(sessionName);
-    const filename = `${sanitizedName}.md`;
+    const filename = `${sanitizedName}.html`;
     content += `- [${sessionName}](${filename})\n`;
 
     // Track both .md and .txt files
@@ -99,15 +99,23 @@ export async function generateIndex(sessions, outputDir = 'output') {
   }
 
   // Write index file
-  const filepath = path.join(outputDir, 'index.md');
-  await fs.writeFile(filepath, content, 'utf-8');
+  const filepath = path.join(outputDir, "index.md");
+  await fs.writeFile(filepath, content, "utf-8");
 
   // Write manifest file
-  const manifestPath = path.join(outputDir, '.manifest.json');
-  await fs.writeFile(manifestPath, JSON.stringify({
-    generated: new Date().toISOString(),
-    files: generatedFiles
-  }, null, 2), 'utf-8');
+  const manifestPath = path.join(outputDir, ".manifest.json");
+  await fs.writeFile(
+    manifestPath,
+    JSON.stringify(
+      {
+        generated: new Date().toISOString(),
+        files: generatedFiles,
+      },
+      null,
+      2,
+    ),
+    "utf-8",
+  );
 
   return generatedFiles;
 }
@@ -118,49 +126,55 @@ export async function generateIndex(sessions, outputDir = 'output') {
  * @param {string} outputDir - Base output directory (default: 'output')
  * @param {string} destPath - Destination path for the index file
  */
-export async function generateRootIndex(outputDir = 'output', destPath = 'gh-pages-repo/docs/index.md') {
+export async function generateRootIndex(
+  outputDir = "output",
+  destPath = "gh-pages-repo/docs/index.md",
+) {
   // Read the template
-  const templatePath = path.join(__dirname, '..', 'templates', 'index.md');
-  let template = await fs.readFile(templatePath, 'utf-8');
+  const templatePath = path.join(__dirname, "..", "templates", "index.md");
+  let template = await fs.readFile(templatePath, "utf-8");
 
   // Scan output directory for ietf* folders
   let meetings = [];
   try {
     const entries = await fs.readdir(outputDir, { withFileTypes: true });
     meetings = entries
-      .filter(entry => entry.isDirectory() && entry.name.startsWith('ietf'))
-      .map(entry => {
+      .filter((entry) => entry.isDirectory() && entry.name.startsWith("ietf"))
+      .map((entry) => {
         // Extract meeting number from ietf123 format
         const match = entry.name.match(/^ietf(\d+)$/);
         return match ? parseInt(match[1], 10) : null;
       })
-      .filter(num => num !== null)
+      .filter((num) => num !== null)
       .sort((a, b) => a - b); // Numerical order
   } catch (error) {
-    console.warn('Could not read output directory:', error.message);
+    console.warn("Could not read output directory:", error.message);
   }
 
   // Generate meeting links
-  let meetingsList = '';
+  let meetingsList = "";
   if (meetings.length > 0) {
     for (const meetingNum of meetings) {
       meetingsList += `- [IETF ${meetingNum}](ietf${meetingNum}/index.md)\n`;
     }
   } else {
-    meetingsList = 'No meetings processed yet.\n';
+    meetingsList = "No meetings processed yet.\n";
   }
 
   // Replace the meetings section (after "# Meetings")
-  const meetingsMarker = '# Meetings\n';
+  const meetingsMarker = "# Meetings\n";
   const markerIndex = template.indexOf(meetingsMarker);
   if (markerIndex !== -1) {
-    const beforeMarker = template.substring(0, markerIndex + meetingsMarker.length);
-    template = beforeMarker + '\n' + meetingsList;
+    const beforeMarker = template.substring(
+      0,
+      markerIndex + meetingsMarker.length,
+    );
+    template = beforeMarker + "\n" + meetingsList;
   } else {
     // If marker not found, append to end
-    template += '\n\n# Meetings\n\n' + meetingsList;
+    template += "\n\n# Meetings\n\n" + meetingsList;
   }
 
   // Write the index file
-  await fs.writeFile(destPath, template, 'utf-8');
+  await fs.writeFile(destPath, template, "utf-8");
 }
