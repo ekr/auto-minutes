@@ -50,11 +50,15 @@ export async function saveMinutes(sessionName, content, outputDir = 'output') {
   // Create sanitized filename from session name
   const sanitizedName = sanitizeSessionName(sessionName);
 
-  const filename = `${sanitizedName}.md`;
-  const filepath = path.join(outputDir, filename);
+  // Write markdown file
+  const mdFilename = `${sanitizedName}.md`;
+  const mdFilepath = path.join(outputDir, mdFilename);
+  await fs.writeFile(mdFilepath, content, 'utf-8');
 
-  // Write content to file
-  await fs.writeFile(filepath, content, 'utf-8');
+  // Write text file (same content)
+  const txtFilename = `${sanitizedName}.txt`;
+  const txtFilepath = path.join(outputDir, txtFilename);
+  await fs.writeFile(txtFilepath, content, 'utf-8');
 }
 
 /**

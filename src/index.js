@@ -263,9 +263,10 @@ async function publishToGitHub(meetingNumber, outputDir, noPush = false) {
     console.log('Committing changes...');
     process.chdir(ghPagesDir);
 
-    // Git add each file individually
+    // Git add each file individually (both .md and .txt versions)
     for (const file of files) {
       const gitPath = path.join('docs', meetingDir, file);
+      console.log(`  Adding ${gitPath} to git...`);
       execSync(`git add "${gitPath}"`, { stdio: 'inherit' });
     }
     execSync(`git commit -m "Update minutes for IETF ${meetingNumber}"`, {
