@@ -275,24 +275,47 @@ async function publishToGitHub(meetingNumber, outputDir, noPush = false) {
     execSync('git reset --hard baseline', { stdio: 'inherit' });
     process.chdir('..');
 
-    // Step 3: Copy the meeting directory files
-    console.log(`Copying ${outputDir} to gh-pages/docs...`);
-    const sourcePath = path.resolve(outputDir);
-    const destPath = path.join(docsDir, meetingDir);
+    // Step 3: Copy files from ALL meeting directories based on their manifests
+    console.log('Copying meeting files based on manifests...');
 
-    // Ensure destination directory exists
-    await fs.mkdir(destPath, { recursive: true });
+    // Get all meeting directories from output/
+    const outputBase = 'output';
+    const meetings = await fs.readdir(outputBase, { withFileTypes: true });
+    const meetingDirs = meetings
+      .filter(entry => entry.isDirectory() && entry.name.startsWith('ietf'))
+      .map(entry => entry.name);
 
-    // Read all files from the source directory
-    const files = await fs.readdir(sourcePath);
+    for (const meetingDirName of meetingDirs) {
+      const sourcePath = path.join(outputBase, meetingDirName);
+      const destPath = path.join(docsDir, meetingDirName);
+      const manifestPath = path.join(sourcePath, '.manifest.json');
 
-    // Copy each file individually
-    for (const file of files) {
-      const sourceFile = path.join(sourcePath, file);
-      const destFile = path.join(destPath, file);
+      // Check if manifest exists
+      let filesToCopy;
+      try {
+        const manifestContent = await fs.readFile(manifestPath, 'utf-8');
+        const manifest = JSON.parse(manifestContent);
+        filesToCopy = manifest.files;
+        console.log(`  ${meetingDirName}: copying ${filesToCopy.length} files from manifest`);
+      } catch (error) {
+        console.warn(`  ${meetingDirName}: no manifest found, skipping`);
+        continue;
+      }
 
-      console.log(`  Copying ${file}...`);
-      await fs.copyFile(sourceFile, destFile);
+      // Ensure destination directory exists
+      await fs.mkdir(destPath, { recursive: true });
+
+      // Copy each file from the manifest
+      for (const file of filesToCopy) {
+        const sourceFile = path.join(sourcePath, file);
+        const destFile = path.join(destPath, file);
+
+        try {
+          await fs.copyFile(sourceFile, destFile);
+        } catch (error) {
+          console.warn(`    Warning: could not copy ${file}: ${error.message}`);
+        }
+      }
     }
 
     // Step 4: Generate root index.md
@@ -304,15 +327,25 @@ async function publishToGitHub(meetingNumber, outputDir, noPush = false) {
     console.log('Committing changes...');
     process.chdir(ghPagesDir);
 
-    // Git add each file individually (both .md and .txt versions)
-    for (const file of files) {
-      const gitPath = path.join('docs', meetingDir, file);
-      console.log(`  Adding ${gitPath} to git...`);
-      execSync(`git add "${gitPath}"`, { stdio: 'inherit' });
+    // Git add all files from all meeting directories
+    for (const meetingDirName of meetingDirs) {
+      const manifestPath = path.join('..', outputBase, meetingDirName, '.manifest.json');
+
+      try {
+        const manifestContent = await fs.readFile(manifestPath, 'utf-8');
+        const manifest = JSON.parse(manifestContent);
+
+        for (const file of manifest.files) {
+          const gitPath = path.join('docs', meetingDirName, file);
+          execSync(`git add "${gitPath}"`, { stdio: 'inherit' });
+        }
+      } catch (error) {
+        // Skip if no manifest
+      }
     }
 
     // Add root index.md
-    console.log('  Adding docs/index.md to git...');
+    console.log('Adding docs/index.md to git...');
     execSync('git add docs/index.md', { stdio: 'inherit' });
 
     execSync(`git commit -m "Update minutes for IETF ${meetingNumber}"`, {

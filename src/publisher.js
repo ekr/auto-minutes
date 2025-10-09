@@ -70,6 +70,7 @@ export async function saveMinutes(sessionName, content, outputDir = 'output') {
  * Generate an index page listing all minutes
  * @param {Array<string>} sessions - Array of session names
  * @param {string} outputDir - Directory to save index (default: 'output')
+ * @returns {Promise<Array<string>>} List of generated files
  */
 export async function generateIndex(sessions, outputDir = 'output') {
   // Ensure output directory exists
@@ -80,15 +81,30 @@ export async function generateIndex(sessions, outputDir = 'output') {
   content += `Generated: ${new Date().toISOString()}\n\n`;
   content += '## Sessions\n\n';
 
+  const generatedFiles = ['index.md'];
+
   for (const sessionName of sessions) {
     const sanitizedName = sanitizeSessionName(sessionName);
     const filename = `${sanitizedName}.md`;
     content += `- [${sessionName}](./${filename})\n`;
+
+    // Track both .md and .txt files
+    generatedFiles.push(`${sanitizedName}.md`);
+    generatedFiles.push(`${sanitizedName}.txt`);
   }
 
   // Write index file
   const filepath = path.join(outputDir, 'index.md');
   await fs.writeFile(filepath, content, 'utf-8');
+
+  // Write manifest file
+  const manifestPath = path.join(outputDir, '.manifest.json');
+  await fs.writeFile(manifestPath, JSON.stringify({
+    generated: new Date().toISOString(),
+    files: generatedFiles
+  }, null, 2), 'utf-8');
+
+  return generatedFiles;
 }
 
 /**
