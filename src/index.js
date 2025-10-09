@@ -269,6 +269,12 @@ async function publishToGitHub(meetingNumber, outputDir, noPush = false) {
       stdio: 'inherit'
     });
 
+    // Step 2.5: Reset to baseline tag
+    console.log('Resetting to baseline tag...');
+    process.chdir(ghPagesDir);
+    execSync('git reset --hard baseline', { stdio: 'inherit' });
+    process.chdir('..');
+
     // Step 3: Copy the meeting directory files
     console.log(`Copying ${outputDir} to gh-pages/docs...`);
     const sourcePath = path.resolve(outputDir);
