@@ -86,7 +86,7 @@ export async function generateIndex(sessions, outputDir = 'output') {
   for (const sessionName of sessions) {
     const sanitizedName = sanitizeSessionName(sessionName);
     const filename = `${sanitizedName}.md`;
-    content += `- [${sessionName}](./${filename})\n`;
+    content += `- [${sessionName}](${filename})\n`;
 
     // Track both .md and .txt files
     generatedFiles.push(`${sanitizedName}.md`);
@@ -139,7 +139,7 @@ export async function generateRootIndex(outputDir = 'output', destPath = 'gh-pag
   let meetingsList = '';
   if (meetings.length > 0) {
     for (const meetingNum of meetings) {
-      meetingsList += `- [IETF ${meetingNum}](./ietf${meetingNum}/index.md)\n`;
+      meetingsList += `- [IETF ${meetingNum}](ietf${meetingNum}/index.md)\n`;
     }
   } else {
     meetingsList = 'No meetings processed yet.\n';

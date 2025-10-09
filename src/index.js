@@ -323,8 +323,8 @@ async function publishToGitHub(meetingNumber, outputDir, noPush = false) {
     const rootIndexPath = path.resolve(ghPagesDir, 'docs', 'index.md');
     await generateRootIndex('output', rootIndexPath);
 
-    // Step 4.5: Copy Jekyll config and logo
-    console.log('Copying Jekyll config and logo...');
+    // Step 4.5: Copy Jekyll config, logo, and layouts
+    console.log('Copying Jekyll config, logo, and layouts...');
     const configTemplatePath = path.resolve('templates', '_config.yml');
     const configDestPath = path.resolve(ghPagesDir, 'docs', '_config.yml');
     await fs.copyFile(configTemplatePath, configDestPath);
@@ -335,6 +335,22 @@ async function publishToGitHub(meetingNumber, outputDir, noPush = false) {
       await fs.copyFile(logoTemplatePath, logoDestPath);
     } catch (error) {
       console.warn('Warning: Could not copy logo.jpg:', error.message);
+    }
+
+    // Copy layout directory
+    const layoutsSrcDir = path.resolve('templates', '_layouts');
+    const layoutsDestDir = path.resolve(ghPagesDir, 'docs', '_layouts');
+    try {
+      await fs.mkdir(layoutsDestDir, { recursive: true });
+      const layoutFiles = await fs.readdir(layoutsSrcDir);
+      for (const layoutFile of layoutFiles) {
+        await fs.copyFile(
+          path.join(layoutsSrcDir, layoutFile),
+          path.join(layoutsDestDir, layoutFile)
+        );
+      }
+    } catch (error) {
+      console.warn('Warning: Could not copy layouts:', error.message);
     }
 
     // Step 5: Commit changes
@@ -358,14 +374,19 @@ async function publishToGitHub(meetingNumber, outputDir, noPush = false) {
       }
     }
 
-    // Add root index.md, Jekyll config, and logo
-    console.log('Adding docs/index.md, docs/_config.yml, and docs/logo.jpg to git...');
+    // Add root index.md, Jekyll config, logo, and layouts
+    console.log('Adding docs/index.md, docs/_config.yml, docs/logo.jpg, and docs/_layouts/ to git...');
     execSync('git add docs/index.md', { stdio: 'inherit' });
     execSync('git add docs/_config.yml', { stdio: 'inherit' });
     try {
       execSync('git add docs/logo.jpg', { stdio: 'inherit' });
     } catch (error) {
       // Logo might not exist, that's okay
+    }
+    try {
+      execSync('git add docs/_layouts/', { stdio: 'inherit' });
+    } catch (error) {
+      // Layouts might not exist, that's okay
     }
 
     execSync(`git commit -m "Update minutes for IETF ${meetingNumber}"`, {
