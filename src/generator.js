@@ -3,7 +3,7 @@
  * Converts transcripts into structured meeting minutes
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from "@anthropic-ai/sdk";
 
 let anthropic = null;
 
@@ -23,10 +23,12 @@ export function initializeClaude(apiKey) {
  */
 export async function generateMinutes(transcript, sessionName) {
   if (!anthropic) {
-    throw new Error('Claude API not initialized. Call initializeClaude() first.');
+    throw new Error(
+      "Claude API not initialized. Call initializeClaude() first.",
+    );
   }
 
-  const prompt = `You are an expert technical writer for the IETF. Convert the following meeting transcript into well-structured meeting minutes in Markdown format.
+  const prompt = `You are an expert technical writer for the IETF. Convert the following meeting transcript into well-structured meeting minutes in Markdown format. It should contain an account of the discussion including any decisions made.
 
 Session: ${sessionName}
 
@@ -47,12 +49,14 @@ ${transcript}
 Generate the meeting minutes:`;
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: "claude-sonnet-4-20250514",
     max_tokens: 4096,
-    messages: [{
-      role: 'user',
-      content: prompt
-    }]
+    messages: [
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
   });
 
   return message.content[0].text;
