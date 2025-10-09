@@ -5,7 +5,7 @@
 
 import dotenv from 'dotenv';
 import { fetchMeetingSessions, downloadTranscript } from './scraper.js';
-import { initializeGemini, generateMinutes } from './generator.js';
+import { initializeClaude, generateMinutes } from './generator.js';
 import { saveMinutes, generateIndex } from './publisher.js';
 
 // Load environment variables
@@ -48,17 +48,17 @@ async function main() {
     process.exit(1);
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    console.error('Error: GEMINI_API_KEY not found in environment');
+    console.error('Error: ANTHROPIC_API_KEY not found in environment');
     console.error('Please create a .env file with your API key');
     process.exit(1);
   }
 
   console.log(`Processing IETF ${meetingNumber} meeting transcripts...`);
 
-  // Initialize Gemini
-  initializeGemini(apiKey);
+  // Initialize Claude
+  initializeClaude(apiKey);
 
   try {
     // Step 1: Fetch all sessions for the meeting

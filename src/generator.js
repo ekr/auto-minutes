@@ -1,33 +1,59 @@
 /**
- * Minutes Generator using Gemini API
+ * Minutes Generator using Claude API
  * Converts transcripts into structured meeting minutes
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 
-let genAI = null;
+let anthropic = null;
 
 /**
- * Initialize the Gemini API client
- * @param {string} apiKey - Gemini API key
+ * Initialize the Claude API client
+ * @param {string} apiKey - Anthropic API key
  */
-export function initializeGemini(apiKey) {
-  genAI = new GoogleGenerativeAI(apiKey);
+export function initializeClaude(apiKey) {
+  anthropic = new Anthropic({ apiKey });
 }
 
 /**
- * Generate meeting minutes from a transcript using Gemini
- * @param {string} transcript - The meeting transcript text
+ * Generate meeting minutes from a transcript using Claude
+ * @param {string} transcript - The meeting transcript text (JSON format)
  * @param {string} sessionName - Name of the session
  * @returns {Promise<string>} Generated minutes in Markdown format
  */
 export async function generateMinutes(transcript, sessionName) {
-  if (!genAI) {
-    throw new Error('Gemini API not initialized. Call initializeGemini() first.');
+  if (!anthropic) {
+    throw new Error('Claude API not initialized. Call initializeClaude() first.');
   }
 
-  // TODO: Implement Gemini API call with appropriate prompt
-  // Format output as Markdown
+  const prompt = `You are an expert technical writer for the IETF. Convert the following meeting transcript into well-structured meeting minutes in Markdown format.
 
-  throw new Error('Not yet implemented');
+Session: ${sessionName}
+
+Requirements:
+- Start with a # header with the session name
+- Include a ## Summary section with a brief overview
+- Include a ## Key Discussion Points section with bullet points
+- Include a ## Decisions and Action Items section if applicable
+- Include a ## Next Steps section if applicable
+- Be concise but capture all important technical discussions
+- Use proper Markdown formatting
+- Focus on technical content and decisions
+
+The transcript is in JSON format with timestamps and text. Here is the transcript:
+
+${transcript}
+
+Generate the meeting minutes:`;
+
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 4096,
+    messages: [{
+      role: 'user',
+      content: prompt
+    }]
+  });
+
+  return message.content[0].text;
 }
