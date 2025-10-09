@@ -77,6 +77,9 @@ async function main() {
   // Initialize Claude
   initializeClaude(apiKey);
 
+  // Set up output directory for this meeting
+  const outputDir = `output/ietf${meetingNumber}`;
+
   try {
     // Step 1: Fetch all sessions for the meeting
     console.log('Fetching session list...');
@@ -161,7 +164,7 @@ async function main() {
       const combinedMinutes = allMinutes.join('\n\n---\n\n');
 
       // Save to file
-      await saveMinutes(sessionName, combinedMinutes);
+      await saveMinutes(sessionName, combinedMinutes, outputDir);
 
       processedSessions.push(sessionName);
       console.log(`Saved combined minutes for: ${sessionName}`);
@@ -169,7 +172,7 @@ async function main() {
 
     // Step 3: Generate index page
     console.log('Generating index...');
-    await generateIndex(processedSessions);
+    await generateIndex(processedSessions, outputDir);
 
     console.log('All done!');
   } catch (error) {
