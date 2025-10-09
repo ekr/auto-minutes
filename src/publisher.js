@@ -7,6 +7,37 @@ import fs from 'fs/promises';
 import path from 'path';
 
 /**
+ * Sanitize a session name to create a valid filename
+ * @param {string} sessionName - Name of the session
+ * @returns {string} Sanitized filename-safe string
+ */
+export function sanitizeSessionName(sessionName) {
+  return sessionName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Check if minutes already exist for a session
+ * @param {string} sessionName - Name of the session
+ * @param {string} outputDir - Directory where minutes are saved
+ * @returns {Promise<boolean>} True if minutes exist, false otherwise
+ */
+export async function minutesExist(sessionName, outputDir = 'output') {
+  const sanitizedName = sanitizeSessionName(sessionName);
+  const filename = `${sanitizedName}.md`;
+  const filepath = path.join(outputDir, filename);
+
+  try {
+    await fs.access(filepath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Save minutes to the output directory
  * @param {string} sessionName - Name of the session
  * @param {string} content - The markdown content
@@ -17,10 +48,7 @@ export async function saveMinutes(sessionName, content, outputDir = 'output') {
   await fs.mkdir(outputDir, { recursive: true });
 
   // Create sanitized filename from session name
-  const sanitizedName = sessionName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  const sanitizedName = sanitizeSessionName(sessionName);
 
   const filename = `${sanitizedName}.md`;
   const filepath = path.join(outputDir, filename);
@@ -44,11 +72,7 @@ export async function generateIndex(sessions, outputDir = 'output') {
   content += '## Sessions\n\n';
 
   for (const sessionName of sessions) {
-    const sanitizedName = sessionName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
+    const sanitizedName = sanitizeSessionName(sessionName);
     const filename = `${sanitizedName}.md`;
     content += `- [${sessionName}](./${filename})\n`;
   }

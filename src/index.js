@@ -8,7 +8,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { fetchMeetingSessions, downloadTranscript } from './scraper.js';
 import { initializeClaude, generateMinutes } from './generator.js';
-import { saveMinutes, generateIndex } from './publisher.js';
+import { saveMinutes, generateIndex, minutesExist } from './publisher.js';
 
 // Load environment variables
 dotenv.config();
@@ -119,6 +119,14 @@ async function main() {
     // Step 3: Process each session group
     const processedSessions = [];
     for (const [sessionName, sessionGroup] of sessionsByName) {
+      // Check if minutes already exist for this session
+      const exists = await minutesExist(sessionName, outputDir);
+      if (exists) {
+        console.log(`\nSkipping ${sessionName} - minutes already exist`);
+        processedSessions.push(sessionName);
+        continue;
+      }
+
       console.log(`\nProcessing session group: ${sessionName} (${sessionGroup.length} session(s))`);
 
       // Process all sessions in the group and concatenate
