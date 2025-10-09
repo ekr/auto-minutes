@@ -61,6 +61,13 @@ async function main() {
       type: 'boolean',
       description: 'Skip git push (only clone, copy, and commit)'
     })
+    .option('model', {
+      alias: 'm',
+      type: 'string',
+      choices: ['claude', 'gemini'],
+      default: 'claude',
+      description: 'LLM model to use for generating minutes'
+    })
     .demandCommand(1, 'Please provide a meeting number')
     .help()
     .alias('help', 'h')
@@ -77,18 +84,29 @@ async function main() {
   const sessionFilter = argv.session;
   const publish = argv.publish;
   const noPush = argv.noPush;
+  const model = argv.model;
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.error('Error: ANTHROPIC_API_KEY not found in environment');
-    console.error('Please create a .env file with your API key');
-    process.exit(1);
+  // Check for appropriate API key based on model
+  if (model === 'claude') {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('Error: ANTHROPIC_API_KEY not found in environment');
+      console.error('Please create a .env file with your API key');
+      process.exit(1);
+    }
+    initializeClaude(apiKey);
+  } else if (model === 'gemini') {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('Error: GEMINI_API_KEY not found in environment');
+      console.error('Please create a .env file with your API key');
+      process.exit(1);
+    }
+    const { initializeGemini } = await import('./generator.js');
+    initializeGemini(apiKey);
   }
 
-  console.log(`Processing IETF ${meetingNumber} meeting transcripts...`);
-
-  // Initialize Claude
-  initializeClaude(apiKey);
+  console.log(`Processing IETF ${meetingNumber} meeting transcripts using ${model}...`);
 
   // Set up output directory for this meeting
   const outputDir = `output/ietf${meetingNumber}`;
@@ -148,7 +166,13 @@ async function main() {
         console.log(`  Processing ${session.sessionName} [${session.sessionId}]...`);
 
         // Download transcript
-        const transcript = await downloadTranscript(session);
+        let transcript;
+        try {
+          transcript = await downloadTranscript(session);
+        } catch (error) {
+          console.log(`  Skipping ${session.sessionName} [${session.sessionId}] - could not fetch transcript: ${error.message}`);
+          continue;
+        }
 
         // Generate minutes
         const minutes = await generateMinutes(transcript, session.sessionName);
@@ -179,6 +203,12 @@ async function main() {
         allMinutes.push(`${dateTimeHeader}${minutes}`);
 
         console.log(`  Completed ${session.sessionName} [${session.sessionId}]`);
+      }
+
+      // Skip if no transcripts were successfully processed
+      if (allMinutes.length === 0) {
+        console.log(`Skipping ${sessionName} - no transcripts could be fetched`);
+        continue;
       }
 
       // Concatenate all minutes for this session name
