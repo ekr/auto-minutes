@@ -94,7 +94,7 @@ export async function generateIndex(sessions, outputDir = "output") {
   for (const sessionName of sortedSessions) {
     const sanitizedName = sanitizeSessionName(sessionName);
     const filename = `${sanitizedName}.html`;
-    const mdFilename = `${sanitizedName}.md`;
+    const mdFilename = `${sanitizedName}.txt`;
     content += `- [${sessionName}](${filename}) ([markdown](${mdFilename}))\n`;
 
     // Track both .md and .txt files
