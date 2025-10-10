@@ -52,6 +52,31 @@ function getCacheDir(meetingNumber) {
 }
 
 /**
+ * Get all cached meeting numbers
+ * @returns {Promise<Array<number>>} Array of meeting numbers
+ */
+export async function getCachedMeetingNumbers() {
+  const cacheBase = path.join("cache", "output");
+
+  try {
+    const entries = await fs.readdir(cacheBase, { withFileTypes: true });
+    const meetingNumbers = entries
+      .filter(entry => entry.isDirectory() && entry.name.startsWith('ietf'))
+      .map(entry => {
+        const match = entry.name.match(/^ietf(\d+)$/);
+        return match ? parseInt(match[1], 10) : null;
+      })
+      .filter(num => num !== null)
+      .sort((a, b) => a - b);
+
+    return meetingNumbers;
+  } catch (error) {
+    // Cache directory doesn't exist yet
+    return [];
+  }
+}
+
+/**
  * Get cache file path for a specific session
  * @param {number} meetingNumber - IETF meeting number
  * @param {string} sessionId - Session ID
@@ -120,6 +145,40 @@ export async function getCachedSessionIds(meetingNumber) {
     // Cache directory doesn't exist yet
     return [];
   }
+}
+
+/**
+ * Save session metadata manifest to cache
+ * @param {number} meetingNumber - IETF meeting number
+ * @param {Array<Object>} sessionGroups - Array of {sessionName, sessionIds: []}
+ */
+export async function saveCacheManifest(meetingNumber, sessionGroups) {
+  const cacheDir = getCacheDir(meetingNumber);
+  await fs.mkdir(cacheDir, { recursive: true });
+
+  const manifestPath = path.join(cacheDir, '.manifest.json');
+  await fs.writeFile(
+    manifestPath,
+    JSON.stringify({
+      generated: new Date().toISOString(),
+      sessionGroups,
+    }, null, 2),
+    'utf-8'
+  );
+}
+
+/**
+ * Load session metadata manifest from cache
+ * @param {number} meetingNumber - IETF meeting number
+ * @returns {Promise<Array<Object>>} Array of {sessionName, sessionIds: []}
+ */
+export async function loadCacheManifest(meetingNumber) {
+  const cacheDir = getCacheDir(meetingNumber);
+  const manifestPath = path.join(cacheDir, '.manifest.json');
+
+  const content = await fs.readFile(manifestPath, 'utf-8');
+  const manifest = JSON.parse(content);
+  return manifest.sessionGroups;
 }
 
 /**
