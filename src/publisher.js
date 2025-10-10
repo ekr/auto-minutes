@@ -43,6 +43,86 @@ export async function minutesExist(sessionName, outputDir = "output") {
 }
 
 /**
+ * Get cache directory for a meeting
+ * @param {number} meetingNumber - IETF meeting number
+ * @returns {string} Cache directory path
+ */
+function getCacheDir(meetingNumber) {
+  return path.join("cache", "output", `ietf${meetingNumber}`);
+}
+
+/**
+ * Get cache file path for a specific session
+ * @param {number} meetingNumber - IETF meeting number
+ * @param {string} sessionId - Session ID
+ * @returns {string} Cache file path
+ */
+function getCacheFile(meetingNumber, sessionId) {
+  return path.join(getCacheDir(meetingNumber), sessionId);
+}
+
+/**
+ * Check if cached minutes exist for a specific session ID
+ * @param {number} meetingNumber - IETF meeting number
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<boolean>} True if cache exists, false otherwise
+ */
+export async function cacheExists(meetingNumber, sessionId) {
+  const cachePath = getCacheFile(meetingNumber, sessionId);
+
+  try {
+    await fs.access(cachePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Save minutes to cache for a specific session ID
+ * @param {number} meetingNumber - IETF meeting number
+ * @param {string} sessionId - Session ID
+ * @param {string} minutes - Raw LLM-generated minutes (markdown)
+ */
+export async function saveCachedMinutes(meetingNumber, sessionId, minutes) {
+  const cacheDir = getCacheDir(meetingNumber);
+
+  // Ensure cache directory exists
+  await fs.mkdir(cacheDir, { recursive: true });
+
+  const cachePath = getCacheFile(meetingNumber, sessionId);
+  await fs.writeFile(cachePath, minutes, "utf-8");
+}
+
+/**
+ * Load cached minutes for a specific session ID
+ * @param {number} meetingNumber - IETF meeting number
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<string>} Cached minutes (raw markdown)
+ */
+export async function getCachedMinutes(meetingNumber, sessionId) {
+  const cachePath = getCacheFile(meetingNumber, sessionId);
+  return await fs.readFile(cachePath, "utf-8");
+}
+
+/**
+ * Get all cached session IDs for a meeting
+ * @param {number} meetingNumber - IETF meeting number
+ * @returns {Promise<Array<string>>} Array of session IDs
+ */
+export async function getCachedSessionIds(meetingNumber) {
+  const cacheDir = getCacheDir(meetingNumber);
+
+  try {
+    const entries = await fs.readdir(cacheDir);
+    return entries.filter(entry => !entry.startsWith('.'));
+  } catch (error) {
+    // Cache directory doesn't exist yet
+    return [];
+  }
+}
+
+/**
  * Save minutes to the output directory
  * @param {string} sessionName - Name of the session
  * @param {string} content - The markdown content

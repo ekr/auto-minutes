@@ -8,58 +8,105 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { fetchMeetingSessions, downloadTranscript } from './scraper.js';
 import { initializeClaude, generateMinutes } from './generator.js';
-import { saveMinutes, generateIndex, minutesExist, generateRootIndex } from './publisher.js';
+import { saveMinutes, generateIndex, minutesExist, generateRootIndex, cacheExists, saveCachedMinutes, getCachedMinutes, getCachedSessionIds } from './publisher.js';
 
 // Load environment variables
 dotenv.config();
 
 /**
- * Process a single session: download transcript, generate minutes, and save
+ * Generate minutes for a session (checks cache first, otherwise downloads and generates)
+ * @param {number} meetingNumber - IETF meeting number
  * @param {Object} session - Session object with sessionName and sessionId
- * @returns {Promise<string>} The session name
+ * @returns {Promise<string>} The generated minutes (raw markdown)
  */
-async function processSession(session) {
-  console.log(`Processing ${session.sessionName}...`);
+async function generateSessionMinutes(meetingNumber, session) {
+  // Check cache first
+  if (await cacheExists(meetingNumber, session.sessionId)) {
+    console.log(`  Loading from cache: ${session.sessionId}`);
+    return await getCachedMinutes(meetingNumber, session.sessionId);
+  }
 
   // Download transcript
-  const transcript = await downloadTranscript(session);
+  console.log(`  Downloading transcript: ${session.sessionId}`);
+  let transcript;
+  try {
+    transcript = await downloadTranscript(session);
+  } catch (error) {
+    throw new Error(`Could not fetch transcript: ${error.message}`);
+  }
 
-  // Generate minutes
+  // Generate minutes using LLM
+  console.log(`  Generating minutes with LLM: ${session.sessionId}`);
   const minutes = await generateMinutes(transcript, session.sessionName);
 
-  // Save to file
-  await saveMinutes(session.sessionName, minutes);
+  // Save to cache
+  await saveCachedMinutes(meetingNumber, session.sessionId, minutes);
+  console.log(`  Cached: ${session.sessionId}`);
 
-  console.log(`Completed ${session.sessionName}`);
-  return session.sessionName;
+  return minutes;
+}
+
+/**
+ * Parse session information from session ID
+ * Format: IETFXXX-SESSIONNAME-YYYYMMDD-HHMM
+ * @param {string} sessionId - Session ID
+ * @returns {Object} Object with sessionName and dateTime
+ */
+function parseSessionId(sessionId) {
+  const parts = sessionId.split('-');
+
+  // Extract date/time (last two parts)
+  const dateStr = parts[parts.length - 2]; // YYYYMMDD
+  const timeStr = parts[parts.length - 1]; // HHMM
+
+  // Extract session name (everything between IETFXXX and date)
+  const sessionName = parts.slice(1, -2).join('-');
+
+  let dateTimeHeader = '';
+  if (dateStr && timeStr && dateStr.length === 8 && timeStr.length === 4) {
+    const year = dateStr.substring(0, 4);
+    const month = dateStr.substring(4, 6);
+    const day = dateStr.substring(6, 8);
+    const hour = timeStr.substring(0, 2);
+    const minute = timeStr.substring(2, 4);
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthName = monthNames[parseInt(month, 10) - 1];
+    const formattedDateTime = `${day} ${monthName} ${year} ${hour}:${minute}`;
+
+    dateTimeHeader = `**Session Date/Time:** ${formattedDateTime}\n\n`;
+  }
+
+  return { sessionName, dateTimeHeader };
 }
 
 async function main() {
   const argv = yargs(hideBin(process.argv))
-    .usage('Usage: $0 [options] <meeting-number>')
-    .example('$0 118', 'Process IETF meeting 118')
-    .example('$0 -v 118', 'Process with verbose output')
-    .example('$0 -s "TLS" 118', 'Process only TLS sessions from meeting 118')
-    .example('$0 -p 118', 'Process and publish to GitHub Pages')
-    .option('verbose', {
-      alias: 'v',
-      type: 'boolean',
-      description: 'Run with verbose output'
-    })
-    .option('session', {
+    .usage('Usage: $0 [options]')
+    .example('$0 --summarize 123', 'Generate LLM summaries for IETF 123')
+    .example('$0 --output', 'Generate output markdown files from cache')
+    .example('$0 --summarize 123 --output', 'Generate summaries and output')
+    .example('$0 --push', 'Publish and push to GitHub Pages')
+    .option('summarize', {
       alias: 's',
-      type: 'string',
-      description: 'Process only sessions matching this name (case-insensitive partial match)'
+      type: 'number',
+      description: 'Generate LLM summaries for meeting number (cache raw minutes)'
+    })
+    .option('output', {
+      alias: 'o',
+      type: 'boolean',
+      description: 'Generate output markdown files from cache'
     })
     .option('publish', {
       alias: 'p',
       type: 'boolean',
-      description: 'Publish to GitHub Pages (gh-pages branch)'
+      description: 'Publish to GitHub Pages (clone, copy, commit)'
     })
-    .option('no-push', {
-      alias: 'n',
+    .option('push', {
+      alias: 'P',
       type: 'boolean',
-      description: 'Skip git push (only clone, copy, and commit)'
+      description: 'Publish and push to GitHub Pages'
     })
     .option('model', {
       alias: 'm',
@@ -68,22 +115,27 @@ async function main() {
       default: 'claude',
       description: 'LLM model to use for generating minutes'
     })
-    .demandCommand(1, 'Please provide a meeting number')
+    .option('verbose', {
+      alias: 'v',
+      type: 'boolean',
+      description: 'Run with verbose output'
+    })
+    .check((argv) => {
+      if (!argv.summarize && !argv.output && !argv.publish && !argv.push) {
+        throw new Error('Must specify at least one action: --summarize, --output, --publish, or --push');
+      }
+      return true;
+    })
     .help()
     .alias('help', 'h')
     .parse();
 
-  const meetingNumber = parseInt(argv._[0], 10);
-
-  if (isNaN(meetingNumber)) {
-    console.error('Error: Meeting number must be a valid integer');
-    process.exit(1);
-  }
-
+  const meetingNumber = argv.summarize;
   const verbose = argv.verbose;
-  const sessionFilter = argv.session;
-  const publish = argv.publish;
-  const noPush = argv.noPush;
+  const doSummarize = !!argv.summarize;
+  const doOutput = argv.output;
+  const doPublish = argv.publish || argv.push;
+  const doPush = argv.push;
   const model = argv.model;
 
   // Check for appropriate API key based on model
@@ -123,102 +175,56 @@ async function main() {
       console.log('=== End Session List ===\n');
     }
 
-    // Filter sessions if session name filter is provided
-    let sessionsToProcess = sessions;
-    if (sessionFilter) {
-      const filterLower = sessionFilter.toLowerCase();
-      sessionsToProcess = sessions.filter(s =>
-        s.sessionName.toLowerCase().includes(filterLower)
-      );
-      console.log(`Filtered to ${sessionsToProcess.length} sessions matching "${sessionFilter}"`);
-
-      if (sessionsToProcess.length === 0) {
-        console.error(`No sessions found matching "${sessionFilter}"`);
-        process.exit(1);
-      }
-    }
-
     // Step 2: Group sessions by name (multiple sessions can have the same name)
     const sessionsByName = new Map();
-    for (const session of sessionsToProcess) {
+    for (const session of sessions) {
       if (!sessionsByName.has(session.sessionName)) {
         sessionsByName.set(session.sessionName, []);
       }
       sessionsByName.get(session.sessionName).push(session);
     }
 
-    // Step 3: Process each session group
+    // Step 3: Process each session group - generate/cache and format output
     const processedSessions = [];
     for (const [sessionName, sessionGroup] of sessionsByName) {
-      // Check if minutes already exist for this session
-      const exists = await minutesExist(sessionName, outputDir);
-      if (exists) {
-        console.log(`\nSkipping ${sessionName} - minutes already exist`);
-        processedSessions.push(sessionName);
-        continue;
-      }
-
       console.log(`\nProcessing session group: ${sessionName} (${sessionGroup.length} session(s))`);
 
-      // Process all sessions in the group and concatenate
+      // Generate/load minutes for all sessions in the group
       const allMinutes = [];
       for (const session of sessionGroup) {
         console.log(`  Processing ${session.sessionName} [${session.sessionId}]...`);
 
-        // Download transcript
-        let transcript;
         try {
-          transcript = await downloadTranscript(session);
+          // Generate minutes (uses cache if available, otherwise downloads and generates)
+          const minutes = await generateSessionMinutes(meetingNumber, session);
+
+          // Parse date/time header from session ID
+          const { dateTimeHeader } = parseSessionId(session.sessionId);
+
+          // Add date/time header and minutes
+          allMinutes.push(`${dateTimeHeader}${minutes}`);
+
+          console.log(`  Completed ${session.sessionName} [${session.sessionId}]`);
         } catch (error) {
-          console.log(`  Skipping ${session.sessionName} [${session.sessionId}] - could not fetch transcript: ${error.message}`);
+          console.log(`  Skipping ${session.sessionName} [${session.sessionId}] - ${error.message}`);
           continue;
         }
-
-        // Generate minutes
-        const minutes = await generateMinutes(transcript, session.sessionName);
-
-        // Parse date/time from session ID (format: IETFXXX-SESSIONNAME-YYYYMMDD-HHMM)
-        const sessionIdParts = session.sessionId.split('-');
-        const dateStr = sessionIdParts[sessionIdParts.length - 2]; // YYYYMMDD
-        const timeStr = sessionIdParts[sessionIdParts.length - 1]; // HHMM
-
-        let dateTimeHeader = '';
-        if (dateStr && timeStr && dateStr.length === 8 && timeStr.length === 4) {
-          const year = dateStr.substring(0, 4);
-          const month = dateStr.substring(4, 6);
-          const day = dateStr.substring(6, 8);
-          const hour = timeStr.substring(0, 2);
-          const minute = timeStr.substring(2, 4);
-
-          // Format as a readable date/time without timezone (it's local time)
-          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const monthName = monthNames[parseInt(month, 10) - 1];
-          const formattedDateTime = `${day} ${monthName} ${year} ${hour}:${minute}`;
-
-          dateTimeHeader = `**Session Date/Time:** ${formattedDateTime}\n\n`;
-        }
-
-        // Add date/time header and minutes
-        allMinutes.push(`${dateTimeHeader}${minutes}`);
-
-        console.log(`  Completed ${session.sessionName} [${session.sessionId}]`);
       }
 
       // Skip if no transcripts were successfully processed
       if (allMinutes.length === 0) {
-        console.log(`Skipping ${sessionName} - no transcripts could be fetched`);
+        console.log(`Skipping ${sessionName} - no transcripts could be processed`);
         continue;
       }
 
       // Concatenate all minutes for this session name
       const combinedMinutes = allMinutes.join('\n\n---\n\n');
 
-      // Save to file
+      // Save to output
       await saveMinutes(sessionName, combinedMinutes, outputDir);
 
       processedSessions.push(sessionName);
-      console.log(`Saved combined minutes for: ${sessionName}`);
+      console.log(`Saved output for: ${sessionName}`);
     }
 
     // Step 4: Generate index page
