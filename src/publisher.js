@@ -150,7 +150,7 @@ export async function getCachedSessionIds(meetingNumber) {
 /**
  * Save session metadata manifest to cache
  * @param {number} meetingNumber - IETF meeting number
- * @param {Array<Object>} sessionGroups - Array of {sessionName, sessionIds: []}
+ * @param {Array<Object>} sessionGroups - Array of {sessionName, sessions: [{sessionId, recordingUrl}]}
  */
 export async function saveCacheManifest(meetingNumber, sessionGroups) {
   const cacheDir = getCacheDir(meetingNumber);
@@ -170,7 +170,7 @@ export async function saveCacheManifest(meetingNumber, sessionGroups) {
 /**
  * Load session metadata manifest from cache
  * @param {number} meetingNumber - IETF meeting number
- * @returns {Promise<Array<Object>>} Array of {sessionName, sessionIds: []}
+ * @returns {Promise<Array<Object>>} Array of {sessionName, sessions: [{sessionId, recordingUrl}]}
  */
 export async function loadCacheManifest(meetingNumber) {
   const cacheDir = getCacheDir(meetingNumber);
@@ -186,24 +186,40 @@ export async function loadCacheManifest(meetingNumber) {
  * @param {string} sessionName - Name of the session
  * @param {string} content - The markdown content
  * @param {string} outputDir - Directory to save files (default: 'output')
+ * @param {Array<string>} recordingUrls - Array of recording URLs for this session
  */
-export async function saveMinutes(sessionName, content, outputDir = "output") {
+export async function saveMinutes(sessionName, content, outputDir = "output", recordingUrls = []) {
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
 
   // Create sanitized filename from session name
   const sanitizedName = sanitizeSessionName(sessionName);
-  const mdFilename = `${sanitizedName}.md`;
+  const txtFilename = `${sanitizedName}.txt`;
 
-  // Add markdown version link at the top
-  const contentWithLink = `[Markdown Version](${mdFilename})\n\n${content}`;
+  // Build header with links
+  let header = `[Markdown Version](${txtFilename})`;
+
+  // Add recording link(s)
+  if (recordingUrls.length > 0) {
+    if (recordingUrls.length === 1) {
+      header += ` | [Session Recording](${recordingUrls[0]})`;
+    } else {
+      // Multiple recordings for this session
+      const recordingLinks = recordingUrls
+        .map((url, idx) => `[Recording ${idx + 1}](${url})`)
+        .join(' | ');
+      header += ` | ${recordingLinks}`;
+    }
+  }
+
+  const contentWithLink = `${header}\n\n${content}`;
 
   // Write markdown file
+  const mdFilename = `${sanitizedName}.md`;
   const mdFilepath = path.join(outputDir, mdFilename);
   await fs.writeFile(mdFilepath, contentWithLink, "utf-8");
 
   // Write text file (same content)
-  const txtFilename = `${sanitizedName}.txt`;
   const txtFilepath = path.join(outputDir, txtFilename);
   await fs.writeFile(txtFilepath, content, "utf-8");
 }

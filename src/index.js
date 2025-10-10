@@ -221,7 +221,7 @@ async function main() {
           `\nProcessing session group: ${sessionName} (${sessionGroup.length} session(s))`,
         );
 
-        const processedSessionIds = [];
+        const processedSessions = [];
         for (const session of sessionGroup) {
           console.log(
             `  Processing ${session.sessionName} [${session.sessionId}]...`,
@@ -236,17 +236,20 @@ async function main() {
             continue;
           }
 
-          processedSessionIds.push(session.sessionId);
+          processedSessions.push({
+            sessionId: session.sessionId,
+            recordingUrl: session.recordingUrl,
+          });
           console.log(
             `  Completed ${session.sessionName} [${session.sessionId}]`,
           );
         }
 
         // Only add to manifest if at least one session was processed
-        if (processedSessionIds.length > 0) {
+        if (processedSessions.length > 0) {
           sessionGroups.push({
             sessionName,
-            sessionIds: processedSessionIds,
+            sessions: processedSessions,
           });
         }
       }
@@ -278,17 +281,20 @@ async function main() {
           console.log(`\nGenerating output for: ${group.sessionName}`);
 
           const allMinutes = [];
-          for (const sessionId of group.sessionIds) {
-            const minutes = await getCachedMinutes(meetingNum, sessionId);
-            const { dateTimeHeader } = parseSessionId(sessionId);
+          const recordingUrls = [];
+
+          for (const session of group.sessions) {
+            const minutes = await getCachedMinutes(meetingNum, session.sessionId);
+            const { dateTimeHeader } = parseSessionId(session.sessionId);
             allMinutes.push(`${dateTimeHeader}${minutes}`);
+            recordingUrls.push(session.recordingUrl);
           }
 
           // Concatenate all minutes for this session name
           const combinedMinutes = allMinutes.join("\n\n---\n\n");
 
-          // Save to output
-          await saveMinutes(group.sessionName, combinedMinutes, outputDir);
+          // Save to output (with recording URLs)
+          await saveMinutes(group.sessionName, combinedMinutes, outputDir, recordingUrls);
           processedSessions.push(group.sessionName);
           console.log(`  Saved: ${group.sessionName}`);
         }

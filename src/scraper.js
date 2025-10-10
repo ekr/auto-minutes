@@ -99,6 +99,7 @@ export async function fetchMeetingSessions(meetingNumber) {
     sessions.push({
       sessionName: sessionName,
       sessionId: sessionId,
+      recordingUrl: href,
     });
   });
 
