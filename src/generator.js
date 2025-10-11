@@ -16,7 +16,7 @@ let currentModel = null;
  */
 export function initializeClaude(apiKey) {
   anthropic = new Anthropic({ apiKey });
-  currentModel = 'claude';
+  currentModel = "claude";
 }
 
 /**
@@ -25,7 +25,7 @@ export function initializeClaude(apiKey) {
  */
 export function initializeGemini(apiKey) {
   gemini = new GoogleGenerativeAI(apiKey);
-  currentModel = 'gemini';
+  currentModel = "gemini";
 }
 
 /**
@@ -55,9 +55,13 @@ ${transcript}
 
 Generate the meeting minutes:`;
 
-  if (currentModel === 'claude') {
+  let generatedText;
+
+  if (currentModel === "claude") {
     if (!anthropic) {
-      throw new Error("Claude API not initialized. Call initializeClaude() first.");
+      throw new Error(
+        "Claude API not initialized. Call initializeClaude() first.",
+      );
     }
 
     const message = await anthropic.messages.create({
@@ -71,17 +75,48 @@ Generate the meeting minutes:`;
       ],
     });
 
-    return message.content[0].text;
-  } else if (currentModel === 'gemini') {
+    generatedText = message.content[0].text;
+  } else if (currentModel === "gemini") {
     if (!gemini) {
-      throw new Error("Gemini API not initialized. Call initializeGemini() first.");
+      throw new Error(
+        "Gemini API not initialized. Call initializeGemini() first.",
+      );
     }
 
-    const model = gemini.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = gemini.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(prompt);
     const response = result.response;
-    return response.text();
+    generatedText = response.text();
   } else {
-    throw new Error("No model initialized. Call initializeClaude() or initializeGemini() first.");
+    throw new Error(
+      "No model initialized. Call initializeClaude() or initializeGemini() first.",
+    );
   }
+
+  return cleanMarkdownCodeFence(generatedText);
+}
+
+/**
+ * Remove markdown code fence markers that some LLMs add around their output
+ * @param {string} text - The text to clean
+ * @returns {string} Cleaned text without code fence markers
+ */
+function cleanMarkdownCodeFence(text) {
+  // Remove ```markdown at the start and ``` at the end
+  let cleaned = text.trim();
+
+  // Check for opening fence (```markdown, ```md, or just ```)
+  if (cleaned.startsWith("```markdown") || cleaned.startsWith("```md") || cleaned.startsWith("```")) {
+    const firstNewline = cleaned.indexOf("\n");
+    if (firstNewline !== -1) {
+      cleaned = cleaned.substring(firstNewline + 1);
+    }
+  }
+
+  // Check for closing fence (```)
+  if (cleaned.endsWith("```")) {
+    cleaned = cleaned.substring(0, cleaned.length - 3);
+  }
+
+  return cleaned.trim();
 }
