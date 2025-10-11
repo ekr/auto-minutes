@@ -25,6 +25,9 @@ import {
 // Load environment variables
 dotenv.config();
 
+// Global verbose flag
+let verbose = false;
+
 /**
  * Generate minutes for a session (checks cache first, otherwise downloads and generates)
  * @param {number} meetingNumber - IETF meeting number
@@ -114,7 +117,7 @@ async function main() {
     .example("$0 --summarize 123 --output", "Generate summaries and output")
     .example("$0 --build", "Build site with 11ty (outputs to _site/)")
     .example("$0 --output --build", "Generate output and build site")
-    .example("$0 --push", "Build and push to GitHub Pages")
+    .example("$0 --pages", "Build and prepare GitHub Pages")
     .option("summarize", {
       alias: "s",
       type: "number",
@@ -131,10 +134,10 @@ async function main() {
       type: "boolean",
       description: "Build site with 11ty (outputs to _site/)",
     })
-    .option("push", {
-      alias: "P",
+    .option("pages", {
+      alias: "p",
       type: "boolean",
-      description: "Build and push to GitHub Pages",
+      description: "Build and prepare GitHub Pages (gh-pages branch)",
     })
     .option("model", {
       alias: "m",
@@ -149,9 +152,9 @@ async function main() {
       description: "Run with verbose output",
     })
     .check((argv) => {
-      if (!argv.summarize && !argv.output && !argv.build && !argv.push) {
+      if (!argv.summarize && !argv.output && !argv.build && !argv.pages) {
         throw new Error(
-          "Must specify at least one action: --summarize, --output, --build, or --push",
+          "Must specify at least one action: --summarize, --output, --build, or --pages",
         );
       }
       return true;
@@ -161,11 +164,11 @@ async function main() {
     .parse();
 
   const meetingNumber = argv.summarize;
-  const verbose = argv.verbose;
+  verbose = argv.verbose;
   const doSummarize = !!argv.summarize;
   const doOutput = argv.output;
-  const doBuild = argv.build || argv.push;
-  const doPush = argv.push;
+  const doBuild = argv.build || argv.pages;
+  const doPages = argv.pages;
   const model = argv.model;
 
   // Check for appropriate API key based on model (only needed for summarize)
@@ -321,7 +324,7 @@ async function main() {
 
       // Generate root index
       console.log("\nGenerating root index...");
-      await generateRootIndex("site");
+      await generateRootIndex();
       console.log("Root index generated at site/index.md");
     }
 
@@ -330,7 +333,7 @@ async function main() {
     // BUILD STAGE: Build site with 11ty if requested
     if (doBuild) {
       console.log("\n=== BUILD STAGE ===");
-      await buildSite(doPush);
+      await buildSite(doPages);
     }
   } catch (error) {
     console.error("Error:", error.message);
@@ -339,24 +342,138 @@ async function main() {
 }
 
 /**
- * Build site with 11ty and optionally push to GitHub Pages
- * @param {boolean} push - Whether to push to GitHub Pages after building
+ * Build site with 11ty and optionally prepare GitHub Pages
+ * @param {boolean} preparePages - Whether to prepare GitHub Pages after building
  */
-async function buildSite(push = false) {
+async function buildSite(preparePages = false) {
   const { execSync } = await import("child_process");
+  const fs = await import("fs/promises");
+  const path = await import("path");
 
   try {
+    // Remove existing _site directory
+    console.log("Cleaning _site directory...");
+    try {
+      await fs.rm("_site", { recursive: true, force: true });
+    } catch (err) {
+      // Directory doesn't exist, that's fine
+    }
+
     console.log("Building site with 11ty...");
     execSync("npx @11ty/eleventy", { stdio: "inherit" });
     console.log("Successfully built site to _site/");
 
-    if (push) {
-      throw new Error("Push functionality not yet implemented");
+    if (preparePages) {
+      const repoUrl = "git@github.com:ekr/auto-minutes.git";
+      const ghPagesDir = "gh-pages-repo";
+      const docsDir = path.join(ghPagesDir, "docs");
+
+      try {
+        // Step 1: Remove existing gh-pages repo if it exists
+        console.log("\nPreparing to push to GitHub Pages...");
+        try {
+          await fs.rm(ghPagesDir, { recursive: true, force: true });
+          console.log("Removed existing gh-pages-repo directory");
+        } catch (err) {
+          // Directory doesn't exist, that's fine
+        }
+
+        // Step 2: Clone the gh-pages branch
+        console.log("Cloning gh-pages branch...");
+        execSync(`git clone -b gh-pages --single-branch ${repoUrl} ${ghPagesDir}`, {
+          stdio: "inherit",
+        });
+
+        // Step 3: Reset to baseline tag
+        console.log("Resetting to baseline tag...");
+        process.chdir(ghPagesDir);
+        execSync("git reset --hard baseline", { stdio: "inherit" });
+        process.chdir("..");
+
+        // Step 4: Clear docs directory
+        console.log("Clearing docs directory...");
+        await fs.rm(docsDir, { recursive: true, force: true });
+        await fs.mkdir(docsDir, { recursive: true });
+
+        // Step 5: Copy everything from _site to gh-pages-repo/docs
+        console.log("Copying _site/ to gh-pages-repo/docs/...");
+        const allowedExtensions = ['.css', '.html', '.txt', '.jpg', '.png'];
+        const copiedFiles = await copyDir("_site", docsDir, allowedExtensions);
+        console.log(`Copied ${copiedFiles.length} files`);
+
+        // Step 6: Git add and commit
+        console.log("Adding files to git...");
+        process.chdir(ghPagesDir);
+        for (const file of copiedFiles) {
+          // Get path relative to docsDir (e.g., "docs/index.html")
+          const relativePath = path.relative(ghPagesDir, file);
+          if (verbose) {
+            console.log(`  Adding: ${relativePath}`);
+          }
+          execSync(`git add "${relativePath}"`, { stdio: "inherit" });
+        }
+
+        console.log("Committing changes...");
+        execSync('git commit -m "Updated pages with current minutes"', { stdio: "inherit" });
+        process.chdir("..");
+
+        console.log("Successfully prepared gh-pages branch");
+      } catch (error) {
+        console.error("Error preparing gh-pages:", error.message);
+        // Try to clean up even on error
+        try {
+          await fs.rm(ghPagesDir, { recursive: true, force: true });
+        } catch (cleanupError) {
+          // Ignore cleanup errors
+        }
+        throw error;
+      }
     }
   } catch (error) {
     console.error("Error in build/push process:", error.message);
     throw error;
   }
+}
+
+/**
+ * Recursively copy directory contents, filtering by allowed file extensions
+ * @param {string} src - Source directory
+ * @param {string} dest - Destination directory
+ * @param {Array<string>} allowedExtensions - Array of allowed file extensions (e.g., ['.html', '.css'])
+ * @returns {Promise<Array<string>>} Array of destination file paths that were copied
+ */
+async function copyDir(src, dest, allowedExtensions = null) {
+  const fs = await import("fs/promises");
+  const path = await import("path");
+
+  const copiedFiles = [];
+
+  await fs.mkdir(dest, { recursive: true });
+  const entries = await fs.readdir(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      const subFiles = await copyDir(srcPath, destPath, allowedExtensions);
+      copiedFiles.push(...subFiles);
+    } else {
+      // If no filter specified, copy all files
+      if (!allowedExtensions) {
+        await fs.copyFile(srcPath, destPath);
+        copiedFiles.push(destPath);
+      } else {
+        const ext = path.extname(entry.name).toLowerCase();
+        if (allowedExtensions.includes(ext)) {
+          await fs.copyFile(srcPath, destPath);
+          copiedFiles.push(destPath);
+        }
+      }
+    }
+  }
+
+  return copiedFiles;
 }
 
 main();

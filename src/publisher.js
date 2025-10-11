@@ -290,22 +290,19 @@ export async function generateIndex(sessions, outputDir = "output") {
 
 /**
  * Generate root index.md from template
- * Scans the directory for meeting folders and adds them to the index
- * @param {string} outputDir - Base output directory to scan for meetings (default: 'site')
+ * Scans cache/output for meeting folders and adds them to the index
  * @param {string} destPath - Destination path for the index file (default: 'site/index.md')
  */
-export async function generateRootIndex(
-  outputDir = "site",
-  destPath = "site/index.md",
-) {
+export async function generateRootIndex(destPath = "site/index.md") {
   // Read the template
   const templatePath = path.join(__dirname, "..", "templates", "index.md");
   let template = await fs.readFile(templatePath, "utf-8");
 
-  // Scan output directory for ietf* folders
+  // Scan cache/output directory for ietf* folders
   let meetings = [];
+  const cacheOutputDir = path.join("cache", "output");
   try {
-    const entries = await fs.readdir(outputDir, { withFileTypes: true });
+    const entries = await fs.readdir(cacheOutputDir, { withFileTypes: true });
     meetings = entries
       .filter((entry) => entry.isDirectory() && entry.name.startsWith("ietf"))
       .map((entry) => {
@@ -316,7 +313,7 @@ export async function generateRootIndex(
       .filter((num) => num !== null)
       .sort((a, b) => a - b); // Numerical order
   } catch (error) {
-    console.warn("Could not read output directory:", error.message);
+    console.warn("Could not read cache/output directory:", error.message);
   }
 
   // Generate meeting links
