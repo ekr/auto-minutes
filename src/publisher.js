@@ -289,14 +289,14 @@ export async function generateIndex(sessions, outputDir = "output") {
 }
 
 /**
- * Generate root index.md for GitHub Pages from template
- * Scans output/ directory for meeting folders and adds them to the index
- * @param {string} outputDir - Base output directory (default: 'output')
- * @param {string} destPath - Destination path for the index file
+ * Generate root index.md from template
+ * Scans the directory for meeting folders and adds them to the index
+ * @param {string} outputDir - Base output directory to scan for meetings (default: 'site')
+ * @param {string} destPath - Destination path for the index file (default: 'site/index.md')
  */
 export async function generateRootIndex(
-  outputDir = "output",
-  destPath = "gh-pages-repo/docs/index.md",
+  outputDir = "site",
+  destPath = "site/index.md",
 ) {
   // Read the template
   const templatePath = path.join(__dirname, "..", "templates", "index.md");

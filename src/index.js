@@ -112,7 +112,9 @@ async function main() {
     .example("$0 --summarize 123", "Generate LLM summaries for IETF 123")
     .example("$0 --output", "Generate output markdown files from cache")
     .example("$0 --summarize 123 --output", "Generate summaries and output")
-    .example("$0 --push", "Publish and push to GitHub Pages")
+    .example("$0 --build", "Build site with 11ty (outputs to _site/)")
+    .example("$0 --output --build", "Generate output and build site")
+    .example("$0 --push", "Build and push to GitHub Pages")
     .option("summarize", {
       alias: "s",
       type: "number",
@@ -124,15 +126,15 @@ async function main() {
       type: "boolean",
       description: "Generate output markdown files from cache",
     })
-    .option("publish", {
-      alias: "p",
+    .option("build", {
+      alias: "b",
       type: "boolean",
-      description: "Publish to GitHub Pages (clone, copy, commit)",
+      description: "Build site with 11ty (outputs to _site/)",
     })
     .option("push", {
       alias: "P",
       type: "boolean",
-      description: "Publish and push to GitHub Pages",
+      description: "Build and push to GitHub Pages",
     })
     .option("model", {
       alias: "m",
@@ -147,9 +149,9 @@ async function main() {
       description: "Run with verbose output",
     })
     .check((argv) => {
-      if (!argv.summarize && !argv.output && !argv.publish && !argv.push) {
+      if (!argv.summarize && !argv.output && !argv.build && !argv.push) {
         throw new Error(
-          "Must specify at least one action: --summarize, --output, --publish, or --push",
+          "Must specify at least one action: --summarize, --output, --build, or --push",
         );
       }
       return true;
@@ -162,7 +164,7 @@ async function main() {
   const verbose = argv.verbose;
   const doSummarize = !!argv.summarize;
   const doOutput = argv.output;
-  const doPublish = argv.publish || argv.push;
+  const doBuild = argv.build || argv.push;
   const doPush = argv.push;
   const model = argv.model;
 
@@ -319,16 +321,16 @@ async function main() {
 
       // Generate root index
       console.log("\nGenerating root index...");
-      await generateRootIndex("output", "site/index.md");
+      await generateRootIndex("site");
       console.log("Root index generated at site/index.md");
     }
 
     console.log("\nAll done!");
 
-    // Step 5: Publish to GitHub Pages if requested
-    if (doPublish) {
-      console.log("\nPublishing to GitHub Pages...");
-      await publishToGitHub(!doPush);
+    // BUILD STAGE: Build site with 11ty if requested
+    if (doBuild) {
+      console.log("\n=== BUILD STAGE ===");
+      await buildSite(doPush);
     }
   } catch (error) {
     console.error("Error:", error.message);
@@ -337,192 +339,22 @@ async function main() {
 }
 
 /**
- * Publish meeting minutes to GitHub Pages
- * @param {boolean} noPush - Skip the git push step
+ * Build site with 11ty and optionally push to GitHub Pages
+ * @param {boolean} push - Whether to push to GitHub Pages after building
  */
-async function publishToGitHub(noPush = false) {
+async function buildSite(push = false) {
   const { execSync } = await import("child_process");
-  const fs = await import("fs/promises");
-  const path = await import("path");
-
-  const repoUrl = "git@github.com:ekr/auto-minutes.git";
-  const ghPagesDir = "gh-pages-repo";
-  const docsDir = path.join(ghPagesDir, "docs");
 
   try {
-    // Step 1: Remove existing gh-pages repo if it exists
-    try {
-      await fs.rm(ghPagesDir, { recursive: true, force: true });
-      console.log("Removed existing gh-pages-repo directory");
-    } catch (err) {
-      // Directory doesn't exist, that's fine
-    }
+    console.log("Building site with 11ty...");
+    execSync("npx @11ty/eleventy", { stdio: "inherit" });
+    console.log("Successfully built site to _site/");
 
-    // Step 2: Clone the gh-pages branch
-    console.log("Cloning gh-pages branch...");
-    execSync(`git clone -b gh-pages --single-branch ${repoUrl} ${ghPagesDir}`, {
-      stdio: "inherit",
-    });
-
-    // Step 2.5: Reset to baseline tag
-    console.log("Resetting to baseline tag...");
-    process.chdir(ghPagesDir);
-    execSync("git reset --hard baseline", { stdio: "inherit" });
-    process.chdir("..");
-
-    // Step 3: Copy files from ALL meeting directories based on their manifests
-    console.log("Copying meeting files based on manifests...");
-
-    // Get all meeting directories from output/
-    const outputBase = "output";
-    const meetings = await fs.readdir(outputBase, { withFileTypes: true });
-    const meetingDirs = meetings
-      .filter((entry) => entry.isDirectory() && entry.name.startsWith("ietf"))
-      .map((entry) => entry.name);
-
-    for (const meetingDirName of meetingDirs) {
-      const sourcePath = path.join(outputBase, meetingDirName);
-      const destPath = path.join(docsDir, meetingDirName);
-      const manifestPath = path.join(sourcePath, ".manifest.json");
-
-      // Check if manifest exists
-      let filesToCopy;
-      try {
-        const manifestContent = await fs.readFile(manifestPath, "utf-8");
-        const manifest = JSON.parse(manifestContent);
-        filesToCopy = manifest.files;
-        console.log(
-          `  ${meetingDirName}: copying ${filesToCopy.length} files from manifest`,
-        );
-      } catch (error) {
-        console.warn(`  ${meetingDirName}: no manifest found, skipping`);
-        continue;
-      }
-
-      // Ensure destination directory exists
-      await fs.mkdir(destPath, { recursive: true });
-
-      // Copy each file from the manifest
-      for (const file of filesToCopy) {
-        const sourceFile = path.join(sourcePath, file);
-        const destFile = path.join(destPath, file);
-
-        try {
-          await fs.copyFile(sourceFile, destFile);
-        } catch (error) {
-          console.warn(`    Warning: could not copy ${file}: ${error.message}`);
-        }
-      }
-    }
-
-    // Step 4: Generate root index.md
-    console.log("Generating root index.md...");
-    const rootIndexPath = path.resolve(ghPagesDir, "docs", "index.md");
-    await generateRootIndex("output", rootIndexPath);
-
-    // Step 4.5: Copy Jekyll config, logo, and layouts
-    console.log("Copying Jekyll config, logo, and layouts...");
-    const configTemplatePath = path.resolve("templates", "_config.yml");
-    const configDestPath = path.resolve(ghPagesDir, "docs", "_config.yml");
-    await fs.copyFile(configTemplatePath, configDestPath);
-
-    const logoTemplatePath = path.resolve("templates", "logo.jpg");
-    const logoDestPath = path.resolve(ghPagesDir, "docs", "logo.jpg");
-    try {
-      await fs.copyFile(logoTemplatePath, logoDestPath);
-    } catch (error) {
-      console.warn("Warning: Could not copy logo.jpg:", error.message);
-    }
-
-    // Copy layout directory
-    const layoutsSrcDir = path.resolve("templates", "_layouts");
-    const layoutsDestDir = path.resolve(ghPagesDir, "docs", "_layouts");
-    try {
-      await fs.mkdir(layoutsDestDir, { recursive: true });
-      const layoutFiles = await fs.readdir(layoutsSrcDir);
-      for (const layoutFile of layoutFiles) {
-        await fs.copyFile(
-          path.join(layoutsSrcDir, layoutFile),
-          path.join(layoutsDestDir, layoutFile),
-        );
-      }
-    } catch (error) {
-      console.warn("Warning: Could not copy layouts:", error.message);
-    }
-
-    // Step 5: Commit changes
-    console.log("Committing changes...");
-    process.chdir(ghPagesDir);
-
-    // Git add all files from all meeting directories
-    for (const meetingDirName of meetingDirs) {
-      const manifestPath = path.join(
-        "..",
-        outputBase,
-        meetingDirName,
-        ".manifest.json",
-      );
-
-      try {
-        const manifestContent = await fs.readFile(manifestPath, "utf-8");
-        const manifest = JSON.parse(manifestContent);
-
-        for (const file of manifest.files) {
-          const gitPath = path.join("docs", meetingDirName, file);
-          execSync(`git add "${gitPath}"`, { stdio: "inherit" });
-        }
-      } catch (error) {
-        // Skip if no manifest
-      }
-    }
-
-    // Add root index.md, Jekyll config, logo, and layouts
-    console.log(
-      "Adding docs/index.md, docs/_config.yml, docs/logo.jpg, and docs/_layouts/ to git...",
-    );
-    execSync("git add docs/index.md", { stdio: "inherit" });
-    execSync("git add docs/_config.yml", { stdio: "inherit" });
-    try {
-      execSync("git add docs/logo.jpg", { stdio: "inherit" });
-    } catch (error) {
-      // Logo might not exist, that's okay
-    }
-    try {
-      execSync("git add docs/_layouts/", { stdio: "inherit" });
-    } catch (error) {
-      // Layouts might not exist, that's okay
-    }
-
-    execSync(`git commit -m "Update meeting minutes"`, {
-      stdio: "inherit",
-    });
-
-    // Step 4: Push to GitHub (unless noPush is set)
-    if (noPush) {
-      console.log("Skipping git push (--no-push flag set)");
-      console.log(`Repository left in: ${ghPagesDir}`);
-    } else {
-      console.log("Pushing to GitHub...");
-      execSync("git push origin gh-pages", { stdio: "inherit" });
-
-      // Return to original directory
-      process.chdir("..");
-
-      // Clean up
-      console.log("Cleaning up...");
-      await fs.rm(ghPagesDir, { recursive: true, force: true });
-
-      console.log("Successfully published to GitHub Pages!");
+    if (push) {
+      throw new Error("Push functionality not yet implemented");
     }
   } catch (error) {
-    console.error("Error publishing to GitHub:", error.message);
-    // Try to clean up even on error
-    try {
-      process.chdir("..");
-      await fs.rm(ghPagesDir, { recursive: true, force: true });
-    } catch (cleanupError) {
-      // Ignore cleanup errors
-    }
+    console.error("Error in build/push process:", error.message);
     throw error;
   }
 }
