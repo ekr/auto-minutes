@@ -24,8 +24,7 @@ at [https://ekr.github.io/auto-minutes](https://ekr.github.io/auto-minutes)
 and then we use Cloudflare Workers to publish the GitHub pages subdirectory
 to the [https://ietfminutes.org](https://ietfminutes.org). Currently,
 the GitHub pages version doesn't really work properly due to some
-Jekyll issues with relative links, but I plan to fix that, or maybe
-switch to a different static site generator.
+issues with relative links, but that's not the version you want to use anyway.
 
 
 ## FAQ
@@ -41,8 +40,7 @@ Yes. That's the idea! The minutes are generated in markdown
 and there's a link to the raw markdown so you can just cut
 and paste. You probably should double check for places
 where one of the AI processing steps has screwed up (e.g., "quick"
-for "QUIC"), but you don't have to.
-Some of these
+for "QUIC"). Some of these
 issues may be in the original transcript generating stage and so
 are hard too fix in minutes generation.
 
