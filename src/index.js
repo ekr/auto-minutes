@@ -232,7 +232,9 @@ async function main() {
 
           // Skip if no minutes were generated (transcript unavailable)
           if (!minutes) {
-            console.log(`  Skipping ${session.sessionName} [${session.sessionId}] - no transcript`);
+            console.log(
+              `  Skipping ${session.sessionName} [${session.sessionId}] - no transcript`,
+            );
             continue;
           }
 
@@ -266,11 +268,13 @@ async function main() {
       console.log("Scanning cache for meetings...");
 
       const cachedMeetings = await getCachedMeetingNumbers();
-      console.log(`Found ${cachedMeetings.length} cached meetings: ${cachedMeetings.join(', ')}`);
+      console.log(
+        `Found ${cachedMeetings.length} cached meetings: ${cachedMeetings.join(", ")}`,
+      );
 
       for (const meetingNum of cachedMeetings) {
         console.log(`\n--- Processing IETF ${meetingNum} ---`);
-        const outputDir = `output/ietf${meetingNum}`;
+        const outputDir = `site/minutes/ietf${meetingNum}`;
 
         console.log("Loading cache manifest...");
         const sessionGroups = await loadCacheManifest(meetingNum);
@@ -284,7 +288,10 @@ async function main() {
           const recordingUrls = [];
 
           for (const session of group.sessions) {
-            const minutes = await getCachedMinutes(meetingNum, session.sessionId);
+            const minutes = await getCachedMinutes(
+              meetingNum,
+              session.sessionId,
+            );
             const { dateTimeHeader } = parseSessionId(session.sessionId);
             allMinutes.push(`${dateTimeHeader}${minutes}`);
             recordingUrls.push(session.recordingUrl);
@@ -294,7 +301,12 @@ async function main() {
           const combinedMinutes = allMinutes.join("\n\n---\n\n");
 
           // Save to output (with recording URLs)
-          await saveMinutes(group.sessionName, combinedMinutes, outputDir, recordingUrls);
+          await saveMinutes(
+            group.sessionName,
+            combinedMinutes,
+            outputDir,
+            recordingUrls,
+          );
           processedSessions.push(group.sessionName);
           console.log(`  Saved: ${group.sessionName}`);
         }
@@ -307,8 +319,8 @@ async function main() {
 
       // Generate root index
       console.log("\nGenerating root index...");
-      await generateRootIndex("output", "output/index.md");
-      console.log("Root index generated at output/index.md");
+      await generateRootIndex("output", "site/index.md");
+      console.log("Root index generated at site/index.md");
     }
 
     console.log("\nAll done!");

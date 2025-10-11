@@ -2,8 +2,6 @@
 
 This site contains auto-generated minutes for [IETF](https://www.ietf.org/) meetings.
 
-Source code: [https://github.com/ekr/auto-minutes](https://github.com/ekr/auto-minutes)
-
 
 # Meetings
 

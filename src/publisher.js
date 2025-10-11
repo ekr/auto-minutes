@@ -61,12 +61,12 @@ export async function getCachedMeetingNumbers() {
   try {
     const entries = await fs.readdir(cacheBase, { withFileTypes: true });
     const meetingNumbers = entries
-      .filter(entry => entry.isDirectory() && entry.name.startsWith('ietf'))
-      .map(entry => {
+      .filter((entry) => entry.isDirectory() && entry.name.startsWith("ietf"))
+      .map((entry) => {
         const match = entry.name.match(/^ietf(\d+)$/);
         return match ? parseInt(match[1], 10) : null;
       })
-      .filter(num => num !== null)
+      .filter((num) => num !== null)
       .sort((a, b) => a - b);
 
     return meetingNumbers;
@@ -140,7 +140,7 @@ export async function getCachedSessionIds(meetingNumber) {
 
   try {
     const entries = await fs.readdir(cacheDir);
-    return entries.filter(entry => !entry.startsWith('.'));
+    return entries.filter((entry) => !entry.startsWith("."));
   } catch (error) {
     // Cache directory doesn't exist yet
     return [];
@@ -156,14 +156,18 @@ export async function saveCacheManifest(meetingNumber, sessionGroups) {
   const cacheDir = getCacheDir(meetingNumber);
   await fs.mkdir(cacheDir, { recursive: true });
 
-  const manifestPath = path.join(cacheDir, '.manifest.json');
+  const manifestPath = path.join(cacheDir, ".manifest.json");
   await fs.writeFile(
     manifestPath,
-    JSON.stringify({
-      generated: new Date().toISOString(),
-      sessionGroups,
-    }, null, 2),
-    'utf-8'
+    JSON.stringify(
+      {
+        generated: new Date().toISOString(),
+        sessionGroups,
+      },
+      null,
+      2,
+    ),
+    "utf-8",
   );
 }
 
@@ -174,9 +178,9 @@ export async function saveCacheManifest(meetingNumber, sessionGroups) {
  */
 export async function loadCacheManifest(meetingNumber) {
   const cacheDir = getCacheDir(meetingNumber);
-  const manifestPath = path.join(cacheDir, '.manifest.json');
+  const manifestPath = path.join(cacheDir, ".manifest.json");
 
-  const content = await fs.readFile(manifestPath, 'utf-8');
+  const content = await fs.readFile(manifestPath, "utf-8");
   const manifest = JSON.parse(content);
   return manifest.sessionGroups;
 }
@@ -188,7 +192,12 @@ export async function loadCacheManifest(meetingNumber) {
  * @param {string} outputDir - Directory to save files (default: 'output')
  * @param {Array<string>} recordingUrls - Array of recording URLs for this session
  */
-export async function saveMinutes(sessionName, content, outputDir = "output", recordingUrls = []) {
+export async function saveMinutes(
+  sessionName,
+  content,
+  outputDir = "output",
+  recordingUrls = [],
+) {
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
 
@@ -207,7 +216,7 @@ export async function saveMinutes(sessionName, content, outputDir = "output", re
       // Multiple recordings for this session
       const recordingLinks = recordingUrls
         .map((url, idx) => `[Recording ${idx + 1}](${url})`)
-        .join(' | ');
+        .join(" | ");
       header += ` | ${recordingLinks}`;
     }
   }
@@ -314,7 +323,7 @@ export async function generateRootIndex(
   let meetingsList = "";
   if (meetings.length > 0) {
     for (const meetingNum of meetings) {
-      meetingsList += `- [IETF ${meetingNum}](ietf${meetingNum}/index.md)\n`;
+      meetingsList += `- [IETF ${meetingNum}](minutes/ietf${meetingNum}/index.html)\n`;
     }
   } else {
     meetingsList = "No meetings processed yet.\n";
