@@ -9,8 +9,8 @@ them into minutes, as shown in the diagram above.
 
 Auto Minutes works one IETF plenary meeting at a time. It starts by
 scraping the proceedings page,
-[https://datatracker.ietf.org/meeting/123/proceedings](for instance).
-It extracts every "Session Recording" link and infers the link for the
+([for instance](https://datatracker.ietf.org/meeting/123/proceedings)).
+It extracts each "Session Recording" link and infers the link for the
 transcript JSON from the URL, sending the transcript to an LLM
 (currently mostly Gemini) with preva prompt directing it to make minutes
 in markdown. This is the only expensive part of the process (more in
