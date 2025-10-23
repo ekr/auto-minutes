@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="suit.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-SUIT-20211108-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 14:30</p>
+<h1>suit</h1>
+<h2>Summary</h2>
+<p>The SUIT working group session covered the status of the recharter, updates from the recent hackathon, and significant technical discussions on the SUIT Manifest specification. Key points included the decision to split the main manifest document into several smaller drafts, an in-depth debate on mandatory-to-implement signature algorithms, an update on firmware encryption, and a presentation on trust domains. Decisions were made regarding a recharter milestone, the scheduling of a joint interim meeting with RATS, and the proposed mandatory signature algorithm for SUIT implementations, subject to mailing list confirmation.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Recharter Status</strong>:</p>
+<ul>
+<li>Milestones have been updated in the data tracker.</li>
+<li>Discussion arose regarding a milestone for coordinating with the RATS working group on the placement of the SUIT-specific RATS profile document.</li>
+<li>Consensus formed around the idea that RATS is the appropriate home for the general RATS profile, but SUIT should review it. SUIT-specific claims might reside in SUIT.</li>
+<li><strong>Proposal</strong>: Hold a 20-minute virtual interim meeting between RATS and SUIT to discuss the <code>draft-burkholz-suit-claims</code> document and clarify the division of content (generic vs. SUIT-specific claims) and its working group home.</li>
+</ul>
+</li>
+<li>
+<p><strong>Hackathon Update</strong>:</p>
+<ul>
+<li>Presentations were given on tools and code (Riot, SUIT extensions, Brendan's code). Recordings and slides are available.</li>
+<li>Hacking events occurred on different fronts.</li>
+<li><strong>Lesson Learned</strong>: Online events, especially hackathons, are challenging due to concurrent activities and time zone differences.</li>
+</ul>
+</li>
+<li>
+<p><strong>SUIT Manifest 16 (Draft Split)</strong>:</p>
+<ul>
+<li>The primary <code>suit-manifest</code> document has been split into four (potentially five) separate drafts to simplify the core specification.</li>
+<li><strong>Core Document Scope</strong>: Covers authentication, basic flow control (try-each, multiple components), override parameters, severable members, and text description.</li>
+<li><strong>Excluded from Core</strong>: Delegation, dependency manifests, multiple SUIT processors (moved to Trust Domains draft), payload transforms (no dedicated document yet for compression, but Encrypted Firmware exists), conditions/metadata for updates (moved to Update Management draft).</li>
+<li><strong>Integrated Element Keys</strong>: Changed from fragment-only URIs with integer references to direct text string matching keys. This enables straightforward pre-fetching by intermediaries.</li>
+<li><strong>URI Definition</strong>: Clarified that the specification refers to URI references, not strictly fully qualified domain names.</li>
+</ul>
+</li>
+<li>
+<p><strong>Open Issues: Mandatory-to-Implement (MTI) Signature Algorithms</strong>:</p>
+<ul>
+<li><strong>Implementation Overhead</strong>: Verification time for HSS-LMS is roughly one-third of ECDSA, but tooling is less mature. HSS-LMS keys require ongoing maintenance and have a fixed number of signatures, with larger signature sizes (min 1280 bytes).</li>
+<li><strong>Quantum Resistance</strong>: ECDSA is not quantum-resistant; HSS-LMS is.</li>
+<li><strong>MTI for Whom?</strong>: Discussion on whether MTI should apply equally to manifest authors, consumers, and intermediaries (e.g., co-signers). Constrained devices often pick one algorithm at compile time.</li>
+<li><strong>Proposal</strong>: Constrained devices <em>must</em> implement one of HSS-LMS or ECDSA. Manifest authors, co-signers, and other intermediary roles <em>must</em> implement both HSS-LMS and ECDSA to ensure interoperability.</li>
+<li><strong>Optional Algorithms</strong>: Discussion on whether to allow RSA and failover options for digest algorithms, especially in bootloaders.</li>
+</ul>
+</li>
+<li>
+<p><strong>Firmware Encryption Update</strong>:</p>
+<ul>
+<li><strong>Hybrid Public Key Encryption (HPKE)</strong>: Extracted into a standalone COSE method document to be discussed in the COSE WG.</li>
+<li><strong>Attack Mitigations</strong>:
+<ul>
+<li>Encryption information moved from manifest to the manifest envelope (SUIT encryption input tag) to avoid issues with signature protection.</li>
+<li>A verification mechanism for battery exhaustion prevention was added, allowing consumers to quickly check payload decryption using a content encryption key (CEK) on a predefined byte sequence in the manifest.</li>
+</ul>
+</li>
+<li><strong>Current Status</strong>: Code exists for HPKE and COSE, but interoperability testing is pending.</li>
+</ul>
+</li>
+<li>
+<p><strong>Trust Domains Presentation</strong>:</p>
+<ul>
+<li><strong>Content</strong>: This document covers delegation chains (lists of CBOR Web Tokens), dependencies (fundamental to SUIT's design, enabling lock-step processing and encrypted manifests), multiple SUIT processors (for mutually distrustful processing environments on a single device), and the unlinked directive.</li>
+<li><strong>TEEP Dependency</strong>: The TEEP specification depends on this draft.</li>
+<li><strong>Open Issues</strong>: Lack of running code, concerns about correct CBOR Web Token usage.</li>
+<li><strong>Proposal</strong>: Adopt <code>draft-ietf-suit-trust-domains</code> (and <code>draft-ietf-suit-update-management</code>) as a working group document, as their content originated from the main SUIT manifest document.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Working Group Recharter Milestone</strong>: A milestone will be added to the recharter specifying that a decision on the working group home for the RATS profile for SUIT claims document should be made by March.</li>
+<li><strong>RATS/SUIT Interim Meeting</strong>: The chairs will coordinate with the RATS chairs to schedule a 20-minute virtual interim meeting (before Christmas, if possible) to discuss the <code>draft-burkholz-suit-claims</code> document and clarify its working group home and content split.</li>
+<li><strong>MTI Signature Algorithm</strong>:
+<ul>
+<li><strong>Proposed Consensus</strong>: HSS-LMS will be the Mandatory-to-Implement (MTI) algorithm for SUIT. ECDSA will be a SHOULD. Other algorithms are MAY.</li>
+<li>This consensus needs to be confirmed on the mailing list.</li>
+</ul>
+</li>
+<li><strong>Trust Domains &amp; Update Management Documents</strong>: <code>draft-ietf-suit-trust-domains</code> and <code>draft-ietf-suit-update-management</code> will be re-adopted as SUIT working group documents. Brendan will repost these drafts.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Chairs</strong>: Coordinate scheduling of the joint RATS/SUIT interim meeting.</li>
+<li><strong>Roman</strong>: Submit the recharter with the new milestone to the ISG.</li>
+<li><strong>Working Group</strong>: Discuss and confirm the proposed MTI signature algorithm consensus on the mailing list.</li>
+<li><strong>Brendan</strong>: Repost <code>draft-moran-suit-trust-domains</code> and <code>draft-moran-suit-update-management</code> as <code>draft-ietf-suit-...</code> documents for working group adoption.</li>
+<li><strong>All interested parties</strong>: Attend the TEEP session on Friday morning for further discussion on SUIT's use in TEEP and related issues.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

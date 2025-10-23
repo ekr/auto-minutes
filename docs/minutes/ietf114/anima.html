@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="anima.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-ANIMA-20220725-1900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 19:00</p>
+<h1>anima</h1>
+<h2>Summary</h2>
+<p>The ANIMA Working Group discussed the status of several key drafts, including updates to JWS-signed vouchers, BR-SKi PRM, BR-SKi AE, GRASP-based information distribution, resource auto-deployment, constrained join proxy, and EAP-based onboarding for BR-SKi. Key decisions and discussions included a request for a &quot;YANG doctor&quot; review for consistency across ANIMA documents, the potential mandatory-to-implement status for stateless constrained join proxies, and the need to define a new CoAP scheme for discovery in constrained environments. Authors were encouraged to provide concrete implementation examples and engage the mailing list for further technical discussions and reviews.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Process &amp; IPR</strong>: Early IPR disclosure is mandatory for WG adoption. Nine RFCs are published; implementers are encouraged to report errata. A new RFC, 9355 (ASA Guidelines), has been published.</li>
+<li><strong>Draft Status (without dedicated slots)</strong>:
+<ul>
+<li><code>draft-ietf-anima-voucher-cloud</code>: No changes since IETF 113, ready for WG Last Call. Normative reference to an unadopted LAMPS draft is not an ANIMA blocker.</li>
+<li><code>draft-ietf-anima-voucher-delegation</code>: Continued interest, similar work ongoing outside IETF. Requires attention.</li>
+<li><code>draft-ietf-anima-8366bis</code>: Requires WG decision on progression to Internet Standard.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-anima-jws-voucher</code></strong>:
+<ul>
+<li>Proposes JWS-signed JSON as an alternative to CMS-signed JSON (RFC 8366) for voucher artifacts, without changing the YANG model.</li>
+<li>Fixed to Generalized JWS JSON Serialization to support multiple signatures and align with other formats like CBOR/COSE.</li>
+<li>Version 4 added an optional <code>type</code> header parameter.</li>
+<li>Implementers are encouraged to include implementation and interop testing details in a &quot;to-be-removed&quot; section for IESG review.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-anima-burski-prm</code> (BR-SKi PRM)</strong>:
+<ul>
+<li>Significant updates from peer reviews, addressing 22-61 issues.</li>
+<li>Added support for non-slash vouchers (e.g., for VLC channels).</li>
+<li>Enhanced pledge CA certificate endpoint to receive signed CA cert responses from the Registrar.</li>
+<li>Made the Registrar's proof of possession (via a second JWS signature in the voucher) mandatory, similar to TLS provisional accept.</li>
+<li>Clarified SKI format and augmented the existing BR-SKi voucher request YANG model rather than redefining it.</li>
+<li>A proof-of-concept (PoC) implementation is complete.</li>
+</ul>
+</li>
+<li><strong>YANG Consistency Across ANIMA Documents</strong>: Michael Richardson raised a concern about the consistent and correct use of YANG for &quot;data at rest&quot; across multiple ANIMA documents, requesting a comprehensive &quot;YANG doctor&quot; review for the entire working group's approach.</li>
+<li><strong><code>draft-ietf-anima-burski-ae</code> (BR-SKi AE)</strong>:
+<ul>
+<li>Renamed from <code>essence-enroll</code>.</li>
+<li>Generalizes BR-SKi by allowing alternative enrollment protocols (e.g., CMC, CMP) instead of EST.</li>
+<li>Clarified the Registrar's role in delegating Registration Authority (RA) tasks to backend servers.</li>
+<li>PoC implementation completed and well-received. Authors believe it's ready for WG Last Call.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-anima-grasp-distribution</code></strong>:
+<ul>
+<li>Aimed at enhancing information distribution using GRASP.</li>
+<li>Discussion on use cases, particularly automotive (kept as futuristic) and 3GPP integration (as motivation for ANIMA's potential).</li>
+<li>Acknowledged missing security considerations and inconsistencies in &quot;should/must&quot; language.</li>
+<li>Feedback requested to make the document more concrete with implementable GRASP method examples and specific application scenarios.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-anima-resource-auto-deployment</code></strong>:
+<ul>
+<li>Proposes an autonomic negotiation mechanism for resource distribution.</li>
+<li>Introduced a three-stage process: discovery, negotiation, and after-negotiation (including &quot;secret synchronization&quot;).</li>
+<li>Not a resource reservation protocol, but enables multi-round, multi-type resource negotiation.</li>
+<li>No PoC implementation reported.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-anima-constrained-join-proxy</code> and <code>draft-ietf-anima-constrained-voucher</code></strong>:
+<ul>
+<li>Discovery text moved from <code>constrained-join-proxy</code> to <code>constrained-voucher</code>.</li>
+<li><strong>Stateless Join Proxy Implementation</strong>: Discussed whether Join Proxies must implement both stateful and stateless modes. Security benefits of stateless (no state overload protection) and ease of implementation (for low-power devices) were noted. The Chair proposed making stateless mandatory to implement (MTI).</li>
+<li><strong>Wire Format Change</strong>: The old <code>jpy</code> message was removed and simplified to a small, encrypted &quot;context&quot; field, aligning with 6tisch minimal security onboarding (RFC 9031/9032). This is a significant change requiring WG review.</li>
+<li><strong>CoAP Discovery Scheme</strong>: Current CoAP discovery (<code>coap://</code>) is insufficient for the constrained join proxy which requires a <code>jpy</code> header. Carsten Bormann recommended creating a new, plumbing-specific CoAP scheme (e.g., <code>jpy://</code>) and defining its behavior within the document.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-anima-eap-connect</code></strong>:
+<ul>
+<li>Proposes an EAP-based mechanism for BR-SKi onboarding over Wi-Fi, as an alternative to BR-SKi TEEP.</li>
+<li>Uses EAP-TLS with a network identifier <code>onboarding@eap.arpa</code> where the server is provisionally not authenticated.</li>
+<li>Leverages existing enterprise &quot;captive portal&quot; networks for initial untrusted IP connectivity.</li>
+<li>Addresses a gap in RFC 5216 by defining unauthenticated EAP-TLS behavior.</li>
+<li>A PoC implementation is expected by the next IETF.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Chair</strong>: Review <code>draft-ietf-anima-voucher-cloud</code> and initiate WG Last Call.</li>
+<li><strong>Chair</strong>: Ping authors of <code>draft-ietf-anima-voucher-delegation</code> and <code>draft-ietf-anima-8366bis</code> in two months to accelerate progress.</li>
+<li><strong>Michael Richardson</strong>: Schedule a meeting to discuss ANIMA's YANG strategy with &quot;YANG doctors&quot; or experts.</li>
+<li><strong>Stefan Fries (for <code>jws-voucher</code> and <code>burski-prm</code>)</strong>:
+<ul>
+<li>Add changelog entries attributing reviewers/contributors.</li>
+<li>Include information on PoC implementations and interop testing in drafts (in a &quot;to-be-removed&quot; section).</li>
+</ul>
+</li>
+<li><strong>Michael Richardson (for <code>constrained-join-proxy</code> and <code>constrained-voucher</code>)</strong>:
+<ul>
+<li>Research and define a new CoAP scheme (e.g., <code>jpy://</code>) within the document to address CoAP discovery for the stateless join proxy.</li>
+<li>Get back to the working group with a proposal for the scheme registration process.</li>
+</ul>
+</li>
+<li><strong>Kyung-Chul (for <code>grasp-distribution</code>)</strong>: Provide concrete, implementable examples of GRASP method applications in the document, detailing interactions and objective exchanges for specific scenarios.</li>
+<li><strong>Henrik Brockhaus (for <code>burski-ae</code>)</strong>: Track reviewers and contributions in the document's changelog.</li>
+<li><strong>Working Group Members</strong>: Engage in reviews for all active drafts, particularly those nearing WG Last Call.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>All Drafts</strong>: Authors to address open issues and review comments on the mailing list.</li>
+<li><strong><code>draft-ietf-anima-jws-voucher</code></strong>: Further alignment with the Brewski design team, interop testing, seeking a document shepherd, working group review.</li>
+<li><strong><code>draft-ietf-anima-burski-prm</code></strong>: Address 14 remaining open issues (clarifying response codes and endpoint handling), update security considerations, seeking a document shepherd. Expected to be ready for WG Last Call after these updates.</li>
+<li><strong><code>draft-ietf-anima-burski-ae</code></strong>: Await Elliot's input on EST over CMC/CMP, seeking a document shepherd. Authors indicate readiness for WG Last Call pending reviews.</li>
+<li><strong><code>draft-ietf-anima-grasp-distribution</code></strong>: Continue revisions, with a goal for WG Last Call by the end of the year, after incorporating concrete examples and addressing security considerations.</li>
+<li><strong><code>draft-ietf-anima-resource-auto-deployment</code></strong>: Update autonomic resource management objectives and add practical scenario examples. Seek comments and contributions.</li>
+<li><strong><code>draft-ietf-anima-constrained-join-proxy</code> / <code>constrained-voucher</code></strong>: These drafts are closely tied and will be progressed in parallel. A second WG Last Call for <code>constrained-join-proxy</code> is anticipated after addressing the wire format change and CoAP scheme definition.</li>
+<li><strong><code>draft-ietf-anima-eap-connect</code></strong>: Further discussion on the mailing list. A PoC implementation is anticipated.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

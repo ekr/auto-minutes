@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="oauth.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF123-OAUTH-20250724-0730">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF123-OAUTH-20250725-1230">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 24 Jul 2025 07:30</p>
+<h1>oauth</h1>
+<h2>Summary</h2>
+<p>The OAuth working group meeting covered a variety of topics, including AI agent authentication, SD-JWT VC, updates to the OAuth security BCP, JOT security BCP, identity and authorization chaining across domains, client ID prefixing, and automatic client registration with SPIFFE. Discussions focused on security vulnerabilities, interoperability concerns, and potential solutions.  A formal vote was held on the inclusion of DID methods in the SD-JWT VC document.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>AI Agent Authentication (Jonathan Rosenberg, Pat White):</strong>
+<ul>
+<li>Discussion of challenges in authorizing AI agents, specifically regarding the need to avoid god-like service tokens.</li>
+<li>Two main problems identified:
+<ul>
+<li>Authenticating agents interacting with users over PSTN.</li>
+<li>Escalating permissions for autonomous agents without a clear UI.</li>
+</ul>
+</li>
+<li>A third related problem: AI confirmation flows, draft Rosammer-checked-00 was submitted.</li>
+<li>Jeff Normandoe suggested looking into Client Initiated Backchannel Authentication (CIBA).</li>
+<li>Tim Cappalli argued that AI agent authentication should be directly in scope of OAuth.</li>
+<li>Suggestion for separation between agents and authorization infrastructure to prevent agents from touching tokens.</li>
+</ul>
+</li>
+<li><strong>SD-JWT VC (Brian Campbell):</strong>
+<ul>
+<li>Review of changes since Bangkok, including minor editorial updates and a clarification of issuer signature mechanisms.</li>
+<li>Rationale for not including DID methods directly in the specification due to complexity, interoperability concerns, and perceived reputational risk.</li>
+<li>Extensive discussion on whether to include DID methods in the document or leave them to extensions.</li>
+<li>Arguments for inclusion: Existing section 3-3-5 was agreed and should be kept until consensus, current facts are misleading</li>
+<li>Arguments against inclusion: cognitive overhead, standardization for interoperability should take place in another working group.</li>
+<li>Oliver noted previous removal of DID methods because they were not sufficient for interoperability.</li>
+<li>Tony Nadlin pointed out that consensus is not necessarily unanimity.</li>
+</ul>
+</li>
+<li><strong>OAuth Security BCP Updates (Pedram, Kai-Juan):</strong>
+<ul>
+<li>Discussion of updating the BCP to include security considerations for audience injection and mix-up attacks.</li>
+<li>The updated BCP will be a new RFC containing only the new content, specifically related to the identified attacks.</li>
+<li>Kai-Juan presented new mix-up attack variants impacting integration platforms and agentic AI ecosystems.</li>
+<li>Proposed solution: OAuth client should differentiate each integrated app with a distinct redirect URI.</li>
+<li>Hannes suggested people read the documents, and get familiar with the underlying assumptions before the next discussion.</li>
+<li>Tim Cappalli suggested to keep the work ongoing instead of rushing through with the audience vulnerability issue.</li>
+</ul>
+</li>
+<li><strong>JOT Security BCP Updates (Honor, Mike Jones):</strong>
+<ul>
+<li>Discussion of new attacks on JOT in the wild and the need to update the security BCP.</li>
+<li>Five areas of focus: iteration count for password based key generation, JWWE/JWS confusion, case sensitivity, compression, and JSON serialized JWS.</li>
+<li>Aaron Parecki provided feedback and suggestions on mitigating approaches and the use of specific deprecation notices and existing RFCs.</li>
+<li>Philip Skokin emphasized the importance of implementers to adopt the BCP to become aware of the potential vulnerabilities</li>
+</ul>
+</li>
+<li><strong>OAuth Identity and Authorization Chaining Across Domains (Brian Campbell):</strong>
+<ul>
+<li>Discussion of a common pattern that preserves identity and authorization information across trust domains without end-user interaction.</li>
+<li>Describes the local RFC 8693 token exchange locally to get a token to facilitate an RFC 7523 cross-domain access token acquisition</li>
+<li>Exploration of how the work can be used in an enterprise context and specifically with Agentic AI.</li>
+<li>Reference to Aaron Parecki's identity assertion authorization grant profile and its potential applications.</li>
+<li>Aaron emphasized this solves direct, enterprise-related use cases independent of AI, although AI amplifies the problem it addresses.</li>
+</ul>
+</li>
+<li><strong>Client ID Prefix (Brian Campbell presenting for Aaron Parecki):</strong>
+<ul>
+<li>Discussion of the client ID metadata document and client ID prefix drafts as a means to address pre-registration of clients.</li>
+<li>The client id prefix allows to resolve the client metadata at the specified URL, therefore reducing pre-registration requirements.</li>
+<li>Laif raised the need for a proper trust management mechanism, similarities with OpenID Federation, and the need to align.</li>
+</ul>
+</li>
+<li><strong>Automatic Client Registration with SPIFFE (Peter Castleman, Dag Snegan):</strong>
+<ul>
+<li>Addressing the exponential growth of clients and secrets through automated client registration, leveraging SPIFFE for identity attestation and credential management.</li>
+<li>Dmitry Telgan's register-on-first-use approach and use of SPIFFE JOT as a software statement in dynamic client registration were presented as approaches.</li>
+<li>Brian suggested to combine the approach with his own draft.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>SD-JWT VC:</strong> A poll was conducted on whether DID methods should be included in the document. The results were 7 in favor, 14 against, and 9 with no opinion. <strong>Decision:</strong> DID methods will <strong>not</strong> be included in the SD-JWT VC document. The proponents should create a profile.</li>
+<li><strong>OAuth Identity and Authorization Chaining Across Domains:</strong> The working group will start a last call for the identity and authorization chaining draft.</li>
+<li><strong>Security Discussions:</strong> Schedule interim meetings to discuss, especially, the client ID prefix problem, and the BCP updates on the mixup attacks.</li>
+<li>The working group will do a call for adoption on the JOT BCP security updates on the mailing list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Post results of the SD-JWT VC poll on the mailing list.</li>
+<li>Start working group last call for the identity and authorization chaining draft.</li>
+<li>Schedule interim meeting to continue discussion on the client ID prefix draft and BCP mixup attack updates.</li>
+<li>Continue discussion of automatic client registration with SPIFFE on the mailing list and in future meetings.</li>
+<li>Explore combining efforts on addressing the automated identification problem with the approach presented in the client id prefix, and the token chaining.</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 25 Jul 2025 12:30</p>
+<h1>oauth</h1>
+<h2>Summary</h2>
+<p>This meeting covered a variety of topics including token status lists, back-end tested client authentication, transaction tokens, client authentication with Spiffy, refresh token expiration, native app authentication, client extension claims, and deferred key binding. Several decisions were made regarding next steps for these drafts.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Token Status List:</strong> The draft is in shepherd review and guidance is sought to speed up the process.</li>
+<li><strong>Back-End Tested Client Authentication:</strong> Discussions focused on the challenges with the challenge endpoint and potential optimizations for Depop usage, including potentially reusing the Deepop proof for client attestation.</li>
+<li><strong>Transaction Tokens:</strong> The draft is considered ready for working group last call after addressing concerns regarding HTTP header format.</li>
+<li><strong>Client Authentication with Spiffy:</strong>  Discussion centered on the use of ISS claims and the possibility of relaxing requirements when profiling documents.  Concerns were raised about supporting both Jot and X.509 ASWIT in the same draft.</li>
+<li><strong>Refresh Token Expiration:</strong>  Questions raised regarding defining parameters for clients to request time-limited tokens and the use of &quot;expires in&quot; vs. &quot;expires at.&quot;</li>
+<li><strong>Native App Authentication:</strong> Addressing seamless native app authentication across trust domains. Browserless app to app communication.</li>
+<li><strong>Client Extension Claims:</strong>  Adding custom claims to be able to be used by different authentication requirements. Fire, FAPI etc.</li>
+<li><strong>Pushed Client Registration</strong>: Client IDs limitations were discussed as a whole. Ephemeral clients, SPA clients and client metadata fetch documents.</li>
+<li><strong>Deferred Key Binding:</strong> Exploring options on how to handle binding tokens to keys where proof-of-possession is deferred to a later stage and potentially done by a different entity. Different use cases were presented from different implementations.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Token Status List:</strong> Proceed with shepherd review. Chairs to look into speeding the review process.</li>
+<li><strong>Back-End Tested Client Authentication:</strong> Authors to consider security analysis of Depop optimization and potential inclusion of a Deepop nonce in the challenge endpoint response. Andrew, Philip, and Aaron volunteered to review the document.</li>
+<li><strong>Transaction Tokens:</strong>  Start working group last call.</li>
+<li><strong>Client Authentication with Spiffy:</strong> Authors to create an issue regarding ISS claims. Working group to decide whether to split the draft into separate profiles for Jot and X.509 ASWIT.</li>
+<li><strong>Refresh Token Expiration:</strong> Address concept of granting vs. consent. Rename parameters.</li>
+<li><strong>Pushed Client Registration:</strong> Discuss what can be done with client registration and see if an interim meeting is possible to try to unite all solutions into the same area.</li>
+<li><strong>Deferred Key Binding:</strong> Create a thread on the mailing list to discuss the next steps of the draft and gather feedback from the group.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue working on drafts based on feedback.</li>
+<li>Schedule interim meeting to discuss approaches to identity and push client registration.</li>
+<li>Shepherd reviews to be completed.</li>
+<li>Working group last calls to be initiated.</li>
+<li>Discuss deferred key binding and if protocols or BCPs needs to be followed.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

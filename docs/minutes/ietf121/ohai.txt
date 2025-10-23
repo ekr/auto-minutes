@@ -1,0 +1,53 @@
+**Session Date/Time:** 05 Nov 2024 18:00
+
+# ohai
+
+## Summary
+
+This meeting focused on the Chunked Oblivious HTTP draft. Discussions centered on the dependency on the incremental HTTP draft, security implications of incremental delivery (particularly timing attacks and replayability), and other remaining issues like negotiation, maximum chunk size, and security considerations related to interactivity. The goal is to resolve the remaining issues and solicit reviews for eventual publication.
+
+## Key Discussion Points
+
+*   **Dependency on Incremental HTTP Draft:**
+    *   The Chunked OHDP draft introduces a dependency on the "incremental HTTP" draft to signal incremental delivery to intermediaries (relays).
+    *   Debate arose regarding whether this dependency should be normative or informational. Concerns were raised about potential changes to the incremental HTTP header format and its impact on the Chunked OHDP draft.
+    *   It was noted that relays often buffer requests/responses, and the incremental HTTP header provides a standard way to signal incremental delivery, which was previously accomplished by manually configuring relays.
+
+*   **Security Implications of Incremental Delivery:**
+    *   Concerns were raised about the security implications of incremental delivery and the potential for timing attacks, especially when request and response chunks are interleaved.
+    *   It was suggested that interleaved request and response processing fundamentally changes the security properties of Oblivious HTTP, potentially allowing attackers to correlate requests and responses.
+    *   The discussion highlighted the need for clearer guidance on interactivity and the security assumptions that are violated when incremental requests and responses are combined.
+    *   The use of padding and normalization of timing were suggested as potential mitigation strategies for timing attacks.
+    *   The need for redoing the formal security analysis to account for incremental delivery was emphasized.
+
+*   **Negotiation of Chunked OHDP:**
+    *   The discussion centered on how a client knows whether a relay and gateway support Chunked OHDP.
+    *   The conclusion was that the media type should be used to signal support, and if Chunked OHDP is required, the client should just try it and treat failure as a general OHDP failure.
+    *   It was decided that the draft should state that if chunked is used on the request, the gateway must use chunked on the response.
+
+*   **Maximum Chunk Size:**
+    *   The group discussed the need for a minimum maximum chunk size for interoperability.
+    *   16KB (2^14) was proposed as a suitable default minimum maximum chunk size.
+
+*   **Media Type Registration:**
+    *  It was suggested to explicitly ask the media type registration authority for an incantation that prevents the use of fragment identifiers with the new media type to prevent a potential source of confusion.
+
+*   **Replayability:**
+    *   The potential for replayability attacks was discussed, and the need for more detailed text on security concerns related to interactivity was highlighted.
+
+## Decisions and Action Items
+
+*   **Action Item:** Tommy and Martin to work on expanding the text on security concerns around interactivity and replayability.
+*   **Action Item:** Tommy to work on incorporating the media type registration suggestion.
+*   **Action Item:** Authors to finalize the draft changes based on the issues discussed.
+*   **Decision:** 16KB (2^14) will be used as the default minimum maximum chunk size.
+*   **Decision:** If chunked is used on the request, the gateway must use chunked on the response.
+*   **Action Item:** Solicit help with formal security analysis, including Jonathan Hui if available.
+
+## Next Steps
+
+*   Address remaining issues and incorporate feedback from the meeting.
+*   Complete test vectors.
+*   Conduct more interoperability testing, including Martin's updated reference implementation.
+*   Monitor the progress and stabilization of the incremental HTTP draft.
+*   Once the major issues are resolved (excluding formal analysis and test vectors), solicit working group reviews.

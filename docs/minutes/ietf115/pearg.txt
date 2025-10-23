@@ -1,0 +1,69 @@
+**Session Date/Time:** 09 Nov 2022 15:00
+
+# pearg
+
+## Summary
+
+The PEARG session covered updates on its current drafts, including two drafts nearing publication on Transient Numeric Identifiers (TNI) and one on a survey of censorship techniques. Discussions were held on ongoing drafts for safe measurement guidelines and IP address privacy considerations. Three presentations followed: "Clean Insights" (David Oliver) explored privacy-preserving measurement strategies for civil society, emphasizing user consent and transparent data collection; "Practically Exploitable Cryptographic Vulnerabilities in Matrix" (Sofia Celi & Daniel Jones) detailed several critical vulnerabilities found in the Matrix messaging protocol related to authentication, impersonation, and key backups; and "Measurements of Internet Censorship Globally" (Simone Basso - OONI) showcased OONI's methodology and recent findings on internet censorship in Iran, Russia, and the status of HTTP/3 and DNS-over-HTTPS/TLS. Key themes included the challenges of balancing data collection with privacy, the complexity of secure messaging protocols, and the evolving landscape of internet censorship.
+
+## Key Discussion Points
+
+*   **Draft Updates:**
+    *   **Transient Numeric Identifiers (TNI):** Two drafts are in their final stages of review, with publication anticipated soon, marking the first documents from PEARG.
+    *   **Survey of Worldwide Censorship Techniques:** Passed IRTF last call and is undergoing review by the IRTF Chair.
+    *   **Guidelines for Performing Safe Measurement on the Internet:** Recently updated (August 2023), considered in good shape but requires more community review. Mentioned at an IAB workshop on encrypted network measurement, highlighting its unique holistic harm reduction approach.
+    *   **IP Address Privacy Considerations:** Received a recent update. Authors plan an editorial pass before IETF 116 and are seeking community review, particularly regarding applications and use cases.
+*   **"Clean Insights" Presentation (David Oliver):**
+    *   **Motivation:** Started in 2017 to address privacy-preserving measurement needs for civil society, internet freedom, and human rights, pre-GDPR enforcement.
+    *   **Approach:** Focuses on collecting "just enough data" to answer specific questions, aggregating on the source, using an anonymizing proxy, and ensuring transparent user engagement and consent.
+    *   **Technology:** Provides SDKs for clients/servers, an anonymizing proxy (integrates with Matomo, extensible to other analytics), and domain fronting capabilities for censorship/surveillance resistance.
+    *   **Principles:** Emphasizes time-bound "campaigns" for data collection and avoids "contracts of adhesion" where users feel compelled to consent.
+    *   **Consent Models:** Explored design patterns for consent, such as "umbrella app" (patterns of usage) and "focus group" (selective user base).
+    *   **Relation to IETF PPM:** Shares common ground on the need for proxying and starting with specific questions. Differs in its lightweight implementation and reliance on "trust in the collector and implementers" for defining and neutralizing "toxic" PII, rather than hard protocol enforcement. It maintains concern for one-time visit anonymity.
+    *   **Q&A Highlights:** Discussion included the "right to be forgotten" (not explicitly in CI, but campaigns offer a partial mechanism), the broader issue of diluted consent in current internet practices (CI aims for real consent at a smaller scale), and exploring cryptographic methods to reduce collector trust (e.g., Oblivious HTTP, algorithmic privacy measures) as future work.
+*   **"Practically Exploitable Cryptographic Vulnerabilities in Matrix" Presentation (Sofia Celi & Daniel Jones):**
+    *   **Context:** Matrix is a widely used (60M+ users) decentralized messaging protocol aiming for secure communication with untrusted home servers and end-to-end encryption. Claims properties like confidentiality, integrity, authentication, and deniability.
+    *   **Vulnerability 1: Home Server control of users/devices (Confidentiality/Integrity/Authentication Break):** Group membership messages are unencrypted and unauthenticated, allowing a malicious Home Server to inject users or devices into a room, enabling decryption of future messages.
+        *   **Root Cause:** Assumption that only user messages need protection; practical implementation challenges.
+        *   **Fix:** Cryptographically authenticated device lists (already present for cross-signing, but not for the HS's device list).
+    *   **Vulnerability 2: Short Authentication String (SAS) Protocol Verification (Authentication Break):** Lack of domain separation in key identifiers allows a Home Server to provide its own device identifier, which is interpreted as a master cross-signing key fingerprint during out-of-band verification, leading to impersonation.
+        *   **Root Cause:** Using the same field for device identifiers (server-controlled) and master cross-signing key fingerprints (user-controlled).
+        *   **Fix:** Avoid server-controlled inputs in out-of-band verification protocols.
+    *   **Vulnerability 3: Semi-Trusted Impersonation (Authentication Break):** The key request protocol (for new devices to decrypt old messages) lacked sufficient receiving-side checks. A Home Server could force-send a "forwarded room key message" to impersonate another device.
+        *   **Root Cause:** Implementation mistake and underspecified protocol for handling forwarded keys. Keys received this way are flagged as "semi-trusted" in the UI.
+    *   **Vulnerability 4: Upgrading Impersonation:** Building on V3, an adversary could send new Megolm session setup messages over the semi-trusted channel, leading to a "fully trusted" impersonation that bypasses UI warnings.
+        *   **Root Cause:** Implementation mistake, protocol confusion where session setup messages were incorrectly allowed over Megolm.
+    *   **Vulnerability 5: Confidentiality Break via Key Backup:** Combining V3 and V4, an adversary could impersonate a trusted device and use the Secure Storage/Secret Sharing protocol to force a target device to use a Home Server-controlled recovery key for Megolm key backups, enabling the HS to decrypt all messages.
+        *   **Root Cause:** Implementation mistake, protocol confusion, and flexible specification for encryption algorithms.
+    *   **Lessons Learned:** The vulnerabilities are practically exploitable. The complexity of secure group messaging protocols and unclear security properties highlight the need for formal modeling, analysis, and cross-community collaboration (academic, standardization bodies).
+    *   **Q&A Highlights:** Discussions touched on federation between home servers (modeled as a single untrusted entity for current analysis), plans for a "part two" focusing on formal modeling and deniability properties, and the importance of collaboration with IETF working groups like MIMI.
+*   **"Measurements of Internet Censorship Globally" Presentation (Simone Basso - OONI):**
+    *   **OONI Overview:** A free software project (since 2012) providing tools for users to measure internet censorship, accumulating over a billion measurements from 200+ countries.
+    *   **Measurement Principles:**
+        *   Probes are provided with known-good IP addresses and contextual information for targets.
+        *   DNS lookups include both the ISP's resolver and unencrypted DNS over UDP 53 to detect blanket interception.
+        *   HTTPS measurements involve TCP connect, TLS handshake, and resource fetch, with failures indicating "anomalies."
+        *   A backend organizes data, and OONI Explorer/reports make findings accessible.
+    *   **Case Study: Iran (Mahsa Amini protests, September 2022):** Observed a shift from "anomaly" to "confirmed" censorship (e.g., using Bogon IPs) for DNS-over-HTTPS (DoH). Detailed analysis showed mixed blocking patterns (DNS blocking, TCP connect timeouts, TLS handshake timeouts), with some good IPs still working, suggesting dynamic and IP-dependent blocking.
+    *   **Case Study: Russia (early 2022):** Detected throttling of Twitter by analyzing TLS handshake times and data received. Identified two populations of users: normal speed and very slow handshakes, indicating "heavy throttling" aimed at disrupting application usability.
+    *   **Case Study: Quick/HTTP/3 Measurements:** Experimental measurements from China indicated that many sites blocked via HTTPS (TCP/TLS) were also blocked for HTTP/3, suggesting IP/endpoint blocking. However, some sites inaccessible over HTTPS were working via HTTP/3. An experimental "Quick Ping" tool suggested that observed timeouts were for basic Quick connectivity, not necessarily TLS inspection within Quick at the time.
+    *   **DNS Track Experiment:** A new OONI Probe experiment dedicated to measuring DoT/DoH, following OONI's core principles. Data is starting to be collected.
+    *   **Future Work:** Improving data anonymization and accessibility, adding DoH3/DoQ support, using Chrome's TLS fingerprint to avoid confounding factors, and integrating Quick measurements into mainline experiments.
+    *   **Q&A Highlights:** Discussion included differentiating between government censorship and cloud provider blocking (OONI can detect 403 responses but not the direct cause); extending the Quick Ping tool to account for middleboxes that inspect specific offsets for SNI within Quick; and OONI's approach to responsible measurement, including detailed consent documentation, in-app quizzes to confirm user understanding, and a separate "experimental" client for advanced users.
+
+## Decisions and Action Items
+
+*   **PEARG Chairs:** Continue to shepherd the "Transient Numeric Identifiers" drafts towards publication and review the "Survey of Worldwide Censorship Techniques" draft.
+*   **Mallory Noodle (CDT) and "Guidelines for Performing Safe Measurement" Authors:** Continue work on the draft, focusing on elaborating important unwritten parts and seeking broader community review (e.g., from PPM).
+*   **Brad and "IP Address Privacy Considerations" Authors:** Perform an editorial pass on the draft before IETF 116 and seek community review, especially regarding potential applications.
+*   **David Oliver ("Clean Insights"):** Continue exploring methods for increasing privacy via encryption and algorithmic privacy measures (e.g., OHTTP, differential privacy ideas) for Clean Insights.
+*   **Matrix Community/Implementers:** Continue implementing fixes for the identified cryptographic vulnerabilities.
+*   **Sofia Celi & Daniel Jones:** Proceed with planned formal modeling and analysis of the Matrix protocol, including its deniability properties. Engage with IETF MIMI working group discussions to inform future secure messaging protocol designs.
+*   **Simone Basso (OONI):** Continue work on improving OONI tools, including better data anonymization, DoH3/DoQ support, integrating Chrome's TLS fingerprint, and merging Quick into mainline experiments. Collaborate with community members on Quick Ping tool extensions.
+
+## Next Steps
+
+*   Progression of existing PEARG drafts towards publication and further development.
+*   Continued exploration of new work items for the research group.
+*   Deepen formal analysis and modeling of secure messaging protocols, fostering collaboration between academic and standardization bodies.
+*   Further development and deployment of internet censorship measurement tools and methodologies.

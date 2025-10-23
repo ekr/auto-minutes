@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="acme.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-ACME-20220728-2000">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 20:00</p>
+<h1>acme</h1>
+<h2>Summary</h2>
+<p>The ACME working group meeting at IETF 114 discussed the status of several existing drafts, including the <code>acme-authority-token</code>, <code>acme-client</code>, <code>tnoth-list</code>, <code>dtn-node-id</code>, <code>integrations</code>, and <code>subdomains</code>. Key discussions revolved around progressing the long-stalled <code>tnoth-list</code> and its interdependent <code>acme-authority-token</code> documents. The <code>acme-detail-node-id</code> draft received a request for further review following recent changes. The <code>acme-revocation-information</code> (ARI) draft, after an in-room poll demonstrating strong support, was decided to be adopted as a working group document. Finally, a new proposal was presented by Brandon Weeks to integrate WebAuthn attestation statements with ACME for client certificate issuance, which garnered significant interest and a call for adoption.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative</strong>: A note-taker (Aaron Gable) was secured. Standard IETF Note Well and in-person/remote participation guidelines were reviewed.</li>
+<li><strong>Document Status Update</strong>:
+<ul>
+<li><code>acme-authority-token</code> (draft-ietf-acme-authority-token): New version 08 released this month to address Ben Kaduk's discusses. It requires coordinated progress with <code>tnoth-list</code>.</li>
+<li><code>acme-client</code> (draft-ietf-acme-client): New version 05 from April, with light discussion.</li>
+<li><code>tnoth-list</code> (draft-ietf-acme-tnoth-list): Current version is from March 2021 with three outstanding discusses. It needs a new editor to take the pen and significant revisions. The document is intertwined with <code>acme-authority-token</code> and should progress in lockstep. Given the substantial changes anticipated and the 15-month delay, a working group re-confirmation of consensus is required.</li>
+<li><code>dtn-node-id</code> (draft-ietf-acme-dtn-node-id): Current version from just before IETF 113, waiting for external write-ups since March 2022.</li>
+<li><code>integrations</code> (draft-ietf-acme-integrations): Went through Working Group Last Call (WGLC) with little discussion. Ready to be pushed to IESG.</li>
+<li><code>subdomains</code> (draft-ietf-acme-subdomains): Just finished WGLC. Ready to be pushed to IESG.</li>
+<li><code>ari</code> (draft-ietf-acme-revocation-information): Previous adoption call on the mailing list yielded little response.</li>
+</ul>
+</li>
+<li><strong>Current Work Items Presentations</strong>:
+<ul>
+<li><strong><code>acme-detail-node-id</code> (Bryan):</strong> No new feedback since IETF 113. The COSE document is in RFC 48. Previous WGLC made breaking changes related to algorithm agility and conformance with RFC 8823 (email challenge). A consensus re-check is needed. Aaron Gable volunteered to re-review the document, having requested some of the changes. The chairs will reiterate a request for reviews.</li>
+<li><strong><code>acme-revocation-information</code> (ARI) (Aaron Gable):</strong> Version 03, with minor changes to fix typos and clarify introductory text regarding alternative solutions. The suggested renewal algorithm text was updated from &quot;client must perform specific calculations and should renew&quot; to &quot;client must attempt renewal based on suggested window and we recommend a specific algorithm.&quot; The author seeks feedback on this change. An in-room poll was conducted for adoption, showing strong support.</li>
+</ul>
+</li>
+<li><strong>New Proposed Work (Brandon Weeks - ACME with WebAuthn Attestation):</strong>
+<ul>
+<li><strong>Proposal</strong>: A specification to combine the WebAuthn attestation statement format with ACME for issuing client certificates, primarily for devices like laptops, workstations, and servers.</li>
+<li><strong>Rationale</strong>: ACME is widely adopted and well-designed, unlike other certificate enrollment protocols (SCEP, CMP, EST, CMC). Modern devices (Android, Apple, Chrome OS, TPMs) increasingly support hardware-backed device attestation. WebAuthn is gaining mindshare as a de facto format for abstracting attestation.</li>
+<li><strong>Draft Changes</strong>: Adds a new ACME challenge type where the client returns a WebAuthn attestation statement. Uses ACME key authorization as the nonce. Specifies identifiers (RFC 4043 for platform, RFC 4108 for hardware module, though the latter received feedback). Includes informative text on using External Account Binding for pre-authentication in enterprise environments.</li>
+<li><strong>Discussion Points</strong>:
+<ul>
+<li><strong>Integration with <code>acme-client</code> draft</strong>: Author suggests keeping it separate due to narrower focus on devices and specific use of attestation statements.</li>
+<li><strong>Clarifying &quot;Attestation&quot;</strong>: Hank requested clearer differentiation between key provenance and broader system trustworthiness evidence, and precise definitions of terms.</li>
+<li><strong>Information in Client Certificate</strong>: Discussion on reflecting device/security chip identity and key generation properties into certificates. Monty Wiseman and Sean Turner suggested defining a registry for quality distinctions rather than embedding detailed specification here due to complexity.</li>
+<li><strong>Verification Procedures</strong>: The document does not specify how CAs should verify attestations, which is a complex and often underspecified problem. Participants (Sean Turner, Aaron Gable, Carl Wallace) agreed that the document should acknowledge this complexity and refer to external documentation/best practices, rather than trying to fully specify verification. The chairs emphasized the need for verifiability and assurance against self-assertion.</li>
+</ul>
+</li>
+<li><strong>Implementation</strong>: A fork of the Smallstep CA and client exist, implementing TPM attestation. Apple iOS 16 betas use this encoding in ACME. Android has it on their roadmap.</li>
+<li><strong>Call for Adoption</strong>: Brandon Weeks formally requested a call for adoption, citing existing vendor support and broad interest.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: The <code>acme-revocation-information</code> (ARI) draft (draft-ietf-acme-ari) will be adopted as a working group document. This was based on an in-room poll showing 17 votes for adoption and 0 against.</li>
+<li><strong>Action Item (Chairs)</strong>: Send out a call for objections on the ACME mailing list for the adoption of <code>acme-revocation-information</code> (ARI).</li>
+<li><strong>Action Item (Chairs)</strong>: Contact the authors of <code>tnoth-list</code> to identify the current editor and establish a timeline for updating the document.</li>
+<li><strong>Action Item (Chairs)</strong>: Once <code>tnoth-list</code> is updated and a new version is issued, bring both <code>tnoth-list</code> and <code>acme-authority-token</code> back to the working group for a short (e.g., two-week) last call to reconfirm consensus, including STIR on the CC list for broader review.</li>
+<li><strong>Decision</strong>: The <code>acme-integrations</code> and <code>acme-subdomains</code> drafts, having completed WGLC, are ready to be pushed to the IESG.</li>
+<li><strong>Action Item (Bryan - <code>acme-detail-node-id</code> author)</strong>: Reiterate the request for working group review of the <code>acme-detail-node-id</code> draft to confirm breaking changes.</li>
+<li><strong>Action Item (Aaron Gable - <code>acme-detail-node-id</code> reviewer)</strong>: Perform a review of <code>acme-detail-node-id</code> and provide feedback to the list.</li>
+<li><strong>Action Item (Brandon Weeks - ACME with WebAuthn Attestation author)</strong>: Add informative text to the draft acknowledging the complexities of attestation verification and the need for CAs to correctly implement verification procedures.</li>
+<li><strong>Action Item (Chairs)</strong>: Send out a call for adoption for Brandon Weeks's ACME with WebAuthn Attestation draft on the mailing list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The ACME chairs will initiate the mailing list processes for the adoption of the ARI draft and the new WebAuthn Attestation proposal.</li>
+<li>The chairs will follow up with the authors of <code>tnoth-list</code> to unblock its progress and coordinate with <code>acme-authority-token</code>.</li>
+<li>The <code>acme-detail-node-id</code> draft awaits further working group reviews.</li>
+<li><code>integrations</code> and <code>subdomains</code> drafts will be forwarded to the IESG.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

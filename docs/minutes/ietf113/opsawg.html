@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="opsawg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-OPSAWG-20220324-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 24 Mar 2022 13:30</p>
+<h1>opsawg</h1>
+<h2>Summary</h2>
+<p>The opsawg session covered a range of operational and management aspects of Internet technologies, including updates on Yang models for service attachment points, VPN performance monitoring, and service-aware network elements (SANE). Discussions also featured the need for IPFIX extensions for SRv6, a data model for life cycle management (MLMO), and updates to SNMPv3 over TLS. New proposals included a data manifest for streaming telemetry, an in-band flow learning framework, and adaptive traffic data collection. An open mic session with the ADs highlighted concerns from an operator regarding policy statements in drafts and the tension between working group decisions and operational realities.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Service Attachment Points (SAP)</strong>
+<ul>
+<li><strong>Problem:</strong> Previous model lacked sufficient filtering for specific services and a clear association between service attachment topology and physical topology.</li>
+<li><strong>Revisions:</strong> Model now structured by service to allow for multiple services under the same node, with multiplexing via attachment interfaces (e.g., sub-interfaces). Examples (VPN-focused) and mapping between service and attachment topology were added.</li>
+<li><strong>Discussion:</strong> The classification as an &quot;inventory model&quot; was debated, and the need to consider ongoing C-CAMP work on network inventory was raised.</li>
+<li><strong>Status:</strong> Ready for Working Group Last Call (WGLC), with an outstanding review on mapping details.</li>
+</ul>
+</li>
+<li><strong>VPN Service Performance Monitoring (VPN PM)</strong>
+<ul>
+<li><strong>Status:</strong> Draft recently closed WGLC, with helpful comments received.</li>
+<li><strong>Key Change:</strong> Added &quot;inter-site performance monitoring type&quot; to address the limitation of only tunnel-based monitoring. This was implemented using a <code>choice</code> definition in the Yang model, allowing for either inter-VPN access interface PM or tunnel PM.</li>
+<li><strong>Chair's Comment:</strong> The addition of the <code>choice</code> could be a substantive change that might benefit from further review before IESG publication.</li>
+</ul>
+</li>
+<li><strong>SANE (Service Aware Network Element)</strong>
+<ul>
+<li><strong>Updates:</strong> Addressed circular dependencies and improved the health score reporting by using a Yang <code>union</code> type (either &quot;missing&quot; or &quot;calculated&quot;) to prevent misinterpreting zero as a valid health score when it's still being determined.</li>
+<li><strong>Implementations:</strong> Day-X agent (Delft University), Cisco, and Huawei prototypes were reported.</li>
+<li><strong>Status:</strong> Close to WGLC, with minor Yang module updates pending.</li>
+</ul>
+</li>
+<li><strong>Export of SRv6 Information in IPFIX</strong>
+<ul>
+<li><strong>Problem Statement:</strong> Current IPFIX extensions (RFC9160) cover MPLS Segment Routing, but data plane visibility for SRv6 is missing, especially crucial for providers migrating to SRv6.</li>
+<li><strong>Proposed Solution:</strong> Extensions to IPFIX to expose the Segment Routing Header (SRH) and its components (<code>segments-left</code>, <code>tag</code>, <code>flex</code>, <code>segment-type</code>, <code>srh-section</code>, <code>srh-segment-list-section</code>, <code>srh-segment-basic-list</code>).</li>
+<li><strong>Operational Considerations:</strong> Discussed handling of compressed SID containers (CC containers) and the need for clear guidelines in the draft.</li>
+<li><strong>Status:</strong> Received feedback from Spring, opsawg, and IPFIX doctors. Document specifies <code>Internet-Standard</code>.</li>
+<li><strong>Call for Adoption:</strong> The authors requested working group adoption to accelerate progress and prevent the use of private enterprise code points for SRv6 deployments.</li>
+</ul>
+</li>
+<li><strong>MLMO (Data Model for Life Cycle Management and Operations)</strong>
+<ul>
+<li><strong>Goal:</strong> Define a flexible and consistent Yang data model for managing assets (hardware, software, virtual entities), features, incidents, and licenses, including organizational and user structures.</li>
+<li><strong>Revisions:</strong> Introduced &quot;instances&quot; for modules, improved referencing with one-to-many and parent-child hierarchies, and added <code>organization</code> and <code>lmo-users</code> modules.</li>
+<li><strong>Challenges:</strong> Licensing is recognized as a complex issue, requiring further evaluation. Discussions around using <code>identities</code> over <code>enums</code> for greater flexibility and focusing on a common core subset for wider applicability were noted.</li>
+<li><strong>Status:</strong> A poll showed significant interest (14/20 participants supported), but a formal call for adoption was not made, with chairs suggesting further discussion on the mailing list to address outstanding questions.</li>
+</ul>
+</li>
+<li><strong>SNMPv3 over TLS Transport Model Updates</strong>
+<ul>
+<li><strong>Context:</strong> Updating the TLS transport model for SNMPv3, adopted as a work item.</li>
+<li><strong>Key Challenge:</strong> The existing fingerprint algorithm referenced a TLS 1.2 hashing table which is no longer maintained by the TLS working group with TLS 1.3.</li>
+<li><strong>Solution:</strong> The proposed solution is to duplicate the existing TLS 1.2 hashing table into a new, SNMP-specific table that can be extended, without requiring a major MIB overhaul or implying TLS 1.3 algorithms are compatible with TLS 1.2. MIB experts confirmed this approach.</li>
+<li><strong>Future Edits:</strong> Minor edits (e.g., name revision, BCP14 conformance), and a question about renaming the new duplicated table to be more general for potential reuse across IETF.</li>
+<li><strong>Discussion:</strong> Potential overlap with IETF Cozy group's hashing algorithm indexing was mentioned. Concern was raised about ensuring new TLS 1.3 algorithm additions are reflected in the SNMP registry automatically.</li>
+</ul>
+</li>
+<li><strong>Data Manifest for Contextualized Streaming Telemetry</strong>
+<ul>
+<li><strong>Problem:</strong> Raw streaming telemetry data lacks context (e.g., device state, collection parameters), making anomaly detection and closed-loop automation difficult, especially when devices are inaccessible or configurations change.</li>
+<li><strong>Proposal:</strong> Introduce &quot;data manifest&quot; as contextual information, comprising:
+<ol>
+<li><strong>Platform Manifest:</strong> Describes the data-producing platform (e.g., vendor, OS).</li>
+<li><strong>Data Collection Manifest:</strong> Details how and when telemetry was metered (e.g., subscription ID, actual period, &quot;unchanged&quot; flag).</li>
+</ol>
+</li>
+<li><strong>Principles:</strong> Contextual information must accompany the data.</li>
+<li><strong>Open Questions:</strong> Threat model analysis for data integrity and self-assertiveness, applicability to other protocols (SNMP, IPFIX), virtual devices, missed collections, and Yang packages.</li>
+<li><strong>Discussion:</strong> The problem was recognized as interesting and hard. Balancing metadata granularity (per subscription vs. per leaf) and pragmatic data needs was highlighted.</li>
+</ul>
+</li>
+<li><strong>In-band Flow Learning Framework</strong>
+<ul>
+<li><strong>Motivation:</strong> Address the challenge of network visibility and live traffic monitoring (delay, loss) in large-scale networks, particularly 5G backhaul.</li>
+<li><strong>Framework Components:</strong>
+<ol>
+<li><strong>Service Discovery:</strong> Acquiring flow characteristics (IP, ports, VRF) via configuration or device-triggered sampling.</li>
+<li><strong>Telemetry Deployment:</strong> Determining telemetry type (end-to-end vs. hop-by-hop), policy (which flows to monitor), and deployment mechanism (controller or device).</li>
+<li><strong>Telemetry Adjustments:</strong> Handling route convergence (new instance) and aging (recycling resources for stale instances).</li>
+</ol>
+</li>
+<li><strong>Chair's Comment:</strong> The presentation was too high-level, requiring more technical detail on specific triggers and functions for interoperability.</li>
+<li><strong>Discussion:</strong> Overlap with the IPPM working group was noted, with a suggestion to present there for feedback and scope clarification.</li>
+</ul>
+</li>
+<li><strong>Adaptive Traffic Data Collection</strong>
+<ul>
+<li><strong>Problem:</strong> Traditional network traffic collection (e.g., 5-minute intervals) masks characteristics, leading to an inability to reflect real-time network state or detect transient issues like congestion. Continuous millisecond-interval sampling, however, consumes excessive resources.</li>
+<li><strong>Objective:</strong> Develop adaptive traffic data collection mechanisms to capture real-time network state with minimal resource consumption.</li>
+<li><strong>Chair's Comment:</strong> Suggested exploring the existing <code>Event MIB</code> for threshold-based reporting and reviewing research on A/B comparisons for monitoring methodologies.</li>
+</ul>
+</li>
+<li><strong>Yang Model for Data Export over IPFIX</strong>
+<ul>
+<li><strong>Motivation:</strong> Address the need for bulk data export via IPFIX, especially in broadband access nodes, and update an outdated existing Yang model (RFC6728).</li>
+<li><strong>Revisions:</strong> The draft was significantly shortened and refocused to <em>only</em> cover the IPFIX exporting process and bulk data export parameters, removing psamp and collector processes. It no longer aims to obsolete RFC6728 and now solely specifies TCP as the transport.</li>
+<li><strong>Status:</strong> A call for adoption on the mailing list received no feedback. BBF has an open liaison request for this draft.</li>
+<li><strong>Discussion:</strong> Chairs and ADs encouraged working group members to review the revised, shorter draft and consider adoption, emphasizing the importance of supporting the BBF's needs.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>VPN Service Performance Monitoring:</strong> The chairs indicated that due to the substantive change (addition of <code>choice</code> for inter-site performance monitoring), the draft might benefit from more review time, potentially another week, before IESG publication.</li>
+<li><strong>Export of SRv6 Information in IPFIX:</strong> The authors requested a call for adoption at opsawg. Chairs will likely initiate this after some review.</li>
+<li><strong>MLMO (Data Model for Life Cycle Management and Operations):</strong> While a poll showed significant support, no formal call for adoption was made. Chairs indicated this discussion should continue on the mailing list to resolve open questions.</li>
+<li><strong>Yang Model for Data Export over IPFIX:</strong> The chairs indicated they would initiate another call for adoption after the recent restructuring and to garner renewed interest and review.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Service Attachment Points:</strong> Proceed towards Working Group Last Call.</li>
+<li><strong>VPN Service Performance Monitoring:</strong> Authors to continue engaging with the working group for further review on the substantive change before requesting IESG publication.</li>
+<li><strong>SANE:</strong> A new version of the draft will be posted shortly, incorporating <code>counter64</code> for version and an implementation suggestion, then move towards WGLC.</li>
+<li><strong>Export of SRv6 Information in IPFIX:</strong> Chairs to facilitate a call for adoption. Authors to continue implementation efforts (aiming for vpp by IETF 115).</li>
+<li><strong>MLMO:</strong> Further discussions on the mailing list to refine the model, especially regarding licensing complexity and attribute definitions. Side meetings will shift to monthly.</li>
+<li><strong>SNMPv3 over TLS Transport Model Updates:</strong> Authors to make final edits, distribute for final review, and then start the last call process. They will also distribute to TLS reflectors. Further consideration for the naming of the new hashing table and the process for reflecting new TLS 1.3 algorithms is needed.</li>
+<li><strong>Data Manifest for Contextualized Streaming Telemetry:</strong> Authors to analyze the threat model and address security concerns.</li>
+<li><strong>In-band Flow Learning Framework:</strong> Authors to update the draft with more technical details on triggers, functions, and interoperability. Consideration to be given to presenting in the IPPM working group to clarify scope and seek feedback.</li>
+<li><strong>Adaptive Traffic Data Collection:</strong> Authors to solicit comments and refine the draft. Explore <code>Event MIB</code> and research on A/B comparisons for monitoring methodologies.</li>
+<li><strong>Yang Model for Data Export over IPFIX:</strong> Chairs to initiate a new call for adoption to ensure broader review and feedback from the working group, especially given the BBF's interest.</li>
+</ul>
+<hr>
+<p><strong>AD Open Mic Discussion:</strong></p>
+<ul>
+<li><strong>Operator Concerns on Policy in Drafts:</strong> An operator raised concerns about a draft (Quick manageability) stating a recommendation <em>not</em> to use version numbers for network admission control. The operator argued that RFCs should not dictate policy for network operators, who need flexibility for admission control and active traffic management, contrary to what some working groups imply (e.g., passive monitoring only).</li>
+<li><strong>AD Response:</strong> The ADs acknowledged the tension between working group views and operator needs. They encouraged operators to clearly articulate their concerns in reviews and on the mailing list. If consensus cannot be reached, the ADs may place a &quot;discuss&quot; notice on the document to highlight valid operator concerns. They also emphasized the importance of early engagement with ADs when such issues arise and suggested that operators propose alternative text that focuses on potential problems rather than policy enforcement. The ADs reiterated that IETF documents require IETF-wide rough consensus, not just working group consensus, and that operator reviews are crucial for this process.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,127 @@
+**Session Date/Time:** 20 Mar 2022 13:00
+
+# Hackathon Results Presentations
+
+## Summary
+
+The Hackathon Results Presentations showcased a wide array of technical achievements and ongoing work from various IETF working groups and individual projects. Participants presented their progress on implementing new drafts, improving existing protocols, conducting interoperability testing, developing tools, and optimizing network performance and security in diverse environments, from IoT to high-speed routing and data centers. A key takeaway emphasized the invaluable benefit of in-person collaboration for debugging, discussion, and community building.
+
+## Key Discussion Points
+
+*   **DANE (DANCE) Implementation:**
+    *   Implemented two drafts for DANE: a TLS extension for DANE client ID and DANE-based intent authentication using a Go library.
+    *   Successfully integrated DANE client ID extension in TLS 1.2 and 1.3, including fallback to Subject Alternative Name (SAN).
+    *   Developed authorization rules based on client ID.
+    *   Tested in an IoT (LoRaWAN) use case, demonstrating secure peer authentication without a common Root CA, moving beyond siloed environments.
+
+*   **GNAP (General Naming and Authorization Protocol):**
+    *   Focused on building a delegation protocol (akin to an improved OAuth).
+    *   Implemented HTTP signatures for request protection and validation within GNAP.
+    *   Successfully generated usable tokens and initiated user interaction for delegation.
+    *   Developed four functional clients (PHP, JavaScript SPA, Java) and updated a Java authorization server, leveraging existing libraries for HTTP signatures and structured fields.
+    *   **Learnings:** HTTP signatures are complex to implement from scratch but powerful once integrated into a library. Identified ambiguities in the specification regarding parameter order.
+
+*   **HTTP Transport Auth (draft-ideas):**
+    *   Re-implemented an initial version of HTTP Transport Auth to authenticate non-request/response traffic and TLS sessions without leaking client hello information.
+    *   Got the draft working in Conscrypt (a Java-based crypto library fork), making it open-source.
+    *   Explored potential implementations in Python and Chronet.
+    *   Noted that the `keying materials export function` is widely available in various language ecosystems (Go, Rust, Microsoft, Mozilla), but Python currently relies on `pyOpenSSL`.
+    *   Seeking an interoperability partner.
+
+*   **I2NSF (Interface to Network Security Functions):**
+    *   Implemented a security controller that translates high-level I2NSF policies into low-level rules for network functions (e.g., firewalls, traffic generators).
+    *   Reflected the latest YANG data models (capability, consumer, policy, service, registration, monitoring interfaces).
+    *   Introduced new application interface models to provide automated feedback from NSF monitoring data (e.g., blocking attack IPs).
+    *   **Learnings:** Updated YANG models for simplified configuration, consolidated multiple event notifications to reduce bandwidth, and enabled automatic policy feedback for attack identification.
+
+*   **IPwave Hackathon Project:**
+    *   Extended the Context Aware Navigation Protocol (CANP) for drones, building on previous work for vehicles (ITF 102).
+    *   Implemented a drone-assisted handover mechanism for vehicular networks to cover 5G gNodeB coverage gaps.
+    *   **Learnings:** CANP can use ICMP Neighbor Discovery (PMI option) to share drone mobility information for collision avoidance. The IPv4 drone-assisted handover is complete, with IPv6 implementation planned for a future hackathon. Investigated deep learning (LSTM) for improved handover decisions.
+
+*   **ALTO (Application-Layer Traffic Optimization):**
+    *   Utilized ALTO cost maps to optimize large-scale dataset transfers for the CERN Rucio application (Large Hadron Collider).
+    *   Integrated an ALTO client (Python, RFC 7285) with Rucio, enabling dynamic download algorithm selection based on network conditions (bandwidth, latency).
+    *   Demonstrated significant performance improvements (4-5x speedup in Mininet simulations) when using ALTO-aware decisions compared to agnostic approaches.
+    *   Worked on southbound ALTO integration with SDN controllers (Mininet, Open Daylight).
+
+*   **SodaStream (RFC Errata Analysis):**
+    *   Analyzed RFC errata to understand decision-making processes within the IETF.
+    *   Observed increasing RFC publication times but consistently high errata filings.
+    *   **Initial Findings:** Application and Security areas have the most errata per RFC. Half of errata are filed within 1000 days of publication, indicating RFC popularity. Approximately 40% are editorial, 60% technical.
+    *   Developed tooling to allow community members to add more descriptive labels to errata filings (e.g., typos, terminology mistakes).
+
+*   **DNS Projects:**
+    *   **Extended DNS Errors (EDE):** Discussed and proposed new EDE codes for common situations to ensure consistent error reporting across DNS implementations.
+    *   **Dry Run DNSSEC:** Introduced a new delegation signer (DS) algorithm to test DNSSEC changes (e.g., algorithm rollovers) before live deployment, with fallback mechanisms. RIPE Atlas measurements are ongoing.
+    *   **Catalog Zones:** Conducted interoperability testing with a new BIND implementation and coordinated catalog serving/consumption using a hackathon wiki.
+    *   **Dynamic Update over Encrypted Transport:** Implemented server and multiple client implementations for dynamic updates over encrypted transports (DNS over TLS), showing successful operation in Rust.
+    *   The in-person hackathon was highly beneficial for developers and operators to meet and collaborate.
+
+*   **PDMV2 (Performance and Diagnostic Metrics v2):**
+    *   Focused on adding encryption to PDM (RFC 8250), which provides network performance metrics via IPv6 extension headers.
+    *   Developed a sample registration protocol for establishing shared context and key encapsulation using HPKE.
+    *   Discussed and implemented a sample allow list for authentication and authorization using TLS/MLS.
+    *   Aims to achieve a Proof-of-Concept covering both registration and encrypted data transfer phases.
+
+*   **CoSy (Constrained Application Protocol Security):**
+    *   Implemented CoSy Hybrid Public Key Encryption (HPKE) for firmware encryption, contributing to the `tcozy` C library.
+    *   Used the PSA Crypto API for hardware-related crypto features, demonstrating encrypt/decrypt functionality.
+    *   Highlighted the benefit of face-to-face interaction for this complex security implementation.
+
+*   **EAP Noob and EAPooter:**
+    *   Worked on implementing EAP Noob (RFC 9140) into the ESP-IDF framework for ESP-32.
+    *   Achieved initial functional code for JSON and message parsing, with key handling and cryptography parts pending further work.
+    *   Explored EAPooter, a new draft aiming for similar goals as EAP Noob but using CBOR for message format.
+
+*   **Rare Free Router:**
+    *   Improved Free Router, a Java-based user-space routing control plane, for Research and Education (R&E) networking, especially with P4-based Tofino data planes.
+    *   Supported special use cases like Polka (source routing) and CERN's IPv6 flow label-based traffic engineering.
+    *   Implemented Unicast RPF (uRPF) with a P4-based hardware acceleration. This involved creating duplicate forwarding tables for source address lookups, a common trade-off.
+    *   **Learnings:** IPv4 uRPF was simpler than IPv6 due to IPv6's integrated Neighbor Discovery protocol complicating exception handling. The hackathon fostered strong community collaboration.
+
+*   **Benchmarking WG (Network Tester Model):**
+    *   Developed a YANG model for managing network testers, enabling Netconf interfaces for benchmark development on traditionally proprietary equipment.
+    *   Implemented an RFC 2544 Section 26.6 reset test, controlling an HP relay actuator with a Raspberry Pi and YANG/Netconf to automate power cycling and recovery measurements.
+
+*   **Adaptive Subscription for Telemetry:**
+    *   Proposed and evaluated an adaptive subscription policy built on YANG push to balance data overhead and fidelity in remote telemetry.
+    *   Compared high/low frequency periodic telemetry with adaptive frequency telemetry using gRPC streaming telemetry from campus APs.
+    *   **Findings:** Adaptive subscription with server-side decision making effectively captured events (e.g., roaming, link congestion) while significantly reducing data volume compared to high-frequency collection. Threshold selection for monitoring objects is critical.
+
+*   **Benchmarking WG (Containerized Infrastructure Performance - AbraPT):**
+    *   Focused on benchmarking network performance in containerized infrastructures, particularly Service Function Chaining (SFC).
+    *   Evaluated a combined SR-IOV and VPP model, and the impact of the number of Virtual Network Functions (VNFs) in SFC.
+    *   **Results:** SR-IOV + VPP showed better performance than VPP-only. The number of VNFs only impacted very small packet sizes. Multi-node setups showed throughput decrease for smaller packets.
+
+*   **SCHC (Static Context Header Compression):**
+    *   Consolidated OpenSCHC implementations for IP header compression in constrained networks (LoRaWAN, Sigfox, 5G NB-IoT).
+    *   Worked on a YANG version of rule descriptions for interoperability and a new component ACK feature.
+    *   **Learnings:** `core-conf` YANG provided very compact rule representation (1/6th size). Noted that `core-conf` alphabetical sorting of entries could increase CBOR encoding size for rule IDs, suggesting a need for WG discussion.
+
+*   **CoSi (Formally Verifiable LAKE Implementation):**
+    *   Aimed to produce a provably secure, formally verifiable implementation of the Lightweight Authenticated Key Exchange (LAKE) protocol for constrained embedded systems.
+    *   Used a Rust-based framework (Hackspec) to generate a formal model, which can then be used to generate formally verified Rust or C code for microcontrollers.
+    *   Implemented the ADHOC (LAKE) protocol state machine with Hackspec and demonstrated interoperability with an existing Java-based implementation.
+
+## Decisions and Action Items
+
+*   **Hackathon Demo Happy Hour:** Participants are encouraged to register and present their projects tomorrow (17:00-18:30) in the same room. Registration is open until noon tomorrow.
+*   **Code Lounge:** The meeting room will serve as a "Code Lounge" throughout the week for continued project work and collaboration.
+*   **Future Hackathon:** The next IETF hackathon will be held in Philadelphia.
+*   **SodaStream Project:** Participants are encouraged to visit the SodaStream website to contribute by tagging RFC errata with more descriptive labels.
+*   **SCHC Project:** Discussion needed within the working group regarding `core-conf` alphabetical sorting and its impact on CBOR encoding efficiency for rule IDs.
+*   **PDMV2 Project:** A demo is scheduled for tomorrow (Green Room 1, 8 AM).
+*   **ALTO Project:** Developers are welcomed to join the ALTO codebase project initiative.
+
+## Next Steps
+
+*   **PDMV2:** Complete the full implementation including registration and data transfer phases, and gather user feedback.
+*   **CoSy:** Upload the implemented CoSy HPKE code to the `tcozy` repository.
+*   **EAP Noob:** Complete the key handling and cryptography parts of the EAP Noob implementation for ESP-IDF.
+*   **IPwave:** Continue work on drone V2X 5G simulation (currently 60% complete) and the IPv6 version of drone-assisted handover for the next hackathon.
+*   **Benchmarking WG (AbraPT):** Measure the performance of other internal network techniques (L2 underlay, EVPN, BGP) and eBPF/XDP models, and update the draft.
+*   **CoSi (Formally Verifiable LAKE):** Complete the port of the Hackspec model to embedded platforms (CC2538, nRF52840), publish as a crate on `crates.io`, and then proceed to generate formally verified Rust and C code for microcontrollers.
+*   **Rare Free Router:** Continue collaboration, and explore implementing new IETF protocols within the Free Router framework.
+*   **DNS (Dry Run DNSSEC):** Continue monitoring RIPE Atlas measurements; pursue making it a working group item if interest persists.
+*   **SCHC:** The team will host a demo tomorrow.

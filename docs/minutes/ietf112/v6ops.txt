@@ -1,0 +1,163 @@
+**Session Date/Time:** 11 Nov 2021 14:30
+
+# v6ops
+
+## Summary
+
+The v6ops working group met to discuss three drafts. The `draft-ietf-v6ops-transition-pros-cons` was declared ready for a Working Group Last Call (WG LC) after modifications. A new individual draft, `draft-gabor-v6ops-ipv6-scalability`, presenting initial scalability measurements for stateful NAT44, was introduced for feedback. Finally, `draft-zhao-v6ops-nd-deployment`, a deployment guideline for IPv6 Neighbor Discovery (ND), was presented, generating significant discussion on L2/L3 isolation, router enhancements, and the applicability of specific technologies like Wi-SUN (Wing). A joint session with 6man on the IPv6 Hop-by-Hop extension header was announced for the following day.
+
+## Key Discussion Points
+
+### 1. `draft-ietf-v6ops-transition-pros-cons`: Pros and Cons of IPv6 Transition and Technologies
+
+*   **Presenter**: Gabor Szigeti
+*   The draft is deemed ready for Working Group Last Call.
+*   Two main changes were made:
+    *   Section 4.2, discussing the security of stateful technologies, was removed. Its content has been spun off into a new individual draft: `draft-gabor-v6ops-ipv6-scalability-service`.
+    *   The reference to benchmarking (in section 5) was removed, with a placeholder draft for benchmarking all IPv6-as-a-Service technologies planned.
+*   The authors requested the WG Last Call to proceed with publication.
+*   **Decision**: The Working Group Chairs will initiate a Working Group Last Call for `draft-ietf-v6ops-transition-pros-cons` next week.
+
+### 2. `draft-gabor-v6ops-ipv6-scalability-service`: Scalability of IPv6 Transition Technologies for IPv6-as-a-Service
+
+*   **Presenter**: Gabor Szigeti
+*   This is a new individual draft intended to serve as a sample for measurements and results of IPv6 transition technologies.
+*   Currently contains initial scalability results for stateful NAT44 (specifically `iptables`).
+*   **Measurements conducted**:
+    *   **Scalability against CPU cores**: Tested with 1, 2, 4, 8, and 16 CPU cores.
+        *   Measured maximum connection establishment rate and throughput using bi-directional traffic (per RFC 8219).
+        *   Results show performance scales up, but not linearly (e.g., ~10x performance with 16 cores compared to 1 core, relative scale-up factor decreases from 0.83 to 0.66).
+    *   **Scalability against concurrent sessions**: Tested by increasing the number of source/destination port combinations.
+        *   Hash table size was proportionally increased where possible.
+        *   Results indicate stable connection/throughput performance across a wide range of concurrent sessions, but stateful operation consumes significant memory (e.g., 150GB for 400M connections). Performance degrades when approaching system limits (e.g., memory exhaustion, hash table size limits).
+*   **Questions to the Working Group**:
+    *   Are these types of results useful and sufficient for network operators?
+    *   Is this measurement methodology appropriate for future stateful NAT64 scalability measurements?
+    *   Should specific implementations like Jool be tested?
+*   No specific feedback or decisions were made during this slot; feedback was solicited.
+
+### 3. `draft-zhao-v6ops-nd-deployment`: IPv6 ND Deployment Guidelines
+
+*   **Presenter**: Zhao Li
+*   **Title clarification**: This draft is a deployment guideline, not a proposal for new solutions. It advocates Layer 2 (L2) and Layer 3 (L3) isolation only in suitable cases.
+*   **Motivation**: To consolidate distributed information on ND issues and solutions (found across many RFCs) into a single document for operators. Also, to provide guidance on *how to avoid* ND issues, rather than just solving them.
+*   **Key aspects of the draft**:
+    *   Summarizes existing ND issues and analyzes current solutions.
+    *   Distinguishes between L2 isolation (e.g., point-to-point links) and unique prefix per host (UPP H, often considered L3 isolation), noting that these are often conflated but are distinct concepts. An example from RFC 7668 was used to illustrate this.
+    *   Analyzes the pros and cons of both L2 isolation and UPP H, and their applicability.
+    *   Incorporates insights from historical debates, particularly around RFC 8273 (UPP H), which are otherwise hard to access.
+*   **Discussion and Feedback**:
+    *   **Dave Thaler**: Suggested referencing RFC 4903 (Multi-Link Subnet Issues) as an additional relevant resource that discusses issues around multi-link subnets.
+    *   **Nalini**: Expressed appreciation for the work, noting it addresses a significant area of confusion and problems for enterprises deploying IPv6. Offered to provide feedback from large-scale implementations.
+    *   **Jan Zorz**: Raised questions about L2 isolation:
+        *   How does L2 isolation (e.g., private VLANs) prevent ND cache poisoning on a router if hosts can still send traffic to the router?
+        *   Expressed concern about scalability if many interfaces are needed on a router for each L2-isolated host.
+        *   Questioned whether existing routing/switching environments support creating interfaces per host and whether router enhancements are standardized or merely vendor-specific.
+        *   The presenter acknowledged that L2 isolation alone doesn't solve all problems and router enhancements are often needed.
+    *   **Eric Vyncke**: Raised concerns about the inclusion and clarity of references to "Wi-SUN" (Wing) and 6lo-specific stateful registration mechanisms. He cautioned that operators might mistakenly assume these are general-purpose solutions for enterprise wireless (e.g., 802.11) when they are currently 6lo-specific and not widely implemented by general hosts.
+    *   **Pascal**: Noted that the registration mechanism used by Wi-SUN/6lo is being extended to other technologies like EVPN, suggesting its potential broader utility.
+*   **Action Item**: The chairs suggested that Zhao, Eric, and Pascal collaborate offline to discuss the inclusion, clarification, and appropriate context for Wi-SUN (Wing) related content in the draft.
+
+## Decisions and Action Items
+
+*   **Decision**: A Working Group Last Call will be initiated next week for `draft-ietf-v6ops-transition-pros-cons`.
+*   **Action Item**: Gabor Szigeti to prepare for the Working Group Last Call of `draft-ietf-v6ops-transition-pros-cons`.
+*   **Action Item**: Zhao Li to consider adding RFC 4903 to the references of `draft-zhao-v6ops-nd-deployment`.
+*   **Action Item**: Zhao Li, Eric Vyncke, and Pascal Thubert to discuss offline the appropriate inclusion, context, and clarification for Wi-SUN (Wing) related content in `draft-zhao-v6ops-nd-deployment`.
+
+## Next Steps
+
+*   A joint session with the 6man working group will be held tomorrow to discuss the future of the IPv6 Hop-by-Hop extension header, addressing its current issues as a potential DoS vector and exploring new use cases.
+*   Continue discussions and provide feedback on the `draft-gabor-v6ops-ipv6-scalability-service` and `draft-zhao-v6ops-nd-deployment` on the v6ops mailing list.
+
+---
+
+**Session Date/Time:** 12 Nov 2021 12:00
+
+# v6ops
+
+## Summary
+
+This joint v6ops and 6man session focused on the long-standing operational issues with the IPv6 Hop-by-Hop (HBH) Extension Header and discussed potential paths for its rehabilitation. The discussion highlighted how HBH is frequently filtered or dropped due to its historical association with Denial of Service (DoS) vectors and slow-path processing in older router architectures. Several proposed solutions were presented, including re-defining HBH processing rules to ensure fast-path handling, specifying limits on extension header usage, and exploring compelling use cases. There was strong consensus among participants to proceed with efforts to make HBH options viable and to break the cycle of non-use and filtering, while acknowledging the challenges of migration and existing deployments.
+
+## Key Discussion Points
+
+*   **Introduction and Goals (Ron):**
+    *   The Hop-by-Hop (HBH) Extension Header has been specified since 1995 (RFC 1882) and later in RFC 2460.
+    *   The Router Alert option (RFC 2711) was an early, unfortunate application, often punting packets to the control plane, making HBH a DoS vector.
+    *   This led to network operators filtering HBH packets, creating a cycle of non-use.
+    *   RFC 8200 changed the expectation: nodes should only process HBH if *explicitly configured* to do so, but this has not significantly improved the situation.
+    *   Goals of the session: Determine if RFC 8200's specification is sufficient, if the situation can improve without changes, and whether to rehabilitate or deprecate HBH. Also, to re-examine existing HBH options and identify necessary documents.
+
+*   **"Operational Issues with Processing of Hop-by-Hop Extension Headers" (Guillermo/Dion Mishra):**
+    *   This newly adopted draft focuses solely on HBH issues, unlike RFC 1998 which is generic to all extension headers.
+    *   **Problem Statement:** HBH is often misidentified as a DoS vector, leading to slow-path processing, dropping, or filtering by operators. The goal is to make HBH viable.
+    *   **Draft Updates:** Renamed, solution-space content removed (especially from sections 7 and 8) to make it problem-focused and generalized for WG involvement.
+    *   **Future Work:** Refine requirements in Section 7, develop migration strategies (Section 8), and explore new network scenarios/use cases (Enterprise, IoT).
+    *   **Motivation:** HBH is a valuable container for new services like telemetry (e.g., IPPM). Operators need this tool in a safe, secure, and easily deployable manner.
+    *   **Modern Router Architecture:** Newer hardware (MPUs, ASICs) with strict control/forwarding plane separation and rate-limiting can process HBH at line rate in the forwarding plane, mitigating past DoS concerns.
+    *   **Common Implementations:** `Next Header = 0` (HBH) often defaults to the slow path, leading to ACL filtering or dropping.
+    *   **RFC 8200 Impact:** While it allowed local configuration to avoid processing HBH (or ignore/drop/punt), it has not significantly enabled HBH deployment due to existing operator mindsets.
+    *   **Conclusion:** Need to break the cycle of filtering, change operator perception, and enable viable HBH solutions.
+
+*   **"Hop-by-Hop Option Processing Procedures" (Bob Hinden & Gorry Fairhurst):**
+    *   **Issue:** HBH options are commonly dropped due to fear of slow-path processing.
+    *   **Proposal:** Simplify HBH usage and redefine procedures to make it practical.
+    *   **Proposed Rules:**
+        *   One HBH option *must* be processed on the fast path.
+        *   Additional HBH options *may* be processed if configured.
+        *   Nodes creating packets should preferably include a single HBH option.
+        *   Nodes can skip remaining HBH options without examination.
+        *   Nodes unable to fast-path process an HBH option must treat it as unrecognized (unless explicitly configured).
+        *   The Router Alert option is considered an *exception* as it inherently directs to the slow path.
+    *   **Implications for New HBH Options:** Must be designed for fast-path processing (straightforward, fixed size, minimal data).
+    *   **Open Issues:** Clear definition of "fast path" vs. "slow path." How to handle multiple HBH options in a packet (the second one might not be processed by default).
+    *   **Next Steps:** Seeking 6man working group adoption for this draft. Need compelling use cases to drive implementation (e.g., Path MTU).
+
+*   **"Limits on IPv6 Extension Headers" (Tom Herbert):**
+    *   **Problem:** Support for IPv6 Extension Headers (EHs) is poor. RFC 8200 has no limits on the number of EHs or options, only on total packet MTU, which allows for excessive, DoS-like EH chains.
+    *   **Hardware Challenge:** Variable-length TLVs are difficult for hardware to process efficiently due to their serialized nature.
+    *   **Hidden Problem:** Routers often need to read L4 headers (e.g., ports). Long EH chains can push L4 headers beyond a fixed-size parsing buffer, leading to drops.
+    *   **Proposal:** Specify limits for both sending and receiving EHs.
+        *   **Processing Limits:** Number of EHs, number of options within HBH/DO, length of options.
+        *   **Total Header Length Limit:** To ensure L4 headers remain accessible.
+        *   **Sender Limits:** Default limits, can be exceeded only if "safe" (e.g., within a limited domain or via active probing).
+        *   **Receiver Limits:** Optional, with suggested defaults (e.g., 8 HBH/DO options).
+    *   **Behavior on Exceeding Limits:** Intermediate nodes should *ignore* excess HBH options, not drop. End hosts are expected to process all.
+    *   **Implementation:** These limits, though adding conditionals, can be integrated into high-performance hardware EH processing.
+    *   **Next Steps:** Interested in feedback on working group adoption.
+
+*   **Example Use Cases (Lightning Talks):**
+    *   **Path MTU HBH Option (Bob Hinden & Gorry Fairhurst):** An experimental RFC for Path MTU Discovery. Routers along the path can update a minimum MTU value in the HBH option, which is returned to the source. This provides rapid feedback on path MTU and can work even if not all routers process it.
+    *   **IOAM with HBH (Haoyu Song):** In-situ Operations, Administration, and Maintenance (IOAM) requires per-hop processing, making HBH a natural fit. Challenges include potentially large, variable overhead, exceeding hardware header buffer limits, and impacting subsequent headers like SRv6 Segment Routing Header (SRH). Proposed solutions involve separating IOAM instruction/data, segmenting data collection, or direct export mechanisms.
+    *   **Alternate Marking HBH Option (Giuseppe Fioccola):** A passive performance measurement technique (loss, delay flags) for IPv6. The source marks the packet, and intermediate nodes read it if configured. It's intended for controlled domains, and ignoring the option doesn't affect the measurement logic.
+    *   **VTN Resource Identifier HBH Option (Jianli Wang):** For Virtual Underlay Networks (VTNs) (e.g., network slicing), a VTN identifier needs to be carried in the data packet and processed per-hop to steer traffic to allocated resources. HBH is proposed for this. It's designed for controlled, limited domains.
+
+*   **Open Discussion and Decisions:**
+    *   **Eduard:** Expressed skepticism about IETF's ability to "enforce" HBH processing and resistance to arbitrary numerical restrictions. He supported architectural changes like separating "soft" (control plane) and "hard" (data plane) options.
+    *   **General Sentiment:** Strong support for continuing efforts to rehabilitate HBH, with a focus on finding compelling use cases to drive operator adoption. There was general agreement that HBH should not be deprecated without strong evidence of danger.
+    *   **RFC 8200 Effectiveness:** Several noted that RFC 8200 (allowing ignored HBH) did not visibly improve HBH deployment. The default "punt to control plane" behavior remains a problem.
+    *   **"Internet-wide" vs. "Limited Domains":** Debate arose on whether "limited domain" use cases (RPL, DETNET, VTN, Alternate Marking) qualify as "internet-wide interest." Pascal argued that many limited domains collectively constitute significant interest.
+    *   **Migration Strategy:** Emphasized as critical for any solution, ensuring coexistence of new and old devices.
+    *   **Re-examining Existing HBH Options:**
+        *   **"Dead Wood":** General agreement that a review of old, unused HBH options is beneficial, particularly regarding their size implications.
+        *   **Router Alert:** This option was specifically called out due to its behavior of punting to the control plane.
+            *   Concerns were raised about deprecating it outright, as it is still used by existing protocols (e.g., MLDv2, L2 equipment).
+            *   A suggestion was made to define deprecation in this context as "don't use for new protocols or on general internet paths, but allow for specific existing protocols."
+            *   Eduard highlighted the general IETF problem of scattered information across many RFCs, making it hard for operators to understand nuances.
+
+## Decisions and Action Items
+
+*   **Decision:** There was a strong consensus within the session to **proceed with the rehabilitation of the Hop-by-Hop Extension Header**, focusing on making it viable for future use cases rather than deprecating it.
+*   **Action Item (Chairs):** The chairs will take the discussion to the relevant mailing lists (v6ops, 6man) to initiate working group adoption calls for the "Operational Issues with Processing of Hop-by-Hop Extension Headers" and "Hop-by-Hop Option Processing Procedures" drafts.
+*   **Action Item (Fred G. Baker):** Will work on a BCP (Best Current Practice) draft for ignoring HBH options, complementing the proposed solutions.
+
+## Next Steps
+
+*   **Mailing List Discussions:** Further detailed technical discussions on the proposed drafts and open issues (e.g., definition of fast/slow path, specific limits, Router Alert handling) will continue on the v6ops and 6man mailing lists.
+*   **Document Progression:**
+    *   The "Operational Issues with Processing of Hop-by-Hop Extension Headers" draft will continue to refine its requirements section and develop migration strategies.
+    *   The "Hop-by-Hop Option Processing Procedures" draft will address open issues and seek working group adoption.
+    *   Consideration of a dedicated document or section to comprehensively address requirements for HBH options.
+    *   Discussion on a potential "housekeeping" document to re-examine or deprecate existing, unused, or problematic HBH options (such as Router Alert), with careful consideration of backwards compatibility and specific protocol uses.
+*   **Community Engagement:** All participants are encouraged to read the presented drafts, provide feedback, and contribute to the ongoing discussions to help shape the future of HBH processing in IPv6.

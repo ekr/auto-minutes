@@ -1,0 +1,29 @@
+**Session Date/Time:** 06 Nov 2024 13:00
+
+# httpapi
+
+## Summary
+
+This meeting covered several key topics related to HTTP APIs, including HTTP message security, error reporting, media types for REST APIs, rate limiting, and item potency.  There were presentations on HTTP message signing (Justin Richer), Digest Fields Problem Types (Marius Kleidl, Lucas Pardue, Roberto Polli), REST API Media Types (Roberto Polli), and Rate Limiting (Darrell Miller).  The discussions were focused on technical details, potential security implications, and directions for future work on these topics.
+
+## Key Discussion Points
+
+*   **HTTP vs HTTPS:** The discussion started around APIs that should never be accessed over an unencrypted channel (not even for 301 redirects) when they use credentials. Server-side (don't listen on port 80) and client-side (TLS-only by default) mitigations were discussed.  The risks of on-path attackers intercepting requests on port 80 were also highlighted.
+*   **HTTP Message Signing:**  Justin Richer presented on HTTP message signing (RFC 9421), its use cases (integrity protection, intermediaries), and how it can be combined with other mechanisms like content digests and client certificate headers.  The need for error codes for signatures was introduced.
+*   **Digest Fields Problem Types:** Marius Kleidl presented a proposal to define a set of problem types for use with Digest Fields (RFC 8615) to report errors like mismatching digest values, unsupported algorithms, and invalid digest values.  Justin Richer cautioned about the risk of oracle attacks when reporting errors. The applicability of these problem types to HTTP message signatures was discussed.
+*   **REST API Media Types:** Roberto Polli discussed the progress on registering media types for Open API (JSON and YAML) and the challenges with JSON Schema due to its fluid specification and fragment identifiers. It was decided to focus on registering media type to reference complete documents to avoid concerning ourselves with reference types.
+*   **Rate Limiting:**  Darrell Miller presented on rate limiting headers and the addition of a "partition key" to allow clients and intermediaries to track individual limits.  He requested feedback on the initial registry of quota units, the complexity of the partition key, and the need for in-band communication of how to construct the partition key. Justin Richer and Marius Kleidl provided feedback on the partition key and format. Defining problem types for when rate limits are reached was also suggested.
+*   **Item Potency:** The item potency key topic was also discussed. Kevin is expected to provide a draft fairly soon to update the key.
+
+## Decisions and Action Items
+
+*   **Digest Fields Problem Types:** Adopt HTTP Privacy and the Digest Fields Problems Document.
+*   **Rate Limiting:**  Explore the idea of a well-known set of values that could go into the partition key.  Consider defining a problem type for when rate limits are reached.
+*   **REST API Media Types:**  Roberto Polli will review current document.
+
+## Next Steps
+
+*   Authors to address feedback on Digest Fields Problem Types.
+*   Authors to address feedback on Rate Limiting including partitioning key, potential values, and structure.
+*   Kevin to provide an updated draft on item potency.
+*   Working group members to review open issues on GitHub, particularly on Item Potency and Link Hints.

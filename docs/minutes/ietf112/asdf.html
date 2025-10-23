@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="asdf.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-ASDF-20211112-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 12 Nov 2021 14:30</p>
+<h1>asdf</h1>
+<h2>Summary</h2>
+<p>The asdf working group met at IETF 112 to discuss the status of the SDF specification, with a focus on preparing it for Working Group Last Call (WGLC). Key discussions revolved around resolving outstanding technical issues and pull requests, administrative tasks for WGLC, and considering the timelines for publication. The group also explored potential new work items, including mechanisms for protocol mappings, instance definitions, and relationships between models, acknowledging that these might require extensions beyond the current core specification or a re-charter.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Status:</strong> The <code>asdf</code> working group was chartered a little over a year ago, has held multiple virtual interims and hackathons, and the SDF specification has reached &quot;implementation draft status.&quot;</p>
+</li>
+<li>
+<p><strong>SDF Specification Readiness for WGLC:</strong></p>
+<ul>
+<li><strong>Document Shepherd:</strong> Hannes Tschofenig has been proposed and has agreed to serve as the document shepherd.</li>
+<li><strong>Pull Request 45 (Action/Event Affordances):</strong> Discussion on how to best represent multiple parameters for action inputs and outputs. The current single data type definition is sometimes unwieldy. PR 45 suggests making the object for parameters implicit. There was no immediate consensus on the necessity or specific approach, and further review of the issue was requested.</li>
+<li><strong>Multiple Namespaces in a Single Spec:</strong> The current SDF structure directs all spec-defined names into a single default namespace. The idea of allowing a single specification to define terms in multiple namespaces was discussed. While it could offer flexibility for factoring out common data types, it complicates JSON pointer usage. The consensus was to defer this feature for now, unless a strong objection is raised from the original proponent (Ari).</li>
+<li><strong>SDF Choice Factoring:</strong> Acknowledged limitation in factoring out common properties when using <code>sdf_choice</code>, which can make tools struggle with resolution steps. This is considered &quot;not beautiful but not really killing us.&quot;</li>
+<li><strong>Editorial &amp; Tooling Tasks:</strong> Identified remaining tasks including verifying CDDL grammar, ensuring JSON examples parse, adding automated checks, and collecting more editorial reviews from new readers. Tooling work is also needed to support co-occurrence constraints in CDDL-to-JSON Schema translation.</li>
+<li><strong>Future Work Considerations (Non-Blocking for WGLC):</strong>
+<ul>
+<li><strong>Version Field:</strong> Clarifying the definition and usage of the <code>version</code> field in the <code>info</code> block, possibly aligning with RFC 3339/ISO 8601 for lexicographical ordering.</li>
+<li><strong>Metadata Integration:</strong> Discussed combining information from multiple SDF files and harmonizing metadata (e.g., <code>copyright</code>, <code>license</code>) with similar efforts in other working groups (e.g., <code>opsawg</code>'s work on mud files).</li>
+<li><strong>Source Information (&quot;Breadcrumbs&quot;):</strong> The need for structured ways to retain information about the origin of specification parts when combining multiple sources, beyond just comments.</li>
+<li><strong>Spec Guidelines/Invariants:</strong> Suggestion to document internal guidelines and invariants (e.g., <code>sdf_xxx</code> vs. <code>xxx</code> terminology, alternation of user/SDF-defined names) for future evolution.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>New Work Items (Protocol Mappings, Instances, and Relationships):</strong></p>
+<ul>
+<li><strong>Protocol Mappings:</strong> Proposed a mechanism for &quot;mapping files&quot; to add ecosystem-specific qualities (e.g., IPSO object/resource IDs) to a harmonized SDF model without cluttering the core SDF specification. This would involve a slim base model plus mapping files to generate a &quot;fat&quot; model. This approach appears workable and non-blocking for the current SDF spec, though the handling of the &quot;quality space&quot; needs careful consideration.</li>
+<li><strong>Instances and Relationships:</strong> Two perspectives were presented (Ari's via Carsten, and Michael Richardson's).
+<ul>
+<li><strong>Relationships:</strong> The need to describe relationships between concepts and instances (e.g., a heater linked to a boiler, a light switch controlling a light). These links would have defined relations, cardinality, and target type constraints. LWM2M object links were cited as a use case.</li>
+<li><strong>Instances:</strong> SDF defines classes, but there's a need for &quot;instance definitions&quot; (like a Web of Things Thing Description, which describes a specific thing without its current state). This could resemble the mapping file approach, adding specific qualities and identifiers to a class definition.</li>
+<li><strong>Layered Constraints (Michael Richardson):</strong> Viewed instances as progressively layered constraints on definitions, moving towards a network-addressable entity only when protocol bindings are applied. This involves building an &quot;application graph&quot; of reusable, related objects.</li>
+<li><strong><code>sdf_ref</code> Discussion:</strong> A suggestion was made to reconsider the naming of <code>sdf_ref</code> as it implies wholesale expansion. If a reference mechanism for semantic links without expansion is needed, a new term or renaming <code>sdf_ref</code> to <code>sdf_expand</code> might be appropriate. The window for such a change is closing with SDF 1.2.</li>
+</ul>
+</li>
+<li><strong>Protocol Binding Extensions:</strong> Experimentation with using WoT Protocol Binding vocabulary as an SDF extension (annotation technique) to generate Thing Descriptions showed a good workflow.</li>
+<li><strong>Consensus:</strong> There's a shared understanding and a closely aligned direction for these new work items, with WoT Thing Descriptions serving as a useful benchmark.</li>
+</ul>
+</li>
+<li>
+<p><strong>Milestone Review:</strong> The SDF specification is slightly delayed from its September target but is on track. The additional work identified (mappings, relationships, instances) may necessitate simple extensions or, if more complicated, a re-charter of the working group.</p>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> Hannes Tschofenig is confirmed as the document shepherd for the SDF specification.</li>
+<li><strong>Action Item:</strong> The working group members are requested to review Pull Request 45 (Action/Event affordances) and the issue regarding multiple namespaces to provide further input offline.</li>
+<li><strong>Decision:</strong> The proposal to allow a single SDF specification to define terms in multiple namespaces is dropped for now, unless a strong objection is raised.</li>
+<li><strong>Action Item:</strong> Community members are encouraged to provide editorial reviews of the SDF draft to ensure clarity and readability.</li>
+<li><strong>Action Item:</strong> Review the <code>opsawg</code> draft on JSON metadata for <code>mud</code> files to ensure cultural and potential literal compatibility for SDF metadata.</li>
+<li><strong>Decision:</strong> The working group will target a WGLC for the SDF specification by mid-January. If substantive changes are made, the spec will be labeled SDF 1.2; otherwise, it will remain SDF 1.1.</li>
+<li><strong>Action Item:</strong> Michael Richardson will send out a Doodle poll to schedule virtual interims for December, January, and February. The plan is to have a December meeting (if SDF 1.2), and a February meeting to address WGLC comments.</li>
+<li><strong>Action Item:</strong> Further discussion is needed on the naming convention of <code>sdf_ref</code> (e.g., considering <code>sdf_expand</code> for expansion, and a different term for non-expanding semantic links). This should be a key agenda item for an upcoming interim.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Virtual Interims:</strong> Schedule and conduct virtual interims to address remaining technical issues, progress on the <code>sdf_ref</code> naming discussion, and prepare for WGLC.</li>
+<li><strong>WGLC Preparation:</strong> Continue resolving outstanding issues and addressing editorial tasks to ready the SDF specification for WGLC by mid-January.</li>
+<li><strong>Explore New Work:</strong> Further explore the proposed mechanisms for protocol mappings, instance definitions, and relationships between models, potentially leading to extensions or the consideration of a working group re-charter.</li>
+<li><strong>Review <code>opsawg</code> Draft:</strong> Incorporate feedback from the <code>opsawg</code> metadata draft review into SDF's metadata structure where appropriate.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

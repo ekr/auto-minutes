@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lpwan.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-LPWAN-20220322-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 22 Mar 2022 12:00</p>
+<h1>lpwan</h1>
+<h2>Summary</h2>
+<p>The lpwan working group met for a brief one-hour session to discuss the status and next steps for several key documents. Discussions included updates on the Compound ACK document, the YANG data model, the Sigfox and NB-IoT profiles, and a significant technical challenge regarding the <code>dev</code> and <code>app</code> roles in mesh/peer-to-peer 802.15.4 networks. Decisions were made to move the NB-IoT profile to Proposed Standard status and to launch its Working Group Last Call soon, while other documents require further refinement and discussion on the mailing list.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong><code>lpwan-chic-compound-ack</code> (Juan Carlos Zuniga)</strong>
+<ul>
+<li>Document is in Sherpas review.</li>
+<li>Updates to RFC 8724, clarification on window 0 placement, fixed a copy-paste error, and added text on new all-zero usage behavior.</li>
+<li><strong>Dominique's comments</strong>: Identified typos, material issues on mailing list, and concerns about distinguishing the new compound ACK with the abort message, particularly its implications for the already published LoraWAN RFC. Suggested adding an annex for technology-specific details.</li>
+</ul>
+</li>
+<li><strong><code>lpwan-chic-yang</code> Data Model (Laurent Toutain)</strong>
+<ul>
+<li>New version covers RFC 8724 and 8824, with naming closer to RFCs and inclusion of <code>max-interleaf-frames</code>.</li>
+<li>Hackathon findings: CBOR/CoNF representation significantly reduces rule size (from ~2500 bytes to ~400 bytes, a 6x reduction) compared to JSON.</li>
+<li>Discussion on optimizing CBOR SIDs for even greater compactness by reordering SIDs.</li>
+</ul>
+</li>
+<li><strong><code>lpwan-chic-sigfox</code> Profile (Diego Vistuba)</strong>
+<ul>
+<li>Two major updates:
+<ol>
+<li>Two uplink ACK configurations allowing medium (up to 480 bytes) and larger (up to 2250 bytes) packets, accommodating IPv6 MTU requirements.</li>
+<li>Mandatory Reassembly Check Sequence (RCS) field for rules where the number of fragments in the last window is unknown, to avoid reassembly ambiguity.</li>
+</ol>
+</li>
+</ul>
+</li>
+<li><strong><code>lpwan-chic-nb-iot</code> Profile (Anna Maria Mandalari)</strong>
+<ul>
+<li>Feedback from Carlos Gomez: structure of the document needs to better separate configuration from use cases.</li>
+<li>Clarified that fragmentation is not used in the PDCP layer as RLC already handles segmentation.</li>
+<li>Discussion on the draft status: current informational status vs. Proposed Standard. Consensus was that it should be a Proposed Standard, similar to other LPWAN profiles.</li>
+<li>IPv4 support: Confirmed that the LPWAN WG charter is focused on IPv6, so IPv4 solutions would be out of scope for this document.</li>
+</ul>
+</li>
+<li><strong><code>lpwan-chic-802.15.4</code> and Dev/App Roles (Carles Gomez)</strong>
+<ul>
+<li>Problem: The <code>dev</code> (constrained device) and <code>app</code> (application server) roles, well-defined for star topologies, are ambiguous in mesh or peer-to-peer 802.15.4 networks where devices communicate directly.</li>
+<li>Two main options discussed:
+<ol>
+<li>Strictly adhere to RFC 8724 definitions: devices must contextually know if they are <code>dev</code> or <code>app</code> for each communication, making uplink/downlink specific to endpoint pairs.</li>
+<li>Define rules based on source/destination rather than <code>dev</code>/<code>app</code>: potentially duplicates rules (one per direction) and requires new terminology.</li>
+</ol>
+</li>
+<li>Additional suggestions: Laurent suggested defining rules as <code>up</code> or <code>down</code> rather than symmetric, allowing different handling. Eric proposed broadening the scope beyond 802.15.4. Pascal suggested a header bit to explicitly indicate the sender's <code>dev</code>/<code>app</code> perspective.</li>
+</ul>
+</li>
+<li><strong><code>lpwan-chic-mesh</code> (Laurent Toutain)</strong>
+<ul>
+<li>A new draft proposing extensions to Chic for mesh connectivity.</li>
+<li>Introduces &quot;device IDs&quot; for the core to reach a device, and &quot;next hop&quot; for a device to reach the core.</li>
+<li>Allows for non-symmetric rules (e.g., <code>up</code> or <code>down</code> depending on device/next-hop selection), with the constraint that rule IDs cannot be shared between different sets of rules.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong><code>lpwan-chic-compound-ack</code></strong>:
+<ul>
+<li><strong>Action</strong>: Juan Carlos and Dominique to discuss typos and material issues, including the abort message distinction and LoraWAN RFC implications, on the mailing list.</li>
+<li><strong>Action</strong>: Explore adding an annex for technology-specific details, possibly requiring an update to the LoraWAN RFC reference.</li>
+<li><strong>Decision</strong>: Postpone pushing for publication until comments are cleared and shepherd review (possibly by Laura Toutain) is complete.</li>
+</ul>
+</li>
+<li><strong><code>lpwan-chic-yang</code></strong>:
+<ul>
+<li><strong>Action</strong>: Laurent to check with CoRF (Constrained RESTful Environments) experts regarding the CBOR/CoNF optimization approach for SIDs.</li>
+</ul>
+</li>
+<li><strong><code>lpwan-chic-sigfox</code></strong>:
+<ul>
+<li><strong>Action</strong>: Update figures in the draft.</li>
+<li><strong>Action</strong>: Update the Sigfox implementation for testing the new changes and solving corner cases.</li>
+<li><strong>Action</strong>: Ensure all corner cases are addressed and clarified in the draft before asking for a Working Group Last Call.</li>
+</ul>
+</li>
+<li><strong><code>lpwan-chic-nb-iot</code></strong>:
+<ul>
+<li><strong>Decision</strong>: Change the draft status from Informational to Proposed Standard.</li>
+<li><strong>Decision</strong>: Launch the Working Group Last Call for this document immediately after the meeting, assuming current comments are addressed.</li>
+</ul>
+</li>
+<li><strong><code>lpwan-chic-802.15.4</code> and Dev/App Roles</strong>:
+<ul>
+<li><strong>Action</strong>: Carles to incorporate feedback and continue discussion on the mailing list for handling <code>dev</code>/<code>app</code> roles in peer-to-peer contexts.</li>
+</ul>
+</li>
+<li><strong><code>lpwan-chic-mesh</code></strong>:
+<ul>
+<li><strong>Action</strong>: Further discussion needed on the mailing list to assess interest and refine the proposal for mesh connectivity.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Working Group Last Call for <code>lpwan-chic-nb-iot</code> to be initiated by the chairs.</li>
+<li>Continued discussion and refinement of the <code>lpwan-chic-compound-ack</code>, <code>lpwan-chic-yang</code>, <code>lpwan-chic-sigfox</code>, <code>lpwan-chic-802.15.4</code>, and <code>lpwan-chic-mesh</code> documents on the mailing list.</li>
+<li>Next lpwan interim meeting will continue these discussions.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

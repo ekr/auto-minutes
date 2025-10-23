@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="tcpm.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-TCPM-20220729-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 29 Jul 2022 14:00</p>
+<h1>tcpm Meeting Minutes - IETF</h1>
+<h2>Summary</h2>
+<p>The tcpm session focused on the status of several working group documents, including updates on their progression towards Proposed Standard status, addressing reviewer comments, and discussing future enhancements. Key discussions revolved around the CUBIC congestion control algorithm's parameters, the transition of PRR from experimental to standard, the readiness of Accurate ECN for Working Group Last Call (WGLC), and the scope of TCP Yang models for network observability and troubleshooting. A new proposal for a TCP ACK rate request option was also presented, initiating discussion on its design and purpose.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Status Update:</strong></p>
+<ul>
+<li><strong>RFC 9235 (TCP AO Test Vectors):</strong> Published. 16 errata were filed due to a TCP checksum error in IPv4 example packets. The AD decided to approve the errata as filed rather than aggregate them.</li>
+<li><strong>RFC 793bis (TCP Base Specification):</strong> In AUTH48, addressing RFC editor comments, and progressing.</li>
+<li><strong>TCP Yang Module (draft-ietf-tcpm-tcp-yang):</strong> Completed Working Group Last Call and is currently in IESG Last Call. Authors are addressing comments, with a revised ID expected after the holidays.</li>
+<li><strong>PRR (Proportional Rate Reduction) (draft-ietf-tcpm-prr):</strong> In progress, aiming for WGLC.</li>
+<li><strong>CUBIC (draft-ietf-tcpm-rfc8312bis):</strong> Past WGLC, substantial comments received, and discussions are ongoing.</li>
+<li><strong>HISTOR+:</strong> Document shepherd review almost complete, minor editorial changes pending.</li>
+<li><strong>Accurate ECN (draft-ietf-tcpm-accurate-ecn):</strong> Ongoing work, almost ready for WGLC. The AD requested prioritization due to its relationship with L4S.</li>
+<li><strong>Generalized ECN:</strong> Builds on Accurate ECN, ready for WGLC once Accurate ECN progresses.</li>
+<li><strong>TCP EDO:</strong> No significant changes since the last meeting.</li>
+</ul>
+</li>
+<li>
+<p><strong>Revised CUBIC (draft-ietf-tcpm-rfc8312bis-05) Presentation:</strong></p>
+<ul>
+<li>Aims to publish CUBIC as a Proposed Standard.</li>
+<li><strong>TCP-Friendly Model (Issue 1):</strong> Marco's comment on the correctness of CUBIC's TCP-friendly model was discussed. It was noted as a complex research topic requiring detailed analysis. Consensus was to publish the current draft and defer this for future research or a &quot;CUBIC v2.&quot;</li>
+<li><strong>Beta Value Change (0.7 to 0.5) (Issue 2):</strong> Proposal to change the Beta parameter from 0.7 to 0.5 was discussed. It was highlighted that existing deployments (Linux, Apple, FreeBSD, Microsoft) use 0.7, and there is no real-world deployment experience with 0.5. Concerns about increased queue variation and delay with 0.5 were raised. <strong>Consensus was not to change the Beta value to 0.5 in this document</strong> but to document the widely deployed 0.7, reserving 0.5 for potential future research or a new CUBIC version.</li>
+<li><strong>Bug Fix (Issue 3):</strong> A bug related to <code>alpha_cubic</code> calculation (setting to 1 if CWND &gt; <code>w_max</code> and CWND &gt; <code>prior_cwnd</code>) was fixed by Neil and has been addressed in Linux.</li>
+<li><strong>Congestion Window Reduction (Issue 6):</strong> An open pull request addresses implementations using CWND directly during congestion events for reduction.</li>
+</ul>
+</li>
+<li>
+<p><strong>PRR (Proportional Rate Reduction) (draft-ietf-tcpm-prr-10) Presentation:</strong></p>
+<ul>
+<li>This draft revises RFC 6937 to move PRR from an Experimental RFC to a Proposed Standard, reflecting widespread deployment and experience (Linux, FreeBSD, Netflix RACK stack, Windows).</li>
+<li><strong>Key Improvements:</strong>
+<ul>
+<li>Dynamically selects between slow start and conservative (strict packet conservation) behavior when in-flight bytes drop below <code>ssthresh</code>, based on ACK progress and lack of new losses.</li>
+<li>Explicitly defines handling for NACK-SAC (duplicate ACK without SACK blocks), assuming one packet acknowledged for simplicity and adding protection against excessive ACKs.</li>
+<li>Ensures at least one fast retransmit is sent upon entering recovery to maintain ACK clocking, which was previously an undocumented Linux implementation detail.</li>
+<li>Clarifies the calculation of the Congestion Window (<code>snd_cwnd</code>) based on in-flight or pipe plus <code>send_state</code>.</li>
+</ul>
+</li>
+<li><strong>Minor Edits:</strong> Recommendation to use RACK-TLP (Tail Loss Probe) for better loss detection, removal of deprecated text, and updating examples. A Linux bug in the original PRR implementation reported by Bob Briscoe has also been fixed.</li>
+</ul>
+</li>
+<li>
+<p><strong>Accurate ECN (draft-ietf-tcpm-accurate-ecn-19) Presentation:</strong></p>
+<ul>
+<li>This draft enhances TCP with finer-grained ECN feedback.</li>
+<li><strong>Updates:</strong>
+<ul>
+<li>Adjusted the section on ACK filtering to clarify its relationship with RFC 3449, noting that updating RFC 3168 implies applicability to Accurate ECN.</li>
+<li>Changed the recommendation for implementation priority: suggested starting with the sending side of the TCP option as it's simpler.</li>
+<li>Experimental TCP option IDs used in implementations were retrospectively registered with IANA. The working group will seek an early IANA assignment for the final IDs.</li>
+</ul>
+</li>
+<li><strong>Readiness:</strong> The authors believe the draft is ready for WGLC.</li>
+<li><strong>Implementation Concerns:</strong> Discussions included the status of Linux kernel maintainers' acceptance and potential issues with offload features (TSO/GRO) correctly handling the ACE bits.</li>
+</ul>
+</li>
+<li>
+<p><strong>TCP Yang Model (draft-ietf-tcpm-tcp-yang-10) Presentation:</strong></p>
+<ul>
+<li><strong>Status:</strong> In IESG evaluation, three &quot;discuss&quot; points and several comments received. Authors are preparing a revised ID.</li>
+<li><strong>Scope:</strong> Narrows to basic statistics, TCP connection and listener lists, and augmentation of the <code>ietf-tcp-common</code> model to support TCP AO and MD5.</li>
+<li><strong>IESG Feedback:</strong> Comments related to encoding <code>any</code> in the listener list, inconsistencies in AO/MD5 examples, and 2019 language usage.</li>
+<li><strong>MD5 Support:</strong> Authors confirmed they are <strong>not removing MD5 support</strong> due to requirements from the BGP Yang model.</li>
+<li><strong>Verification:</strong> Examples are verified against the model using <code>yanglint</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>Next-Gen TCP Yang Model (draft-mishra-tcpm-next-gen-tcp-yang-00) Presentation:</strong></p>
+<ul>
+<li><strong>Motivation:</strong> Driven by operational needs for enhanced visibility, particularly for BGP in massively scalable data centers. A key use case is diagnosing &quot;zero window deadlock&quot; situations that can lead to internet outages.</li>
+<li><strong>Use Cases:</strong>
+<ul>
+<li>Troubleshooting stuck BGP sessions where one router is congested (zero receive window) and cannot process incoming data, while the other believes the session is active.</li>
+<li>Monitoring TCP session statistics (windowing, scaling, throughput) on compute nodes.</li>
+</ul>
+</li>
+<li><strong>Proposed Additions:</strong> TCP FSM states, TCP flags, kernel-accessible parameters, windowing parameters, TCP options/optimizations, and congestion control (CC) parameters.</li>
+<li><strong>Discussion:</strong> The working group provided feedback that the model should be concise, focusing on actionable information for operational troubleshooting (e.g., detecting persistent zero window conditions) rather than comprehensive packet-level debugging (like <code>tcpdump</code>). It should avoid standardizing overly implementation-specific details. There's a balance between meeting operational needs and avoiding a large, complex Yang model, with an understanding that extensions are possible.</li>
+</ul>
+</li>
+<li>
+<p><strong>TCP ACK Rate Request (draft-gomez-tcpm-tcp-ack-rate-request-05) Presentation:</strong></p>
+<ul>
+<li><strong>Motivation:</strong> Address suboptimal performance due to delayed ACKs, especially in large CWND scenarios (e.g., asymmetric paths, computational overhead reduction) and small CWND scenarios (e.g., data centers, transactional data).</li>
+<li><strong>Updates in v05:</strong>
+<ul>
+<li>Removed the &quot;ignore order&quot; feature due to unclear utility.</li>
+<li>Assigned experimental TCP option <code>Kind</code> field value 254 (per RFC 6994).</li>
+<li>Extended the option size by one byte to ensure an even length (common for TCP options and padding alignment), increasing the <code>R</code> (requested ACK rate) field.</li>
+<li><code>R</code> field now uses binary encoding, allowing a maximum value of 2047. <code>R=0</code> requests an immediate ACK without changing the steady-state ACK rate.</li>
+</ul>
+</li>
+<li><strong>Discussion on Max <code>R</code> Value:</strong> Concerns were raised that very large <code>R</code> values (e.g., 1000+) are excessive and provide too infrequent feedback for a transport protocol to behave well, even for advisory options. Bob Briscoe suggested reviewing existing congestion control options RFCs for similar mechanisms and field length guidance. The importance of maintaining an even option length was reiterated.</li>
+<li><strong>Implementation:</strong> A prototype implementation for FreeBSD is underway and will be open-sourced soon.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>CUBIC (draft-ietf-tcpm-rfc8312bis):</strong> The working group confirmed its consensus to proceed with the current draft for Proposed Standard publication, reflecting the widely deployed CUBIC algorithm (using Beta 0.7). Further research or changes (e.g., Beta 0.5) are deferred to potential future CUBIC versions.</li>
+<li><strong>PRR (draft-ietf-tcpm-prr):</strong> The working group decided to move this draft to Working Group Last Call quickly.
+<ul>
+<li><strong>ACTION:</strong> Yuchi to follow up with the author (Yu-Chun) regarding his review comments and ensure they are addressed.</li>
+</ul>
+</li>
+<li><strong>Accurate ECN (draft-ietf-tcpm-accurate-ecn):</strong> The working group agreed to proceed with Working Group Last Call.
+<ul>
+<li><strong>ACTION:</strong> tcpm chairs to coordinate with IANA for an early allocation of a permanent TCP option ID for Accurate ECN.</li>
+</ul>
+</li>
+<li><strong>TCP Yang Model (draft-ietf-tcpm-tcp-yang):</strong> The authors will publish a revised draft ID after the holidays, addressing IESG comments. The decision was made <strong>not</strong> to remove MD5 support from the model.</li>
+<li><strong>Next-Gen TCP Yang Model (draft-mishra-tcpm-next-gen-tcp-yang):</strong> Proponents are encouraged to refine the scope of the draft, focusing on a concise set of actionable parameters for operational troubleshooting (e.g., zero window detection) rather than comprehensive debugging, allowing for future extensions.</li>
+<li><strong>TCP ACK Rate Request (draft-gomez-tcpm-tcp-ack-rate-request):</strong>
+<ul>
+<li><strong>ACTION:</strong> Carlos Gomez to review existing congestion control options RFCs (as suggested by Bob Briscoe) to see if there are similar mechanisms or established guidelines for ACK rate options and field lengths.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>tcpm chairs to initiate the WGLC for <code>draft-ietf-tcpm-prr</code>.</li>
+<li>tcpm chairs to initiate the WGLC for <code>draft-ietf-tcpm-accurate-ecn</code>.</li>
+<li>tcpm chairs to initiate the early IANA option ID assignment for <code>draft-ietf-tcpm-accurate-ecn</code>.</li>
+<li>Authors of <code>draft-ietf-tcpm-tcp-yang</code> to publish a new revision addressing IESG comments.</li>
+<li>Author of <code>draft-gomez-tcpm-tcp-ack-rate-request</code> to consider feedback on the maximum <code>R</code> value and existing RFCs.</li>
+<li>Continued discussion on <code>draft-mishra-tcpm-next-gen-tcp-yang</code> on the mailing list to refine its scope.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

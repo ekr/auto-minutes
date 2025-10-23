@@ -1,0 +1,116 @@
+**Session Date/Time:** 24 Mar 2022 13:30
+
+# webtrans
+
+## Summary
+
+The webtrans working group met to discuss updates from the W3C WebTransport API, key issues concerning WebTransport over HTTP/3, and WebTransport over HTTP/2. Discussions included the W3C API status, implementation challenges, session pooling and resource limits for HTTP/3, and the use of capsules versus TLVs for HTTP/2, with a particular focus on the implications for intermediaries and end-to-end semantics. Decisions were made regarding graceful session termination, GoAway behavior, stream closure, and resource limits for pooling, while a new design team was formed to tackle the capsule unification for HTTP/2 and HTTP/3. Stream prioritization was acknowledged as primarily an API concern.
+
+## Key Discussion Points
+
+### W3C API Update (Will Law)
+
+*   **Progress:** The WebTransport API specification is now a Working Draft (March 11, 2022).
+*   **Timetable:** An optimistic timetable aims for Candidate Recommendation (CR) soon, with a Proposed Recommendation (PR) by July 31st, requiring at least two independent implementations.
+*   **Implementation Blocker:** Chrome has shipped (M97), but Mozilla has not yet signaled a date for their implementation, challenging the July 31st PR target. The charter may be extended if needed.
+*   **Milestones:** Adjusted to match the release process, with a new "Candidate Recommendation" milestone.
+*   **Key Decisions (Resolved Issues):**
+    *   Clients should not provide credentials when establishing a session.
+    *   Blocking ports on `fetch`'s bad ports list.
+    *   Adding smooth RTT variation to `WebTransportStats`.
+    *   Adding `packetsLost` to `WebTransportStats`.
+    *   Extra requirements on server certificate hashes.
+    *   `WebTransportGetStats` additions: `expiredOutgoing`, `droppedIncomingDatagramsLost`.
+    *   Stream stats will be individual `getStats` methods on each stream instance.
+    *   Decisions around reliability, fallback, and constructor arguments (`requireUnreliable` vs. `requestReliable`).
+    *   Content Security Policy (CSP) compatibility break with early Chrome versions for future stability.
+    *   Datagram priority over streams: Changed to normative language ensuring user agents prioritize datagrams quickly, replacing an absolute "always go first" rule.
+*   **Current Issues Under Debate:**
+    *   Bike-shedding names for stream stats.
+    *   Connection pooling: Default on or off, constructor configuration.
+    *   Priorities between streams: Is this necessary, and does IETF intend to define a method that filters to the browser level?
+
+### Priorities Discussion
+
+*   **IETF Input Sought:** W3C asked for IETF input on stream prioritization.
+*   **Schemes:** HTTP (8 levels) and WebRTC (4 levels) were mentioned as potential models.
+*   **API vs. Wire Protocol:** General consensus that stream prioritization is largely an API concern (how web applications signal priorities to the browser), rather than a core wire-protocol problem for the IETF WebTransport WG, unless end-to-end signaling is strictly required.
+*   **Application-Level Solutions:** It was noted that applications can use WebTransport streams/datagrams to signal priority themselves.
+*   **Use Cases:** A use case for dynamically prioritizing newer over older media segments (e.g., video/audio) was presented, which might require more flexible control than a small fixed set of priorities. This would require browser support for client-side sending.
+*   **Congestion Control:** Discussion touched upon desired control over congestion control algorithms (e.g., BBR, Google CC) and the potential for hints in the API.
+*   **W3C Issue 62:** Participants were encouraged to comment on W3C issue 62 for further discussion on priority.
+*   **Conclusion:** The WG reiterated its philosophy to focus on shipping a functional WebTransport and defer application-layer concerns or advanced features (like fine-grained congestion control) to future versions or extensions if current API/protocol capabilities prove insufficient.
+
+### WebTransport over HTTP/3 and HTTP/2
+
+*   **Overview Draft (Victor Vasiliev):**
+    *   The overview draft needs updating to abstract common operations between HTTP/3 and HTTP/2 WebTransport implementations. A pull request is in progress.
+*   **Graceful Session Termination (GoAway):**
+    *   Need a mechanism for intermediaries (e.g., reverse proxies) to signal a graceful shutdown of WebTransport sessions. A `DRAIN_WEBTRANSPORT_SESSION` capsule was proposed.
+    *   **Decision:** Alan Frindell will author a Pull Request for a `DRAIN_WEBTRANSPORT_SESSION` capsule.
+*   **GoAway and WebTransport Session Creation:**
+    *   HTTP/2 `GOAWAY` prevents new streams on the HTTP/2 connection but allows existing streams to finish. For WebTransport, this means no *new* WebTransport sessions can be created on the underlying HTTP/2 connection, but *existing* WebTransport sessions can still create their own streams. This behavior should be preserved for HTTP/3.
+    *   **Decision:** Consensus to maintain this behavior: `GOAWAY` means no new WebTransport sessions, but existing sessions can continue creating their internal streams.
+*   **Closing Connect Stream:**
+    *   Current draft behavior: Closing the `CONNECT` stream automatically terminates everything in the WebTransport session. This was suggested to be revisited for potentially allowing internal streams to remain open.
+    *   **Discussion:** Keeping the current semantics (closing `CONNECT` stream terminates everything) simplifies resource lifecycle management and is consistent with QUIC connection closure.
+    *   **Decision:** Consensus to keep the current semantics where closing the `CONNECT` stream automatically terminates the WebTransport session.
+*   **Alt-Svc Header Handling:**
+    *   Question: How should `Alt-Svc` headers affect WebTransport?
+    *   **Discussion:** `Alt-Svc` in a response should not impact an active WebTransport session. Broader `Alt-Svc` interactions with connections are typically handled by the HTTP working group.
+    *   **Decision:** The WebTransport draft will consider `Alt-Svc` interactions outside its immediate scope, deferring to HTTP WG.
+
+### Pooling and Resource Limits for HTTP/3 (Eric Kinnear)
+
+*   **Goal:** Support multiple WebTransport sessions within a single HTTP/3 connection and allow coexistence with regular HTTP requests.
+*   **HTTP/2 vs HTTP/3:** Less of an issue for HTTP/2 as each session is encapsulated in a `CONNECT` stream. HTTP/3 needs more specific mechanisms as WebTransport uses native H3 streams.
+*   **Proposal:** Implement necessary resource limits to prevent one WebTransport session from unfairly dominating the H3 connection. No preclusion of future enhancements.
+*   **Existing Flow Control:** H3 inherits stream-level flow control from QUIC (`MAX_STREAM_DATA`, `MAX_STREAMS`).
+*   **Additional Needs:**
+    *   **Maximum Session Count:** Limit the number of WebTransport sessions (e.g., via a `WEBTRANSPORT_MAX_SESSIONS` setting).
+    *   **Maximum Streams per Session:** Limit the number of streams a single WebTransport session can open.
+    *   **Maximum Data per Session:** Limit total data across all streams within a WebTransport session.
+*   **Discussion on Max Data per Session:** This was deemed technically very challenging, potentially requiring significant architectural contortions or layer violations with QUIC.
+*   **Decisions on Pooling:**
+    *   **Limit total WebTransport session count via settings:** Consensus (e.g., a `WEBTRANSPORT_MAX_SESSIONS` setting).
+    *   **Limit max streams per WebTransport session:** Consensus to *attempt implementation* by authoring a PR, acknowledging potential difficulties.
+    *   **Limit total data per WebTransport session:** Consensus that this is too hard currently. The issue will be closed, and can only be reopened if a concrete, implemented design is presented to the WG.
+
+### WebTransport over HTTP/2 (Eric Kinnear)
+
+*   **Progress:** Many changes discussed at IETF 112 have been landed. The HTTP Datagram design team concluded, unblocking further work.
+*   **Sending Frames Before CONNECT Response:**
+    *   Current text: Frames can only be sent *after* receiving a 200 OK response to the initial `CONNECT` request.
+    *   **Proposal:** Allow sending frames before the `CONNECT` response, subject to flow control. This reduces RTT and allows server-initiated streams to start sooner.
+    *   **Decision:** Consensus to allow sending frames before the `CONNECT` response is received.
+*   **Capsules vs. TLVs:**
+    *   **Context:** HTTP Datagrams now define a `DATAGRAM` capsule. Current H2 WebTransport uses TLVs for its frames.
+    *   **Proposal:** Switch to using capsules for H2 WebTransport frames.
+    *   **Benefits:** Can reuse the `DATAGRAM` capsule. Potentially reuse `MAX_STREAMS` and `STREAMS_BLOCKED` capsules (if defined for H3).
+    *   **Core Issue: End-to-end vs. Hop-by-hop:** TLVs were hop-by-hop. Capsules are conceptually end-to-end but can be converted by intermediaries (e.g., `DATAGRAM` capsule to native datagram). How does this affect stream-related control (which is inherently hop-by-hop)?
+    *   **Discussion:**
+        *   Intermediating stream constraints between H2 and H3 is complex; it might be better to treat H2 and H3 WebTransport as different protocol segments for an intermediary.
+        *   The `end-to-end` property of capsules is the litmus test; if it's harmful for certain control frames, they shouldn't be capsules.
+        *   While H2 TLVs are wire-format compatible, the semantic implications of a shared registry and end-to-end behavior need careful consideration.
+    *   **Conclusion:** This is a complex issue requiring further focused work.
+
+## Decisions and Action Items
+
+*   **`DRAIN_WEBTRANSPORT_SESSION` Capsule:** Alan Frindell to author a Pull Request for this new capsule.
+*   **GoAway Behavior:** Keep current semantics: `GOAWAY` prevents new WebTransport sessions, but existing sessions can continue creating new streams.
+*   **Closing `CONNECT` Stream:** Keep current semantics: Closing the `CONNECT` stream automatically terminates the WebTransport session.
+*   **WebTransport Pooling for HTTP/3:**
+    *   **ACTION:** Eric Kinnear to author a PR for a `WEBTRANSPORT_MAX_SESSIONS` setting (or similar) to limit the total number of WebTransport sessions.
+    *   **ACTION:** Eric Kinnear to author a PR for limiting the maximum number of streams per WebTransport session, with the understanding that implementation experience will determine feasibility.
+    *   **DECISION:** The issue of limiting total data per WebTransport session will be closed as too complex for now, to be revisited only with a concrete, implemented proposal.
+*   **HTTP/2 Frame Sending:** Allow sending frames before the `CONNECT` response is received. (Action: Eric Kinnear to update draft).
+*   **Capsule Unification for HTTP/2 and HTTP/3:** A design team will be formed to explore the use of capsules for WebTransport over HTTP/2, addressing end-to-end vs. hop-by-hop semantics and unification with H3 capsule definitions.
+
+## Next Steps
+
+*   **Design Team for Capsules:**
+    *   Chairs will send an email to the mailing list asking for volunteers for this design team.
+    *   Eric Kinnear has volunteered to lead this design team.
+    *   The team will aim for a rapid iteration, potentially leading to an interim meeting for discussion.
+*   **W3C Issue 62 (Priorities):** Participants interested in stream prioritization should engage with W3C issue 62.
+*   **Pull Requests:** Authors of PRs (Alan Frindell, Eric Kinnear) should proceed with drafting and submitting them.

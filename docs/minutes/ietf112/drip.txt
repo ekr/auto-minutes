@@ -1,0 +1,82 @@
+**Session Date/Time:** 11 Nov 2021 14:30
+
+# drip
+
+## Summary
+
+The drip working group session provided updates on the status of several core drafts, including architecture, remote ID (RID), authentication formats, and registries. Key discussions revolved around the progress towards Working Group Last Call (WGLC) for the architecture and RID drafts, an implementation report for a blockchain-based registry, and a detailed update on the authentication formats and registries drafts. A significant decision was made to include a more detailed architectural figure in the `drip-architecture` draft. The group also discussed potential future work on attestation technologies (RATS/SUIT) and the emerging need for private observer-to-pilot communications.
+
+## Key Discussion Points
+
+*   **Working Group Policies**: The chairs reminded attendees about the Notewell and the new IETF conduct policy, emphasizing professionalism and impersonality.
+*   **Document Status Overview**:
+    *   **Requirements Draft**: Currently in the AD queue for publication, anticipated by year-end or early January.
+    *   **Architecture Draft (draft-ietf-drip-architecture)**:
+        *   Version 17 recently published, addressing most editorial comments.
+        *   Detailed review by Sue acknowledged. New sections cover drip authentication and journal content.
+        *   Remaining tasks: update the architecture figure and a `30pp` update.
+        *   **Architectural Figure Discussion**: Stu presented a detailed ASCII art figure (showing GPOD, PSOD, UA, GCS, UAS, etc.) proposed for inclusion to provide a comprehensive overview of system relationships, excluding over-the-air broadcast to avoid over-complication.
+*   **Implementation Report (Blockchain Registry)**:
+    *   Andre presented an implementation using Hyperledger Iroha blockchain for the drip registry.
+    *   **Functionality**: Stores drone ID, flight records, and handles authentication and access control for public and authorized private lookups. Drones themselves do not directly interact with the blockchain.
+    *   **Security**: Uses Byzantine fault tolerance, permissioned access, multi-signature transactions, and smart contracts for tracking data access.
+    *   **Performance**: Simulations on Amazon Virtual Cloud with 16 blockchain nodes and 100 drones showed good performance (approx. 10ms delay for drone-to-system updates, hundreds of milliseconds for queries).
+    *   **Data**: Supports EU regulation data (123 bytes) and compressed STSM (24 bytes).
+    *   **Code Status**: Authentication part (OpenHIP v2 crypto branch extended for c-shake and hierarchical hits) is public. Blockchain scripts are currently private but planned for end-of-year release.
+    *   **Future**: Prototype with flying drone expected by end of year.
+*   **Drip Entity Tags / Remote ID Draft (draft-ietf-drip-rid)**:
+    *   Bob provided an update on version 13.
+    *   **Naming**: Renamed to "Drip Entity Tags" (DETs) for hierarchical HITs, aligning with ASTM terminology.
+    *   **Content**: Proof messages removed, aligning with `drip-auth`. Aligned with ASTM F3411 (removing version designation).
+    *   **Mappings**: Completed ET mapping to CTA 2063-A for standalone remote ID modules.
+    *   **Privacy**: Added a section on the lack of privacy on open broadcast media.
+    *   **Security**: Expanded attack vector section, with input from CFRG, highlighting the importance of registration for mitigation against hash size attacks.
+    *   **Dependencies**: Strong reliance on `drip-auth` for attestation proofs and `drip-registries` for attack mitigation.
+    *   **Status**: Considered complete except for fine-tuning (e.g., DNS examples) and ready for WGLC. Two known implementations (AX Enterprise, Andre's).
+*   **Authentication Formats Draft (draft-ietf-drip-auth-formats)**:
+    *   Adam presented updates since adoption.
+    *   **Changes**: New title, re-arranged sections for clarity, explicit F3411-19 references removed.
+    *   **ASTM F3411 v1.1 Changes**:
+        *   **Specific Authentication Method (SAM)**: A new authentication type allows adding formats after F3411 publication. ICAO will manage values for a dedicated byte.
+        *   **Additional Data Length/Field**: Provides all 16 pages of authentication message for use, with subset used for broadcast due to media constraints. Used for Forward Error Correction (FEC).
+    *   **FEC**: Aligned for multi-page FEC (Reed-Solomon).
+    *   **Broadcast Attestation Structure**: Fits within SAM data. Signing timestamp removed (pending re-addition discussion). Provides self-attestation of the DET and confirms key possession asserted by the drip link message.
+    *   **Drip Manifest**: Reworked hash lengths, message hashing definitions, variable window byte. Drip Link + Manifest provides necessary trust (Link: key trusted via registry; Manifest: dynamic aircraft signature validates key ownership).
+    *   **Drip Frame**: Future-proofing mechanism.
+    *   **To-Dos**: FEC cleanup, manifest window definition, operational recommendations review, IANA considerations, appendix updates, flow diagram. Target early next year for review and WGLC.
+*   **Registries Draft (draft-ietf-drip-registries)**:
+    *   Adam presented an update on the recently revived draft.
+    *   **Expansion**: Grew from 11 to 36 pages. Attestations moved from `drip-auth`.
+    *   **Structure**: Currently a compilation of notes; needs significant reorganization and cleanup. The section on "definitions, claims, assertions, attestations, and certificates" needs to be consolidated to one location (likely aligning with `drip-arch`).
+    *   **Registry Classes**: Defined generalized high-level views of registries (Root, IRM, MRA, CAAs/RAs, Remote ID Registries).
+    *   **FQDNs & DNS Records**: Definitions included, needing harmonization. List of proposed DNS records and justifications.
+    *   **Registry Operations**: Section 9 requires significant re-writing for clarity and technical detail.
+    *   **Implementation**: AX Enterprise has a registry implementation on a development Kubernetes cluster with an HTTP API, manual DNS updates, and a transition to EPP and RDAP for registry operations.
+    *   **Next Steps**: Refine sections, clean up revisioning, gather EU input, address PII protection, work with Bob on X.509 aspects.
+    *   **Importance**: Draft supports `drip-auth`, `uas-rid`, and potentially operator privacy.
+*   **Broader Ecosystem Discussions**:
+    *   **RATs & SUIT**: Robin suggested exploring the RATS (Remote Attestation Procedures) working group and SUIT (Software Updates for Internet of Things) for design patterns relevant to secure remote attestations and registry interactions, particularly for devices with manufacturers separate from operators. Adam and Stu agreed on the potential, noting compactness challenges for over-the-air protocols but usefulness of patterns.
+    *   **Observer-to-Pilot Communications**: Med reported that U.S. federal agencies recognize a need for *private* observer-to-pilot communications for immediate, non-punitive actions. This is on the horizon but not a current `drip` work item.
+
+## Decisions and Action Items
+
+*   **Architecture Draft Figure**:
+    *   **Decision**: The group reached consensus to include Stu's proposed detailed architectural figure (showing GPOD, PSOD, UA, GCS, etc.) in the `drip-architecture` draft.
+    *   **Action**: Stu and Shuai to update the draft with the figure and associated textual explanations, including clear identification of what is and is not within the drip scope (e.g., DAA and V2P interfaces). Target for inclusion in the next revision (version 18) by end of the week.
+*   **Architecture Draft WGLC**:
+    *   **Action**: Co-chairs to initiate a 2-week final review period, followed by a 2-week Working Group Last Call (WGLC), aiming to stick to this schedule.
+*   **RID Draft WGLC**:
+    *   **Action**: Co-chairs to discuss initiating Working Group Last Call for `draft-ietf-drip-rid`.
+*   **Registries Draft Adoption**:
+    *   **Action**: Co-chairs to start a call for adoption for `draft-ietf-drip-registries` very soon.
+*   **Mailing List Transparency**:
+    *   **Action**: Co-authors are encouraged to conduct discussions on draft content on the mailing list to ensure transparency for the entire working group.
+
+## Next Steps
+
+*   **Architecture Draft**: Publish revision 18 incorporating the new figure and other editorial fixes. Proceed with the proposed WGLC schedule.
+*   **Remote ID Draft**: Chairs to initiate WGLC.
+*   **Authentication Formats Draft**: Continue addressing open to-dos (FEC, manifest window, operational recommendations, IANA, flow diagrams). Aim for an early IoT sector review and a subsequent release, targeting WGLC.
+*   **Registries Draft**: Following adoption, refine section 4 and section 8 (registry operations, revisioning process). Incorporate EU input, address PII protection, and collaborate with Bob on X.509 aspects.
+*   **Research**: Further explore design patterns and potential applicability from the RATs and SUIT working groups for registry and attestation processes.
+*   **Future Work**: Keep the emerging requirement for private observer-to-pilot communications on the horizon for potential future consideration.

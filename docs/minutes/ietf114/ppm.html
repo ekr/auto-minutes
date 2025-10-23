@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ppm.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-PPM-20220728-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 14:00</p>
+<h1>ppm</h1>
+<h2>Summary</h2>
+<p>The ppm (Privacy Preserving Measurement) session covered updates on the STAR draft, the implementation status and notable changes in the DAP protocol (Draft 01), discussions on DAP query types and their privacy implications, and proposals for in-band task enforcement and dynamic configuration in DAP. Key concerns revolved around mitigating civil attacks, ensuring robust authentication, balancing query flexibility with privacy guarantees, and establishing trust in task parameters.</p>
+<h2>Key Discussion Points</h2>
+<h3>STAR Draft Update</h3>
+<ul>
+<li><strong>Goals</strong>: Achieve K-anonymity for clients reporting sensitive measurements, with low computational overhead and network usage for both clients and servers. Easy implementation using well-known cryptographic techniques.</li>
+<li><strong>Mechanism</strong>: Uses secret sharing. A symmetric key is derived from a deterministic function on the measurement, which encrypts the measurement. A secret share of the key is sent to the server along with the encrypted measurement. Decryption is only possible once 'n' shares are collected (K-anonymity). Requires an anonymizing proxy and a randomness server. Key rotation between the randomness phase and aggregation phase prevents the aggregation server from linking to the randomness server.</li>
+<li><strong>Implementation Status</strong>: Shipped in Brave for some telemetry. An open-source Rust implementation with FFI bindings is available. Currently uses a TCP proxy for anonymizing proxy but experimenting with OHTTP.</li>
+<li><strong>Changes since last IETF</strong>: Removed punctual OPRs, now uses simple key rotation. Randomness server is now required (not optional) to simplify privacy decisions and mitigate server brute-forcing of input values. Enhanced documentation on collusion risks and security considerations.</li>
+<li><strong>Discussion on Civil Attacks (Bogus Shares)</strong>:
+<ul>
+<li>A client generating a bogus share could prevent the aggregation server from reconstructing the key and decrypting valid measurements, effectively disabling the collection of specific values (e.g., top URLs).</li>
+<li>This attack is generally out of scope for general Sybil attacks but is a serious concern for this specific decryption mechanism.</li>
+<li>The current Brave implementation attempts to reconstruct with random sets of shares if initial reconstruction fails, but this is not robust against a substantial fraction of bogus shares.</li>
+<li>It was suggested that underlying secret-sharing frameworks might have mechanisms for share authentication or validation, which should be investigated.</li>
+</ul>
+</li>
+<li><strong>Adoption</strong>: The authors believe the draft is ready for adoption as a working group item.</li>
+</ul>
+<h3>DAP Protocol Updates (Draft 01)</h3>
+<ul>
+<li><strong>Implementation Status</strong>:
+<ul>
+<li><code>daphne</code>: Rust implementation of DAP leader, helper, and collector.</li>
+<li><code>yanus</code>: Rust implementation of DAP server components.</li>
+<li><code>divi-up-ts</code>: TypeScript client (report uploads).</li>
+<li><code>librio-rs</code>: Implements vDAF draft 01. Lacks efficient Poplar1.</li>
+<li>Need more implementations, especially in languages other than Rust.</li>
+<li>Manual interoperability testing performed; planning an automated framework (inspired by quick interrupt runner).</li>
+</ul>
+</li>
+<li><strong>Course-Grained Report Timestamps</strong>:
+<ul>
+<li>Problem: High-resolution nonces (Unix epoch seconds + 8 random bytes) can leak client-identifying information.</li>
+<li>Change: Timestamp rounded down to the <code>min_batch_duration</code> (a task parameter). Random component widened to 16 bytes. Allows tuning of privacy by task configuration.</li>
+</ul>
+</li>
+<li><strong>Aggregation Jobs</strong>:
+<ul>
+<li>Introduced to enable efficient parallel preparation of inputs (transforming input shares to output shares, which is vDAF-specific and can be stateful).</li>
+<li>Leader generates random aggregation job IDs, assigns sets of reports to each job, and transmits this mapping to the helper.</li>
+<li>Helper uses job ID to index its storage and execute vDAF preparation, allowing many helpers to work in parallel.</li>
+</ul>
+</li>
+<li><strong>Aggregator Mutual Authentication</strong>:
+<ul>
+<li>Problem: The leader acts as an HTTP client to the helper's HTTP server during aggregation. This channel needs mutual authentication (beyond TLS server auth).</li>
+<li>Current spec uses a pre-negotiated bearer token (<code>DAP-Auth-Token</code> header).</li>
+<li>Issue: Long-term shared secrets are undesirable and restrict the use of existing, well-established HTTP authentication mechanisms (e.g., OAuth2, TLS client certificates).</li>
+<li>Proposed Direction: The protocol should enumerate requirements for channel security rather than prescribing specific authentication solutions, leveraging HTTP's existing composability with auth schemes. HPKE is an exception where channels are tunneled through participants.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Recommended consulting the HTTP API Working Group for best practices on HTTP API authentication.</li>
+<li>Concerns were raised about the use of HPKE for mutual authentication, especially for collector-to-helper communication tunneled via the leader. Direct communication might simplify this.</li>
+<li>The leader's power to de-anonymize by controlling routing (e.g., selectively dropping reports) was highlighted as a significant threat. Ingestion servers (e.g., OHTTP) could mitigate the leader's access to client metadata.</li>
+<li>While the protocol primarily assumes one helper for simplicity, the design allows for multiple helpers. This is a trade-off between privacy (more actors for collusion) and protocol complexity.</li>
+<li>A recommended, default request authentication mechanism might be beneficial for interoperability, even if custom schemes are allowed.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>DAP Query Types and Privacy</h3>
+<ul>
+<li><strong>DAP Protocol Overview</strong>: Comprises Upload (clients send input shares), Aggregate (aggregators verify and aggregate reports), and Collect (collector retrieves aggregate shares).</li>
+<li><strong>Problem</strong>: How to select a set of reports for aggregation? Batches must be large enough for privacy.</li>
+<li><strong>Current Scheme</strong>: Reports are grouped by client-generated timestamps into non-overlapping time windows.</li>
+<li><strong>New Use Cases / Problems</strong>:
+<ul>
+<li><strong>Client Property Grouping</strong>: Aggregating reports based on client attributes (e.g., user agent, location). Not well supported.</li>
+<li><strong>Fixed-Size Batches</strong>: Aggregating reports into disjoint batches of a fixed, approximate size. Useful for statistical analysis and differential privacy. Not supported.</li>
+</ul>
+</li>
+<li><strong>Discussion on Privacy Implications</strong>:
+<ul>
+<li>The current design ensures that each input submission is processed only once, which simplifies privacy analysis. Allowing arbitrary or overlapping queries significantly complicates privacy guarantees.</li>
+<li>Alternative models, like the IPA proposal where the collector selects submissions and passes them to the helper, were discussed as potentially more flexible but also more challenging for privacy.</li>
+<li><strong>Simplicity vs. Flexibility</strong>: Emphasized that complex query mechanisms make it harder for users to trust the privacy guarantees. A simpler, auditable rule (e.g., &quot;each report can only be used in one query&quot;) is preferable for convincing participants of safety.</li>
+<li><strong>Configuration</strong>: Query types should ideally be configured out-of-band as part of the task configuration to maintain predictability and trust, rather than dynamic in-wire negotiation.</li>
+<li><strong>Drill-Down Queries</strong>: Acknowledged as a critical real-world use case (e.g., analyzing statistics by demographics to identify anomalies). This use case inherently requires repeated sampling on the same data set, which poses significant privacy challenges.</li>
+<li><strong>Differential Privacy (DP)</strong>: Connected to fixed-size batches and repeated queries. DP needs to be a core consideration.</li>
+</ul>
+</li>
+</ul>
+<h3>DAP Threat Model &amp; Mitigations</h3>
+<ul>
+<li><strong>Privacy Goal</strong>: The aggregate output should not leak information about honest client inputs beyond the aggregate itself. This relies on a minimum batch size.</li>
+<li><strong>Threat Model</strong>: Assumes malicious clients, at least one honest aggregator, and a malicious collector (which interactively queries the system).</li>
+<li><strong>Identified Attacks</strong>:
+<ul>
+<li><strong>Stuffing (Sybil) Attack</strong>: Malicious clients inject data to skew results and learn individual inputs.</li>
+<li><strong>Over-sampling Attack</strong>: Clients repeatedly contribute the same input, revealing information over time across multiple aggregates.</li>
+<li><strong>Intersection Attack</strong>: Collector queries with overlapping batches to infer information about batches smaller than the minimum size.</li>
+</ul>
+</li>
+<li><strong>Mitigation Discussion</strong>:
+<ul>
+<li>Stuffing/Over-sampling: Likely deployment-specific (e.g., client authentication, differential privacy at the local or central level). The protocol may not mandate specific solutions here.</li>
+<li>Intersection Attack: Can be handled within the protocol (current strict enforcement or proposed looser enforcement).</li>
+<li><strong>Algorithm for Query Validity</strong>: The need for an efficient algorithm to determine if a new query is valid given previous queries (conforming to a &quot;one query per submission&quot; rule) was discussed. Servers would need to track which reports were involved in which queries.</li>
+<li><strong>Differential Privacy</strong>: Accommodations in the DAP spec and the vDAF document (CFRG) are needed. Expertise is sought for CFRG contributions.</li>
+</ul>
+</li>
+</ul>
+<h3>DAP Task Enforcement &amp; Configuration</h3>
+<ul>
+<li><strong>Problem</strong>: Task parameters (e.g., <code>min_batch_size</code>) configured by a potentially dishonest leader or collector might be too small, compromising privacy without the helper or clients knowing. How to ensure parameters are enforced and build client trust?</li>
+<li><strong>Proposed Solution (Issue 271: In-band Task Enforcement)</strong>:
+<ol>
+<li><strong>Transparency</strong>: Clients learn the task parameters being used, enabling better auditing and informed participation/opt-out decisions.</li>
+<li><strong>Client Sends Parameters</strong>: Clients include task parameters in the report's extension, sealed (e.g., via AAD) to prevent malicious modification in transit.</li>
+<li><strong>Aggregator Verification</strong>: Aggregators verify that the client-provided parameters match their stored parameters for the task.</li>
+</ol>
+</li>
+<li><strong>Dynamic Task Creation (Issue 290)</strong>:
+<ul>
+<li>Extends in-band enforcement: A new task can be created on demand when a new (task ID, parameters) tuple is received from a client report.</li>
+<li>This avoids out-of-band task orchestration between leader and helper.</li>
+<li>Malicious clients submitting reports with altered parameters would cause their reports to be segregated into different batches, preventing pollution.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Dynamic configuration is valuable for allowing operators to add new aggregations without explicit coordination among server organizations.</li>
+<li>Security considerations for this proposal need further detailed analysis.</li>
+<li>While clients may not realistically understand all privacy parameters for consent, transparency is important for auditing and organizational policy enforcement.</li>
+<li>Helpers need mechanisms to define what parameters they are willing to accept to uphold their role in maintaining system honesty.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>STAR Draft Adoption</strong>: No formal call for adoption was made, but interested parties are encouraged to comment on the mailing list.</li>
+<li><strong>DAP Protocol - Aggregator Authentication</strong>: The working group will consult with the HTTP API working group to identify best practices for HTTP API authentication in DAP.</li>
+<li><strong>DAP Query Types</strong>:
+<ul>
+<li>For the next draft (DAPv2), the focus will be on supporting fixed-size batches (issue 273) with the constraint that each report is used in only one query.</li>
+<li>Addressing drill-down queries, demographic queries, and the full differential privacy story will be deferred to later work.</li>
+<li><strong>Action Item</strong>: Chris Patton to file an issue and prepare a PR for fixed-size batch support in DAPv2.</li>
+</ul>
+</li>
+<li><strong>DAP Threat Model</strong>:
+<ul>
+<li>The threat model will clarify that &quot;at least one aggregator is honest&quot; (correcting a typo).</li>
+<li>The primary focus for protocol-level mitigation will remain on intersection attacks, guided by the &quot;one report per query&quot; principle.</li>
+<li>Mitigations for stuffing/over-sampling attacks will be considered deployment-specific for now or addressed in future protocol work.</li>
+</ul>
+</li>
+<li><strong>DAP Task Enforcement &amp; Configuration</strong>:
+<ul>
+<li>In-band task parameter delivery (Issue 271) and dynamic task creation (Issue 290) are seen as valuable.</li>
+<li><strong>Action Item</strong>: Sean to prepare a PR to incorporate these concepts, with a focus on thoroughly detailing the security implications.</li>
+</ul>
+</li>
+<li><strong>CFRG vDAF Document</strong>: The working group encourages experts in differential privacy to contribute to the vDAF document in CFRG, as accommodations for DP will be needed there.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussions on STAR draft adoption on the mailing list.</li>
+<li>Investigate HTTP API authentication best practices for DAP.</li>
+<li>Implement fixed-size batch support in DAPv2.</li>
+<li>Further analyze and implement in-band task enforcement and dynamic task creation in DAP.</li>
+<li>Explore drill-down queries, multi-helper support, and differential privacy in future work, potentially through interim meetings.</li>
+<li>Collaborate with CFRG on differential privacy aspects for vDAF.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

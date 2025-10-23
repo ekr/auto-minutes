@@ -1,0 +1,96 @@
+**Session Date/Time:** 09 Nov 2021 12:00
+
+# webtrans
+
+## Summary
+
+The webtrans working group session included updates from the W3C WebTransport working group, detailing progress on the WebTransport API, error handling, and Chrome's implementation. Key technical discussions revolved around the IETF drafts for WebTransport over HTTP/3 and HTTP/2. For HTTP/3, topics included graceful session termination (Go Away), resource management/pooling, redirects, and request forgery. For HTTP/2, discussions focused on the layered design, framing (mirroring Quick vs. using capsules), stream bundling vs. native streams, and the multi-layered flow control model. A significant architectural discussion addressed the desire for version-independent WebTransport frames versus distinct mappings for HTTP/2 and HTTP/3.
+
+## Key Discussion Points
+
+### W3C WebTransport Update (Yaniv Inbar)
+
+*   **Status Update**: Published another working draft. Believed to have finished all issues in the "Minimum Viable Ship" milestone. Four non-editorial issues ready for PR; three editorial.
+*   **API Enhancements**:
+    *   Improved error handling with `WebTransportError` DOM exception (source, 8-bit stream error code). Allows aborting streams with a specified error code.
+    *   `maxDatagramSize` read-only member on datagrams (UA-defined).
+    *   Sender-side `BufferSource` objects for streams.
+    *   Minimal prioritization: outgoing datagrams have priority over other outgoing data/streams.
+    *   32-bit close code for `WebTransportCloseInfo` (not an error).
+*   **Chrome Implementation**: Shipping WebTransport in M97 (based on o2 draft) with 8-bit reset stream code and 32-bit closing error code. No origin trial required. Available in window and workers, secure contexts only. Future additions include deeper prioritization, stats, and hash-based certificates (M98).
+*   **Use Cases**:
+    *   **Multicast Datagrams**: Request forwarded from W3C Multicast Community Group for consideration by the IETF working group.
+    *   **Bidirectional Server-Based Video Conferencing & Low-Latency Video Upload**: Identified as an important use case. Current WebTransport APIs are insufficient for effective congestion control integration with video encoders (e.g., handling keyframes/delta frames, re-enabling dropped layers). W3C requests IETF support in developing effective measurement mechanisms.
+
+### WebTransport over HTTP/3 (Victor Vasiliev)
+
+*   **Draft o2 Update**: Incorporates six months of changes, including clean session close and reset error codes. This version is shipping in Chrome M97 (non-pooled).
+*   **`WebTransport-Draft-Version` Header**: Added to indicate the draft version in use, for eventual reshaping or removal.
+*   **"Go Away" Mechanism for Graceful Session Termination**:
+    *   **Discussion**: Whether a generic `GO_AWAY` capsule/mechanism is needed, similar to HTTP/3. Arguments for: usefulness for servers (especially those wanting to drain gracefully), intermediary proxies. Arguments against: application-specific semantics, ability to build it on top with a control stream.
+    *   **Decision/Action**: Alan Frindell volunteered to write a PR/proposal detailing use cases and specifics.
+*   **Resource Management and Pooling**:
+    *   **Problem**: How to manage and isolate resources (e.g., concurrent streams, flow control) when pooling multiple WebTransport sessions and regular HTTP/3 traffic over a single QUIC connection. QUIC's flow control is connection-global.
+    *   **Discussion**: Concern about one session starving others, especially with unbounded stream creation. Martin initially suggested a "laissez-faire" approach but acknowledged the risk of pathological interactions. Dragana highlighted the difficulty for developers with varying browser/server limits and timing-dependent issues.
+    *   **Conclusion**: This is a critical issue needing further discussion on the mailing list.
+*   **Redirects**:
+    *   **Discussion**: Whether WebTransport should follow HTTP 3xx redirects. Previous W3C discussion leaned towards not supporting them, deferring to the application. Martin argued that if playing HTTP, HTTP rules (including redirects) should apply. Victor noted historical regret when protocols don't support redirects.
+    *   **Conclusion**: Need to determine if HTTP BCPs mandate redirect support for HTTP-based protocols. If so, WebTransport should support them.
+*   **Request Forgery**:
+    *   **Problem**: Attack where malicious web content can make WebTransport traffic resemble other protocols (e.g., HTTP, STUN, SIP) to bypass network security (e.g., firewalls, NATs). WebSockets used masking to prevent this. Quick's encryption helps but may not fully mitigate if keys are leaked by a malicious server.
+    *   **Discussion**: Harold pointed out that such an attack, if keys are leaked, could impact any protocol using Quick. David suggested that a `fetch` UDP blocklist of ports (similar to TCP blocklists) in W3C might be a better solution, punting the issue to W3C or the QUIC WG.
+    *   **Conclusion**: This is a broader QUIC issue, not specific to WebTransport. The working group agreed to punt this to the QUIC working group for broader consideration.
+
+### WebTransport over HTTP/2 (Eric Kinnear)
+
+*   **Layered Design**: Moved to a layered design, pulling in a minimal set of framing from Quick to run over a single HTTP/2 `CONNECT` stream. Martin Thompson joined as an author.
+*   **Framing and Quick Mirroring**:
+    *   **Discussion**:
+        *   Whether to exactly mirror Quick frames (e.g., `RESET_STREAM`'s `final_size`) or remove unnecessary fields.
+        *   Whether to add a length field to all frames, and its position (type-then-length vs. length-then-type).
+        *   Reusing Quick parsers vs. simple, independent parsing logic.
+    *   **Consensus**: No strong need to mirror Quick exactly. The H2 fallback transport doesn't require extreme overhead squeezing. Adding a length field (type-then-length is current draft) simplifies parsing and allows skipping unknown frame types. Reusing Quick parsers for specific types is not a primary concern due to small code size.
+*   **Capsules**:
+    *   **Discussion**: David suggested using HTTP Datagrams capsules (type + length + payload) for WebTransport frames, to leverage shared infrastructure and potential intermediary handling benefits. Alan argued that it doesn't significantly simplify parsing and registering in a global registry might not be beneficial.
+    *   **Decision**: Deferred to the MASQUE design team's ongoing discussions about HTTP Datagrams and capsule usage.
+*   **Native Streams vs. Bundled Streams**:
+    *   **Approach**: Currently, all WebTransport streams (bi-directional, uni-directional) are bundled within the single HTTP/2 `CONNECT` stream (data frames).
+    *   **Discussion**: No significant benefit was identified for splitting out WebTransport streams into native HTTP/2 streams for the H2 mapping.
+    *   **Conclusion**: Maintain the current approach of bundling streams within the `CONNECT` stream for HTTP/2.
+*   **Flow Control**:
+    *   **Model**: Proposed using four nested layers of flow control:
+        1.  HTTP/2 connection-level flow control.
+        2.  HTTP/2 `CONNECT` stream flow control (for the entire WebTransport session).
+        3.  WebTransport session-level flow control (analogous to Quick's connection flow control).
+        4.  Individual WebTransport stream flow control.
+    *   **Conclusion**: This multi-layered approach provides fine-grained control and handles pooling complexities effectively. Group found it workable.
+*   **Error Handling**:
+    *   **Approach**: Will import error handling from Quick. The `CLOSE_WEBTRANSPORT_SESSION` capsule from HTTP/3 will likely be adopted for HTTP/2 as well for session teardown, aligning consistency between H2 and H3 mappings.
+    *   **Conclusion**: Aim for similarity with HTTP/3 error handling and session closing mechanisms.
+
+### Layering and Version Independence
+
+*   **Discussion**: Explored whether WebTransport frames should be a version-independent protocol framework, with HTTP/2 and HTTP/3 drafts serving as mappings to their respective transports.
+    *   **Pros of Version Independence**: Architectural elegance, simplified intermediary handling (if frames are just forwarded), easier pooling management when bundled.
+    *   **Cons/Challenges**: Conflict with splitting out native datagrams/streams in H3. Negotiation of modes (bundled vs. native). Different performance guarantees.
+    *   **Victor's View**: WebTransport provides a fundamental model of streams and datagrams (Quick-based abstraction), and H2/H3 are implementations of that model. He wants to avoid requiring servers to implement H2 WebTransport if they only care about H3's native performance.
+    *   **Consensus**: It's acceptable for the HTTP/2 and HTTP/3 mappings to be distinct and not fully overlapping in terms of their framing/behavior. Intermediaries would be responsible for any necessary translation. The priority is to make it easier for web developers on the server side.
+
+## Decisions and Action Items
+
+*   **Go Away Mechanism (HTTP/3)**: Alan Frindell to draft a PR/proposal for a "Go Away" mechanism in WebTransport over HTTP/3.
+*   **Resource Management and Pooling (HTTP/3)**: Needs further discussion on the mailing list due to its complexity.
+*   **Request Forgery**: Punted to the QUIC working group as it is a broader issue, potentially suggesting a fetch UDP port blocklist in W3C.
+*   **Framing in HTTP/2**: No strong need to exactly mirror Quick frames. A custom framing with a length field is acceptable.
+*   **Capsule Usage**: Decision on using HTTP Datagrams capsules for WebTransport frames is deferred to the MASQUE design team.
+*   **HTTP/2 Streams**: WebTransport streams will remain bundled within the HTTP/2 `CONNECT` stream (not split into native H2 streams).
+*   **Error Handling (HTTP/2)**: Will align with HTTP/3's approach to session-level error handling/closing.
+
+## Next Steps
+
+*   Alan Frindell to prepare a PR for the "Go Away" mechanism.
+*   Continue discussion on HTTP/3 resource management and pooling on the mailing list.
+*   Await outcomes from the MASQUE design team regarding HTTP Datagrams and capsule usage for WebTransport over HTTP/2 framing.
+*   The chairs will work to resolve blocks related to the MASQUE work.
+*   Continue progress on the WebTransport drafts, incorporating decisions and further discussions.
+*   Encourage community to experiment with WebTransport (available in Chrome M97).

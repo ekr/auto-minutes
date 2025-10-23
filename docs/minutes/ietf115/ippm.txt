@@ -1,0 +1,141 @@
+**Session Date/Time:** 07 Nov 2022 09:30
+
+# ippm
+
+## Summary
+
+The ippm session covered status updates for existing working group documents, discussions on security and scope for several drafts, and a series of lightning talks on new proposals. Key discussions included the implementation of security features for one-way capacity measurement, a proposed split for the PDM V2 draft, and improvements to the responsiveness test algorithm. The working group also discussed the scope of the IOAM YANG model and the status of the PAM adoption call. Lightning talks introduced new concepts ranging from enhanced alternate marking to user device-based performance monitoring.
+
+## Key Discussion Points
+
+### Administrative
+*   The Note Well slide was reviewed.
+*   Meeting was run via MeetEcho with queuing for all participants.
+*   **Volunteers**: Note-taker (Tommy Pauly) confirmed, no Jabber scribe volunteered.
+
+### Document Status Updates
+*   `draft-ietf-ippm-ioam-conf-state` and `draft-ietf-ippm-ipv6-options` are in IESG review.
+*   `draft-ietf-ippm-explicit-flow-measurement` underwent a second Working Group Last Call (WGLC) with no pushback, expected to progress.
+
+### Adopted/Working Group Documents
+
+#### Performance Management on Link Aggregation (PM on LAG)
+*   **Motivation**: Measure performance of individual member links within a Link Aggregation Group (LAG), as existing methods run single test sessions.
+*   **Proposed Method**: Establish multiple "micro-sessions" between two LAG endpoints, associating them with corresponding member links using identifiers.
+*   **Extensions**: TWAMP and STAMP are extended with new control messages and test packet fields for micro-session IDs.
+*   **Interop Issue**: Discussion during adoption call on interop between TWAMP/STAMP formats. Conclusion: No requirement for such deployments; misconfigurations can be detected; operators can choose not to use PM on LAG. This will be described as operational considerations.
+*   **Scope Clarification**: The work's scope is for adjacent nodes (single link between aggregation points), analogous to BFD over LAG.
+*   **Next Step**: Add stateless process support for STAMP extension.
+
+#### One-Way IP Capacity Measurement Protocol
+*   **Updates**: Extensive changes to the protocol based on security directorate early review. New security operation modes, key management, firewall configuration, and IANA sections added.
+*   **Security Modes**:
+    *   Newly defined authentication mode for the control phase (all client requests/server replies).
+    *   Optional authentication mode for data phase feedback PDUs (not load PDUs).
+    *   Completely unauthenticated mode available.
+*   **DTLS Discussion**: DTLS was considered for test setup/activation but deemed not helpful for protecting critical data phase information (measurements, rate control) due to its re-transmission and ordered delivery characteristics.
+*   **Encryption Proposal**: The authors propose that if users want encryption, they should operate the protocol within an independent encrypted tunnel (e.g., IPsec, WireGuard) of their choice, rather than modifying the protocol itself. This allows users to characterize their chosen tunnel technology.
+*   **Discussion (Martin Thomson)**: Questioned why DTLS wouldn't apply, noting re-transmissions are mostly for handshakes. Expressed concern about "trying unencrypted first" to characterize tunnels, as it still exposes data.
+*   **Discussion (Tommy Pauly)**: Clarified that the proposed "fully encrypted mode" would be an additional subsection advising on running the protocol within an external tunnel, not a protocol change.
+
+#### Encrypted PDM (Performance Data Message)
+*   **Implementation**: Moving to eBPF for implementation (PDM V1 completed, PDM V2 in progress) for broader platform support. Hack demo available.
+*   **IAB Workshop**: PDM V2 proposal accepted for an IAB workshop on managing encrypted networks.
+*   **IPv6 Extension Headers (EH)**: Testing IPv6 EH deployment with CDNs/Cloud providers revealed issues (IPv6 at edge, IPv4 internally). A side meeting is planned to discuss this; fixing IPv6 EH support in CDNs is a priority.
+*   **Draft Split Proposal**: Proposing to split the current draft into two:
+    1.  The existing draft for Secondary-to-Secondary (PDM V2 encryption) which is an independent protocol.
+    2.  A new draft for Primary-to-Secondary and Primary-to-Primary (a control/registration protocol for key exchange and context).
+*   **Rationale for Split**: Addresses scalability concerns (combinatorial explosion without primary nodes), reduces document complexity (avoids a ~60-page RFC), and allows for independent implementation of S2S in small environments.
+*   **Discussion (Tommy Pauly)**: Agreed that a group consensus would be needed for a split. Suggested creating an outline or prototype of the two split documents for WG review.
+
+#### Responsiveness Test
+*   **Goal**: Measure round-trip delay when the network is actively used, not idle, by generating representative upload/download traffic.
+*   **Algorithm Flaw & Solution**:
+    *   **Flaw**: Current algorithm can terminate too early, underestimating bufferbloat by stopping when throughput stabilizes but buffers are still filling.
+    *   **Solution**: Terminate the test when *both* throughput and delay have stabilized.
+*   **Well-known URI**: Suggestion to define a `.well-known` URI for a JSON configuration file, enabling any web server to host responsiveness tests.
+*   **Home Gateway Use Case**: Interest from vendors to host test endpoints on home gateways to diagnose local bufferbloat (e.g., Wi-Fi vs. ISP).
+*   **Unencrypted Measurements**: Request to support unencrypted capacity measurements, as TLS at gigabit speeds can be challenging for low-cost home gateway hardware.
+*   **Discussion (Al Morton)**: Shared measurements showing `responsiveness` estimates of capacity can be lower than RFC 9097 IP layer capacity, suggesting TCP instabilities with multiple connections.
+*   **Discussion (Martin Thomson)**: Confirmed Wi-Fi chipsets in APs are significant sources of bufferbloat, making local testing valuable.
+*   **Discussion (Tommy Pauly)**: Suggested the `well-known` URI could be HTTPS while the high-rate test traffic is unencrypted. Noted that HTTP/2 over plain TCP is non-standard and HTTP/1.1 pipelining doesn't offer the same interleaving as HTTP/2, requiring careful consideration for unencrypted tests. Also highlighted the need for implementers to ensure their APIs create multiple TCP connections for the test.
+*   **Discussion (Chairs)**: Acknowledged mobile scenarios (e.g., train with cell handover) have not been explicitly considered, but the test's ~10-second duration mitigates some dynamic environment issues. Focus on buffer depth (configuration-driven) rather than dynamic traffic.
+
+#### IOAM Data Integrity
+*   **Status**: No changes since the last IETF, awaiting implementer feedback.
+*   **IANA**: Question on whether to annotate code points or ask for allocation.
+*   **Reason for Delay**: Previous student implementation was unreliable; a new student is now working on it as a Master's thesis project.
+
+#### IOAM YANG Data Model
+*   **Updates**: Received WGLC comments. Minor issues will be addressed. A major issue is the request to add examples (authors accept, but question usefulness without implementation).
+*   **Scope Discussion (Greg, Frank)**:
+    *   **Proposed Scope Reduction**: Align the document with RFC 9197 (core IOAM), excluding IOAM EX and IOAM Flags. Yang model to focus on *configuration only*, not export (export can use IPFIX or be IOAM-independent). Filter defined in draft to identify target flows.
+    *   **Concern (Greg)**: Excluding IOAM DX is risky, as it's important for deterministic networking and no other draft addresses its YANG model. Need discussion on IOAM DX operation.
+*   **Discussion (Frank)**: Questioned the usefulness of "made-up" examples for YANG models without an existing implementation, possibly suggesting an Experimental track. Supported scoping the document to RFC 9197.
+
+#### STAMP Extension for SR Networks (STAMP on SRPM)
+*   **Updates (rev06)**: Addressed review comments from Rick (wecheck flag, direct measurement TLV counters) and Greg (V flag, destination address TLV, return path TLV). IANA early code point allocations included. No open issues.
+*   **Context**: Work on STAMP extensions is ongoing in other working groups (Spring, MPLS).
+
+#### Performance Aware Management (PAM)
+*   **Motivation**: SLOs are key to user experience. Not always necessary to capture the full history of an SLO, but rather when it is violated. Allows for "early warning" (optimal threshold) and "critical degradation" (critical threshold).
+*   **Updates**: Adrian joined as co-author. Comments addressed.
+*   **ITF Transport Slices**: SLA composed of SLOs (measurable) and SLEs (challenging to measure). SLEs are out of scope.
+*   **Metrics**: A "ratio metric" is proposed as useful for violated/severely violated intervals.
+*   **Network Slicing**: SLOs can be applied to composite services or subsets of connectivity constructs (point-to-point, point-to-multipoint).
+*   **Open Questions**: Individual packet metrics (optional/burden)? Future work includes Yang model, IPFIX extensions, statistical SLOs, and policy definitions.
+*   **Adoption Poll Status**: Decent support, but primary detailed feedback from Benoit hasn't been fully resolved. Co-authors responded to comments, but no feedback was received from Benoit.
+
+### Lightning Talks
+
+#### Enhanced Alternate Marking
+*   **Motivation**: Address pending points from RFCs 8321/8889 (e.g., lack of additional bits in some protocols, need for increased flow ID entropy, multi-point measurement implementation).
+*   **Proposal**: Generalize alternate marking data fields for all transport protocols to introduce new metadata, flow ID extensions, and flags.
+*   **Applications**: Shorter marking periods, denser delay measurement, increased flow ID entropy, automatic backward direction setup.
+
+#### Distributed Flow Measurements (In-band in IPv6 Networks)
+*   **Problem**: Controller interaction in multi-domain scenarios for in-band network telemetry is complex and introduces latency for high SLA requirements.
+*   **Proposal**: A distributed flow performance measurement method without controller participation, where measurement results are used by routers for forwarding path selection.
+
+#### Flow Measurement in IPv6 Network (In-band Alternate Marking)
+*   **Motivation**: Enhanced capabilities and flexibility for pass flow measurement (in-band network telemetry) in IPv6 networks, driven by China Mobile's deployment experience.
+*   **Proposal**: Auto-marking options for flexible deployments, with Pacific participation of a controller, node ID, and steerable measurement periods.
+
+#### User Devices Explicit Monitoring
+*   **Proposal**: Place explicit flow measurement probes directly on user devices (smartphones, tablets, PCs).
+*   **Advantages**: Scalability, more precise measurements (removing client application delay), guaranteed bi-directional monitoring, potential to reduce network monitoring equipment via coordination, improved end-to-end metrics.
+*   **Privacy Considerations**: The device owner decides whether to monitor traffic and whether to share performance data (e.g., with ISP or national authorities).
+*   **Concern (Martin Thomson)**: Worried this could become a mandatory requirement in some networks, leading to non-optional forfeiture of privacy.
+
+#### MPLS STAMP
+*   **Proposal**: Work in the MPLS working group to extend LSP Ping functionality to bootstrap STAMP sessions (point-to-point and point-to-multipoint). This follows a similar paradigm to LSP Ping bootstrapping BFD sessions.
+
+#### Path Consistency over SRv6
+*   **Problem**: Inconsistent paths for test packets and reply packets lead to inaccurate delay and loss measurements.
+*   **Proposal**: Use a "path segment" to associate the transmission paths of test and reply packets to ensure path consistency.
+
+#### YANG Model for Alternate Marking Method
+*   **Motivation**: China Mobile's large-scale 5G backhaul and Metro networks (400,000 MTN devices) use alternate marking. A consistent YANG model is needed for performance monitoring across different domains and vendors.
+*   **Proposal**: A YANG model with global, head node, and end node objects to configure alternate marking parameters (e.g., label, FIR mode, flow ID, period, hop-by-hop status, IP/interface names).
+
+## Decisions and Action Items
+
+*   **PM on LAG**: Authors will describe operational considerations for TWAMP/STAMP interop and add stateless process support for STAMP extension.
+*   **Capacity Protocol**: The authors will describe the use of external encrypted tunnels for a "fully encrypted mode" in the draft, without modifying the protocol itself.
+*   **Encrypted PDM**: Authors will prepare an outline or prototype of the proposed split drafts (Secondary-to-Secondary vs. Primary-to-Secondary/Primary-to-Primary control) for Working Group review and consensus.
+*   **Responsiveness**: The algorithm will be updated to terminate when *both* throughput and delay stabilize. The draft will also consider how to support unencrypted measurements for home gateways and the implications for HTTP/2 vs HTTP/1.1 and TCP connections.
+*   **IOAM YANG Data Model**: Authors will reduce the scope of the document to align with RFC 9197. A discussion will be needed regarding the exclusion of IOAM DX.
+*   **STAMP on SRPM**: The chairs will consider a Working Group Last Call for this draft.
+*   **PAM**: The authors will upload a new version of the draft incorporating addressed comments and initiate a new call for adoption.
+
+## Next Steps
+
+*   **PM on LAG**: Continue refinement based on feedback and proposed next steps.
+*   **Capacity Protocol**: Seek feedback from the Security Area on the proposed approach for encryption using external tunnels.
+*   **Encrypted PDM**: Present the split draft outlines to the WG for discussion and seek consensus on the approach.
+*   **Responsiveness**: Implement the refined algorithm and address the HTTP/2 and unencrypted measurement considerations.
+*   **IOAM Data Integrity**: Await progress on the new implementation to gather feedback.
+*   **IOAM YANG Data Model**: Engage in further discussion within the WG regarding the scope, particularly the exclusion of IOAM DX.
+*   **STAMP on SRPM**: Await WG Last Call.
+*   **PAM**: Continue to resolve outstanding comments and move towards WG adoption.
+*   **Lightning Talk Proposals**: Authors are encouraged to seek feedback and collaboration on their respective mailing lists and GitHub repositories.

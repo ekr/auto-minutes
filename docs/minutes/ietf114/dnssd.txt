@@ -1,0 +1,87 @@
+**Session Date/Time:** 28 Jul 2022 21:30
+
+# dnssd
+
+## Summary
+
+The dnssd working group meeting focused on updating the status of existing working group documents, discussing individual drafts for potential adoption, and exploring the future of unicast DNS Service Discovery (DNS-SD). Key updates were provided for the SRP, Update Lease, and Advertising Proxy documents, with decisions made to initiate Working Group Last Calls for the first two. A new DNS Directorate was announced, inviting volunteers for early review of DNS-related drafts across the IETF. A substantial discussion was held on the motivation, current capabilities, requirements, deployment, and naming models for a comprehensive unicast DNS-SD solution, addressing limitations of multicast DNS.
+
+## Key Discussion Points
+
+*   **IETF Logistics and Note Well**: Standard IETF Note Well reminder, mask requirements, and appreciation for minute-takers and Jabber scribe.
+*   **DNS Directorate (Eric Vyncke)**:
+    *   An upcoming DNS Directorate will be formed to provide early review of DNS-related drafts, especially those from working groups less familiar with DNS nuances.
+    *   Motivation: Many non-DNS working group drafts (59% of drafts since April with "dns" in filename/abstract) contain DNS components, and issues are often caught too late (e.g., at IESG review).
+    *   Call for volunteers for reviewers (experts, operations, privacy, and juniors to foster talent) and two secretaries for administrative tasks. Email to be sent end of August.
+*   **Working Group Document Updates**:
+    *   **Service Registration Protocol (SRP)**:
+        *   Addressed comments from the previous WGLC (a year ago).
+        *   Major terminology changes (SRP clients -> requesters, SRP servers -> registrars) for consistency.
+        *   Correction of text describing discovery of browsing domains.
+        *   Addressed Eszko's comments on suppressing unusable records and clarifying service discovery instructions.
+    *   **Update Lease**:
+        *   Terminology changes (DNS requesters) aligned with SRP.
+        *   Reorganized and clarified server/requester behavior for initial updates and refreshes, especially when the server cannot distinguish a refresh from an initial update.
+        *   Addressed handling of the key lease interval.
+        *   Added IANA considerations to fix inconsistencies in EDNS0 option registration and refer to this document.
+    *   **Advertising Proxy**:
+        *   Substantial reorganization, dividing the document into different functions (SRP Registrar, Discovery Proxy, Full Service Resolver).
+        *   Discussed the scope of the document: whether it should cover all these related functions as a "whole system" or be split. The author (Ted) prefers a single, comprehensive draft.
+        *   Identified that the advertising proxy can act as an authoritative DNS server for stub networks and may need to be a full service resolver for the stub network.
+        *   **Reviewers volunteered**: Jonathan, Joey.
+        *   AD (Eric) suggested changing the title if the scope is broadened to cover multiple functions.
+*   **Individual Drafts for Future Adoption**:
+    *   **SRP Replication**:
+        *   Not yet a working group document; proponent (Ted) advocated for adoption.
+        *   Two implementations exist (OpenThread, Apple), but are not yet interoperable due to recent updates in the draft (e.g., server discovery changes from Upton and Jonathan).
+        *   Described as mature and an interesting mechanism.
+    *   **Time Since Received (TSR)**:
+        *   Addresses an edge case with multiple unsynchronized advertising proxies acting as SRP servers (e.g., in mesh networks).
+        *   Problem: Traditional MDNS "first come, first served" conflict resolution prevents newer, valid registrations from winning over stale data from an inaccessible proxy.
+        *   Solution: Defines a new MDNS-specific RR type (TSR) in probes to indicate registration age, enabling "freshest data wins" conflict resolution.
+        *   Described as simple but crucial for robust SRP/Advertising Proxy deployments.
+*   **Unicast DNS-SD Discussion (Ted Lemon)**:
+    *   **Motivation**: Address inefficiencies and unreliability of multicast DNS on Wi-Fi (especially with a large number of devices and mesh networks), moving towards unicast communication for service discovery.
+    *   **Current Capabilities**:
+        *   Manual unicast DNS-SD (e.g., `dig` on `meeting.ietf.org` for printers).
+        *   MDNS-based Discovery Proxies (e.g., Apple HomePod Mini/Apple TV) that cache MDNS responses and serve them via unicast.
+        *   SRP updating a DNS authoritative server, providing unicast registration capabilities.
+    *   **What it would take (Requirements)**:
+        *   Mechanism to discover the unicast DNS-SD service itself.
+        *   Mechanism to discover an SRP registrar for service registration.
+        *   Need for a Discovery Proxy to support legacy MDNS clients/services.
+        *   Need for a Full Service Resolver capable of handling local link queries.
+        *   Fallback to MDNS in case the unicast service becomes unavailable.
+    *   **Deployment Models**:
+        *   Single-link home networks.
+        *   Stub networks (e.g., Thread) integrated with the home network.
+        *   Multi-link or managed SoHo/Enterprise networks.
+        *   Service offered as part of infrastructure (e.g., router) or via MDNS discovery.
+    *   **Naming Models**:
+        *   Replicate `.local` behavior for unicast queries, meaning `.local` refers to the network link.
+        *   Assign a unique global name per link, using a "legacy browsing domain list" to iterate across available links.
+        *   Consideration: Mutually exclusive or complementary approaches? Conflict resolution benefit of global names.
+    *   **Obstacles**:
+        *   Current `null` domain behavior for legacy browsing domains vs. explicit `.local` queries.
+        *   Impact of per-link naming on device name consistency.
+    *   **Community Input**:
+        *   **Sabir (Intel)**: Highlighted upcoming Wi-Fi 7 (802.11be) multi-link device (MLD) architecture, where a device might have multiple L2 links but expose a single IP interface. This raises questions about how DNS-SD queries will target specific underlying links.
+        *   **Dave (Apple)**: Mentioned NVMe over Fabrics adopting MDNS for discovery in enterprise storage networks, pointing to another critical use case for scalable unicast solutions.
+
+## Decisions and Action Items
+
+*   **Decision**: Initiate a **second Working Group Last Call (WGLC)** for the `draft-ietf-dnssd-srp` document, lasting 2-3 weeks, to review terminology changes and other updates.
+*   **Decision**: Initiate a **Working Group Last Call (WGLC)** for the `draft-ietf-dnssd-update-lease` document, concurrent with the SRP WGLC, for 2-3 weeks.
+*   **Action Item**: Working group participants are requested to **review** the `draft-ietf-dnssd-srp` and `draft-ietf-dnssd-update-lease` drafts during their respective WGLCs.
+*   **Action Item**: Jonathan and Joey volunteered to **review** the `draft-ietf-dnssd-advertising-proxy` document.
+*   **Decision (Chairs' Intent)**: The working group chairs intend to propose `draft-ietf-dnssd-srp-replication` and `draft-ietf-dnssd-time-since-received` for **working group adoption** after the SRP and Update Lease documents have successfully completed WGLC and been sent to the IESG.
+*   **Action Item**: Eric Vyncke will send an email to the community by the **end of August** calling for volunteers for the new DNS Directorate.
+
+## Next Steps
+
+*   **Working Group**: Review and provide feedback on the SRP and Update Lease drafts during the upcoming WGLCs.
+*   **Jonathan and Joey**: Provide feedback on the Advertising Proxy draft.
+*   **Ted Lemon**: Continue discussions on the Advertising Proxy's scope, potentially considering a title change if it encompasses a broader system.
+*   **Ted Lemon, Upton, Jonathan**: Address interoperability issues in SRP Replication and potentially seek additional co-authors to broaden affiliation.
+*   **Ted Lemon & Working Group**: Further discuss the Unicast DNS-SD problem space, incorporating new considerations like Wi-Fi 7 multi-link devices and NVMe over Fabrics use cases.
+*   **Interested individuals**: Respond to Eric Vyncke's call for volunteers for the DNS Directorate.

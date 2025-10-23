@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="i2nsf.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-I2NSF-20220324-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 24 Mar 2022 12:00</p>
+<h1>i2nsf Meeting Minutes - IETF 113</h1>
+<h2>Summary</h2>
+<p>The i2nsf working group met to discuss the status of existing drafts, particularly those under IESG review and those preparing for working group last call, and to explore potential future work items for a charter update. Significant progress was reported on drafts nearing IESG approval. A new draft on remote attestation was presented, initiating discussion on its scope and relationship with existing RATS work and virtualization environments. The consistency between consumer-facing and NSF-facing interfaces was clarified, and the registration interface draft was deemed ready. A wide range of potential future work, including security automation, container support, DLT, and new protocols, was proposed, prompting a discussion on scope management and prioritization.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Status of Drafts under IESG Review</strong>:</p>
+<ul>
+<li><strong>Capability Data Model</strong>: Has sufficient ballots; requires clearing existing &quot;discuss&quot; comments.</li>
+<li><strong>NSF Facing Interface</strong>: Same situation as the Capability Data Model; sufficient ballots, &quot;discuss&quot; comments need clearing.</li>
+<li><strong>Monitoring Data Model</strong>: Has &quot;discuss&quot; comments and still needs more ballots.</li>
+<li>Paul indicated that he has addressed most &quot;discuss&quot; comments for these drafts, and expects them to move forward shortly. Roman noted that incoming SEC AD Ben's discusses would be adjudicated soon.</li>
+</ul>
+</li>
+<li>
+<p><strong>i2nsf Remote Attestation Interface Yang Data Model (draft-pan-i2nsf-remote-attestation-interface-yang)</strong>:</p>
+<ul>
+<li><strong>Rationale</strong>: Draft name changed from &quot;Trust Enhanced i2nsf&quot; for better alignment with potential i2nsf charter and to avoid ambiguity.</li>
+<li><strong>Granularity</strong>: Defined three components for remote attestation: NSFs, the basic platform carrying the NSF, and the root of trust (e.g., TPM, TE).</li>
+<li><strong>Interface</strong>: Revised based on granularity, retaining RPC and notification functions. A temporary interface for reference values was added as RATS hasn't defined one yet.</li>
+<li><strong>Relationship with RATS</strong>: i2nsf focuses on NSF attestation within the i2nsf architecture, with the security controller as a potential verifier/relying party. RATS defines the basic architecture and evidence types.</li>
+<li><strong>Necessity</strong>: Driven by security (inappropriate deployment, attacks), practicability (ASF-specific target/granularity, unified interface for varied roots of trust), and future extensions (zero trust, SASE, security automation, decentralized security intelligence sharing).</li>
+<li><strong>Current Interface</strong>: Focuses on NSF remote attestation and reference value interfaces.</li>
+<li><strong>Interface Details</strong>: Proposed three groupings: NSF, platform, and root of trust remote attestation, mapping to RPCs and notifications. References RATS-related YANG models like <code>char-attestation-procedure-yang</code>.</li>
+<li><strong>Issues for Discussion</strong>:
+<ul>
+<li><strong>Trust Model</strong>: Which components in the i2nsf architecture (NSF, security controller) require attestation?</li>
+<li><strong>Granularity</strong>: Definition of layers (root of trust -&gt; platform -&gt; service/application). Discussed challenges with vTPM in virtualization, preferring measurement of VM images loaded onto a hypervisor.</li>
+</ul>
+</li>
+<li><strong>Discussion Feedback</strong>:
+<ul>
+<li><strong>Paul</strong>: Work is important for protecting against supply chain attacks, aligns with previous i2nsf YANG models, feasible for future hackathons.</li>
+<li><strong>Wepan</strong>: Inquired about overlap with ETSI NFV's attestation for virtualization; Panlin will research. Suggested considering SASE integration in the future.</li>
+<li><strong>Roman</strong>: Clarifying questions on shimming down to TPM in virtualized environments and why existing <code>char</code> YANG models are insufficient. Panlin explained TPN's maturity issues for virtualization and <code>char</code>'s device-centric rather than NSF-centric attestation.</li>
+<li><strong>Joao</strong>: Noted no incompatibility with ETSI NFV work, suggesting i2nsf could build on ETSI's assurance levels. Agreed that <code>char</code>'s mechanisms are applicable but i2nsf needs to define claims, verification, and policies in its context, similar to TEE attestation work in TIP.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Consistency of Consumer-Facing Interface (CFI) and NSF Facing Interface (NFI) Data Models</strong>:</p>
+<ul>
+<li><strong>Paul's Update</strong>: Presented a comparison showing top-level and low-level YANG tree similarities.</li>
+<li><strong>Key Differences</strong>: CFI omits <code>default-action</code> and <code>priority</code> to keep it simple for high-level policy specification, allowing the Security Policy Translator to handle these. CFI also omits <code>allow-connection</code> duration, simplifying policy for operators.</li>
+<li><strong>Translation</strong>: Endpoint groups and threat prevention information in CFI are for translation purposes. User/device groups in CFI are translated into IP addresses by the Security Controller.</li>
+<li><strong>Conclusion</strong>: CFI and NFI YANG data models are synchronized and can be easily translated by the Security Controller. Demonstrated feasibility through hackathon projects. Deemed CFI ready for WG Last Call.</li>
+</ul>
+</li>
+<li>
+<p><strong>Registration Interface Data Model (draft-paul-i2nsf-registration-interface-yang)</strong>:</p>
+<ul>
+<li><strong>Basis</strong>: Primarily imports elements from the Capability Data Model.</li>
+<li><strong>Features</strong>: Provides NSF capability registration (by a development/management system) and querying (by security controller).</li>
+<li><strong>Content</strong>: Includes NSF capabilities (from the capability data model), performance capabilities, and access information (IP, port for NSF).</li>
+<li><strong>Conclusion</strong>: The draft is considered almost complete, with minor XML syntax updates based on the latest Capability Data Model. Deemed ready for WG Last Call.</li>
+</ul>
+</li>
+<li>
+<p><strong>Charter Update Discussion (Potential New Work Items)</strong>:</p>
+<ul>
+<li><strong>Application Interface</strong>: To enable security management automation by providing monitoring data from NSFs to an &quot;Attestation Analyzer&quot; (using ML for attack/problem detection), which feeds back to the Security Controller for policy augmentation/creation.</li>
+<li><strong>Supply Chain / Insider Attack Prevention</strong>: Incorporate remote attestation, auditing, and Distributed Ledger Technology (DLT).</li>
+<li><strong>Container Deployment</strong>: Extend architecture and YANG models to support container-based (e.g., Kubernetes) deployments.</li>
+<li><strong>New Protocols</strong>: Accommodate new transport protocols like QUIC and HTTP/3 in existing CFI/NFI/Capability models.</li>
+<li><strong>Scope Concerns</strong>:
+<ul>
+<li><strong>Roman</strong>: Expressed concern that the enumerated list of work items constitutes a &quot;very, very large&quot; scope, with each item potentially being a working group in itself (e.g., container orchestration, DLT). Noted that i2nsf has taken six and a half years to deliver its first set of drafts, urging careful prioritization.</li>
+<li><strong>Diego</strong>: Agreed on the complexity, especially for containers (Kubernetes, serverless), which may require rethinking architectural assumptions and trust models. Emphasized leveraging existing work from other groups (DLTs, attestation) rather than reinventing.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>Paul has addressed most &quot;discuss&quot; comments for the <strong>Capability Data Model</strong>, <strong>NSF Facing Interface</strong>, and <strong>Monitoring Data Model</strong> under IESG review, clearing the path for their progression.</li>
+<li>The <strong>Consumer-Facing Interface Data Model</strong> and <strong>Registration Interface Data Model</strong> are considered technically ready for Working Group Last Call.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Initiate Working Group Last Call for the <strong>Consumer-Facing Interface Data Model</strong> and <strong>Registration Interface Data Model</strong>.</li>
+<li>Continue discussion on the mailing list regarding the proposed new work items for a potential charter update. The community needs to prioritize and define a manageable scope for future work, building on existing efforts from other working groups where possible.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,48 @@
+**Session Date/Time:** 22 Mar 2022 09:00
+
+# dnsop
+
+## Summary
+
+The dnsop working group session began with administrative announcements, including the publication of two RFCs (DNSSEC IANA Considerations and DNS TCP Requirements) and an update on the SVCB/HTTPS Service Binding draft's progress through the IESG call. Chairs announced a readiness to adopt new work, having cleared a backlog of existing documents. An initial survey indicated strong interest in DNSSEC Bootstrapping and DNSSEC Automation drafts, for which a call for adoption will be initiated soon. The Area Director requested the working group to prioritize a BCP document on DNSSEC, suggesting a fast-track approach.
+
+The session featured presentations of six new drafts:
+1.  **Negative Caching of DNS Resolution Failures**: Proposing stricter requirements for resolvers to cache resolution failures.
+2.  **Glue is Not Optional**: Clarifying requirements for name server implementations regarding glue records, particularly distinguishing in-domain and sibling glue.
+3.  **DNSSEC DANE for SVCB and HTTPS RRs**: Integrating DANE with new SVCB/HTTPS records and QUIC, addressing CNAME handling and transport prefix labels.
+4.  **DNSSEC Dry Run**: Introducing a mechanism for testing DNSSEC deployments without user-visible failures, leveraging a new DS algorithm type.
+5.  **Expressing Communication Service Requirements in DNS Queries**: Suggesting a method to encode Quality of Service (QoS) requirements directly into DNS query names.
+6.  **Structured DNS Error Page**: Proposing the use of structured JSON within Extended DNS Errors (EDE) for better reporting of DNS filtering and blocking.
+
+All presented drafts are candidates for future working group adoption and will be included in an upcoming survey to gauge and prioritize working group interest.
+
+## Key Discussion Points
+
+*   **New Work Adoption Strategy**: Chairs outlined a two-phase approach for new work: an immediate call for adoption for DNSSEC Bootstrapping and DNSSEC Automation, followed by a broader survey for other drafts, including those presented in this session, to prioritize future work.
+*   **DNSSEC BCP Priority**: The Area Director, Warren Kumari, urged the working group to fast-track the development of a DNSSEC Best Current Practice (BCP) document, emphasizing its importance and aiming to avoid the administrative overhead of a separate, short-lived working group.
+*   **Multi-signer DNSSEC Automation (Ulrich W.)**: A special request highlighted the problem of requiring multiple DNSSEC signers to support identical algorithms, which hinders domain migration and deployment for smaller entities. It was noted that current RFCs requiring signatures of all algorithms in a DNSKEY set are problematic in such scenarios, necessitating adjustments to DNSSEC RFCs.
+*   **Negative Caching of DNS Resolution Failures (Dwayne W.)**: The draft proposes strengthening requirements for recursive resolvers to cache various resolution failures (timeouts, SERVFAIL, REFUSED, DNSSEC validation failures) for a minimum of 5 seconds (up to 5 minutes) to prevent excessive query retries during outages. It also recommends exponential backoff and limiting retries to twice (three queries total). Discussion centered on making exponential backoff a "MUST" requirement and the impact on large recursive operators with many backend servers.
+*   **Glue is Not Optional (Dwayne W.)**: The draft clarifies that its requirements apply to name server software, not registry operations. It proposes rephrasing "glue" to "referral glue" and suggests that sibling glue could be optional if message size constraints are hit, while in-domain glue remains required. Discussions focused on the appropriate terminology for "glue" (with a strong preference for definition in the DNS Terminology document) and the implications for registry operations.
+*   **DNSSEC DANE for SVCB and HTTPS RRs (Ben S.)**: The draft proposes integrating DANE with SVCB/HTTPS records and QUIC, treating SVCB output (target, transport, port) as input for standard DANE. It suggests simplifying DANE by having a single reference identity for validation and updating RFC 6698 transport prefixes to clarify their meaning for DTLS/QUIC. Concern was raised about the DANE CNAME handling and the implications for certificate ownership and management.
+*   **DNSSEC Dry Run (Willem T.)**: This draft introduces a new DS algorithm type to enable DNSSEC dry runs, allowing operators to test deployments and receive EDE reports without impacting end-users. Resolvers would first attempt validation with the dry-run DS; if validation fails, a report is sent, and validation is retried without the dry-run DS. Concerns included registry provisioning challenges (e.g., variable hash lengths, EPP signaling) and whether adding more complexity to resolvers is preferable over pushing EDE adoption. A "meta digest type" for DS records was suggested as an alternative to avoid polluting the DS algorithm space with specific "fake" types.
+*   **Expressing Communication Service Requirements in DNS Queries (Donald E.)**: The draft proposes encoding QoS requirements (e.g., minimum latency, maximum bandwidth) within DNS QNAMES using new RLDH labels (e.g., `qs--`). This aims to allow applications to indirectly achieve QoS without direct awareness, potentially through "semantic addresses." Discussion questioned whether SVCB records might be a more appropriate mechanism and how a DNS query could realistically influence network path QoS.
+*   **Structured DNS Error Page (Thiru C.)**: The draft suggests using an extra text field within the EDNS Extended Error (EDE) option to convey structured JSON data about DNS filtering or blocking. While initially designed for user-facing error pages, a key concern was the security implications of a resolver directing a client to an arbitrary web page. The authors clarified that error pages are optional, and machine-readable fields for user agent display are prioritized. The working group indicated a preference for truly machine-readable information, with optional user-facing components handled safely by the client.
+
+## Decisions and Action Items
+
+**Decisions:**
+*   No new work was formally adopted during this meeting. All new drafts presented will be part of an upcoming working group survey to gauge interest for adoption.
+
+**Action Items:**
+*   **Chairs**:
+    *   Initiate a call for adoption survey later this week for the "DNSSEC Bootstrapping" and "DNSSEC Automation" drafts.
+    *   Conduct another working group-wide survey in early/mid-April to gather feedback and prioritize other potential new work, including the drafts presented in this session and the AD's request for a DNSSEC BCP.
+    *   Follow up on the Area Director's request to prioritize the development of a DNSSEC BCP.
+*   **Authors of "Glue is Not Optional"**: Continue discussion on the mailing list regarding the appropriate terminology for "glue" and its definition's placement (e.g., in the DNS Terminology document).
+*   **Authors of "DNSSEC Dry Run"**: Engage in further mailing list discussion, addressing concerns related to registry provisioning (e.g., EPP extensions for signaling, hash length validation) and the overall complexity added to resolvers.
+*   **Authors of "Structured DNS Error Page"**: Refine the draft to clearly delineate mandatory machine-readable fields from optional, potentially user-facing components, and consider replacing direct page links with machine-readable contact information (e.g., mailto links).
+
+## Next Steps
+
+*   The dnsop working group will conduct surveys to prioritize and adopt new work items.
+*   Authors of the presented drafts are encouraged to continue discussions on the mailing list to address feedback and refine their proposals in anticipation of the adoption surveys.

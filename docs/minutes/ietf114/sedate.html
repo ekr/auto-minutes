@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="sedate.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-SEDATE-20220725-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 17:30</p>
+<h1>sedate</h1>
+<h2>Summary</h2>
+<p>The sedate working group met to review the progress on its draft, primarily focusing on resolving a long-standing ambiguity concerning the interpretation of the 'Z' (Zulu) suffix in RFC 3339 timestamps when combined with time zone hints. The group also received an update on the liaison with ISO TC154. A key decision was made to clarify the <code>Z</code> semantics within the sedate draft to align with widespread implementation practices, rather than a strict RFC 3339 interpretation, and to include comprehensive explanatory text.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative</strong>: The session began with standard IETF notewell, participation guidelines for in-person and remote attendees, mask mandate reminders, and confirmation of Zulip for notes. The agenda was quickly approved without objection.</li>
+<li><strong>Draft Progress (Carsten Bormann)</strong>:
+<ul>
+<li><strong>Version 4</strong>: Introduced offset time zone syntax, allowing hints with both time zone names and numeric offsets.</li>
+<li><strong>Version 5</strong>: Added a &quot;critical flag&quot; to identify non-hint information, included an example for extending the format (using CLDR calendar format), and proposed &quot;Internet Extended Date Type Format&quot; as the document name.</li>
+<li>The draft is considered largely complete, pending editorial adjustments to ABNF and clarity on the calendar format.</li>
+</ul>
+</li>
+<li><strong>Issue 17: Time Zone Conflict Resolution</strong>:
+<ul>
+<li>This &quot;elephant in the room&quot; addresses conflicts between the UTC-referenced timestamp and a time zone hint (e.g., <code>Europe/Paris</code>).</li>
+<li>The group agreed that the timestamp's semantic information (UTC reference) is always relevant, and the purpose of the draft is to identify such conflicts and enable recipients to resolve them (e.g., by prompting a user).</li>
+</ul>
+</li>
+<li><strong>RFC 3339 <code>Z</code> Semantics and Implementation Deviation</strong>:
+<ul>
+<li><strong>Problem</strong>: RFC 3339 defines <code>Z</code> (Zulu) as a synonym for <code>+00:00</code>, meaning a known UTC offset. However, it also defines <code>-00:00</code> for an unknown offset to local time. ISO 8601, which 3339 profiles, does not seem to provide for <code>-00:00</code>.</li>
+<li><strong>Real-world Implementations</strong>: A survey by Justin Grant (pull request 19) showed that many platform libraries (e.g., JavaScript Temporal project) interpret <code>Z</code> as meaning &quot;no time zone offset implied&quot; (similar to RFC 3339's <code>-00:00</code>), while <code>+00:00</code> is used for a known offset. This is seen as a &quot;willful deviation&quot; but reflects a natural choice for compatibility and brevity.</li>
+<li><strong>Impact</strong>: This deviation increases confusion when combining timestamps with time zone hints, as the implicit meaning of <code>Z</code> varies.</li>
+<li><strong>Proposal</strong>: The sedate draft should define <code>Z</code> as a &quot;null value,&quot; implying the exact offset was unknown, and defer to the suffix (time zone hint) for local time interpretation. <code>+00:00</code> would be used for explicitly defining a UTC offset.</li>
+<li><strong>Backward Compatibility</strong>: Discussion ensued on whether this constitutes &quot;demolishing&quot; RFC 3339. The general consensus, supported by the Area Director, was that it's a clarification of previously ambiguous or poorly defined behavior in the context of extended time zones, reflecting 20 years of implementation experience, rather than a breaking change. It aims to make standards compatible again.</li>
+<li><strong>Need for Clarity</strong>: Participants stressed the need for comprehensive examples, clear explanatory text, and historical context within the sedate document to justify this approach and guide implementers.</li>
+</ul>
+</li>
+<li><strong>Liaison Update (Mike Ksar)</strong>:
+<ul>
+<li>ISO TC154 approved the liaison in April 2022.</li>
+<li>TC154 has had meetings, some focused on vocabulary (ISO 34000), others on 8601 work.</li>
+<li>A notable complication arose regarding &quot;2400&quot; as a deadline in German legal contracts, an outlier to the typical non-inclusive end-of-period definitions in 8601.</li>
+<li><strong>Document Access Issues</strong>: Mike is still struggling to obtain a working copy of the ISO 8601 document due to ISO's paywall model, hindering his ability to assess potential syntax clashes with sedate's proposed extensions (e.g., using <code>[</code>).</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: Within the <code>sedate</code> draft, the interpretation of <code>Z</code> (Zulu) in timestamps will be clarified to signify an unknown or unspecified time zone offset. When <code>Z</code> is present, the time zone hint (suffix) provided in the extended format will be authoritative for local time interpretation, while the instant itself remains UTC-referenced. This approach aims to align the specification with widespread real-world implementation practices.</li>
+<li><strong>Action Item (Editor - Carsten Bormann)</strong>: Create a pull request to incorporate the following into the draft:
+<ul>
+<li>A section that updates the interpretation of RFC 3339's <code>Z</code> semantics, explicitly stating that it aligns with common implementation practice (treating <code>Z</code> more like an &quot;unknown offset&quot; rather than strictly <code>+00:00</code>).</li>
+<li>Guidance that using <code>-00:00</code> may lead to less interoperability.</li>
+<li>Clear examples and interpretive text demonstrating how conflicts between <code>Z</code> and time zone hints are resolved (i.e., the hint takes precedence for local time display).</li>
+<li>Contextual information and historical background explaining the deviation from a strict RFC 3339 interpretation and the justification for this clarification.</li>
+<li>Address <code>must</code>/<code>should</code>/<code>may</code> for various options.</li>
+</ul>
+</li>
+<li><strong>Action Item (Liaison - Mike Ksar)</strong>: Continue efforts to obtain the working documents from ISO TC154.</li>
+<li><strong>Action Item (Chair)</strong>: Reach out to the IAB's liaison coordinator to assist Mike Ksar in obtaining ISO working documents.</li>
+<li><strong>Action Item (Working Group)</strong>: Actively review the updated draft version once published, focusing on the clarity of <code>Z</code> semantics and conflict resolution.</li>
+<li><strong>Decision</strong>: An interim meeting <em>may</em> be considered to accelerate progress if deemed necessary after the editorial work, otherwise, asynchronous work via the mailing list will continue.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The editor (Carsten Bormann) will prepare the next version of the draft incorporating the decisions on <code>Z</code> semantics, examples, and explanatory text.</li>
+<li>Working group members are encouraged to conduct thorough reviews of the upcoming draft, especially regarding the new text on <code>Z</code> interpretation.</li>
+<li>The liaison (Mike Ksar) will continue efforts to engage with ISO TC154 to acquire their working documents and seek a commitment that ISO will not use square bracket characters (<code>[</code>, <code>]</code>) in their future 8601 formats, to prevent syntactic clashes with <code>sedate</code> extensions.</li>
+<li>Further discussions on the precise normative language (<code>must</code>, <code>should</code>, <code>may</code>) will continue on the mailing list.</li>
+<li>A decision on scheduling an interim meeting will be made once the editorial changes are nearing completion (estimated within a couple of weeks).</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,51 @@
+**Session Date/Time:** 12 Nov 2021 14:30
+
+# asdf
+
+## Summary
+
+The asdf working group met at IETF 112 to discuss the status of the SDF specification, with a focus on preparing it for Working Group Last Call (WGLC). Key discussions revolved around resolving outstanding technical issues and pull requests, administrative tasks for WGLC, and considering the timelines for publication. The group also explored potential new work items, including mechanisms for protocol mappings, instance definitions, and relationships between models, acknowledging that these might require extensions beyond the current core specification or a re-charter.
+
+## Key Discussion Points
+
+*   **Working Group Status:** The `asdf` working group was chartered a little over a year ago, has held multiple virtual interims and hackathons, and the SDF specification has reached "implementation draft status."
+*   **SDF Specification Readiness for WGLC:**
+    *   **Document Shepherd:** Hannes Tschofenig has been proposed and has agreed to serve as the document shepherd.
+    *   **Pull Request 45 (Action/Event Affordances):** Discussion on how to best represent multiple parameters for action inputs and outputs. The current single data type definition is sometimes unwieldy. PR 45 suggests making the object for parameters implicit. There was no immediate consensus on the necessity or specific approach, and further review of the issue was requested.
+    *   **Multiple Namespaces in a Single Spec:** The current SDF structure directs all spec-defined names into a single default namespace. The idea of allowing a single specification to define terms in multiple namespaces was discussed. While it could offer flexibility for factoring out common data types, it complicates JSON pointer usage. The consensus was to defer this feature for now, unless a strong objection is raised from the original proponent (Ari).
+    *   **SDF Choice Factoring:** Acknowledged limitation in factoring out common properties when using `sdf_choice`, which can make tools struggle with resolution steps. This is considered "not beautiful but not really killing us."
+    *   **Editorial & Tooling Tasks:** Identified remaining tasks including verifying CDDL grammar, ensuring JSON examples parse, adding automated checks, and collecting more editorial reviews from new readers. Tooling work is also needed to support co-occurrence constraints in CDDL-to-JSON Schema translation.
+    *   **Future Work Considerations (Non-Blocking for WGLC):**
+        *   **Version Field:** Clarifying the definition and usage of the `version` field in the `info` block, possibly aligning with RFC 3339/ISO 8601 for lexicographical ordering.
+        *   **Metadata Integration:** Discussed combining information from multiple SDF files and harmonizing metadata (e.g., `copyright`, `license`) with similar efforts in other working groups (e.g., `opsawg`'s work on mud files).
+        *   **Source Information ("Breadcrumbs"):** The need for structured ways to retain information about the origin of specification parts when combining multiple sources, beyond just comments.
+        *   **Spec Guidelines/Invariants:** Suggestion to document internal guidelines and invariants (e.g., `sdf_xxx` vs. `xxx` terminology, alternation of user/SDF-defined names) for future evolution.
+*   **New Work Items (Protocol Mappings, Instances, and Relationships):**
+    *   **Protocol Mappings:** Proposed a mechanism for "mapping files" to add ecosystem-specific qualities (e.g., IPSO object/resource IDs) to a harmonized SDF model without cluttering the core SDF specification. This would involve a slim base model plus mapping files to generate a "fat" model. This approach appears workable and non-blocking for the current SDF spec, though the handling of the "quality space" needs careful consideration.
+    *   **Instances and Relationships:** Two perspectives were presented (Ari's via Carsten, and Michael Richardson's).
+        *   **Relationships:** The need to describe relationships between concepts and instances (e.g., a heater linked to a boiler, a light switch controlling a light). These links would have defined relations, cardinality, and target type constraints. LWM2M object links were cited as a use case.
+        *   **Instances:** SDF defines classes, but there's a need for "instance definitions" (like a Web of Things Thing Description, which describes a specific thing without its current state). This could resemble the mapping file approach, adding specific qualities and identifiers to a class definition.
+        *   **Layered Constraints (Michael Richardson):** Viewed instances as progressively layered constraints on definitions, moving towards a network-addressable entity only when protocol bindings are applied. This involves building an "application graph" of reusable, related objects.
+        *   **`sdf_ref` Discussion:** A suggestion was made to reconsider the naming of `sdf_ref` as it implies wholesale expansion. If a reference mechanism for semantic links without expansion is needed, a new term or renaming `sdf_ref` to `sdf_expand` might be appropriate. The window for such a change is closing with SDF 1.2.
+    *   **Protocol Binding Extensions:** Experimentation with using WoT Protocol Binding vocabulary as an SDF extension (annotation technique) to generate Thing Descriptions showed a good workflow.
+    *   **Consensus:** There's a shared understanding and a closely aligned direction for these new work items, with WoT Thing Descriptions serving as a useful benchmark.
+
+*   **Milestone Review:** The SDF specification is slightly delayed from its September target but is on track. The additional work identified (mappings, relationships, instances) may necessitate simple extensions or, if more complicated, a re-charter of the working group.
+
+## Decisions and Action Items
+
+*   **Decision:** Hannes Tschofenig is confirmed as the document shepherd for the SDF specification.
+*   **Action Item:** The working group members are requested to review Pull Request 45 (Action/Event affordances) and the issue regarding multiple namespaces to provide further input offline.
+*   **Decision:** The proposal to allow a single SDF specification to define terms in multiple namespaces is dropped for now, unless a strong objection is raised.
+*   **Action Item:** Community members are encouraged to provide editorial reviews of the SDF draft to ensure clarity and readability.
+*   **Action Item:** Review the `opsawg` draft on JSON metadata for `mud` files to ensure cultural and potential literal compatibility for SDF metadata.
+*   **Decision:** The working group will target a WGLC for the SDF specification by mid-January. If substantive changes are made, the spec will be labeled SDF 1.2; otherwise, it will remain SDF 1.1.
+*   **Action Item:** Michael Richardson will send out a Doodle poll to schedule virtual interims for December, January, and February. The plan is to have a December meeting (if SDF 1.2), and a February meeting to address WGLC comments.
+*   **Action Item:** Further discussion is needed on the naming convention of `sdf_ref` (e.g., considering `sdf_expand` for expansion, and a different term for non-expanding semantic links). This should be a key agenda item for an upcoming interim.
+
+## Next Steps
+
+*   **Virtual Interims:** Schedule and conduct virtual interims to address remaining technical issues, progress on the `sdf_ref` naming discussion, and prepare for WGLC.
+*   **WGLC Preparation:** Continue resolving outstanding issues and addressing editorial tasks to ready the SDF specification for WGLC by mid-January.
+*   **Explore New Work:** Further explore the proposed mechanisms for protocol mappings, instance definitions, and relationships between models, potentially leading to extensions or the consideration of a working group re-charter.
+*   **Review `opsawg` Draft:** Incorporate feedback from the `opsawg` metadata draft review into SDF's metadata structure where appropriate.

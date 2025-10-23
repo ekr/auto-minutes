@@ -1,0 +1,69 @@
+**Session Date/Time:** 05 Nov 2024 13:00
+
+# lamps
+
+## Summary
+
+The LAMPS working group meeting covered several important topics, including the status of existing RFCs and drafts, header protection concerns, and updates on key usage, stateful hash-based signatures, ML Chem certificates, MLDSA certificates, SLH DSA, CSR attestation, and composite signatures/kems.  Significant discussion focused on the inclusion of pre-hash functionality in various signature schemes and its implications for security and interoperability.
+
+## Key Discussion Points
+
+*   **Header Protection:** Discussion revolved around from-spoofing risks associated with header protection and the proposed mitigation strategy of rendering the outer "from" header if no valid signature exists and the inner and outer "from" addresses differ.  There was disagreement amongst the authors regarding this approach. The possible implications of preferring the MTA CC headers were discussed.
+*   **Stateful Hash-Based Signatures:**  Updates were provided on the expert review process and terminology surrounding HTTP usage, especially in negative CMP response messages. Different interpretations of HTTP status codes (transport vs. application errors) were debated.
+*   **ML Chem Certificates:**  Discussion included updates on incorporating Mystoids, refactoring the draft, adding examples, and using 64-bit seeds. The inclusion of specific extensions in the certificate example was considered. The SHA1 hashes in SKI and AKI were flagged, and it was proposed to avoid them, suggesting using shake256 instead.
+*   **MLDSA Certificates:** The draft was converted to markdown, aligned with the SLH DSA draft, and refactored to provide more examples. Extensive discussion focused on the inclusion of pre-hash functionality, with strong arguments against its inclusion due to NSA compliance and the inherent design of MLDSA.
+*   **SLH DSA:** Discussion focused on prehash, its implications with the security concerns around malicious picked random values. Certificate generation concerns were brought up.
+*   **CSR Attestation:** Progress was reported on the draft, including updates on the example code and back-and-forth interaction with the TCG (Trusted Computing Group). One open issue is the longstanding question about the hint.
+*   **CSR Freshness:** Discussion involved Composite Devices, and composite Layers. Alignments with CSR attestation for different nonces were mentioned.
+*   **Composite Signatures/Kems:** Discussion on the use of context with existing algorithms, as part of the standardization of MLDSA and ML Chem.
+
+## Decisions and Action Items
+
+*   **HTTP Status Codes:** Sean Turner to investigate RFC 9205 Section 4.6 for guidance on using HTTP status codes to indicate transport vs. application errors.
+*   **ML Chem Certificates:** Provide cert examples for examination.
+*   **MLDSA Certificates:** Agreed to remove pre-hash for MLDSA due to a variety of reasons.
+*   **SLH DSA:** Decide whether prehash for SLHDSA should be allowed, and decide on which hash function to use.
+*   **CSR Attestation:** Decide what the semantics for the hint will be as an extension point.
+*   **SLH DSA:** Add text that indicates a transit from full CRLs to sharded CRLs is part of the PQ transition. A PR for the text is requested.
+*   **Composite Signatures/Kems:** Decide whether or not to use content in composite signatures/kems. Should it be an empty or defensible option, based on the feedback from the open GitHub issues.
+
+## Next Steps
+
+*   Address remaining GitHub issues for CSR Attestation.
+*   Post new versions of SLH DSA, MLDSA and MLChem, incorporating decisions made during the meeting.
+*   Resolve the open questions regarding content in composite signatures and kems.
+*   Continue work on the example code in CSR Attestation.
+*   A decision needs to be reached concerning the definition of hints.
+
+
+---
+
+**Session Date/Time:** 06 Nov 2024 15:00
+
+# lamps
+
+## Summary
+This LAMPS working group meeting covered composite signatures, message level crypto mechanisms (ML-CHEM), CMS updates, and a security vulnerability in CMS related to signed attributes. The discussion included considerations for FIPS compliance, API design, and key management. A key takeaway was the decision to move forward with seeds for key representation. An interim meeting was scheduled to address remaining agenda items.
+
+## Key Discussion Points
+*   **Composite Signatures:**  Discussions revolved around the inclusion of context in the signature API, balancing alignment with FIPS 204 and improving future security. The length and composition of domain separators were also debated to prevent signature stripping attacks.
+*   **ML-CHEM:** Addressed alignment with NIST and other working groups (X-Wing). Focus on KDF choices and potential FIPS compliance issues with HKDF. The group debated whether to offer every option with both SHA2 and SHA3, or to make an opinionated choice depending on the security level. A discussion of CNSA 2.0 and the possibility of needing something stronger despite the shared secret being 32 bytes came up.
+*   **Key Management:** Decided to use seeds (option 2) as the standard private key format.
+*   **CMC:** A review of updates including direct pop.
+*   **CMS:** Discussion of draft revisions for MLDSA and ML-CHEM in CMS, including digest algorithms and KDF options.
+*   **Security Vulnerability in CMS:** A presentation and discussion of an existential unforgeability (EUF) attack in CMS related to the optional use of signed attributes.  A potential solution involves adding a "signing context" attribute to the CMS structure.
+
+## Decisions and Action Items
+*   **Composite Signatures:**
+    *   Falco to create a GitHub issue to discuss prepending a longer constant string to the M' prime for domain separation.
+    *   The group agreed the authors should rewrite the slide on the "pre-hash" API to reflect current thinking.
+*   **ML-CHEM:**
+    *   John Mattsson to post to the mailing list to solicit feedback on KDF choices and FIPS compliance.
+    *   Authors to include ED448 after clarification from Erickson.
+    *   Authors to amend their amendment to re-include ED448
+*   **Key Management:** The group agreed to use seeds (option 2) for representing private keys.
+*   **CMC:** Implementer to include content encryption algorithm.
+
+## Next Steps
+*   Schedule an interim meeting to address remaining agenda items, including EUF CMA attack presentation.
+*   John Gray and Sean to discuss and collaborate on CMP updates.

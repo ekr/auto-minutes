@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ppm.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-PPM-20220325-1130">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Mar 2022 11:30</p>
+<h1>ppm</h1>
+<h2>Summary</h2>
+<p>This was the inaugural meeting of the Privacy Preserving Measurement (PPM) Working Group. The session provided an in-depth introduction to the motivations and technical foundations of privacy-preserving measurement. The core <code>draft-schwartz-priv-ppm</code> (referred to as <code>priv-ppm</code> throughout the meeting) was presented, covering its architecture, open challenges in its upload and collect flows, and an &quot;interoperability target&quot; based on recent implementation experience. An alternative protocol, &quot;Star&quot;, focusing on heavy hitters with different trust assumptions, was also introduced. The session concluded with a discussion on the readiness of the <code>priv-ppm</code> draft for working group adoption, with a consensus to proceed with a call for adoption on the mailing list.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Introduction to Privacy-Preserving Measurement (PPM) (Eric Rescorla)</strong></p>
+<ul>
+<li><strong>Motivation</strong>: Desirability of learning aggregate information about people (e.g., demographics, product usage, web compatibility issues) for public research, commercial development, and operational telemetry.</li>
+<li><strong>Privacy Tension</strong>: This information is often sensitive. Even seemingly less sensitive, high-dimensionality data can be highly revealing when combined (e.g., Target pregnancy prediction, Netflix dataset deanonymization).</li>
+<li><strong>Goal</strong>: Measure <em>aggregates</em> (distributions, relationships, heavy hitters), not individual values. The ability to slice data (e.g., income by geography) is crucial, but individual values are not needed for this.</li>
+<li><strong>Naive Anonymization (Proxies)</strong>: Stripping identifiers client-side and using connection-level or application-level proxies can boost privacy for semi-sensitive or freeform data.</li>
+<li><strong>Limitations of Proxies</strong>: Inadequate for high-dimensionality data (where combining individually low-sensitivity data can identify users), subgroups, correlation/regression analysis, or efficiently finding heavy hitters.</li>
+<li><strong>Multi-Party Computation (MPC)</strong>: Cryptographic solution where clients split data shares between two non-colluding servers. Servers individually aggregate encrypted shares, then combine aggregate shares to reveal the final aggregate without either server seeing individual plaintext data.
+<ul>
+<li><strong>Trust Model</strong>: Clients require non-collusion between servers. Collectors require correct protocol execution (no server can distort results).</li>
+<li><strong>Prio Protocol</strong>: For simple numeric aggregates (mean, product, variance, etc.). Uses zero-knowledge proofs to validate client submissions without revealing values. Scales poorly for sparse categorical data (requires reporting all categories).</li>
+<li><strong>Poplar (formerly &quot;hits&quot;)</strong>: For heavy hitters/common strings. Addresses scaling issues by using a binary tree structure to find popular strings without revealing low-cardinality ones.</li>
+<li><strong>Multi-Query</strong>: Allows collectors to slice data based on demographic or other non-sensitive criteria included unencrypted with the submission. Requires defenses like minimum batch size, anti-replay, and differential privacy to prevent individual data deduction.</li>
+</ul>
+</li>
+<li><strong><code>draft-schwartz-priv-ppm</code> (<code>priv-ppm</code>)</strong>: A generic modular protocol framework for MPC-flavored schemes, initially implementing Prio and Poplar. Designed for web service infrastructure.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>priv-ppm</code> Upload Flow Discussion (Chris Patton)</strong></p>
+<ul>
+<li><strong>PPM Architecture</strong>: Composed of three sub-protocols: Upload (client to aggregator), Aggregate (aggregator to aggregator), and Collect (collector to aggregator). The Leader and Helper are both aggregators; the Leader orchestrates.</li>
+<li><strong>Current Draft (<code>draft-ppm-priv-01</code>)</strong>: Clients upload both encrypted input shares to the <em>Leader</em> aggregator only. The Leader then forwards the Helper's share to the Helper.</li>
+<li><strong>Alternative Proposed</strong>: Clients send one share directly to each aggregator (Leader and Helper) – &quot;split upload model.&quot; This is seen as more natural and deployed in some prior Prio iterations.</li>
+<li><strong>Pros of Leader Upload</strong>:
+<ul>
+<li>Cheaper for Helper aggregator (less bandwidth, not fully exposed as a web service).</li>
+<li>Leader can throttle traffic.</li>
+<li>Upload flow less prone to failure (single HTTP request).</li>
+</ul>
+</li>
+<li><strong>Cons of Leader Upload</strong>:
+<ul>
+<li>Higher bandwidth in the Aggregation flow (Leader to Helper), which is costly (cloud egress). This is especially problematic for Poplar due to larger input shares and multiple aggregation runs.</li>
+</ul>
+</li>
+<li><strong>Open Issue</strong>: Should the working group stick with the Leader Upload model and mitigate bandwidth issues, or adopt the Split Upload model (potentially with an &quot;ingester&quot; coordinating shares)?</li>
+</ul>
+</li>
+<li>
+<p><strong><code>priv-ppm</code> Collect Flow Discussion (Chris Wood)</strong></p>
+<ul>
+<li><strong>Collect Flow</strong>: Collector queries the Leader for aggregate shares, which combines them for the final result.</li>
+<li><strong>Privacy Requirement</strong>: Aggregate output must be based on at least <code>min_batch_size</code> reports.</li>
+<li><strong>Correctness Requirement</strong>: Both aggregators must include the same set of reports in the aggregate.</li>
+<li><strong>Current Problem</strong>: Collect requests are validated in isolation (aligned with time window boundaries, <code>min_batch_size</code> met). A malicious collector can issue multiple, overlapping queries and compute set differences to deduce individual reports, violating privacy.</li>
+<li><strong>Desired Flexibility</strong>: Allow querying not just by time, but also by &quot;space&quot; (e.g., user agent string, geographic region) to drill down into specific issues. This metadata would need to be visible to aggregators.</li>
+<li><strong>Revised Privacy Goal</strong>: Any <em>sequence</em> of collect requests must not allow deduction of an aggregate based on fewer than <code>min_batch_size</code> reports.</li>
+<li><strong>Open Issue</strong>: How to augment the protocol to prevent the set difference attack and how to incorporate &quot;space&quot; dimensions into collect requests, while defining what metadata becomes visible to aggregators.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>priv-ppm</code> Draft Status and Interoperability Target (Tim Cappalli)</strong></p>
+<ul>
+<li><code>draft-ppm-priv-01</code> is considered almost fully implementable, supporting client submission, proof evaluation, and aggregate computation, satisfying the working group charter.</li>
+<li><strong>Interoperability Target</strong>: Efforts by ISRG and Cloudflare to implement <code>draft-ppm-priv-01</code> to identify and resolve practical implementation and operational challenges.</li>
+<li><strong>Key Changes in Interop Target (relative to <code>draft-ppm-priv-01</code>)</strong>:
+<ul>
+<li><strong>Aggregate Phase Detail</strong>: More specific guidance on detecting/handling aggregator disagreements and updated VDAF message types.</li>
+<li><strong>Helper State Management</strong>: Eliminated the &quot;helper state blob&quot; that the Leader stored. Instead, Helpers store their <em>own</em> intermediate state associated with an <code>aggregation_job_id</code> (not secret). This allows for parallelization and avoids issues with transmitting encrypted state.</li>
+<li><strong>Replay Protection</strong>: Replaced the &quot;highest nonce seen&quot; with storing <em>all</em> nonces seen for a retention period. This prevents replay attacks even with multiple parallel helper instances.</li>
+<li><strong>Recovery from Failures</strong>: To detect inconsistencies (e.g., one aggregator dropping shares), aggregate shares will include a report count and an XOR checksum of report nonces. This helps identify &quot;random garbage&quot; results.</li>
+</ul>
+</li>
+<li><strong>Open Questions for the Working Group</strong>:
+<ul>
+<li>Authentication mechanisms for protocol messages vs. transport security requirements.</li>
+<li>Negotiation and rotation of shared secret parameters between aggregators.</li>
+<li>Lifecycle of reports/state: When can old data be discarded? Does an explicit &quot;commit phase&quot; for preparation make sense?</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Star Protocol for Heavy Hitters (Alex Davidson)</strong></p>
+<ul>
+<li><strong>Star's Goal</strong>: An alternative heavy hitter protocol providing &quot;canned anonymity&quot; for clients to provide arbitrary data. When <code>k</code> reports contain the same data point, the aggregation server can reveal it.</li>
+<li><strong>Motivation</strong>: Poplar (one of the VDAFs in <code>priv-ppm</code>) is expensive, and multi-party aggregation can be complex to deploy. Star aims for a single aggregation server approach, using simpler cryptography.</li>
+<li><strong>Three Phases</strong>:
+<ol>
+<li><strong>Randomness</strong>: Clients non-interactively establish secret shares of a common random value, either locally (high entropy needed) or remotely via an Oblivious Pseudorandom Function (OPRF) server.</li>
+<li><strong>Measurement</strong>: Clients encrypt their data (with auxiliary info) and derive an encryption key from the randomness. They secret-share this randomness and send messages to the aggregation server.</li>
+<li><strong>Aggregation</strong>: Server groups messages by deterministic tags (derived from measurement) and, if <code>k</code> shares are present, recovers the measurement.</li>
+</ol>
+</li>
+<li><strong>Security Model</strong>: Requires non-collusion between the randomness server and the aggregation server. Messages encoding the same measurement are leaked (via deterministic tags) even if the threshold <code>k</code> isn't met.</li>
+<li><strong>Civil Attack Mitigation</strong>: OPRF use for randomness generation shortens the attack window for aggregation servers trying dictionary attacks.</li>
+<li><strong>Comparison to Poplar</strong>:
+<ul>
+<li>Star allows arbitrary auxiliary information.</li>
+<li>Star leaks subsets of clients sharing the same measurement (via tags) even below threshold.</li>
+<li>Star reveals only the full heavy-hitting string, not prefixes.</li>
+<li>Star requires only a <em>single</em> aggregation server during the aggregation phase, reducing costs and bandwidth.</li>
+</ul>
+</li>
+<li><strong>Fit with PPM Framework</strong>: Star envisions the &quot;Leader&quot; and &quot;Collector&quot; as a single entity, with no &quot;Helpers&quot;. Clients would send reports via an anonymizing proxy to this single entity.</li>
+<li><strong>Open Questions</strong>: Is the working group interested in Star as an alternative protocol specification? Could it fit within the PPM framework (e.g., as a different VDAF, or an entirely separate protocol)?</li>
+</ul>
+</li>
+<li>
+<p><strong>Discussion on Draft Adoption</strong></p>
+<ul>
+<li><strong><code>priv-ppm</code> Draft Readiness</strong>: Several participants, including the chairs and authors, expressed that <code>draft-ppm-priv-01</code> is ready for working group adoption.</li>
+<li><strong>Star vs. <code>priv-ppm</code></strong>: It was clarified that <code>priv-ppm</code> is a framework for VDAFs like Prio and Poplar. Star is likely a <em>different protocol</em> and not easily &quot;crammed&quot; into <code>priv-ppm</code> as a VDAF, but they are complementary, not mutually exclusive. The working group could adopt both sequentially.</li>
+<li><strong>General Sentiment</strong>: Despite some remaining technical questions and feeling &quot;more confused&quot; due to the depth of topics, there was strong support for moving forward with <code>priv-ppm</code> as a starting point that fits the charter.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: The working group will conduct a call for adoption for <code>draft-schwartz-priv-ppm</code> on the mailing list.</li>
+<li><strong>Action Item</strong>: Working Group Chairs to initiate the call for adoption (WGLC) for <code>draft-schwartz-priv-ppm</code> on the mailing list.</li>
+<li><strong>Action Item</strong>: Continue technical discussions on the <code>priv-ppm</code> draft's upload flow (Leader vs. Split upload), collect flow challenges (set difference attack, querying by &quot;space&quot;), authentication, shared secret management, and report lifecycle via the mailing list.</li>
+<li><strong>Action Item</strong>: Authors of the Star protocol are encouraged to engage with the working group on the mailing list to further discuss its potential fit, independent adoption, or relationship with the <code>priv-ppm</code> framework.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Monitor and participate in the <code>priv-ppm</code> draft adoption discussion on the mailing list.</li>
+<li>Continue in-depth technical discussions on the open issues and proposed changes for <code>priv-ppm</code>.</li>
+<li>Explore the Star protocol further and its potential role within the PPM working group scope.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

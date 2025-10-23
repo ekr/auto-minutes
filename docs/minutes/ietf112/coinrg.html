@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="coinrg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-COINRG-20211111-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 12:00</p>
+<h1>coinrg</h1>
+<h2>Summary</h2>
+<p>The Computing in the Network Research Group (coinrg) met to discuss ongoing research and draft updates. The session featured presentations on architectural proposals for an extensible internet, in-network aggregation for machine learning, information-centric data flow for distributed computing, and an operating system vision for a distributed internet. Updates were also provided on the coinrg Use Cases, Transport Protocol Issues, and Enhancing Security and Privacy drafts, highlighting recent developments and future work. Discussions focused on the technical implications, challenges, and potential solutions for integrating computation deeply within the network.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Chairs' Opening &amp; Logistics:</strong></p>
+<ul>
+<li>Jose M. &amp; Eve S. welcomed attendees, emphasizing IRTF's research focus over standardization.</li>
+<li>Noted recording, IPR disclosures, and Code of Conduct.</li>
+<li>Audio issues were reported and addressed early in the session.</li>
+<li>Agenda was packed with four research papers and three draft updates.</li>
+</ul>
+</li>
+<li>
+<p><strong>&quot;The Extensible Internet&quot; by Scott Shenker (UC Berkeley):</strong></p>
+<ul>
+<li><strong>Problem Statement:</strong> Decades of architectural research have had no discernible impact on the public internet, leading to stagnation. Hyperscalers build private IP networks with extensive in-network services (caching, load balancing), improving latency and reliability, but fragmenting the internet. The core issue is IP Layer 3's dual role (L2 interconnect and host service model) which prevents change due as it's ubiquitous, hardware-baked, and must support all application requirements.</li>
+<li><strong>Proposal (Extensible Internet - EI):</strong> Introduce a new &quot;Service Layer&quot; (L3.5) above IP, leaving IP unchanged. L3.5 offers new in-network services to hosts and decouples L3's two roles.</li>
+<li><strong>Architecture:</strong> L3.5 is implemented in &quot;Service Nodes&quot; (SNs) – racks of servers at the network edge, sparsely deployed. Communication tunnels over IP. Clients signal desired services using the tunneling protocol.</li>
+<li><strong>Services:</strong> All services are in software (open-source code), running in a standardized execution environment on SNs. This is not general computation, but limited packet forwarding, payload processing, and simple functions (e.g., caching, multicast, DDoS prevention, scalable attestation, ICN support). A governance process (e.g., IETF) decides public services, which are run on all service nodes.</li>
+<li><strong>Why it might succeed:</strong> Backwards compatibility (IP remains), utilizes existing edge computing/PoPs, industry &quot;fear&quot; of the internet becoming a last-mile provider, and the approach is proven by large private networks.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li><strong>Layering with Transport Protocols:</strong> Questions arose on whether transport connections run end-to-end or are terminated at SNs, and the implications for encryption. Scott suggested flexibility for endpoints to expose parts of data to SNs for services like caching while keeping other parts private.</li>
+<li><strong>Public Services Mandate:</strong> The requirement for SNs to implement <em>all</em> public services was questioned as a potential barrier to entry. Scott emphasized uniformity is critical for application reliability, and given it's software, resource scaling is the main concern, not hardware changes.</li>
+<li><strong>Service Composition:</strong> Arbitrary user composition of services is explicitly not allowed; instead, pre-approved compositions or &quot;stacks&quot; are defined at the service definition level to avoid complex interaction issues. Internally, these composite services would be merged into a single service module.</li>
+<li><strong>Relation to SFC/SD-WAN:</strong> EI offers global service definitions and extensibility beyond just chaining boxes.</li>
+<li><strong>SN Communication:</strong> Control plane (discovery, management) can leverage SDN-like approaches.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>&quot;In-Network Aggregation for Multi-Tenant Learning&quot; by Wen Say (Tsinghua University):</strong></p>
+<ul>
+<li><strong>Problem:</strong> Distributed Machine Learning (ML) using Parameter Server (PS) architecture suffers from communication bottlenecks during gradient aggregation.</li>
+<li><strong>Solution:</strong> Leverage in-network computation using programmable switches (P4) to aggregate gradients, reducing communication overhead.</li>
+<li><strong>Limitations of Existing Work:</strong> Static resource partitioning and single-rack star topologies limit scalability and efficiency.</li>
+<li><strong>Proposed ATP (Aggregation Transmission Protocol):</strong>
+<ul>
+<li><strong>Goals:</strong> Maximize in-network computation, support multiple simultaneous jobs (multi-tenant), and multi-rack topologies.</li>
+<li><strong>Dynamic Resource Allocation:</strong> Switch memory organized as a shared resource pool, with packets randomly hashed to aggregation units.</li>
+<li><strong>Correctness Challenges &amp; Solutions:</strong>
+<ul>
+<li><strong>Hash Collision:</strong> Fallback to PS aggregation, aggregator not de-allocated until PS confirms.</li>
+<li><strong>Membership Inconsistency/Deadlock:</strong> Retransmission with deduplication at host and switch ensures complete aggregation and prevents memory leaks.</li>
+</ul>
+</li>
+<li><strong>Multi-Rack Aggregation:</strong> Two-level hierarchy at Top-of-Rack (TOR) switches and then PS for final aggregation. Uses a bitmap per aggregator for sub-tree status. Fallback to PS for complex cases.</li>
+<li><strong>Reliability:</strong> Retransmission and bitmap ensures exact-once aggregation.</li>
+<li><strong>Congestion Control:</strong> Uses ECN as a signal, EIMD for control, as RTT is not available for consumed packets.</li>
+<li><strong>Floating Point Overflow:</strong> Fallback to PS aggregation with floating-point arithmetic.</li>
+</ul>
+</li>
+<li><strong>Implementation &amp; Evaluation:</strong> User-space networking stack on hosts, in-network aggregation services in switch. ATP outperforms other PS and Ring-Reduce architectures, especially for network-intensive workloads, and shows graceful degradation with dynamic allocation.</li>
+<li><strong>Takeaways:</strong> In-network computation offers significant performance gains, but correctness is challenging and requires careful host-switch co-design.</li>
+<li><strong>Note:</strong> Due to time constraints, questions were deferred to the mailing list/paper.</li>
+</ul>
+</li>
+<li>
+<p><strong>&quot;Information-Centric Data Flow for Distributed Computing&quot; by Dirk Trossen (Huawei):</strong></p>
+<ul>
+<li><strong>Context:</strong> Explores integration of computing and networking, focusing on structured data flow processing.</li>
+<li><strong>Data Flow Paradigm:</strong> Direct Acyclic Graph (DAG) based approach where data objects trigger computation across nodes. Supports batch and stream processing, windowing, and elasticity.</li>
+<li><strong>Limitations of Current Systems (e.g., Flink):</strong> Use connection-based overlays, treat the network as a black box, centralized orchestration, limited agility between compute and network performance.</li>
+<li><strong>Proposed IceFlow (Information-Centric Data Flow):</strong>
+<ul>
+<li><strong>ICN-based:</strong> Network of named nodes and named functions.</li>
+<li><strong>No Connections:</strong> Computation triggered by requests for input data. Enables efficient data reuse (multicast).</li>
+<li><strong>Challenges:</strong> Asynchronous data production (push semantics), flow control, tracking data consumption.</li>
+<li><strong>ICN Mechanisms:</strong> Uses Dataset Synchronization (e.g., PSync) for consumers to learn about new named data objects under known prefixes. Uses ICN manifests and grouping for scalability.</li>
+<li><strong>Runtime Information:</strong> Consumer reports publish processed windows, enabling loose coupling, congestion control (adapting interest rate), and scaling out (creating new subgraphs when downstream cannot keep up).</li>
+</ul>
+</li>
+<li><strong>Conclusion:</strong> Data flow systems are critical; current overlay approaches are limiting. ICN offers a promising alternative but requires performance optimizations and name-based routing infrastructure. This work presents an example of new protocol work leveraging ICN to break up overlays.</li>
+<li><strong>Note:</strong> Due to time constraints, questions were deferred to the mailing list/paper.</li>
+</ul>
+</li>
+<li>
+<p><strong>&quot;Moda: Operating System for a Distributed Internet&quot; by Marie-Jose Montpetit (on behalf of colleagues):</strong></p>
+<ul>
+<li><strong>Motivation:</strong> IoT environments are fragmented (verticalized, multiple gateways, cloud silos, security/privacy issues). The &quot;Internet as a computer board&quot; paradigm in coinrg suggests the need for an operating system. Data valorization is key in distributed systems.</li>
+<li><strong>Moda Vision:</strong> An operating system for a new distributed internet, providing infrastructure for easy application development. It embodies coinrg topics: discovery (functional, storage, compute), communications (pub/sub), semantic integration, common functionalities (name-based forwarding), and APIs for heterogeneous nodes.</li>
+<li><strong>Core Functionalities:</strong> Orchestration, on-device computing, reusability (lego brick approach), modularity, Network Processing Unit (NPU) management, data and intelligence services (AI in the network, data-driven features).</li>
+<li><strong>Link to coinrg:</strong> Shares common research topics (discovery, distributed abstractions/protocols, decentralized security/trust, federated learning, use cases).</li>
+<li><strong>Status:</strong> A proposed European-wide project.</li>
+<li><strong>Discussion:</strong> A request was made for pointers/website for the Moda project.</li>
+</ul>
+</li>
+<li>
+<p><strong>Draft Update: &quot;Computing in the Network Research Group (coinrg) Use Cases&quot; (draft-ietf-coin-use-cases) by Ike Drost:</strong></p>
+<ul>
+<li><strong>Purpose:</strong> Provide use case-driven requirements analysis and identify benefits of in-network compute (aligned with coinrg charter item 2).</li>
+<li><strong>Changes (since last iteration):</strong>
+<ul>
+<li>New co-authors: Xavier David, Miguel.</li>
+<li><strong>Regrouped Use Cases:</strong> Now organized into &quot;New User Experiences,&quot; &quot;Supporting New Coin Systems,&quot; &quot;Improving Existing Coin Capabilities,&quot; and &quot;Entirely New Coin Capabilities.&quot;</li>
+<li><strong>Sharpened Taxonomy:</strong> Split &quot;Opportunities&quot; and &quot;Research Questions,&quot; linked descriptions to new groupings, focused requirements on <em>Coin capabilities</em>.</li>
+<li><strong>Terminology Alignment:</strong> Started aligning terminology with other coinrg drafts (e.g., Dirk's draft) and suggested a single, overall coinrg terminology document.</li>
+<li>Initial preparation for analysis.</li>
+</ul>
+</li>
+<li><strong>Next Steps:</strong> Finish aligning use cases, review terminology, start analysis (condense opportunities/requirements, identify similarities for charter input).</li>
+<li><strong>Decision:</strong> Chairs will discuss adopting this as an RG document on the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>Draft Update: &quot;Transport Protocol Issues in Computing in the Network (Coin) Systems&quot; (draft-ietf-coin-transport-protocols) by Dirk Trossen:</strong></p>
+<ul>
+<li><strong>Purpose:</strong> Outline challenges to traditional end-to-end transport protocols and identify opportunities/research questions arising from in-network computing (aligned with coinrg charter item 4).</li>
+<li><strong>Changes (since last iteration):</strong>
+<ul>
+<li>Restructured into a &quot;Technology Areas&quot; section (Section 3) and a mirrored &quot;Gap Analysis&quot; section (Section 5) to better highlight research questions.</li>
+<li>Smaller updates linking to ongoing work in ICN addressing.</li>
+</ul>
+</li>
+<li><strong>Questions to the Group:</strong> What other research questions/concepts/ongoing efforts should be included? Should the gap analysis section be maintained?</li>
+<li><strong>Future Plans:</strong> Link more clearly to the updated Use Cases taxonomy, add more existing work (e.g., from HotNets 2021, Bharaji's work), refine research questions into requirements language, fill the gap analysis section (seeking contributors).</li>
+<li><strong>Suggestion:</strong> Adopt this as an RG document.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li><strong>QUIC:</strong> Peng Liu asked if QUIC could help with flow affinity/service equivalence due to its fixed connection ID. Dirk noted the linkage to Dyncast is still in the draft and needs clarification.</li>
+<li><strong>GitHub for Gap Analysis:</strong> Spencer Dawson suggested a GitHub repo for contributions, which Dirk affirmed is available and helpful.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Draft Update: &quot;Enhancing Security and Privacy with In-Network Computing&quot; (draft-ietf-coin-security-privacy) by Aina Doci:</strong></p>
+<ul>
+<li><strong>Purpose:</strong> Explore potential for coin to implement security and privacy mechanisms <em>within</em> the network to reduce latency, improve scalability, and provide quicker reaction to incidents (e.g., retrofitting for resource-restricted devices, industrial networks, transparent anonymization).</li>
+<li><strong>Key Research Areas (summarized from slides due to audio issues):</strong>
+<ul>
+<li><strong>Cryptographic Functions:</strong> Implementing encryption and hashing in the data plane (e.g., IPsec, MACsec, onion routing, message authentication).</li>
+<li><strong>Authentication:</strong> Basic mechanisms like port knocking or one-time passwords in the data plane for continuous authentication without latency overhead.</li>
+<li><strong>Anonymization:</strong> Scalable, transparent, and lightweight anonymization (e.g., rewriting source addresses, hiding path info, encrypting IPv4 addresses) to address performance/usability issues of existing tools like Tor.</li>
+<li><strong>Intrusion Detection:</strong> Inline detection and quick reaction to anomalies, reducing load on existing IDS (e.g., rule-based pre-filtering in data plane).</li>
+<li><strong>Network Monitoring:</strong> Flow monitoring on P4-based hardware switches for efficient, high-performance, and cost-effective network forensics.</li>
+</ul>
+</li>
+<li><strong>Conclusion:</strong> Growing research interest confirms coin's potential for security and privacy, with recent publications (e.g., Usenix Security) and proofs of concept demonstrating feasibility. It's a &quot;hot research topic&quot; with many ideas to investigate.</li>
+<li><strong>Next Steps:</strong> Seeking feedback and contributions.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Chairs:</strong> Discuss adopting the &quot;coinrg Use Cases&quot; (draft-ietf-coin-use-cases) and &quot;Transport Protocol Issues in Computing in the Network (Coin) Systems&quot; (draft-ietf-coin-transport-protocols) as RG documents, with further discussion on the mailing list.</li>
+<li><strong>Marie-Jose Montpetit:</strong> Share pointers or a website for the Moda project on the mailing list.</li>
+<li><strong>Dirk Trossen &amp; Ike Drost (and co-authors):</strong> Continue seeking contributions for gap analysis and related work for their respective drafts, utilizing GitHub repositories for collaboration.</li>
+<li><strong>Aina Doci (and co-authors):</strong> Seek feedback and contributions for the &quot;Enhancing Security and Privacy with In-Network Computing&quot; draft.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Coinrg Chairs:</strong> Plan an interim meeting to review the coinrg scope, aiming for a date halfway between the current IETF meeting and the next.</li>
+<li><strong>All Participants:</strong> Continue discussions and provide input on the mailing list.</li>
+<li><strong>Presenters:</strong> Incorporate feedback and contributions into their drafts.</li>
+<li><strong>Community:</strong> Stay tuned for announcements regarding the interim meeting and opportunities to contribute to the drafts.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

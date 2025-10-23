@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="netmod.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-NETMOD-20220322-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 22 Mar 2022 09:00</p>
+<h1>netmod IETF 113</h1>
+<h2>Summary</h2>
+<p>The netmod session at IETF 113 covered significant progress and ongoing discussions across several key YANG-related initiatives. Updates were provided on YANG versioning (Module Versioning and SemVer drafts), YANG packages, YANG data object tags, system-defined configuration, and a proposed process for updating existing YANG modules in published RFCs. Key discussions revolved around the utility and structure of API versus Implementation packages, the implications of server-side modifications to running configuration, and strategies for backward-compatible module updates. Several documents are progressing towards Working Group Last Call or further stages, with specific action items identified for authors and the working group.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative Updates:</strong>
+<ul>
+<li>Several RFCs have been published since the last meeting.</li>
+<li>A YANG document related to Syslog, returned to the working group, requires a volunteer to update its examples.</li>
+</ul>
+</li>
+<li><strong>YANG Versioning (Joe Clark):</strong>
+<ul>
+<li><strong>Working Group Last Call (WGLC) Status:</strong> Module Versioning and SemVer drafts completed WGLC. A new revision is needed for both, addressing comments from Jurgen, Atallo, and Andy.</li>
+<li><strong>Future WGLC:</strong> Chairs will decide if changes warrant a second WGLC, leaning towards not if changes are primarily editorial. Authors anticipate &quot;discuss&quot; level changes that might necessitate one.</li>
+<li><strong>File Naming and Tooling:</strong> Discussion on whether <code>code-begins</code>/<code>source-code</code> tags should accept alternative filenames (e.g., with SemVer revision labels). The current consensus favors either keeping existing practice or stipulating only module names, letting tooling handle version discovery, to avoid errors with tools like <code>zim</code>.</li>
+<li><strong>Alternative NBC Tagging:</strong> Jurgen proposed adding <code>nbc-change</code> tags with revision dates and descriptions directly on nodes with non-backward compatible changes. This idea was previously discussed, and its verbosity and placement (main draft vs. tooling section) require further deliberation.</li>
+</ul>
+</li>
+<li><strong>YANG Packages (Yan Wouters):</strong>
+<ul>
+<li><strong>Mount Points (Issue 57):</strong> Ongoing discussion on how to handle mount points within packages, specifically whether implementations should prescribe or allow certain packages to be mounted.</li>
+<li><strong>Communication Mechanisms:</strong> Identified 5 mechanisms (YANG 1.0 Hello, YANG 1.1 Library, NetMon, and Packages) for clients to discover device capabilities. Integration into YANG Library was considered but deemed not beneficial.</li>
+<li><strong>Optional Modules (Issues 133/135):</strong> Exploring the balance between flexibility (allowing optional modules) and client complexity. A preference emerged for a clearer model where packages contain mandatory modules, with a separate list of <em>compatible</em> modules for design guidance.</li>
+<li><strong>Revision Labels:</strong> Proposed that IETF <em>must</em> use YANG SemVer for package revision labels, with a recommendation for other organizations to adopt it.</li>
+<li><strong>Deviations:</strong> Clarified that standardization bodies cannot use deviations in package definitions to prevent conflicts (SDO wars); implementations, however, can.</li>
+<li><strong>API vs. Implementation Packages:</strong>
+<ul>
+<li><strong>API Packages:</strong> Defined by SDOs or product lines, standardized, no deviations. Preferred by operators (Tom Hill) for prescriptive definition and ensuring multi-vendor interoperability.</li>
+<li><strong>Implementation Packages:</strong> Document actual device implementations, may contain deviations. Considered by some (Benoit) as the most immediately useful.</li>
+<li>There was a consensus that the distinction between these two types of packages is meaningful and useful for different stakeholders (designers/operators vs. implementers).</li>
+</ul>
+</li>
+<li><strong>Schema Mount:</strong> Proposal to list mount points within <code>yang-package-instance</code> with information about packages expected at those points, especially for advanced use cases.</li>
+</ul>
+</li>
+<li><strong>YANG Data Object Tags (Ching Wang):</strong>
+<ul>
+<li><strong>Purpose:</strong> Self-describing tags for data objects, particularly operational data (KPIs) in streaming telemetry, to classify and reduce data export.</li>
+<li><strong>Status:</strong> Version 6 passed YANG Doctor WGLC and received official review.</li>
+<li><strong>Key Changes:</strong> Clarifications on user tag management, IANA guidance, enhanced security, updated Figure 1 with <code>multi-source</code> and <code>metric-type</code> tags. Checksums were removed due to complexity.</li>
+<li><strong>User Tag Conflict Resolution:</strong> Addressed potential data inconsistencies when clients add/remove tags by proposing restrictions on client privilege in the security section.</li>
+<li><strong>Instance Identifiers:</strong> The use of <code>node-instance-identifier</code> allows flexible association of tags with specific or subset instances.</li>
+</ul>
+</li>
+<li><strong>System Defined Configuration (Ching Wang):</strong>
+<ul>
+<li><strong>Offline Validation of Running Configuration:</strong> Authors decided that offline validation of running configuration alone <em>must</em> be required to maintain backward compatibility for existing clients.</li>
+<li><strong>Origin Parameter:</strong> For system configuration copied to running, <code>intended</code> is favored as the value for the <code>origin</code> parameter, though the draft currently doesn't restrict it.</li>
+<li><strong><code>with-origin</code> for <code>intended</code>:</strong> Support for this parameter for the <code>intended</code> datastore (currently only <code>operational</code>) would benefit clients but faces challenges with RFC 7915's <code>derived-from</code> statement.</li>
+<li><strong><code>reload-system</code> Parameter:</strong> Proposed for <code>edit-config</code>/<code>edit-data</code> operations, allowing the server to automatically populate referenced system configuration to validate running config, but only when explicitly requested by the client. Legacy clients would not be affected.</li>
+<li><strong>Server Modification of Running Config:</strong> A contentious point: The draft states that if <code>reload-system</code> is not given, the server <em>must not modify running</em> unless specified by the client. This was challenged (Balázs) as a significant non-backward compatible (NBC) change that could break existing 3GPP and O-RAN implementations where the system is allowed to modify running configuration. The implications for existing YANG models and RFCs were highlighted.</li>
+<li><strong>Value of <code>reload-system</code>:</strong> Discussion on whether the convenience of avoiding full configuration copies outweighs the implementation complexity for the server.</li>
+</ul>
+</li>
+<li><strong>Immutable Metadata Annotation (Ching Wang):</strong>
+<ul>
+<li><strong>Motivation:</strong> To standardize the visibility of system configurations that are non-deletable or non-modifiable to clients (read-only vs. modifiable causing confusion).</li>
+<li><strong>Concept:</strong> An <code>immutable</code> metadata annotation (boolean) indicating immutability of a data <em>instance</em> (not schema node).</li>
+<li><strong>Rules:</strong> If <code>immutable=true</code>, the node is read-only to clients (no modification/deletion). Creating the node (with system-set value) or deleting its parent (unless parent also immutable) is allowed.</li>
+<li><strong>Open Issues:</strong> Backward compatibility for legacy clients, how to indicate immutability for entire lists/leaf-lists, timing of server rejections for modifications, and whether clients should be allowed to delete immutable system-initiated nodes in running config.</li>
+<li><strong>Concerns:</strong> Rob Wilton expressed concern that allowing arbitrary immutability makes generic clients harder. Yan suggested it provides visibility into existing business restrictions, acknowledging that any restriction adds complexity. Use cases like &quot;invariant&quot; leaves (3GPP), static capabilities, and system-enforced ACLs were noted as potential beneficiaries.</li>
+</ul>
+</li>
+<li><strong>Updating an RFC's YANG Module (Italo Busi):</strong>
+<ul>
+<li><strong>Problem:</strong> Need a tiny, backward-compatible update to <code>ietf-vpn-common-types</code> (RFC 8776) but <code>bis</code> documents are heavy, potentially affecting other modules in the same RFC. A faster process is needed.</li>
+<li><strong>Proposed Solution:</strong> A new draft that <em>updates</em> (rather than obsoletes) the existing RFC, defining a new revision only for the specific module (<code>ietf-vpn-common-types</code>).</li>
+<li><strong>Tooling Concern:</strong> If only changes are presented in the main body, YANG tooling (e.g., YANG Catalog, rfc-strip) might have issues. A proposed workaround was including the full updated module in an appendix and using an automatic diff tool to generate the main body.</li>
+<li><strong>Feedback:</strong> Mahesh provided an example of RFC 9127 <code>bfd-yang</code> (a <code>bis</code> RFC for an incompatible change) where dependent modules also had their revision dates bumped. Rob Wilton suggested putting the <em>latest full module</em> in the main body of the updating draft, with narrative text (e.g., in the introduction) highlighting the changes, to avoid tooling complications and facilitate review focus.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Syslog Document:</strong> The chairs are seeking a volunteer to update the examples in the syslog-related document that was returned to the working group.</li>
+<li><strong>YANG Packages:</strong> The working group expressed consensus that the distinction between &quot;API Packages&quot; and &quot;Implementation Packages&quot; is a meaningful and useful concept.</li>
+<li><strong>YANG Data Object Tags:</strong> The chairs will discuss whether to proceed with an immediate Working Group Last Call for the YANG Data Object Tags document.</li>
+<li><strong>System Defined Configuration:</strong> Authors are to address the open issues, particularly the contentious point regarding server modifications to running configuration, before seeking working group adoption for the document.</li>
+<li><strong>Updating RFC YANG Modules:</strong> The working group adopted Rob Wilton's suggested approach:
+<ul>
+<li>The new draft will contain the <em>full, updated version</em> of the <code>ietf-vpn-common-types</code> module in its main body.</li>
+<li>Narrative text (e.g., in the introduction) should highlight the changes from the previous version.</li>
+<li>This approach avoids the complexity of diffs in the normative text and is compatible with existing YANG tooling.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The Versioning Design Team will continue its weekly calls to address WGLC comments on Module Versioning and SemVer, progress the Packages draft, and then move on to Version Selection and Schema Comparison/Tooling.</li>
+<li>The chairs will evaluate the YANG Data Object Tags document for an immediate Working Group Last Call.</li>
+<li>The authors of the System Defined Configuration document are requested to revise the draft based on the discussions, especially concerning server modification of running configuration, and then bring it back to the working group for consideration of adoption.</li>
+<li>The Immutable Metadata Annotation document authors are encouraged to continue discussion on the mailing list, considering the various use cases and potential implications for clients.</li>
+<li>The authors of the RFC YANG Module Update document will proceed with revising their draft to include the full, updated module in the main body and clearly document the changes in the narrative, following the agreed-upon process.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

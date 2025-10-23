@@ -1,0 +1,74 @@
+**Session Date/Time:** 10 Nov 2021 12:00
+
+# openpgp
+
+## Summary
+The openpgp working group session focused on the significant progress made on the "Crypto Refresh" draft, driven by the specialized Design Team. Key discussions revolved around proposed mandatory and recommended cryptographic algorithms, deprecations, and the development of the Stateless OpenPGP Interface (SOP) and its accompanying interoperability test suite. The Design Team's open and transparent, yet focused, approach was highlighted as crucial for overcoming past stagnation. There was an emphasis on engaging the broader working group for critical decisions, particularly on Mandatory To Implement (MTI) algorithms and deprecation proposals.
+
+## Key Discussion Points
+
+*   **Design Team Progress and Workflow:**
+    *   The working group had previously stalled on RFC 4880 bis due to broad discussions.
+    *   A "Design Team" was formed, comprising chairs, implementers (3-4 different implementations), and editors.
+    *   This team meets weekly, fostering focused discussions and decisions, significantly speeding up progress.
+    *   The workflow is transparent, using Git, a tracker, merge requests (PRs), and an open mailing list archive.
+    *   The Design Team prioritizes work, occasionally postponing items for later or determining them out of scope for the current Crypto Refresh document.
+*   **Crypto Refresh Document Status (driven by Design Team):**
+    *   Most content from the old `4880-bis` draft has been merged.
+    *   "Menial tasks" like clarifications, updates, and table formatting are complete.
+    *   **Notable Work Done:**
+        *   AAD packet defined and updated (including protection for secret key material).
+        *   Internet recipient subpacket.
+        *   SKS v5 for AAD.
+        *   Argon2 added.
+        *   Curve25519 and Curve448 added; encoding format discussions resolved.
+        *   Questionable advice about dropping keys removed.
+    *   **Notable Work In Progress / Not Yet Merged:**
+        *   Mandatory To Implement (MTI) algorithms: Postponed for a broader working group discussion, considering NIST recommendations and post-quantum cryptography.
+        *   V5 signatures: Active discussion in Issue 45.
+        *   FFI keys: Nearing completion, expected to merge soon (PR 7789).
+*   **Proposed Cryptographic Algorithm Choices and Deprecations (Design Team Consensus):**
+    *   **MUST Implement:**
+        *   EDDSA (signing) and ECDH (public key encryption) using Curve25519.
+        *   SHA-256, SHA-384, SHA-512 for hashing.
+        *   AES-128, AES-192, AES-256 for symmetric encryption.
+        *   Authenticated Encryption with Associated Data (AAD).
+        *   OCB mode for AAD (though EAX is in the current draft, OCB is a CFRG recommendation and was suggested as the MUST implement mode; still under debate).
+    *   **SHOULD Implement:** Curve448.
+    *   **New Features:** V5 keys use SHA-2 for fingerprints, Zlip replaces Zip for compression (with uncompressed as default), Argon2 for password-based key derivation.
+    *   **Proposed Deprecations (potentially controversial):**
+        *   **MUST NOT generate:** RSA keys < 2048 bits.
+        *   **MUST NOT implement DSA or Elgamal at all** (generate, encrypt, sign, verify, decrypt) due to vulnerabilities, key validation issues, and prevalence of insecure key sizes. This is a point of contention.
+        *   **MUST NOT use:** MD5, SHA-1, RIPEMD for signing or verifying new signatures.
+        *   **MUST NOT encrypt with:** IDEA, Triple DES, CAST5 (decryption still allowed).
+        *   **MUST NOT use:** simple (unsalted) string-to-key derivation.
+    *   **Remaining Algorithm Questions:**
+        *   Inclusion of Brainpool curves (potential conflict with CFRG focus in charter).
+        *   Requirement for FIPS compliance for a minimal implementation (currently decided against, pending NIST draft on Curve25519/448).
+        *   Making AES256 mandatory for post-quantum preparation (counter-argument: full PQ requires more than just symmetric key strength).
+*   **Stateless OpenPGP Interface (SOP):**
+    *   An abstract, command-line interface for OpenPGP operations, agnostic to wire format details.
+    *   **Purpose:** Facilitates interoperability testing, clarifies user concepts, encourages best practices, aids algorithm deprecation/adoption.
+    *   **Current Focus:** Data management (key generation, encryption, signing, verification).
+    *   **Future Enhancements:** Inline signatures (Issue 25), language-specific frameworks (Java, Rust, Python, C framework in discussion), certificate management functions (merging, validation, maintenance, revocation, subkeys).
+    *   Implementers are encouraged to adopt SOP for better representation in testing.
+*   **Interoperability Test Suite:**
+    *   Developed using the SOP interface for black-box testing.
+    *   Currently includes ~90 tests and ~800 test vectors, uncovering 92 bugs in 10 implementations.
+    *   Results highlight spec ambiguities and improve implementation quality.
+    *   Plans to use the test suite extensively for Crypto Refresh, including testing unreleased/development versions.
+    *   **Call for Contributions:** Suggesting/writing tests (Rust-based), reviewing results, and implementer participation (developing SOP implementations, providing build instructions).
+
+## Decisions and Action Items
+
+*   **Decision:** The Crypto Refresh document will proceed towards an RFC release before addressing Post-Quantum Cryptography, to avoid further delays on overdue cryptographic updates.
+*   **Action Item (Chairs & Design Team):** A summary of the Mandatory To Implement (MTI) algorithm proposals will be sent to the working group mailing list to solicit broader discussion and feedback from the community.
+*   **Action Item (Jonathan):** Meeting notes will be reviewed and posted after the session.
+
+## Next Steps
+
+*   The Design Team will continue its weekly meetings to finalize the Crypto Refresh draft.
+*   The working group will engage in discussions on the mailing list regarding MTI algorithms and proposed deprecations.
+*   Implementers are encouraged to engage with the SOP specification and contribute to the interoperability test suite by implementing SOP interfaces and suggesting new tests.
+*   Consideration for future re-chartering of the working group after Crypto Refresh includes Post-Quantum Cryptography and Perfect Forward Secrecy, potentially in coordination with a new IETF working group on PQ crypto maintenance.
+*   Anticipate Working Group Last Call for the Crypto Refresh draft in early 2022.

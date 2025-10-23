@@ -1,0 +1,76 @@
+**Session Date/Time:** 09 Nov 2023 08:30
+
+# mimi
+
+## Summary
+
+This meeting covered the Mimi architecture, content format, and protocol design. Key discussions revolved around terminology consistency, message ID handling, external content security, message ordering, and the state management of users in rooms, particularly concerning banning and removals. The design team provided updates on document structure and proposed next steps, including potential adoption calls.
+
+## Key Discussion Points
+
+*   **Terminology:** Inconsistencies across documents were noted, and a unified terminology section was requested, preferably in the architecture document.
+*   **Content Format - External Content:** Extensive discussion regarding the handling of external content (attachments) including security implications of web bugs, potential approaches like using the hub or local provider for content delivery, quota management, and privacy considerations.
+*   **Content Format - Message IDs:** Debate on the necessity of message IDs versus relying on ciphertext hashes. Concerns were raised about handling duplicate messages and maintaining data integrity.
+*   **Content Format - Message Ordering:** User experience requirements for consistent message ordering across clients were discussed, including potential challenges and recommendations for implementation. The team acknowledged complexities involved in server-side ordering.
+*   **Mimi Protocol: Protocol vs. Delivery Service Separation:** Discussion on keeping the Mimi Protocol separate from the Delivery Service document. This was due to potential re-use of the Delivery Service in other contexts and engineering considerations regarding the interface between crypto and non-crypto elements.
+*   **Mimi Protocol: User State Management:** Discrepancies emerged in the understanding of how user state is managed during removal processes (e.g., banning), specifically the order in which the MLS group, participant list, and authorization policies are updated. Clarification was provided, but inconsistencies in the draft were identified. A state with limited capabilities between removal from MLS and removing the participant were also proposed.
+
+## Decisions and Action Items
+
+*   **Content Format - External Content Security:** Create an issue to address the vulnerability where anyone with the key can generate a new, valid encryption.
+*   **Mimi Protocol:** Correct the slide about adding proposals because right now it states you immediately get added to the party. That point only applies when someone is added and not when they are removed.
+
+## Next Steps
+
+*   The design team will revise the documents based on the feedback received.
+*   Address the comments made in the Zulip chat.
+*   The working group will use the mailing list or github to continue discussion on external content delivery.
+*   Consider an interim meeting the first week of December, document revisions available a week in advance, for further discussion and feedback.
+*   The working group will continue to work toward a decision about whether it wants to be as much technical content to a adoption decision.
+
+
+---
+
+**Session Date/Time:** 10 Nov 2023 14:30
+
+# mimi
+
+## Summary
+This meeting focused on open issues within the mimi protocol and explored different approaches to user discovery. Discussions included tracking arbitrary state, fan-out mechanisms, and privacy considerations for service reachability. There was significant debate regarding the requirements for user discovery, particularly concerning the balance between privacy and service reachability. Several action items were identified, including clarifying authentication mechanisms and updating the requirements document.
+
+## Key Discussion Points
+*   **Tracking Arbitrary State:**
+    *   The need to carry informational state (e.g., room name, topic) within the protocol was discussed.
+    *   A proposal to implement an "M room state" event was introduced, including considerations for encryption and standardized fields.
+    *   Encryption was debated, along with concerns of how to maintain key rotation with the MLS group.
+
+*   **Fan-out and Routing:**
+    *   The group discussed how key packages should be routed, specifically regarding whether they should always go through the hub.
+    *   Concerns were raised about potential connectivity issues if keys are fetched directly from the source, especially in decentralized messaging architectures.
+
+*   **Authentication Mechanism for Key Packages:**
+    *   Discussion on whether or not a fetching client should be authenticated to request key packages, and how to achieve this.
+
+*   **Discovery Framing:**
+    *   The problem of user discovery was framed as mapping service specific identifiers (SSIs) to service independent identifiers (SIIs).
+    *   Discussion evolved into separating user discovery into authentication and distribution sub-problems, and their different threat models.
+
+*   **Privacy Considerations for Service Reachability:**
+    *   Whether or not to protect against someone using an SII to enumerate account SSI's on a particular service.
+    *   Privacy needs of protecting data from the discovery provider, as well as a general anti-enumeration or rate limiting.
+    *   Debate on hiding SIIs from discovery providers and recipients, balancing privacy with anti-spam measures.
+
+*   **Identifier Strategies**
+    *   Consideration of new, Mimi-specific identifiers for enhanced control.
+
+## Decisions and Action Items
+
+*   **Authentication Mechanism for Key Packages:** Someone will write a clear explanation of the authentication problem on the mailing list.
+
+*   **Requirements Document:** Jonathan Rosenberg and John Peterson will continue to update the requirements document with insights from the meeting, clarifying the scope and goals of user discovery.
+
+## Next Steps
+
+*   Working group members should review the existing Mimi protocol draft and comment on GitHub issues, particularly those considered blockers to adoption.
+*   The design team will process GitHub issues and make changes, potentially publishing a version prior to the adoption call.
+*   Continue discussion of privacy and security requirements for user discovery on the mailing list.

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dispatch.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-DISPATCH-20211108-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 12:00</p>
+<h1>dispatch</h1>
+<h2>Summary</h2>
+<p>The dispatch session primarily focused on an Internet-Draft proposing a &quot;Secure Credential Transfer&quot; protocol. The discussion revolved around the problem of securely sharing digital credentials between devices across different platforms and communication channels. Key concerns raised included the clarity of the problem statement, the security assumptions of the communication channel, the scope of standardization (relay server vs. full architecture), and the integration with existing ecosystems.</p>
+<p>A consensus was reached to propose an IETF-wide Birds of a Feather (BoF) session. This BoF should focus on defining the problem space, constraints, and requirements for secure credential transfer, rather than immediately converging on a specific solution. While the initial suggestion was for the work to reside primarily within the Security Area (SEC), community feedback highlighted that it also has significant Application Area (ART) aspects, suggesting a cross-area collaboration.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Secure Credential Transfer (SCT) Protocol Presentation</strong>: Matt Byington presented an Internet-Draft for a protocol to securely share digital credentials (e.g., vehicle keys, hotel access) between devices, emphasizing cross-platform and channel-agnostic capabilities.</p>
+<ul>
+<li><strong>Problem Statement</strong>: Current methods lack a secure, cross-platform, and channel-agnostic way to share digital credentials stored in secure elements.</li>
+<li><strong>Design Goals</strong>: Work for symmetric/asymmetric credentials, allow sender to manage/revoke shared credentials, support various mobile OS OEMs.</li>
+<li><strong>Proposed Solution</strong>: A new &quot;relay server&quot; acts as a simple mailbox, decoupled from credential provisioning. It facilitates the transfer of metadata/seed data (not the credential itself) for the receiver to procure a new credential from the credential authority. Data to/from the relay server is field-level encrypted, and the server does not know sender/receiver identity. Sharing can occur via any communication channel (email, SMS, WhatsApp).</li>
+<li><strong>High-Level Flow</strong>: Sender obtains a bearer token from the credential authority (via OEM server), sends data to the relay server, which generates a URL. This URL is sent to the receiver via the communication channel. The receiver downloads data from the relay server and uses it to provision a credential via their OEM server and the credential authority.</li>
+<li><strong>Open Graph</strong>: Proposed for rich preview of shared links.</li>
+</ul>
+</li>
+<li>
+<p><strong>Discussion and Concerns</strong>:</p>
+<ul>
+<li><strong>Status of Technology</strong>: The technology is not yet launched but has concrete plans for implementation following preliminary discussions with device OS OEMs (Apple, Google) and vehicle OEMs (Connected Car Consortium - CCC), with a view to referencing an IETF standard.</li>
+<li><strong>Alternative Standards</strong>: Philip Homburg suggested investigating SAML as an existing standard for authentication and authorization with flexible assertion formats.</li>
+<li><strong>Problem Statement Clarity</strong>: Sam Hartman and Stephen Farrell suggested the problem statement needs further refinement, particularly regarding selective permissionless delegation, hardware-backed crypto stores (like YubiKey), and explicit revocation mechanisms.</li>
+<li><strong>Revocation</strong>: Matt clarified that revocation would occur via the credential authority, which maintains a record of shares and can authenticate the sender's request to revoke a specific credential.</li>
+<li><strong>Operating System Dependency</strong>: Stephen Farrell expressed hope that solutions would not strictly require &quot;operating system overlords&quot; (like Android/iOS) for functionality.</li>
+<li><strong>Security of Communication Channel</strong>: Eric Rescorla questioned the assumption that the communication channel (e.g., SMS) is secure, highlighting it as a weak point. Matt acknowledged this, stating recipient binding was a non-goal, and security relies on URL entropy, device binding (after first invocation), and a low Time-To-Live (TTL) for the shared link.</li>
+<li><strong>Message Format and OEM Lock-in</strong>: Eric Rescorla expressed concern that the proposed approach implies the sender must generate a polymorphic token suitable for <em>every</em> possible receiver, potentially creating vendor lock-in with incumbent device manufacturers. He advocated for a single standardized message format.</li>
+<li><strong>Scope of Work</strong>: Richard Barnes and Colin Perkins raised questions about whether the work should focus narrowly on the &quot;relay server&quot; or address the &quot;whole slide 6 architecture&quot; (the entire credential transfer ecosystem, including proprietary OEM provisioning APIs). Colin argued that standardizing only the relay server is &quot;useless&quot; without addressing the broader provisioning architecture. Matt acknowledged the challenges of standardizing existing proprietary OEM APIs but emphasized the need to bridge sender and receiver.</li>
+<li><strong>IETF Adaptability</strong>: Pete Resnick (via Patrick McManus) asked if the authors were open to the IETF &quot;tearing up&quot; the current draft. Matt indicated openness to changes that solve the same goals and are compatible with existing credential authority systems, while noting commercial time pressures for a solution.</li>
+<li><strong>Definition of &quot;Device&quot;</strong>: Ted Hardie (via Patrick McManus) suggested challenging the definition of &quot;device&quot; and considering broader &quot;persona accounts&quot; (e.g., work profiles), and emphasized the need for substantial work on security and privacy. Matt agreed with challenging the &quot;device&quot; noun.</li>
+<li><strong>ART vs. SEC</strong>: Initial chair impression leaned towards SEC, but community feedback highlighted the application architecture aspects, suggesting ART or a cross-area approach.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>BoF Proposal</strong>: A Birds of a Feather (BoF) session will be proposed to the IETF.
+<ul>
+<li><strong>BoF Scope</strong>: The BoF's focus will be to thoroughly define the problem space, constraints, and requirements for secure credential transfer, including the scope of the overall architecture (as depicted in slide 6 of the presentation), rather than immediately standardizing a specific solution.</li>
+<li><strong>Community Involvement</strong>: Both the Security Area (SEC) and Applications Area (ART) communities should be involved in the discussion and the BoF.</li>
+</ul>
+</li>
+<li><strong>Coordination</strong>: The ART Area Directors will coordinate with the SEC Area Directors and the proponents of the draft to plan the BoF.</li>
+<li><strong>Mailing List Discussion</strong>: Discussion on the topic can continue on the dispatch or ART mailing lists in the interim.</li>
+</ul>
+<h2>Other ART Area Updates and Announcements</h2>
+<ul>
+<li><strong>Privacy Respecting Cooperation of Values (PRIV)</strong>: One BoF scheduled for Wednesday.</li>
+<li><strong>New/Nearly New ART Working Groups</strong>:
+<ul>
+<li>OHAI (Oblivious HTTP Application Intermediation): Meeting for the first time (Security Area, but close to ART).</li>
+<li>MEDIAMAN (Media Type Maintenance): Newly chartered, meeting Tuesday. Co-chair volunteers sought.</li>
+<li>CDATE (Concise Data about Times and Events): Meeting again, Tuesday.</li>
+<li>SKIM (SCIM): Reopened working group.</li>
+</ul>
+</li>
+<li><strong>ART Area Review Team (ART-ART)</strong>: Fully operational, has completed around 30 reviews, providing valuable feedback to the IESG. Barry Leiba and Francesca Palombini thanked reviewers and called for new volunteers.</li>
+<li><strong>Internationalization Directorate</strong>: Led by Pete Resnick (Secretary), collects internationalization experts. Barry Leiba highlighted the need for ART-ART reviewers to flag documents potentially requiring internationalization expertise (e.g., character strings, human-readable/enterable data). A list of flag issues will be posted to the ART mailing list. John C. Klensin noted a lack of mechanisms for developing fundamental internationalization specifications when needed.</li>
+<li><strong>ECMAScript Media Types Update</strong>: The only current dispatch working group draft is in Last Call, ending November 15th.</li>
+<li><strong>RTD Office Hours</strong>: Scheduled for one hour at the end of Monday.</li>
+<li><strong>Side Meetings</strong>: Wiki available for organizing side meetings.</li>
+<li><strong>NomCom Feedback</strong>: A reminder for feedback to the NomCom.</li>
+<li><strong>Media Over QUIC (MoQ)</strong>: Spencer Dawkins announced two side meetings for IETF 112 (Monday and Friday, 18:15 UTC) to understand diverse needs for MoQ and plan next steps. The mailing list is active.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

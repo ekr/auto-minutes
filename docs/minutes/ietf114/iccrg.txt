@@ -1,0 +1,68 @@
+**Session Date/Time:** 28 Jul 2022 20:00
+
+# iccrg
+
+## Summary
+
+The iccrg session covered three main topics: an update on Prago Congestion Control (both TCP and Quick implementations), a discussion on packet reordering in multipath transport scenarios, and an announcement regarding the potential formation of a new Congestion Control Working Group within the IETF and its implications for iccrg. Key technical discussions included Prago's performance benefits (low delay, high utilization, RTT independence), challenges with multipath reordering for different traffic types, and the strategic role of iccrg in research and experimentation alongside potential IETF standardization efforts.
+
+## Key Discussion Points
+
+### Prago Congestion Control Update (Bob Briscoe & Vivi Gold)
+
+*   **Core Concepts**: Prago aims for small sawtooth variations in buffer utilization to achieve full utilization and low delay, even with low Active Queue Management (AQM) set points (e.g., 1ms).
+*   **Empirical Results (TCP Prago)**:
+    *   **Single Flow**: Prago (Dual PI Squared) achieved near 100% utilization with a 1ms AQM target, compared to ECN Cubic's 87-88% at the same target, demonstrating significantly lower queue delay (mean and 99th percentile).
+    *   **Dual Queue Behavior**: When one Prago flow competes with one Classic (Cubic) flow in a dual queue setup, the Prago flow experiences very low queuing (mean of 1 packet, 99th percentile of 2 packets). This is attributed to coupling and pacing, where the Classic queue's marking pushes back the Prago flow, allowing the L4S queue to drain. This suggests that marking from another queue can effectively eliminate a standing queue.
+    *   **Flow Competition**: Tests with varying numbers of competing flows (ECCN Cubic vs. Prago/Cubic vs. Prago/Reno) showed FQ_Codel providing excellent fairness. Dual PI Squared demonstrated fair sharing but with slightly higher variance compared to FQ_Codel.
+    *   **RTT Independence**: Prago incorporates an RTT independence algorithm. While FQ_Codel achieved 1:1 rate ratio across varying RTTs, Dual PI Squared, while slightly worse than an ideal single-queue AQM emulation (6.3 ratio vs. 5.5), still significantly mitigates RTT dependence.
+    *   **Web-Light Load**: With heavy web-light load (short, unresponsive flows) and a long-running Prago flow, Prago's EWMA mechanism effectively recognizes the load and makes headroom, keeping delay low, which is a design feature for the internet.
+*   **Quick Implementation of Prago (Vivi Gold - Apple)**:
+    *   **Early Lab Results**: Showed similar trends to TCP Prago, including up to 90% reduction in queuing delay compared to Cubic for low bandwidths.
+    *   **Throughput**: Maintained similar throughput to Cubic.
+    *   **Multi-Flow**: Competing Prago flows converged, though one flow exhibited divergent behavior requiring further investigation. Prago demonstrated less throughput variation and significantly reduced RTT jitter compared to Cubic.
+    *   **Implementation Considerations**:
+        *   Reno is not strictly required for Prago's reduction behavior; default congestion control (e.g., Cubic) can be used for loss-based reductions.
+        *   **Open Question**: How to combine congestion experienced (CE) and packet loss reductions within the same RTT is an area for further investigation and community input.
+        *   **Pacing**: Mandatory for L4S and Prago to prevent burstiness. Challenges exist for user-space CCs (like Quick) in achieving fine-grained pacing. Linux kernel APIs (SO_MAX_PACING_RATE, SO_TXTIME, sk_pacing_rate) can be used for offloading pacing.
+
+### Packet Reordering in Multipath Transport Scenarios (Natalie Romo Moreno)
+
+*   **Problem Statement**: Multipath transport (e.g., ATSS framework for 5G/Wi-Fi) inherently introduces high jitter and out-of-order packet delivery due to path heterogeneity. This can degrade Quality of Experience (QoE) and Quality of Service (QoS) for applications designed for single-path characteristics.
+*   **Impact of No Reordering**:
+    *   **UDP Traffic**: Showed no impact; both paths fully utilized, achieving aggregated bandwidth, as UDP lacks congestion control and reliability.
+    *   **Quick Traffic (NewReno)**: Significant negative impact. Path latency differences cause "scrambling" (out-of-order arrival), leading to duplicate ACKs, misinterpreted as packet loss. This triggers retransmissions and congestion window cuts, resulting in only one path being effectively utilized.
+*   **Proposed Solutions**:
+    *   **Sequence-based Reordering with Static Timer**: Buffers out-of-order packets until the missing one arrives or a fixed timer expires. If the timer is sufficient (e.g., > path latency difference), it corrects scrambling, prevents CC reactions, and enables full bandwidth utilization.
+    *   **Sequence-based Reordering with Dynamic Timer**: Improves upon the static timer by dynamically estimating and adapting the timer to the path latency difference (using RTT measurements). This ensures effective reordering even with changing network conditions.
+    *   **Delay Equalization (Path Latency Difference Compensation)**: For latency-sensitive CCs (e.g., BBR), reordering alone isn't enough; jitter due to path differences still causes throttling. Delaying packets on the faster path to match the slowest path's latency effectively equalizes path latencies, restoring full utilization for BBR.
+*   **Conclusions**:
+    *   Impact of reordering varies with traffic type. Different solutions are suitable for different traffic characteristics.
+    *   In scenarios like ATSS, where traffic type may be unknown, in-network reordering is required for optimal performance.
+    *   3GPP SA2 has concluded that in-network reordering support is needed and recommends a combination of solutions: dynamic sequence-based reordering, delay equalization, and fast packet loss detection.
+*   **IETF Scope Question**: The presentation raised the question of where in the IETF multipath reordering and scheduling algorithms, currently implementation-specific, should be standardized, particularly when tunneling over multipath protocols.
+
+### IETF Congestion Control Working Group (Colin Perkins & Martin Duke)
+
+*   **Proposal**: The IETF Transport Area Directors are considering chartering a new Congestion Control Working Group within the IETF.
+*   **Potential Goals**: Update RFC 5033 (guidelines for standardizing CC algorithms) and potentially develop new standards-track congestion control algorithms.
+*   **ICCRG's Role**:
+    *   ICCRG will continue its role in the IRTF as the primary forum for research and experimentation on congestion control.
+    *   Proposals for IETF standards-track CC algorithms are expected to be thoroughly vetted by the research community, with iccrg playing a crucial role in facilitating discussion, providing review, and documenting practical experience.
+    *   ICCRG will continue to publish Experimental RFCs as a valuable means to document CC algorithms, especially those potentially moving towards IETF standards.
+    *   The group emphasizes that iccrg is primarily a venue for research, experimentation, and discussion, not solely an "Experimental RFC factory."
+*   **Leadership**: Jana is expected to continue as chair, and new co-chair candidates are being sought.
+*   **Transport AD Endorsement (Martin Duke)**: The Transport ADs fully endorse this vision. ICCRG's continued existence and function are crucial. It's possible the new IETF CC WG could complete its specific tasks and close, with iccrg remaining the long-term forum for congestion control discussions.
+
+## Decisions and Action Items
+
+*   **Scribe**: Neil volunteered to take minutes for the session.
+*   **Prago CE/Loss Reduction**: The community is encouraged to investigate how to best combine Congestion Experienced (CE) and packet loss reductions within the same RTT for Prago.
+*   **Multipath Reordering Standardization**: Jonathan is encouraged to reach out to the chair (Jana) via email to discuss the appropriate scope and venue within the IETF for standardizing multipath reordering and scheduling.
+
+## Next Steps
+
+*   The iccrg community is invited to further research and discuss the combination of CE and loss reductions for Prago.
+*   Discussion to continue on the mailing list or via direct email regarding the standardization of multipath reordering and scheduling within the IETF.
+*   Stay tuned for updates on the potential IETF Congestion Control Working Group and its implications for iccrg, including announcements about new co-chair candidates.
+*   Attendees are encouraged to participate in future iccrg meetings and IETF sessions for ongoing discussions on congestion control.

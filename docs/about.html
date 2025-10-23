@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <h1>About Auto Minutes</h1>
+<p>Auto Minutes provides automatic minutes for IETF sessions.</p>
+<img src="/img/architecture.png" width="100%">
+<p>Auto Minutes takes the existing Meetecho session transcripts and turns
+them into minutes, as shown in the diagram above.</p>
+<p>Auto Minutes works one IETF plenary meeting at a time. It starts by
+scraping the proceedings page,
+(<a href="https://datatracker.ietf.org/meeting/123/proceedings">for instance</a>).
+It extracts each &quot;Session Recording&quot; link and infers the link for the
+transcript JSON from the URL, sending the transcript to an LLM
+(currently mostly Gemini) with preva prompt directing it to make minutes
+in markdown. This is the only expensive part of the process (more in
+terms of time than money) so we cache the raw minutes to avoid
+having to regenerate them.</p>
+<p>Once all desired sessions have been minuted, Auto Minutes can assemble
+the final site, gluing together the minutes for multiple sessions, adding
+headers, creating index pages, etc. This gets published to GitHub pages
+at <a href="https://ekr.github.io/auto-minutes">https://ekr.github.io/auto-minutes</a>
+and then we use Cloudflare Workers to publish the GitHub pages subdirectory
+to the <a href="https://ietfminutes.org">https://ietfminutes.org</a>. Currently,
+the GitHub pages version doesn't really work properly due to some
+issues with relative links, but that's not the version you want to use anyway.</p>
+<h2>FAQ</h2>
+<h3>How much does this cost to run?</h3>
+<p>Using Gemini Flash 2.5, it costs less than $1 for each IETF meeting.
+GitHub Pages and Cloudflare workers are free.</p>
+<h3>Can I use the minutes? Can I submit them for my WG?</h3>
+<p>Yes. That's the idea! The minutes are generated in markdown
+and there's a link to the raw markdown so you can just cut
+and paste. You probably should double check for places
+where one of the AI processing steps has screwed up (e.g., &quot;quick&quot;
+for &quot;QUIC&quot;). Some of these
+issues may be in the original transcript generating stage and so
+are hard too fix in minutes generation.</p>
+<h3>What about future IETF meetings?</h3>
+<p>I plan to generate future meetings as soon as the transcripts
+are up.</p>
+<h3>What about interims, etc.?</h3>
+<p>Not supported yet, because I need to scrape them and then create
+a new directory structure. It's probably something I could work
+out if someone cared enough.</p>
+<h3>Can you auto-upload the minutes for me?</h3>
+<p>Not yet, because I don't have the right credentials. What you want
+is for the datatracker to do this automatically, which would
+actually be a lot simpler, because most of the code is working
+with the IETF site and then assembling the site.</p>
+<h3>My minutes were wrong. Will you fix them?</h3>
+<p>There is not currently any way to do that, but maybe in the future.</p>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

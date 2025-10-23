@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="teep.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-TEEP-20220728-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 14:00</p>
+<h1>teep</h1>
+<h2>Summary</h2>
+<p>The TEEP working group session covered significant progress on the TEEP Architecture document, which has resolved AD review comments and is now ready to advance. The IETF 114 Hackathon was highly productive, leading to numerous updates and clarifications in the TEEP Protocol Specification, particularly concerning attestation handling, component identification, TE property reporting, and cipher suite negotiation. Many protocol issues were resolved, with implementers actively participating. A new informational draft on TEEP Use Cases for Confidential Computing in Networks was presented and received strong support for adoption, with a recommendation to broaden its scope to include other cloud-based &quot;no untrusted application&quot; scenarios. Ongoing work includes addressing remaining protocol specification issues and coordinating with related working groups like RATS and SUIT.</p>
+<h2>Key Discussion Points</h2>
+<h3>TEEP Architecture Document (draft-ietf-teep-architecture)</h3>
+<ul>
+<li><strong>Status</strong>: The document has completed Working Group Last Call and addressed AD feedback, with updates in drafts 16, 17, and 18.</li>
+<li><strong>Section 3.3 (Weak Security)</strong>: Clarified that threats to &quot;critical infrastructure&quot; refer to &quot;assets that are essential for the functioning of a society and economy&quot; to avoid confusion with network infrastructure.</li>
+<li><strong>Section 9.3 (Compromised TE)</strong>: Added &quot;replay&quot; to the list of possible actions by a compromised TE agent (drop, replay, or delay messages).</li>
+<li><strong>Section 9.4 (Root CA vs. Trust Anchor)</strong>: Clarified that a &quot;trust anchor&quot; can be a non-root certificate, not exclusively a root CA, when it's a certificate.</li>
+<li><strong>Trust Anchor Definition</strong>: Made the definition more flexible, allowing a trust anchor to be &quot;a certificate, a raw public key, or other structure as appropriate.&quot;</li>
+<li><strong>Section 4.4 (Personalization Data)</strong>: Split confidentiality and integrity protection requirements into two separate sentences for improved clarity.</li>
+<li><strong>Editorial Nits</strong>: Addressed various minor edits, including breaking up long sentences, defining &quot;app store&quot; as a storage location, and rephrasing the threat modality to focus on physical or administrative access rather than user identity.</li>
+<li><strong>Conclusion</strong>: The document is considered complete and ready to advance.</li>
+</ul>
+<h3>IETF 114 Hackathon Report</h3>
+<ul>
+<li><strong>Objective</strong>: Incorporate changes and resolve issues identified since IETF 113.</li>
+<li><strong>Progress</strong>: Highly productive, with discussions leading to improvements on 11 issues and 9 pull requests. Implementers present agreed to breaking changes when necessary.</li>
+<li><strong>Key Topics Covered</strong>:
+<ul>
+<li>COSE/EAT cipher suite selection and handling between TAM and device.</li>
+<li>Identification of TEE information (agent/device).</li>
+<li>Renaming &quot;evidence&quot; to &quot;attestation payload&quot; and introducing &quot;attestation payload format&quot; to accommodate both passport and background check attestation models.</li>
+<li>Capturing TEE hardware and firmware properties.</li>
+<li>Standardizing COSE signing mechanisms.</li>
+</ul>
+</li>
+<li><strong>CDDL Tooling</strong>: Discussion on the challenges of concatenating CDDL files (e.g., COSE, SUIT Report) for validation due to lack of an explicit <code>include</code> mechanism. Michael Richardson provided guidance on generating complete CDDL files in <code>Makefile</code> and pulling dependencies.</li>
+</ul>
+<h3>TEEP Protocol Specification Updates (draft-ietf-teep-protocol)</h3>
+<ul>
+<li><strong>Hackathon Impact</strong>: The hackathon resulted in zero open issues initially, indicating significant stability, though three new issues have since arisen. Six implementations were represented.</li>
+<li><strong>Freshness Mechanism Registry</strong>:
+<ul>
+<li><strong>Problem</strong>: IANA review questioned placement of this registry.</li>
+<li><strong>Discussion</strong>: It was determined that freshness mechanisms are not TEEP-specific and could be a common RATS concept.</li>
+<li><strong>Resolution</strong>: Proposed to remove the registry from the TEEP protocol document and add a reference to the RATS &quot;Reference Interaction Models&quot; document.</li>
+</ul>
+</li>
+<li><strong>Attestation Handling (Issue 223 - Attestation Payload in Update Message)</strong>:
+<ul>
+<li><strong>Problem</strong>: The protocol lacked a mechanism to convey an attestation result from a TAM back to a TEEP agent (e.g., for the passport model, or local attestation results).</li>
+<li><strong>Resolution</strong>: The <code>update</code> message (which has an optional <code>manifest-list</code>) can now carry an <code>attestation-payload</code> and <code>attestation-payload-format</code>, allowing for the return of attestation results without a new message type.</li>
+<li><strong>TAM Behavior with Attestation Results</strong>: Explicit text was added defining TAM actions based on attestation results:
+<ol>
+<li>If attestation fails: Do not trust <code>query-response</code> data; attempt full TEEP agent and dependency update.</li>
+<li>If attestation succeeds but TEEP message indicates out-of-date components: Trust attestation, but apply updates as per TEEP message.</li>
+<li>If attestation succeeds and TEEP message indicates up-to-date: No update needed (potentially pass result as a passport).</li>
+</ol>
+</li>
+</ul>
+</li>
+<li><strong>Component Identification (Issue 220 - <code>tc-info</code> -&gt; <code>system-property-claims</code>)</strong>:
+<ul>
+<li><strong>Problem</strong>: The <code>suit-component-identifier</code> in <code>tc-info</code> (e.g., file path + sequence number) was not unique enough to distinguish different implementations at the same path. This was critical when reporting other TAs installed on the device.</li>
+<li><strong>Resolution</strong>: Replaced <code>tc-info</code> with <code>system-property-claims</code> from the SUIT Report document for better, more unique identification (e.g., digests).</li>
+<li><strong>Discussion</strong>: Michael Richardson questioned the rationale for SUIT reports being burdensome for SGX; Brian asked about the choice of <code>system-property-claims</code> over generic attestation claims.</li>
+</ul>
+</li>
+<li><strong>Reliably Getting TEE Hardware/Firmware Properties (Issue 189)</strong>:
+<ul>
+<li><strong>Problem</strong>: Difficulty in reliably obtaining TEE hardware properties (e.g., SGX version, TrustZone capabilities) in a way that is not overly burdensome or reliant on attestation results alone.</li>
+<li><strong>Resolution (Hardware)</strong>: A new field was introduced (reusing <code>system-property-claims</code>) for directly reporting TEE hardware properties, deemed the most extensible approach by implementers.</li>
+<li><strong>Resolution (Firmware)</strong>: For TEE firmware properties, the EAT profile was updated to use the <code>manifest</code> claim, as <code>software-name</code> and <code>software-version</code> were considered human-readable and unreliable for machine processing.</li>
+</ul>
+</li>
+<li><strong>EAT Claims Profile Update</strong>:
+<ul>
+<li>The TEEP profile for attestation results (using EAT in CWT format) was updated.</li>
+<li><code>chip-version</code> was changed to <code>hardware-version</code> (consistent with EAT spec).</li>
+<li><code>software-name</code> and <code>software-version</code> claims were replaced by the <code>manifest</code> claim for machine-processable firmware identification.</li>
+<li>These optional claims primarily serve efficiency, allowing a TAM to perform targeted updates.</li>
+</ul>
+</li>
+<li><strong>Cipher Suite Negotiation</strong>:
+<ul>
+<li><strong>Problems</strong>: Ambiguity around mandatory COSE operations (<code>Sign</code> vs. <code>Sign1</code>), CDDL contradictions, mandatory cipher suite combinations for TAMs, perceived burden of encryption/MAC, incorrect CDDL, and lack of explicit order for operations within a cipher suite.</li>
+<li><strong>Resolutions</strong>:
+<ul>
+<li><code>cipher-suite</code> was made extensible (a <code>socket</code> type in CDDL).</li>
+<li>MAC and encryption algorithms were moved out of the main document to future extensions for simplicity.</li>
+<li>The core protocol now focuses on <code>Sign1</code> (single signature).</li>
+<li>CDDL contradictions were resolved (appendix version declared correct).</li>
+<li>The order of operations within a cipher suite is now specified as meaningful.</li>
+</ul>
+</li>
+<li><strong>Mandatory Cipher Suites</strong>: Two mandatory cipher suites were defined: <code>Sign1</code> with <code>ES256</code> and <code>Sign1</code> with <code>EdDSA</code>. TAMs <em>must</em> support both, while TEEP agents <em>must</em> support at least one.</li>
+<li><strong>Security Considerations</strong>: Explicitly states that TEEP itself does not provide transport layer encryption but refers to the SUIT Firmware Encryption document for payload protection.</li>
+<li><strong><code>supported-cipher-suites</code> Field</strong>: Changed from optional to mandatory. This was a breaking change, but implementers agreed it simplifies TEEP agent code and improves future-proofing.</li>
+<li><strong>Message Protection</strong>: The <code>Query Response</code> message can now be protected, as the cipher suite is selected prior to its transmission. Messages are implicitly bidirectional.</li>
+<li><strong>Discussion (Encryption)</strong>: Questions arose regarding the encryption capabilities of EAT and SUIT reports and the implications for sensitive data if transport or payload encryption is not used. Key exchange for such scenarios was noted as challenging.</li>
+<li><strong>Discussion (Error Messages)</strong>: Consensus to send error messages when possible (e.g., malformed <code>Query Request</code>), protecting them with the selected cipher suite if available, or a mandatory one otherwise. This aids interoperability and debuggability, mitigating concerns about information disclosure to attackers (Michael Richardson cited IKEv1 issues).</li>
+</ul>
+</li>
+<li><strong>Component Deletion (New Issue)</strong>:
+<ul>
+<li><strong>Problem</strong>: Current <code>update</code> message requires a SUIT manifest for deletion. This is problematic for selective deletion across devices (some need to delete, others keep), or for deleting components not initially known to the TAM (e.g., side-loaded, debug versions).</li>
+<li><strong>Proposed Solution (Ken)</strong>: SUIT manifests could embed &quot;uninstall directives&quot; in the original install manifest. The TEEP protocol could then offer a simple &quot;delete by ID&quot; command in the <code>update</code> message, leveraging the pre-installed uninstall directives.</li>
+<li><strong>Discussion</strong>: Raised concerns about threat modeling (unauthenticated commands?), implications for multiple TAMs/trust domains, mutual dependencies between components, and the exact content/mechanism of uninstall instructions. Michael Richardson suggested leveraging reference counting for components and that debug versions are a valid reason for unknown components.</li>
+</ul>
+</li>
+</ul>
+<h3>TEEP Use Cases for Confidential Computing in Networks (draft-peng-teep-cc-use-cases)</h3>
+<ul>
+<li><strong>Motivation</strong>: To clarify TEEP architecture and protocol application for confidential computing (CC) in networks, focusing on different CC instances (trusted process, VM, container), application packaging, and deployment steps.</li>
+<li><strong>Notional Architecture</strong>: Introduced Network Management &amp; Orchestration Center (N_MOC) housing the TAM, and a Data Owner/Network User.</li>
+<li><strong>Deployment Principles</strong>: Emphasized that personalization data must be processed only after successful remote attestation and securely transferred.</li>
+<li><strong>Package Modes</strong>: Presented various combinations for packaging Untrusted App (UA), Trusted App (TA), and Personalization Data (PD), with corresponding deployment steps for physical/VM/container environments.</li>
+<li><strong>Oblivious Transfer Scenario</strong>: Illustrated a specific use case where TEEP + CC can optimize private computing by reducing network overhead for oblivious transfer operations, replacing it with secure memory access within the TEE.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Hannes Tschofenig highlighted the document's importance in mapping CC use cases to TEEP terminology and architecture, offering helpful examples.</li>
+<li>Dave Farmer identified two valuable contributions: the use case of a TEEP agent in a <em>network middlebox</em> (not just cloud/device) and scenarios where there is <em>no untrusted application</em> (only a trusted application within the TEE).</li>
+<li>Daniel Migault suggested it should be an illustrative, informational document rather than a comprehensive specification.</li>
+</ul>
+</li>
+<li><strong>Decision</strong>: The working group supported the adoption of <code>draft-peng-teep-cc-use-cases</code> as an <strong>informational</strong> document.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: The TEEP Architecture document (draft-ietf-teep-architecture) is ready to advance for AD review.
+<ul>
+<li><strong>Action Item</strong>: Paula (AD) to review <code>draft-ietf-teep-architecture</code> for advancement.</li>
+</ul>
+</li>
+<li><strong>Decision</strong>: The freshness mechanism registry will be moved from the TEEP Protocol document to the RATS Reference Interaction Models document.
+<ul>
+<li><strong>Action Item</strong>: Hank to add the freshness mechanism registry to the RATS Reference Interaction Models document.</li>
+</ul>
+</li>
+<li><strong>Decision</strong>: The TEEP Protocol will allow the <code>update</code> message to carry an <code>attestation-payload</code> and <code>attestation-payload-format</code> to support attestation result conveyance.</li>
+<li><strong>Decision</strong>: The TEEP Protocol will replace <code>tc-info</code> with <code>system-property-claims</code> for component identification.</li>
+<li><strong>Decision</strong>: The TEEP Protocol will use a new field (reusing <code>system-property-claims</code>) for reporting TEE hardware properties.</li>
+<li><strong>Decision</strong>: The EAT claims profile in the TEEP Protocol will be updated to use <code>hardware-model</code>, <code>hardware-version</code>, and <code>manifest</code> claims for firmware properties.</li>
+<li><strong>Decision</strong>: The TEEP Protocol's cipher suite negotiation has been simplified to focus on <code>Sign1</code>, define two mandatory suites for TAMs, and mandate the <code>supported-cipher-suites</code> field.</li>
+<li><strong>Decision</strong>: The working group supported the adoption of <code>draft-peng-teep-cc-use-cases</code> as an <strong>informational</strong> document.
+<ul>
+<li><strong>Action Item</strong>: Peng Ling to update <code>draft-peng-teep-cc-use-cases</code> to an informational document type.</li>
+<li><strong>Action Item</strong>: Peng Ling to consider broadening the scope of <code>draft-peng-teep-cc-use-cases</code> to include other &quot;no untrusted application&quot; cloud use cases before submission.</li>
+</ul>
+</li>
+<li><strong>Action Item</strong>: Dave Farmer to post the current GitHub copy of the TEEP Protocol draft to the IETF datatracker to incorporate recently merged pull requests.</li>
+<li><strong>Action Item</strong>: TEEP chairs to poll the mailing list regarding readiness for an early review or Working Group Last Call for the TEEP Protocol draft.</li>
+<li><strong>Action Item</strong>: SUIT Working Group is encouraged to discuss feedback on SUIT reports being burdensome for some TEEs, clarify the use of <code>system-property-claims</code>, and provide guidance on uninstall directives within SUIT manifests.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussion and resolution of remaining TEEP Protocol issues, particularly around component deletion mechanisms and potential encryption for EAT/SUIT reports.</li>
+<li>Integrate <code>draft-peng-teep-cc-use-cases</code> into the working group's informational output, potentially expanding its scope as discussed.</li>
+<li>Ongoing coordination with the RATS and SUIT working groups on cross-cutting topics like freshness mechanisms, SUIT report applicability, and component uninstall procedures.</li>
+<li>Prepare the TEEP Protocol draft for Working Group Last Call once the remaining issues are addressed and the updated GitHub copy is posted.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

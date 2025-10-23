@@ -1,0 +1,87 @@
+**Session Date/Time:** 21 Mar 2022 09:00
+
+# raw
+
+## Summary
+
+The raw working group session covered updates on several critical drafts: the LDX draft is ready for IETF Last Call, and the Use Cases draft is awaiting AD review. A significant portion of the session was dedicated to the architecture and framework documents, discussing the split, refining terminology (especially "path" and "track" in the context of raw's unique requirements), and clarifying the OODA loop components (PCE/PSC). The OAM support draft presented updates on specific metrics and the concept of piggybacking. Finally, a new draft on multi-domain extensions was introduced to gauge interest and foster discussion on expanding raw's applicability beyond single administrative domains. The chairs encouraged participants to engage in reviews and announced plans for a formal interim meeting to delve deeper into the architecture.
+
+## Key Discussion Points
+
+### LDX Draft Status (Nils)
+*   **Version 09 to 10 Changes:**
+    *   **Motivation/Use Cases:** Clarified that current aeronautical communications (VHF Data Link Mode 2) lack cyber security, relying on phraseology, contrasting with LDX's proposed security measures. Emphasized strict separation between safety-critical (high reliability/availability, ~10kbps) and in-flight entertainment (throughput-focused) communications.
+    *   **Requirements:** Highlighted the shift from voice/ACARS (1970s) to IP-based Aeronautical Telecommunications Network (ATN) traffic (2010s vision), advocating for an IPv6-based ATN network distinct from the customer internet.
+    *   **Rollout:** Noted a delay in the ATN rollout from 2024 to 2025-26.
+    *   **References:** Most normative references were moved to informative, making the document self-contained for core understanding, with external references providing deeper context. Appendix updated regarding aeronautical referential documents.
+*   **Readiness:** John (AD) confirmed that all his comments were addressed, and the draft is ready for IETF Last Call.
+
+### Raw Use Cases Draft (Carlos)
+*   **Overview:** The draft describes various use cases, including aeronautical communications, amusement parks, industrial wireless, video, gaming, UAVs, platooning, edge robotics, and emergencies, detailing motivation, wireless needs, and raw requirements for each.
+*   **Updates:** A subsection on "non-latency critical considerations" (e.g., resiliency) was added based on feedback. All review comments from Pascal and Karina were addressed.
+*   **Status:** The draft has been submitted for publication and is awaiting comments at the AD stage.
+
+### Architecture and Framework Documents (Pascal)
+*   **Document Split:**
+    *   **Architecture:** Focuses on broad building blocks, terminology, and goals, intended for early publication.
+    *   **Framework:** A "journal" of progress, detailing specific technologies and implementation choices, intended for publication at the end of the working group's charter.
+*   **Terminology:**
+    *   **"Path" vs. "Complex Path" vs. "Track":**
+        *   IETF "path" typically implies a serial, integrity-preserving sequence.
+        *   Raw's "complex path" describes the actual "experience" where packets might be duplicated, fragmented, or network-coded.
+        *   "Track" is introduced as the *potential* graph, a layer-3 abstraction of the network available for propagating information from ingress to egress.
+    *   **Discussion on "Track":** Lou raised concerns about potential overlap with existing TE terminology like "T-path" or "protection path," emphasizing the need for alignment with existing IETF terms. Rick (Chair) stressed reusing existing terminology where possible.
+    *   **"Piping" vs. "Flows":** Proposed separating network layer constructs (pipes/tracks) from application layer flows, allowing multiple flows within a single pipe.
+*   **OODA Loop Focus:** The architecture centers on the Observe, Orient, Decide, Act (OODA) loop for reliable and available wireless.
+    *   **Observe:** OAM, PC, metadata.
+    *   **Orient:** Intelligence/recommendations from a PCE (Path Computation Element).
+    *   **Decide:** PSC (Path Segment Controller) making decisions based on observations and orientation.
+    *   **Act:** Signaling (e.g., packet duplication, multi-path routing).
+    *   Raw considers scenarios where not all path segments are deterministic, distinguishing from DetNet/TSN's strict bounded latency requirements.
+*   **Control Plane (PCE-PSC):**
+    *   Carlos inquired about control plane extensions for AI-based decisions and PCE/PSC interactions.
+    *   Pascal suggested intelligence/learning (time series, statistics) would reside in a central PCE, which would then feed digested experience to distributed PSCs for real-time decisions. Signaling between PCE and PSC would be necessary.
+    *   Rick (Chair) noted the logical separation is good and needs clarification on southbound communication (e.g., using DLAPP). Lou suggested leveraging existing TE concepts for separating track availability determination from per-packet selection.
+    *   Rick commented that while the nature of the information exchanged between PCE/PSC is in scope, defining the specific protocols (e.g., YANG models over Netconf) might stretch the WG's current scope.
+*   **IPv6 Scope:** Pascal is open to removing the current architectural limitation to IPv6 if contributions explain how to generalize it.
+*   **Framework Status:** It remains a living document to record implementation decisions and protocol choices as the WG progresses.
+*   **Interim Meeting:** It was agreed that a formal interim meeting would be beneficial for deeper discussion on the architecture and framework documents.
+
+### OAM Support Draft (Fabrice)
+*   **Focus:** This draft specifically addresses raw-specific OAM aspects, separated from generic DetNet OAM.
+*   **Updates:**
+    *   **Recommendations:** Introduced specific metrics to be supported by OAM nodes, including packet error rate, one-way delay, latency, and maximum consecutive failures. Emphasized methods for aggregating statistics and hybrid path tracing.
+    *   **Piggybacking:** Clarified that piggybacking (inserting OAM info into existing packets) reduces medium access cost in scheduled wireless by utilizing unused time slot space, though energy consumption might still be significant. It's classified as orthogonal to active, passive, or hybrid OAM techniques.
+*   **Status:** The draft is stable, and the author welcomes further comments and suggestions.
+
+### Multi-Domain Extensions (Carlos)
+*   **Problem Statement:** The current raw scope implicitly focuses on single administrative domains. There is a need to address scenarios requiring raw guarantees across multiple domains (e.g., hosts in different domains needing reliable communication within large factories).
+*   **Goal:** To explore potential architectural and technological gaps, including multi-domain OAM, and propose initial solutions to stimulate discussion within the working group.
+*   **Proposed Solution (High-Level Example):** Illustrated a flow where an ingress PSE in one domain coordinates with its PCE, which then inter-works with PCEs in other domains to compute tracks, exchange link metrics, and split SLA responsibilities across domains, enabling domain-specific OAM.
+*   **Discussion:**
+    *   Rick (Chair) pointed to an existing generic multi-domain problem statement from the TE working group as a reference.
+    *   The question was raised whether multi-domain raw should be integrated into the existing architecture or treated as an addendum.
+    *   Eve and Lou noted that the DetNet charter already alludes to "coordinated domains," suggesting alignment.
+    *   Carlos confirmed he is not seeking immediate working group adoption but rather feedback and discussion on the mailing list to gauge interest.
+
+### Open Discussion
+*   Rick mentioned ongoing DLAPP extensions in the MANET working group that address radio-link specific properties (e.g., channel assignment, frequency bandwidth) relevant to raw's link awareness needs.
+*   The chairs encouraged participants to provide thorough reviews of the documents.
+
+## Decisions and Action Items
+
+*   **Decision:** IETF Last Call for the LDX draft will begin this week.
+*   **Action Item:** Nils to upload version 10 of the LDX draft to the datatracker.
+*   **Action Item:** Chairs to schedule a formal virtual interim meeting to provide a deeper dive into the Architecture and Framework documents, and potentially multi-domain aspects, with proper advance publicity on the mailing list.
+*   **Action Item:** Lou to provide references for existing IETF terminology that might overlap with "Track" and related concepts for the Architecture draft authors to review.
+*   **Decision:** The meeting concluded early to allow attendees time for document review.
+
+## Next Steps
+
+*   **LDX Draft:** Proceed with IETF Last Call.
+*   **Raw Use Cases Draft:** Await comments during the AD review stage.
+*   **Architecture and Framework Drafts:** Continue discussions, focusing on terminology alignment with existing IETF concepts (e.g., TE paths), scope (e.g., IPv6 limitations), and clarification of PCE/PSC interactions. A formal interim meeting will be organized.
+*   **OAM Support Draft:** Authors to address any further comments received.
+*   **Multi-Domain Extensions Draft:** Continue discussion on the mailing list to assess working group interest and potential scope expansion.
+*   **General:** All participants are encouraged to review the drafts and provide feedback on the mailing list.
+*   **Future Meetings:** Chairs intend to meet in person at IETF 114.

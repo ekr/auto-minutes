@@ -1,0 +1,81 @@
+**Session Date/Time:** 27 Jul 2022 17:30
+
+# lpwan
+
+## Summary
+
+The LPWAN Working Group session reviewed the status of several drafts, including Chic over NB-IoT, the Chic YANG Data Model, Compound ACK, and Chic over Sigfox, all nearing publication. Significant technical updates were presented for each. A new proposal by Bob Muskovich to assign an IP protocol number for Chic was discussed, aiming to enable end-to-end compression of security wrappers and transport layers, receiving strong support from the room. The architecture draft was updated to address Chic instance identification in peer-to-peer scenarios. Finally, the working group discussed potential re-chartering to expand into new technologies (Chic over Foo, e.g., PPP, 802.15.4), incorporating Chic as an IP next header, and exploring forward error correction (FEC) for Chic fragments, with the room expressing significant interest in pursuing new work.
+
+## Key Discussion Points
+
+*   **Chic over NB-IoT Draft (v10):**
+    *   Addressed review comments from Pascal, primarily regarding references and cross-references.
+    *   Recommended an MTU size of 1358 bytes to avoid RLC layer segmentation in 3GPP NB-IoT networks, while noting larger MTUs are possible but may incur L2 segmentation.
+    *   Clarified fragmentation usage based on deployment scenarios:
+        *   Chic in PDCP layer (radio link): Only compression recommended due to RLC segmentation, except for transparent mode where Chic fragmentation is recommended.
+        *   Chic in Non-Access Stratum (NAS): Only compression recommended.
+        *   End-to-end connection (IP over Chic over MAC): Both compression and fragmentation recommended.
+    *   Draft sent to IESG for publication.
+
+*   **Chic YANG Data Model Draft (v14):**
+    *   Covers definitions in RFCs 8724 and 8824 (compression, fragmentation, no-compression for IPv6/UDP/CoAP).
+    *   **Main Change:** Improved timer management using a `tick-duration` and `tick-number` for greater flexibility, allowing ranges from microseconds to several years. Default `tick-duration` set to achieve ~1-second ticks, suitable for LPWANs like LoRaWAN (12-hour max timer).
+    *   Addressed Young Doctor's review comments (Martin Thompson, John Clark).
+    *   **Proposed Significant Modification:** Added a `rule-nature` leaf to explicitly define a rule as either compression or fragmentation, resolving ambiguity where a rule could theoretically be both. The 'no-compression' choice was removed.
+    *   **Future Work Discussion:** Identified a gap in device identification within the YANG model, crucial for security and device management (e.g., using `devEUI`, `URN`, or compact IDs). Proposed extending the model with device IDs for star or mesh topologies.
+
+*   **Compound ACK Draft (v05):**
+    *   **Key Change:** Modified handling of padding bits; `m` bits can be used as zero to signal the end of a compound ACK when more than padding bits are needed.
+    *   Removed references to "receiver award" and bounds of Compound ACK to ACK on error.
+    *   Provided compressed bitmap examples.
+    *   Integrated a complete section of RFC 8724 (Section 8.4.3, ACK-on-error mode) to clearly highlight differences and usage.
+    *   Stated that ACK on RFC 8724 is a special case of the compound ACK (single window of tiles).
+    *   Draft ready for publication, dependent on Chic over Sigfox.
+
+*   **Chic over Sigfox Draft (v11):**
+    *   Addressed shepherd review comments from Anna.
+    *   Updated abstract, introduction, acronyms, and terminology ("data flows" to "traffic flows").
+    *   Confirmed adherence to Appendix F.
+    *   **Recommendation:** A message should be sent every 24 hours to enable downlink transmission on Sigfox.
+    *   Added recommended values for inactivity and retransmission timers.
+    *   **RCS Calculation:** Clarified that only the number of tiles in the last window is sent, leveraging Layer 2 CRC for full message reconstruction.
+    *   Draft ready for publication, dependent on Compound ACK.
+
+*   **Chic as IP Protocol Number (Bob Muskovich) - New Proposal:**
+    *   **Motivation:** To enable end-to-end compression within IP, specifically targeting security wrappers (e.g., ESP) and transport layers (e.g., UDP in DTLS). This allows Chic rules to operate on payload within security envelopes and compress redundant transport headers (e.g., UDP CRC when ICV is present).
+    *   Would allow Chic to act as a transport layer, providing functions like end-to-end forward error correction (FEC) without requiring an ACK channel.
+    *   **Technical Considerations & Questions:**
+        *   Needs a new IPv6 Next Header value.
+        *   Concerns about router dropping unknown protocol numbers (addressed by Eric, IPv6 routers do not fragment, eliminating some fragmentation concerns).
+        *   Possibility of "Chic inside Chic" (e.g., ESP payload compressed by Chic).
+    *   **Discussion:** Pascal noted that FEC for fragments aligns with potential re-chartering for fragment reliability, saving return channel bandwidth in asymmetrical networks. Eric suggested the work might fit better in "IntArea" working group, but expressed support.
+
+*   **Chic Architecture Draft Update:**
+    *   Identified gaps in the original architecture, especially for non-traditional LPWAN deployments beyond device-to-gateway (e.g., peer-to-peer).
+    *   **Chic Instance Identification:** For symmetrical or peer-to-peer networks, where the "app" and "device" roles are not implicit, the Chic instance is now derived from the underlying communication pipe or session (e.g., the device initiating a TCP connection defines its role). This avoids modifying Chic itself.
+    *   For hub-and-spoke models (e.g., Bluetooth LE), the hub acts as the "gateway" and spokes as "devices".
+    *   New text has been produced to document these architectural considerations.
+
+*   **Re-chartering Discussion:**
+    *   **Proposals for new work:**
+        *   **Chic over Foo:** Extending Chic to new technologies not explicitly covered in the current charter (e.g., Chic over PPP, 802.15.4 2.4GHz, Wi-Fi, Body Area Networks). The previous PPP over Chic draft was stalled in IntArea due to lack of review.
+        *   **Chic Next Header:** Bob Muskovich's proposal for an IP protocol number for Chic.
+        *   **FEC for Chic Fragments:** Exploring robust fragment reliability using FEC, potentially saving return channel resources in asymmetrical networks.
+    *   **Working Group Name:** Carlos suggested changing the working group name from "lpwan" if it expands beyond LPWAN technologies. Eric advised against this, considering it a "useless fight" and suggesting to simply update the charter.
+    *   **Mesh Topology:** Carlos requested future architecture updates to explicitly mention mesh topologies, particularly regarding Chic over `sixlowpan` fragmentation. Pascal noted that discussions for mesh are ongoing and require more consensus before being cast in stone in the architecture draft.
+
+## Decisions and Action Items
+
+*   **Decision:** The working group expressed strong positive sentiment (10-0 in a room poll) for Bob Muskovich's proposal to define Chic as an IP protocol number.
+*   **Decision:** The working group expressed significant interest (11-2 in a room poll) in taking on new work and potentially re-chartering to cover broader areas.
+*   **Action Item (Anna/Sergio):** Upload new versions of the Compound ACK and Chic over Sigfox drafts correcting "needs" and Anna's final mailing list comments.
+*   **Action Item (Chairs):** Request publication for Chic over NB-IoT and Chic YANG Data Model. Initiate shepherd reviews for Compound ACK and Chic over Sigfox.
+*   **Action Item (Bob Muskovich):** Consider how FEC for fragments could be accommodated within the existing Chic fragmentation framework and discuss with the working group. Pursue the Chic IP protocol number proposal, potentially with IntArea support.
+*   **Action Item (Working Group):** Discuss re-chartering proposals on the mailing list to shape the scope of future work.
+
+## Next Steps
+
+*   Complete shepherd reviews and push Compound ACK and Chic over Sigfox drafts for publication.
+*   Continue discussions on the mailing list regarding re-chartering proposals, including Chic over new technologies (PPP, 802.15.4), Chic as an IP Next Header, and FEC for Chic fragments.
+*   The chairs will initiate interim meetings after the summer break (likely September) to continue discussions, especially on re-chartering and architectural updates for mesh topologies.
+*   Work on defining device identification within the Chic YANG data model.

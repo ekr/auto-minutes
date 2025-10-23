@@ -1,0 +1,90 @@
+**Session Date/Time:** 28 Jul 2022 17:30
+
+# dnsop
+
+## Summary
+
+The dnsop session covered a wide range of topics, including a proposal for a new DNS Directorate to improve cross-WG document review, updates on numerous in-progress and last-call drafts, hackathon results, and several technical presentations. Key discussions included the status of DNSSEC Best Current Practice and Validator Requirements, the potential for a "dry run" DNSSEC mechanism, recommendations for domain verification techniques (with a strong push for BCP status), an extension for Extended DNS Errors (EDE) to report filtering reasons, and a research presentation highlighting high failure rates for endpoint DNSSEC validation over traditional UDP/TCP. The session concluded with a discussion on ensuring consistency for CDS/CDNSKEY records in multi-signer environments.
+
+## Key Discussion Points
+
+*   **IETF AD Term and DNS Directorate**:
+    *   Warren Kumari announced his term as IETF AD is ending in March and encouraged volunteers for the role.
+    *   He proposed, with Eric Vyncke, to establish a **DNS Directorate (v2)**, similar to OpsDir or SecDir. This directorate would review DNS-related drafts originating from other working groups (currently 59 drafts mention DNS outside dnsop). The goal is to provide focused DNS expertise early in the document lifecycle to prevent issues from reaching the IESG telechat without proper DNS review.
+    *   A call was made for volunteers, including secretaries and reviewers (potentially pairing experienced and newer members).
+
+*   **Document Updates**:
+    *   **`dnssec-bcp` (Paul Hoffman)**: Described as a consolidating document for DNSSEC RFCs, affirming DNSSEC as Best Current Practice. It is considered ready for Working Group Last Call (WGLC).
+    *   **`dnssec-validator-requirements` (Daniel Migault)**: Provides operational recommendations for DNSSEC resolver operators (provisioning, monitoring, management), emphasizing not interfering with DNS mechanics. It is considered well-shaped and ready for WGLC.
+    *   **Working Group Last Calls (in progress or planned)**:
+        *   `dns-voip-fragmentation`: WGLC in progress (3 weeks due to August meeting).
+        *   `glue-unoptional`: Ready for WGLC (discussion on starting now vs. September due to August holidays).
+        *   `catalog-zones`: Ready for WGLC (early September).
+        *   `validator-requirements`: Ready for WGLC (September).
+    *   **Ongoing Drafts**:
+        *   `dnssec-bis` (Dimitri Johnsen): New informational version submitted, addresses previous comments. Needs review.
+        *   `ns3-validation`: Authors working on outstanding items.
+        *   `8499-bis` (Bailiwick Definition): Interim meeting proposed to finalize.
+        *   `ede-error-reporting`: Authors on holiday, feedback expected soon.
+        *   `zone-version-other`: Authors to be contacted regarding EDNS registry.
+        *   `dnssec-automation`: Needs another author from data-c, protocol fully implemented by Johannes.
+        *   `dnssec-bootstrapping`: New version submitted, progressing well.
+    *   **Document Adoption**:
+        *   `domain-verification-techniques` and `caching-resolution-failures` were adopted.
+        *   `service-b-dain` showed strong poll interest but lacked email comments, prompting chairs to request feedback.
+
+*   **Hackathon Results**:
+    *   **DNSSEC Bootstrapping**: Implemented in two ways: a Python-based cron job (generates and pushes signaling zone) and PowerDNS (synthesizes records on the fly using Lua). Both are deployed.
+    *   **DNSSEC Error Reporting**: Happy path implemented, further work needed on features and preventing resolver attacks.
+
+*   **Draft: `domain-verification-techniques` (Shumon Huque)**:
+    *   A survey of existing techniques (TXT, CNAME) for domain ownership verification.
+    *   Recommends targeting records to a specific service and time-bounding them.
+    *   Received feedback to move examples to an appendix and remove normative language (now informational).
+    *   **Discussion**: Strong sentiment in the room for this to be a Best Current Practice (BCP) document due to inconsistent current practices and the need for clear guidance.
+
+*   **Draft: `dry-run-dnssec` (Yorgos P. Theodorou)**:
+    *   Proposes a "dry run" DS record type to allow DNSSEC testing (adoption, key rollovers) without affecting live validation. Resolvers would generate reports (using DNSSEC Error Reporting) and fall back to known secure/insecure states.
+    *   **Discussion**: Concerns raised about potential disruption to validation behavior, the use of DS "hacks" vs. new RR types, variable length digests (potentially useful for post-quantum DNSSEC), implementation complexity, and the challenge of measuring the true error rate without a "denominator" of supporting resolvers. Security caveat: an insecure zone in dry-run will fall back to insecure.
+
+*   **Draft: `dns-priming-bis` (Paul Hoffman)**:
+    *   An update to RFC 8109 on DNS priming (initial cache population).
+    *   Aims to address deferred issues and new considerations like pre-fetching and post-priming authoritative server selection strategies.
+    *   Argued as important for correct resolver operation despite being "boring."
+
+*   **Draft: `extended-dns-error-filtering` (Dan Wing)**:
+    *   An extension to EDE to provide more detailed information about DNS filtering actions (what was filtered, by whom).
+    *   Recent changes include constraining JSON, numeric sub-error codes, and requiring AD Resolver Info to prevent cache poisoning.
+    *   **Discussion**: Positive feedback for operational usefulness and interoperability with RPZ. Questions about browser vendor interest and whether dnsop is the right working group; strong consensus from attendees that it is.
+
+*   **Research Presentation: Endpoint DNSSEC Validation (Chris Wood)**:
+    *   Research conducted using Firefox demonstrated that direct endpoint DNSSEC validation (over UDP/TCP port 53) is generally **not safe** due to high failure rates.
+    *   RRSIG queries failed ~30% of the time; other record types (e.g., HTTPS, SMIMEA) also showed significant failure rates (5-15%).
+    *   Failures are attributed to middleboxes, home gateways, and resolvers mangling or failing to deliver DNSSEC-related records.
+    *   Suggests validation might be safer over DoH/DoT due to bypassing intermediaries.
+    *   Failure rates vary geographically (US/Europe better, China/India worse) and with packet size.
+
+*   **Draft: `cds-cdnskey-consistency` (Peter Thomassen)**:
+    *   Highlights an issue where inconsistent CDS/CDNSKEY records across a child zone's authoritative name servers can lead to delegation breakage (e.g., in multi-homing setups).
+    *   Proposes that a parental agent querying CDS/CDNSKEY must query all listed name servers and only act if the records are consistent.
+    *   **Discussion**: Concerns raised about potential denial-of-service if a single NS being down prevents key rollovers, the presence of "hidden masters," and the need for clarity on rechecking frequency in case of inconsistency.
+
+## Decisions and Action Items
+
+*   **DNS Directorate**: Warren Kumari and Eric Vyncke will organize the DNS Directorate and seek volunteers for secretaries and reviewers.
+*   **`dnssec-bcp`**: Chairs will initiate a 3-week Working Group Last Call.
+*   **`dnssec-validator-requirements`**: Chairs will initiate a Working Group Last Call.
+*   **`glue-unoptional`**: Chairs to decide on WGLC timing (August vs. September) based on feedback.
+*   **`catalog-zones`**: WGLC to be initiated in early September.
+*   **`8499-bis`**: An interim meeting will be organized to finalize the bailiwick definition.
+*   **`domain-verification-techniques`**: Working Group expresses strong support for this draft to become a Best Current Practice (BCP). Chairs will discuss with authors to adjust the status and move examples to an appendix.
+*   **`extended-dns-error-filtering`**: Chairs will plan a call with Dan Wing and potential implementers to gauge explicit implementation support before considering working group adoption.
+*   **`cds-cdnskey-consistency`**: Author Peter Thomassen to consider feedback regarding potential DoS implications, hidden masters, and the definition of time constants for rechecking inconsistencies.
+
+## Next Steps
+
+*   Working Group Last Calls for `dnssec-bcp`, `dnssec-validator-requirements`, `glue-unoptional`, `catalog-zones`, and `validator-requirements` are expected in the coming months.
+*   An interim meeting for `8499-bis` will be scheduled.
+*   Chairs will follow up on `service-b-dain` and `extended-dns-error-filtering` based on feedback and implementation interest.
+*   Attendees are encouraged to review draft versions, particularly those entering WGLC, and provide feedback via the mailing list.
+*   The next IETF meeting will be in London in November, with an interim meeting for dnsop planned for September.

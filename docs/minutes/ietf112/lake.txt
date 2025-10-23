@@ -1,0 +1,70 @@
+**Session Date/Time:** 12 Nov 2021 14:30
+
+# lake
+
+## Summary
+
+The lake working group met to discuss the status of the Ad Hoc protocol specification, review progress on formal analysis, finalize the scope of the traces document, and address open issues. Key discussions included defining the test vector scope for the traces draft, privacy considerations related to connection identifiers, and preparing for a potential Working Group Last Call (WGLC) in early 2022.
+
+## Key Discussion Points
+
+*   **Formal Analysis of Ad Hoc**
+    *   Militia provided an update on a short paper being prepared for the academic cryptographic community.
+    *   This document summarizes the Ad Hoc protocol, its security goals (from the requirements draft), protocol design, key schedule, cipher suite parameters, and specific constructs like the exporter interface and key update function.
+    *   It also maps properties proven by existing formal analyses and identifies areas for further study.
+    *   The paper will be published on Open Archives next week, with an invitation to the formal verification community to begin a 6-month analysis period. Karthik will assist in reaching relevant teams.
+    *   Chairs clarified this is not a working group consensus document but an invitation for external review, open to iterative updates based on feedback. The 6-month period is a preliminary suggestion.
+
+*   **Traces Draft Adoption and Scope**
+    *   The working group adoption call received positive feedback, supporting publication as an Informational RFC.
+    *   A key remark emphasized the importance of verifying test vectors with multiple implementations to ensure correctness.
+    *   **Discussion on Scope for the Traces Draft**:
+        *   Current scope: `method_0` (signature) and `method_3` (static-static) with cipher suite 0 (X25519-based).
+        *   Interest was expressed for NIST P256 curves (cipher suites 2 and 3).
+        *   **Timothy's suggestion**: Include all methods (0, 1, 2, 3) with cipher suites 0 and 2 in the draft; host a more exhaustive list of test vectors on a GitHub page.
+        *   **John's suggestion**: Select 2-3 core traces for the draft, focusing on detailed explanations and correctness. Maintain an extensive, JSON-formatted set of test vectors on GitHub.
+        *   **Marco's suggestion**: Methods 0 and 3 for cipher suites 0 and 2 would be a good compromise.
+        *   Marek Serafin (Assa Abloy) is joining as a co-author to contribute test vectors for cipher suites 2 and 3.
+        *   Existing test vectors are already on GitHub. The group needs to create a process for submitting new test vectors (e.g., via PRs).
+
+*   **Ad Hoc Main Specification Status and Open Issues**
+    *   John provided an update on changes from draft-ietf-lake-ad-hoc-08 to -12.
+    *   Changes from -08 to -11 (discussed at interim): Key derivation simplification, cipher suite negotiation changes, MAC length addition, 45-byte requirement for DY/ciphertext2, CWT/CCS support, EAD type restructuring, various fixes.
+    *   Changes from -11 to -12 (post-interim): Mostly clarifications. COSE `sender_parameters` clarification, PQC CHEMs note for `method_0` (future work), support for all COSE signatures, cipher suite clarifications, MTI section updates, COSE processing moved to appendix, internal reference fixes.
+    *   **Discussion on Open Issues**:
+        *   **Cryptographic explanations**: Minor clarifications added. MAC must be at least 8 bytes.
+        *   **Privacy considerations**: New issue based on Model-T discussions regarding tracking clients across multiple servers if the same identity is used. No technical change, but adds considerations.
+        *   **PQC CHEMs**: Clarified they could be added later to `method_0` (needs a new COSE draft/cipher suite specification).
+        *   **Non-repudiation**: Clarified that all input to the signature function must be saved by the other party to prove participation, unlike wire-visible proofs in some protocols.
+        *   **Optimal Padding (Issue 190)**: Ad Hoc currently reveals identity and EAD lengths. Proposal to add optional padding mechanism to security considerations.
+        *   **EAD Internal Structure/API (Issue 186)**: Needs further discussion on where CBOR encoding should occur and how the EAD interface should be specified (e.g., as a byte string).
+        *   **Compact Representation**: Alignment with CFRG HPKE draft. No strong positive feedback from CFRG.
+        *   **Limited Randomness**: PR submitted referencing OSCORE appendix.
+        *   **Test Vector Issues**: Need a table of contents for JSON test vectors; more cipher suites (P256 ecdsa is coming); use real certificates instead of placeholder keys.
+    *   **Reviews (4 received)**:
+        *   **General**: Reviews were positive, mostly editorial with some technical points.
+        *   **EAD encoding**: High-level answer is the API needs to be a byte string, with the Ad Hoc application handling encoding.
+        *   **Error handling**: Keep optional success error per IoT Ops suggestion.
+        *   **MTI cipher suite**: Discuss changing `0` and `2` to `0/1` and `2/3` later when defining MTI cipher suites.
+        *   **Revocation**: Ad Hoc doesn't provide specific guidance, but relies on X.509 mechanisms (CRL, OCSP - not stapling). Adding OCSP stapling would require COSE or Ad Hoc specification.
+        *   **IANA considerations**: Clarify what "documentation required" means.
+        *   **P256 vs. 25519**: Add guidance for implementers, suggesting 25519 unless hardware constraints require P256 (e.g., for constrained devices).
+        *   **Connection Identifiers**: Stephen Farrell raised concerns about tracking clients if IDs are sent in cleartext, especially in multiplexed environments. John noted current design matches OSCORE and allows tracking, suggesting more considerations or technical contributions for privacy. It's a fundamental design aspect that would be hard to change later.
+        *   **Terminology**: Clarify what is normative: CDDL, English text, or a mix. Most CDDL is normative but needs normative English for details.
+        *   **Hash-based signatures**: Questioned if Ad Hoc needs to support all COSE-approved signature types, given issues like statefulness. Ben suggests applications should profile down COSE algorithms to what makes sense for them.
+        *   **KDF for public output**: Add considerations regarding deriving public information from KDFs.
+
+## Decisions and Action Items
+
+*   **Formal Analysis**: Proceed with publishing the "letter" to the crypto community and initiating the 6-month call for formal analysis.
+*   **Traces Draft Scope**: The chairs will formulate a concrete proposal for the scope of test vectors to be included in the traces draft (based on group input favoring all methods, cipher suites 0 and 2, and 2-3 detailed traces) and send it to the mailing list for further discussion.
+*   **Open Issues**: John will send an email to the mailing list proposing to close all issues that have received a proposed resolution, giving the working group a few days to comment before closing them on GitHub.
+*   **Connection Identifiers**: John will add more security considerations regarding potential client tracking if the same connection identifier is used across different networks. Stephen Farrell will consider making a concrete technical proposal if he has ideas for improvement.
+*   **P256 vs. 25519**: Guidance will be added to the document on when to choose P256 (e.g., due to pre-existing hardware constraints) and to provide default choices for implementers.
+
+## Next Steps
+
+*   Schedule an interim meeting for early to mid-December to address remaining open issues and prepare for Working Group Last Call.
+*   Actively engage on GitHub with comments on proposed issue resolutions or new technical contributions.
+*   The working group aims to initiate a Working Group Last Call (WGLC) in January 2022, following the interim and stabilization of the document, to ensure a stable specification for the impending formal crypto analysis.
+*   Members are encouraged to provide further reviews, especially those who have not yet done so, and to comment on the timeline for WGLC.

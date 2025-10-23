@@ -1,0 +1,111 @@
+**Session Date/Time:** 26 Jul 2022 19:00
+
+# core
+
+## Summary
+
+The CoRE Working Group meeting at IETF 114 covered significant progress, including the publication of three new RFCs (Resource Directory, SenML data CT, Yang-Sibo). Key discussions revolved around the Concise Resource Identifier (CRI) and CoRAL documents, updates to CoAP Group Communication and multicast observations, and advancements in OSCORE profiling and key update mechanisms. The working group also decided to initiate a Call for Adoption for DNS over CoAP and deliberated on performance measurement for CoAP and the transport of CoAP over GATT for BLE. Chairs highlighted the need for careful consideration regarding the scope and informational content within specifications.
+
+## Key Discussion Points
+
+*   **Chairs' Updates:**
+    *   **RFC Publications:** Resource Directory (RFC 9176), SenML data CT (RFC 9193), and Yang-Sibo (RFC 9254) were published. Carsten Bormann provided historical context for the long development of Resource Directory and Yang-Sibo.
+    *   **Documents in Queue/ISG Processing:** `coap-oscore-profile` is in the RFC queue due to 3GPP urgency. `core-com` is in ISG processing and is expected to undergo substantial changes, potentially leading to a second IETF last call.
+    *   **Post-WG Last Call:** Other `coap-com` cluster documents (`combining-cbor`, `library`) and `ripple-oscore` (in shepherd write-up).
+    *   **Recently Adopted (not on agenda):** `attacks-on-coap` and `transport-indication`.
+    *   **Pending WG Adoption (not on agenda):** `group-com-proxy` showed interest at an interim, and chairs will consider a call for adoption.
+    *   **Individual Drafts with Updates/New Submissions (not on agenda):** Several individual drafts received updates or were newly submitted, including `oscore-protected-responses`, `oscore-proxies`, `rd-extensions`, `coap-kitchen-sync`, `core-parameterized-content-format`, and `coap-option-tls-dtls-early-data`.
+
+*   **HREF (Concise Resource Identifiers):**
+    *   The draft is largely complete, with current work focusing on test vectors and implementations.
+    *   Recent GitHub PRs address percent-encoded text and a rule for prefixing relative URIs with `.` when the first path segment contains a colon.
+    *   An open issue concerns the interpretation of `foo:` as either a zero-segment path-based URI or a zero-length opaque URI. Presenter leans towards the former due to practical rarity of the latter.
+    *   **Curries (Concise URI queries):** Discussed as a lexical compression scheme for URIs, to be handled in a separate specification using CBOR Pact function tags.
+
+*   **CoRAL (CoAP Resource Abstract Layer):**
+    *   CoRAL provides a way to build structured documents about resources, similar to RDF, using a structured representation.
+    *   Literals are now simpler, with metadata like language handled by CBOR tags (e.g., from `problem-details`).
+    *   CBOR Pact is explicitly used for concise binary serialization.
+    *   Future updates will focus on dictionary setup for CBOR Pact terms (allowing "well-known tables" for extensibility) and defining a security model for CoRAL agent enforcement that integrates with existing security frameworks like ACE.
+    *   The group was requested to provide real-world examples for evaluating binary serialization. Pruries, patches, and provenance will be postponed for version 1.
+
+*   **Group Communication:**
+    *   Version 7 of the `group-com` draft addresses working group last call comments.
+    *   Key changes include revised document updates, a real-life use case for combining group types (building automation), improved group naming clarity, and relocation of examples to appendices.
+    *   Clarifications were added for proxy limitations and issues, referring to the `group-proxy` document for specific solutions (e.g., HTTP-CoAP proxies).
+    *   The document now clarifies that blockwise operations can use multicast for initial requests and then switch to unicast (potentially reliable) for subsequent blocks.
+    *   The use of "no-sec" mode is strongly discouraged, with only specific exceptions like early discovery.
+    *   Security considerations for CoAP-OSCORE, fragmentation, and monitoring were updated.
+    *   Future versions are expected, with a proposal to bundle `group-com` with `ripple-oscore` and an ACE document for group keys for ISG submission.
+
+*   **Observe Multicast Notifications:**
+    *   This document describes how servers can send responses to a group of clients via multicast, managing the token space. It's relevant for Pub/Sub and large-scale observation scenarios with Group OSCORE.
+    *   Updates include elaborating on how clients obtain necessary configuration, server implications for maintaining observations, and a new section detailing various operational modes.
+    *   A proposed change for deterministic requests suggests the group declares support for them, avoiding parallel observations on the server.
+    *   The document is transitioning to use CRIs for CoAP endpoint addresses, aligning with `transport-indication` work. The draft does not fundamentally alter the basic Pub/Sub model but provides an opt-in feature.
+
+*   **Profiling Add-on for CoAP OSCORE:**
+    *   This document defines an optimized workflow for EDHOC over CoAP to establish an OSCORE security context, combining the third EDHOC message with the first OSCORE request.
+    *   Updates reflect changes in EDHOC draft v15, simplifying identifier conversions and updating content formats.
+    *   Security considerations were added, noting that flooding with combined requests is not a practical attack due to OSCORE replay checks.
+    *   Blockwise considerations were expanded, clarifying client and server processing and providing guidelines for when to use blockwise with the combined EDHOC/OSCORE request.
+    *   The potential for the next version to be ready for a WG Last Call, possibly in parallel with EDHOC, was raised. Carsten Bormann suggested being cautious about including too much informational content in normative specifications, potentially moving it to separate informational documents or appendices.
+
+*   **Key Update for OSCORE (KUDOS):**
+    *   KUDOS defines a lightweight method to perform key updates for OSCORE, renewing master secret/salt to derive new keys, aiming for Perfect Forward Secrecy (PFS).
+    *   A new stateless Kudos mode (No FS mode) was introduced for devices unable to store to persistent memory, using a `P` bit in the OSCORE option's X byte for signaling. PFS mode `MUST` be used if possible.
+    *   Text on preserving observations was moved to the main body, introducing a "long jumping" solution for partial IVs to avoid reuse conflicts after re-keying. A `B` bit in the X byte signals whether to cancel or keep observations.
+    *   The ability to update sender/recipient IDs for privacy reasons was also moved to the main body, using a new encrypted CoAP option.
+    *   The `update_ctx` function now takes nonces and X bytes as input for integrity protection, with two internal paths: EDHOC-based or HKDF-based.
+    *   Discussion points include whether to split `update_ctx` into two distinct functions and the need for signaling a fallback to the HKDF-based method.
+
+*   **DNS over CoAP:**
+    *   The draft aims to provide an encrypted DNS resolution mechanism for IoT devices using CoAP (DTLS or OSCORE), overcoming MTU problems and sharing system resources.
+    *   Changes since the last interim focused on reducing restatements of CoAP behavior, synchronizing CoAP `Max-Age` and DNS TTL, and recommending OSCORE usage.
+    *   A mechanism for DNS push notifications, building on RFC 8765 but utilizing CoAP Observe for simpler client implementation, was proposed.
+    *   IANA considerations for a content format ID are pending.
+
+*   **Performance Measurement for CoAP:**
+    *   This draft proposes a simple mechanism for network diagnostics in constrained environments, based on IPPM working group's "Explicit Flow Measurement" (using `spin` and `square` bits).
+    *   The CoAP option, which carries these performance measurement bits, is selective and safe to forward.
+    *   Detailed scenarios for non-proxy, collaborating/non-collaborating proxies, and OSCORE usage were added.
+    *   The chairs noted that the draft currently presents many alternatives and requested clearer systematic descriptions of limitations and trade-offs. The target status (Standard, Experimental, Informational) requires further discussion on the mailing list.
+
+*   **CoAP over GATT for BLE:**
+    *   This document explores transporting CoAP over GATT for Bluetooth Low Energy, differentiating from alternatives like IPSP (6LoWPAN over BLE) and the Golden Gate approach.
+    *   Recent industry interest is driving efforts to address original limitations (e.g., concurrent requests, bi-directional transport).
+    *   A key challenge is addressing, as Bluetooth MAC addresses are not always visible due to privacy, leading to host-specific identifiers. This impacts how devices are addressed in directories and proxies and has implications for the `transport-indication` draft.
+    *   The document is now considered a candidate for the Standard Track.
+
+*   **Any Other Business (AOB):**
+    *   `group-com-proxy`: The chairs confirmed this document is on their list for further attention.
+    *   `coap-s+jpy` URI scheme: A discussion from the ANIMA meeting about special tunneling protocols for `coap-s` resources prompted a question on whether to suggest a `+transport` addition to the URI scheme.
+    *   An interim meeting for the CoRE WG is planned for August 31st, to be confirmed on the mailing list in coordination with CBOR chairs.
+
+## Decisions and Action Items
+
+*   **HREF:**
+    *   **Decision:** Work on "Curries" (concise URI queries) will be conducted in a separate specification, potentially within CoRE or a new document.
+*   **DNS over CoAP:**
+    *   **Decision:** The chairs will initiate a Call for Adoption for the `dns-over-coap` document.
+*   **CoAP over GATT for BLE:**
+    *   **Decision:** This topic will be brought to an upcoming interim meeting for further discussion.
+*   **CoRE Interim Meeting:**
+    *   **Decision:** An interim meeting for CoRE is tentatively scheduled for August 31st.
+    *   **Action Item:** Marco Tiloca will confirm the date and details on the CoRE mailing list, in coordination with the CBOR chairs.
+*   **Performance Measurement for CoAP:**
+    *   **Action Item:** Marco Tiloca will send a detailed review of the `performance-measurement-for-coap` document to the mailing list after the summer break, focusing on highlighting limitations and trade-offs of the presented alternatives.
+    *   **Action Item:** The working group will discuss the target status (Standard, Experimental, Informational) of the document on the mailing list.
+*   **group-com-proxy:**
+    *   **Action Item:** The chairs will discuss and follow up on the potential for a Call for Adoption for `group-com-proxy`.
+
+## Next Steps
+
+*   **HREF:** Complete test vector and implementation work, decide on the interpretation of the `foo:` URI, and then proceed with a Working Group Last Call. Simultaneously, start work on a `CRI Curry` document within the CBOR Pact framework.
+*   **CoRAL:** Revisit the binary serialization, incorporating real-world examples from the working group, and integrate `problem-details`.
+*   **Group Communication:** Submit at least one more version incorporating outstanding comments (from Carsten Bormann, John Shallow, and Marco Tiloca's own points). Plan to bundle the document with `ripple-oscore` and an ACE document describing group keys for ISG submission.
+*   **Profiling Add-on for CoAP OSCORE:** Add more security considerations (e.g., access control enforcement), renew IANA registration, and potentially proceed to a Working Group Last Call in parallel with the EDHOC Working Group's last call. Consider extracting some informational content into a separate document or appendix.
+*   **Key Update for OSCORE (KUDOS):** Address open GitHub issues. Propose splitting the `update_ctx` function into two distinct methods (EDHOC-based and HKDF-based) and add signaling for the HKDF fallback. Produce an implementation based on existing OSCORE code.
+*   **DNS over CoAP:** Proceed with the Call for Adoption.
+*   **CoAP over GATT for BLE:** Continue working on the technical details of transport over GATT and seek input from the working group on addressing interactions, which will also inform the `transport-indication` document. Prepare for discussion at an interim meeting.
+*   **coap-s+jpy URI Scheme:** Engage with the ANIMA working group to determine the appropriate handling (e.g., suggesting a `+transport` addition) for their tunneling protocol.

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="bier.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-BIER-20220725-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 14:00</p>
+<h1>bier</h1>
+<h2>Summary</h2>
+<p>The Bier working group session covered updates on the status of various drafts, including one moving to AUTH48 and several needing shepherds or addressing AD comments. Two new drafts were presented: &quot;Beer Multicast as a Service&quot; which introduced mechanisms for supporting customer Beer in provider VPNs, and a &quot;Beer Extension Header&quot; proposal aiming for a generic, multi-protocol extension header. A third presentation on &quot;BIFT ID Signaling for BRTE&quot; discussed how to signal BRTE-specific BIFT IDs in IGPs. A significant portion of the session was dedicated to a broader discussion on the challenges of Beer deployment, the &quot;chicken and egg&quot; problem regarding hardware support, and the need for more interoperable implementations and visible success stories.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative &amp; Logistics</strong>:
+<ul>
+<li>Initial audio challenges were resolved.</li>
+<li>Minute takers were volunteered.</li>
+<li>The AD reminded attendees to wear masks when not at the microphone due to IETF policy.</li>
+</ul>
+</li>
+<li><strong>Draft Status Updates</strong>:
+<ul>
+<li><code>draft-ietf-bier-te-arch</code> (BRTE Architecture) is in AUTH48, awaiting <code>draft-ietf-bier-bier2e-oam</code> to become an RFC.</li>
+<li><code>draft-ietf-bier-terkas-bier-ospf-mpls</code> and <code>draft-ietf-bier-bier-ipv6-oam</code> are in the queue, awaiting AD comments/author updates.</li>
+<li><code>draft-ietf-bier-multicast-service</code> (presented today) is a new working group document.</li>
+<li><code>draft-ietf-bier-fast-reroute</code> has been adopted and is in Last Call.</li>
+<li><code>draft-ietf-bier-h-bier-ls</code> requires review from the IDR working group.</li>
+<li><code>draft-ietf-bier-php-bier</code>, <code>draft-ietf-bier-bier-ipv6</code>, and <code>draft-ietf-bier-prefix-redistribution</code> require document shepherds. A volunteer stepped up for <code>draft-ietf-bier-bier-ipv6</code>.</li>
+<li><code>draft-ietf-bier-ping</code> is receiving updates.</li>
+<li>The expired <code>draft-ietf-bier-idr-extensions</code> needs new co-authors/editors as the original author is no longer focused on the work.</li>
+<li>The expired <code>draft-ietf-bier-mlb</code> (Stig) needs resubmission after PIM extensions are complete (now in AUTH48).</li>
+</ul>
+</li>
+<li><strong>Beer Multicast as a Service (<code>draft-ietf-bier-multicast-service</code>) - Jeffrey Zhang</strong>:
+<ul>
+<li><strong>Proposal</strong>: Added a new section for supporting Beer in VPNs (i.e., customer Beer running over a provider VPN service).</li>
+<li><strong>Overlay Signaling</strong>: Existing IDR extensions can be used for VPN IP Saffire.</li>
+<li><strong>Underlay Transport</strong>:
+<ul>
+<li><strong>Ingress Replication</strong>: Simple, no special Beer handling in the provider core.</li>
+<li><strong>Provider Beer for Customer Traffic</strong>: Uses Beer in the provider core for efficient replication but requires maintaining customer Beer state (BIFT ID, BFR IDs) in the underlay.</li>
+</ul>
+</li>
+<li><strong>Discussion on Scalability and State</strong>:
+<ul>
+<li><strong>Concern (Huawei)</strong>: Leaking client BFR IDs/BIFT IDs into the provider network is not hierarchical, raises scalability problems, and may violate traditional VPN architecture and charter scope. Suggested ingress replication as the optimal solution.</li>
+<li><strong>Response (Jeffrey, Thomas, Tony)</strong>: This is a design trade-off. It offers efficient replication and operator control over state (unlike flow-based IP Multicast). It's about plan-ability and operator accountability, allowing providers to decide how many customer BIFTs to support. Analogies were drawn to selective MVPN/EVPN tunnels that also add state.</li>
+<li><strong>Technical Comment (Tony)</strong>: If Beer information is extended with Route Distinguishers (RDs) in IGP, the IGP must support this different primary key. Suggested a capability indication in router description.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Beer Extension Header (<code>draft-ietf-bier-extension-header</code>) - Jeffrey Zhang</strong>:
+<ul>
+<li><strong>Goal</strong>: Define a generic extension header mechanism aligned with NQOS and IPv6 extension headers to support generic functions across MPLS, Beer, and IPv6.</li>
+<li><strong>Structure</strong>: Proposed a &quot;Header of Extension Headers&quot; (HoEH) after the Beer header, containing:
+<ul>
+<li>Reserved field (4 bits).</li>
+<li>Counter of extension headers.</li>
+<li>Total length of extension headers.</li>
+<li>Original upper layer protocol type.</li>
+<li>Next hop type (using IP Protocol Numbers registry values).</li>
+</ul>
+</li>
+<li><strong>Benefits</strong>: Reuse IPv6 extension headers; only one number from the IP protocol registry is needed to signify a generic extension header. Beer-specific functions can then be encoded using an &quot;Extension field&quot; within the generic extension header.</li>
+<li><strong>Feedback</strong>: Seeking comments and consensus for multi-vendor support.</li>
+</ul>
+</li>
+<li><strong>BIFT ID Signaling for BRTE (<code>draft-ietf-bier-te-bift-id-signaling</code>) - Sandy Zhang</strong>:
+<ul>
+<li><strong>Context</strong>: BRTE uses explicit paths and a BIFT ID to locate its forwarding table, distinct from Beer's BFER-based forwarding.</li>
+<li><strong>Proposal</strong>: Signal BRTE-specific BIFT IDs in IGPs (e.g., ISIS, OSPF/OSPFv3).</li>
+<li><strong>Mechanism (ISIS example)</strong>: Advertise MPLS, non-MPLS, and IPv6 encapsulation sub-TLVs associated with a BRTE info sub-TLV. MPLS labels and non-MPLS BIFT IDs must not overlap.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Thomas Eckert</strong>: Further discussion is needed on how BRTE shares SI/SD space with Beer, as this may impact signaling.</li>
+<li><strong>Jeffrey Zhang</strong>: Argued that BRTE BIFT content is typically provisioned by a controller (e.g., via YANG), and the BIFT ID itself could be provisioned this way, negating the need for IGP signaling.</li>
+<li><strong>Sandy Zhang</strong>: Acknowledged the BRTE YANG draft for controller provisioning but stated that if IGP signaling is desired for agency bit operations, then BIFT ID advertisement is necessary.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>General Discussion on Beer Deployment Challenges</strong>:
+<ul>
+<li><strong>&quot;Chicken and Egg&quot; Problem (Jeffrey Zhang)</strong>: New encapsulation/forwarding requires programmable or new hardware chips. This leads to customer hesitation, which in turn reduces vendor motivation for broad platform support, creating a stalemate.</li>
+<li><strong>Need for Success Stories (Stig)</strong>: Requested presentations on Beer deployments at future IETF meetings (e.g., MBONED).</li>
+<li><strong>Existing Deployments (Lenny)</strong>: Highlighted RareNet (French RENATER), which uses Tofino P4 switches with Beer, AMT relay, and unicast-multicast translator. Suggested MBONED as a venue for operational considerations discussions.</li>
+<li><strong>Interoperability and Maturity (Hu, Dirk)</strong>: Vendors need to focus on a core set of interoperable functionalities to drive deployments. Network operators need to know how many other telcos are using Beer (backbone vs. data center) to gauge maturity and justify internal adoption.</li>
+<li><strong>Hardware/Software (Chair, Thomas, David, Ron)</strong>: Header manipulation post-replication for Beer requires specific hardware pipelines, limiting even programmable chip support. Software implementations could drive initial adoption, but data center/telco use cases often demand hardware, creating another &quot;chicken and egg&quot; for software. The MONET WG is looking into software-based routing solutions and Beer applicability.</li>
+<li><strong>Application Drivers (Sandy Zhang)</strong>: In China, operators recognize Beer's value but need clear application drivers. Efforts are underway to connect Beer technology with CDN and media delivery applications.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Action</strong>: A volunteer will shepherd <code>draft-ietf-bier-bier-ipv6</code>. The chair will coordinate.</li>
+<li><strong>Action</strong>: The chair will send an email to the list requesting volunteers for remaining shepherd roles for <code>draft-ietf-bier-php-bier</code>, <code>draft-ietf-bier-ipv6</code>, and <code>draft-ietf-bier-prefix-redistribution</code>.</li>
+<li><strong>Action</strong>: Stig will resubmit the expired <code>draft-ietf-bier-mlb</code> for last call.</li>
+<li><strong>Decision</strong>: <code>draft-ietf-bier-idr-extensions</code> requires new co-authors/editors to address comments and move forward.</li>
+<li><strong>Action</strong>: Lenny will send links to the RareNet Beer deployment to the mailing list.</li>
+<li><strong>Decision</strong>: Discussions on the &quot;Beer Multicast as a Service,&quot; &quot;Beer Extension Header,&quot; and &quot;BIFT ID Signaling for BRTE&quot; drafts will continue on the mailing list for further technical feedback and consensus building.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Shepherd Process</strong>: Facilitate the shepherding process for identified drafts to move them through the RFC pipeline.</li>
+<li><strong>Mailing List Engagement</strong>: Encourage active discussion on the newly presented drafts (<code>draft-ietf-bier-multicast-service</code>, <code>draft-ietf-bier-extension-header</code>, <code>draft-ietf-bier-te-bift-id-signaling</code>) to resolve technical questions and gather consensus.</li>
+<li><strong>Operational Considerations</strong>: Explore opportunities for sessions in other working groups (e.g., MBONED) to discuss Beer operational considerations and deployment experiences.</li>
+<li><strong>Deployment Strategy</strong>: Continue brainstorming and investigating strategies to overcome the &quot;chicken and egg&quot; problem hindering broader Beer deployment, potentially focusing on data center use cases, software implementations, or identifying core interoperable features for initial vendor focus.</li>
+<li><strong>Application Integration</strong>: Encourage efforts to connect Beer technology with specific application drivers (e.g., CDN, media delivery) to demonstrate its value and stimulate adoption.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

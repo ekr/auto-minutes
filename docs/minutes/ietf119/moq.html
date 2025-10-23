@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="moq.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF119-MOQ-20240318-0300">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF119-MOQ-20240319-0730">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 18 Mar 2024 03:00</p>
+<pre><code class="language-markdown"># moq
+
+## Summary
+
+This meeting covered several key aspects of the moq protocol, including a review of the hackathon, discussion of subscribe/fetch semantics, updates to draft 3, low overhead container format (LLC), transport issues, and prioritization. A significant portion of the meeting focused on a new proposal for handling subscribe and fetch, aiming to simplify the interaction between clients and relays. The meeting also addressed the need for prioritization mechanisms and the challenges associated with them.
+
+## Key Discussion Points
+
+*   **Hackathon Review:** Six implementations were reported, with progress made on draft 3. Efforts are underway to achieve interoperability.
+*   **Subscribe/Fetch Proposal:** A new approach to subscribe and fetch was presented, focusing on relative subscriptions for live edges and absolute fetches for historical data.
+    *   Subscribe uses relative ranges for subscribing to the live edge.
+    *   Fetch uses absolute ranges for fetching historical data.
+    *   Delivery order for fetch is *not* guaranteed.
+    *   Debate on whether subscribe should include the ability to start at a non-zero object within a group.
+    *   Discussion on signaling dropped groups.
+    *   Relays should cache at least the last and current group for consistent subscribe behavior.
+    *   Discussion of track alias vs. subscribe ID.
+*   **Draft 3 Updates:** A review of updates and clarifications in draft 3 was presented, including:
+    *   Addition of largest group and object ID to subscribe.
+    *   Change to datagram-only mode.
+    *   Merging of reset messages.
+    *   Addition of announce/cancel.
+*   **Low Overhead Container (LLC):** A presentation on a new container format based on WebCodecs intended to have lower overhead than CMAF.
+    *   Discussion on separating the packaging container format from the mock streaming format.
+*   **Transport Issues:** Discussion on explicit signaling for the end of groups and tracks.
+*   **Prioritization:** Detailed discussion of priorities, including:
+    *   Challenge to reach a consensus due to conflicting requirements and use cases.
+    *   Importance of data-driven decisions.
+    *   Debate on subscriber-driven vs. publisher-driven prioritization.
+
+## Decisions and Action Items
+
+*   **Subscribe/Fetch:** A PR will be created to reflect the presented subscribe/fetch proposal. Luke will provide feedback or propose an alternative.
+*   **Low Overhead Container (LLC):** Moe will split the LLC draft into a container format and a separate streaming format, either as separate drafts, or as distinct sections in a single draft. The chairs will decide which approach to take.
+*   **Prioritization:**
+    *   Revive and update prior work on Prioritization, to reflect current considerations.
+    *   The group will use breaks and beverages to discuss prioritization experiments and desired data points.
+
+## Next Steps
+
+*   Create a PR for the subscribe/fetch proposal based on the presentation, addressing feedback from the chat.
+*   Split the LLC draft into separate streaming and packaging format components.
+*   Address the prioritisation discussion and potential for an interim meeting at the end of the week.
+*   The Chairs will decide what specific actions to take once they've received feedback after further discussion on the prioritization issue.
+</code></pre>
+<hr>
+<p><strong>Session Date/Time:</strong> 19 Mar 2024 07:30</p>
+<pre><code class="language-markdown"># moq
+
+## Summary
+
+This meeting covered various aspects of the Media over QUIC (MoQ) protocol, including lessons from implementation, bandwidth measurement, catalog and WARP updates, lightweight encryption, and subscribe/fetch follow-up. A change in area director and co-chair was also announced.
+
+## Key Discussion Points
+
+*   **Simulcast Implementation &amp; Network Conditions (Suhas):** Experiments with simulcast over MoQ revealed challenges related to unstable Wi-Fi networks and packet loss. Prioritization of streams and adaptation of congestion control mechanisms were explored as potential solutions.
+*   **BBR Congestion Control (Suhas):** Incremental changes to BBR's state machine to improve handling of suspensions and bandwidth changes were discussed. Contributions to future IETF BBR updates were proposed.
+*   **Bandwidth Measurement (Ali):** Passive and active bandwidth measurement techniques were presented. Passive measurements analyze incoming data, while active measurements use probing channels. A hybrid approach combining both methods was suggested.
+*   **Catalog Updates (Will):** Updates to the catalog draft, including support for standard mechanisms for updating JSON documents, relative names, and the addition of a delta update field, were discussed.  A proposal for an explicit object for common track fields was presented.
+*   **WARP Updates (Will):**  An update on WARP (the application layer streaming format for MoQ) was presented. This included the separation of packaging definition into an independent draft. The need to communicate the relationship between media time, wall clock time, and group number to players was highlighted.
+*   **Secure Objects (Colin):** A lightweight encryption scheme for MoQ objects was presented, aiming to minimize bandwidth overhead. The scheme utilizes symmetric encryption with HKTF for key expansion and AEAD algorithms. Key management and nonce generation were discussed.
+*   **Subscribe/Fetch Follow-up (Ian):** Discussions regarding the subscribe/fetch mechanism, particularly its application to HLS/DASH use cases and support for retrieving past groups. Concerns were raised about the complexity and potential conflicts with overlapping requests.
+
+## Decisions and Action Items
+
+*   **Catalog Update Mechanism:**  While the JSON Patch approach has been merged, the working group is open to considering and adopting improved update mechanisms with associated issues and pull requests.
+*   **HLS/DASH Use Case for Subscribe/Fetch:** Colin or another volunteer will create an example of how to use the subscribe/fetch mechanism with HLS/DASH. Luke will review and provide feedback.
+*   **Merge Open Catalog PRs:** The existing open pull requests for the catalog draft should be merged before moving to a new draft ID.
+*   **Prioritize Moving Forward on Subscribe/Fetch PR:** The working group needs to figure out how to move forward and not stop progress with the ongoing changes.
+*   **New Co-chair and Area Director:** Mohit has rotated off and Martin Thomson is the new co-chair starting tomorrow.  Art has rotated off and Wietse Venema is the new area director.
+
+## Next Steps
+
+*   Further discussion and refinement of the BBR improvements.
+*   Continued evaluation and comparison of bandwidth measurement techniques.
+*   Resolution of open issues and merger of pending pull requests for the catalog and WARP drafts.
+*   Further development and standardization of the lightweight encryption scheme for secure MoQ objects.
+*   Continued discussion and clarification of the subscribe/fetch mechanism.
+*   Address feedback for and approve the subscribe/fetch pull request.
+*   The minutes will note that &quot;time does not exist&quot; for MoQ.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

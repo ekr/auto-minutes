@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="sedate.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-SEDATE-20220321-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2022 12:00</p>
+<h1>sedate</h1>
+<h2>Summary</h2>
+<p>The sedate working group met to discuss the status of the draft, recent changes in versions 03 and 04, and several open issues. Key technical discussions revolved around the handling of named IANA time zones when their rules conflict with an RFC3339 offset, the potential need for critical vs. elective extension tags, and the definition of an initial extension. The IETF-ISO liaison process is nearing completion.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>IETF-ISO Liaison Update</strong>: The IETF has made a selection and communicated it to ISO. ISO's formal vetting and voting process concludes next week, with an announcement expected mid-next week on the mailing list.</li>
+<li><strong>Draft Version 03 &amp; 04 Updates</strong>:
+<ul>
+<li><strong>Version 03</strong>: Main new item was simplification, removing the concept of registering extension namespaces. Extensions are now registered directly; namespaces will arise by convention.</li>
+<li><strong>Version 04</strong>: Added support for offset time zones (fixed offsets, not IANA named zones) and clarified the meaning of named IANA time zones.</li>
+</ul>
+</li>
+<li><strong>Conflict Between IANA Time Zone and RFC3339 Offset</strong>:
+<ul>
+<li><strong>Issue</strong>: When a named IANA time zone (e.g., <code>Europe/Paris</code>) is provided alongside an RFC3339 offset (e.g., <code>+01:00</code>), and the rules for the IANA time zone change such that the offset becomes inconsistent, how should implementations resolve the conflict? The draft currently states the IANA time zone implies using rules current at interpretation time, potentially conflicting with the explicit offset.</li>
+<li><strong>Discussion Points</strong>:
+<ul>
+<li>Some argued for trusting the RFC3339 offset as the primary reference, treating the IANA name as an informative hint, especially for applications without user interaction.</li>
+<li>Others argued that if an IANA name is provided, the intent is for it to be a &quot;moving target,&quot; meaning the time zone rules should take precedence, and the offset is merely historical.</li>
+<li>The consensus leaned towards the handling being highly application-dependent and that the format should ideally <em>indicate</em> a conflict rather than implicitly resolving it.</li>
+<li>Strong sentiment emerged that there needs to be an <strong>explicit mechanism or default rule</strong> to state which part (offset or IANA name) takes precedence in case of conflict, or a way to mark intent, rather than leaving it to a &quot;best guess&quot; by implementations. A suggestion was made to use a non-sensical offset (e.g., <code>-00:00</code>) as a marker for IANA zone precedence.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Critical vs. Elective Extensions</strong>:
+<ul>
+<li><strong>Issue</strong>: Should the extension syntax include a way to mark certain tags as &quot;critical&quot; (must be understood and acted upon, or the entire timestamp rejected) versus &quot;elective&quot; (can be ignored if not understood)? Current draft assumes all tags are optional/ignorable.</li>
+<li><strong>Discussion</strong>: There was a proposal for syntax (e.g., <code>!</code> prefix) to denote critical extensions. The definition of &quot;reject&quot; (treat as malformed/do not act on) was clarified. A drawback noted was that introducing this now might break existing &quot;de facto&quot; non-compliant implementations.</li>
+</ul>
+</li>
+<li><strong>Draft Name</strong>: Discussion on a more descriptive name, with &quot;Extended RFC3339&quot; being a contender.</li>
+<li><strong>Defining an Initial Extension</strong>:
+<ul>
+<li><strong>Proposal</strong>: To define at least one common extension within the draft to make it more practical for implementers.</li>
+<li><strong>Suggested Extension</strong>: A &quot;calendar hint&quot; based on Unicode TR/CLDR locale information (e.g., <code>@cal=hebrew</code>).</li>
+<li><strong>Benefit</strong>: This would force examination of character sets allowed for labels and values (alphanumeric vs. full Unicode).</li>
+</ul>
+</li>
+<li><strong>ABNF Production Order</strong>: Proposal to change the ABNF definition order from bottom-up (as in RFC3339) to top-down for readability. This was generally accepted as an editorial change.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Time Zone Conflict Resolution</strong>: No concrete decision was made on the specific mechanism, but it was agreed that the working group needs to define an explicit behavior (e.g., a default interpretation or an explicit marker) for resolving conflicts between IANA time zones and RFC3339 offsets.
+<ul>
+<li><strong>Action</strong>: Take the discussion on time zone conflict resolution and explicit markers to the mailing list and GitHub issue for further debate.</li>
+</ul>
+</li>
+<li><strong>Critical Extensions</strong>: No concrete decision was made on whether to include syntax for critical extensions.
+<ul>
+<li><strong>Action</strong>: Continue the discussion on critical vs. elective extensions on the mailing list and GitHub issue.</li>
+</ul>
+</li>
+<li><strong>Calendar Hint Extension</strong>: The proposal to define a calendar hint extension was accepted.
+<ul>
+<li><strong>Action</strong>: Ujwal to write a Pull Request (PR) for the calendar hint extension.</li>
+</ul>
+</li>
+<li><strong>ABNF Order</strong>: Agreed to change the ABNF production order from bottom-up to top-down.
+<ul>
+<li><strong>Action</strong>: Carsten to update the draft with the reordered ABNF.</li>
+</ul>
+</li>
+<li><strong>Milestones</strong>:
+<ul>
+<li>The August 2021 milestone for draft adoption is complete (will be marked as resolved).</li>
+<li>The December 2021 milestone for submission to IESG for publication is outdated and needs to be updated.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Mailing List / GitHub Discussion</strong>: Actively participate in discussions on:
+<ul>
+<li>Resolving IANA time zone and offset conflicts (explicit markers, default behavior).</li>
+<li>Including critical vs. elective extension tags.</li>
+</ul>
+</li>
+<li><strong>Draft Development</strong>:
+<ul>
+<li>Ujwal to draft text/PR for the calendar hint extension.</li>
+<li>Carsten to update ABNF order.</li>
+</ul>
+</li>
+<li><strong>Milestone Update</strong>: The publication milestone will be rescheduled. A target of <strong>June 2022</strong> was tentatively suggested for publication.</li>
+<li><strong>Interim Meeting</strong>: An interim meeting is tentatively planned for <strong>end of May 2022</strong> if needed to resolve outstanding critical issues, particularly the time zone conflict. Mailing list discussion will be attempted first.</li>
+<li><strong>Blue Sheets</strong>: Attendees who have not yet logged into MeetEcho were requested to do so for blue sheet recording.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="add.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-ADD-20211108-1600">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 16:00</p>
+<h1>add Meeting Minutes</h1>
+<h2>Summary</h2>
+<p>The &quot;add&quot; working group session covered updates and discussions on several key drafts related to the discovery of designated resolvers (DDR), network resolvers (DNR), and challenges with legacy forwarders and split-horizon DNS configurations. A core change to DDR regarding resolver verification was broadly accepted. The working group also discussed the potential adoption of two drafts: one on split-horizon DNS and another on deployment considerations for ADD protocols in home networks. Neither of these latter two drafts reached consensus for immediate adoption as standalone working group documents, with suggestions for further refinement or integration into other deliverables.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative and Note Well:</strong>
+<ul>
+<li>A scribe volunteered to capture decisions and resolutions.</li>
+<li>An emphasis was placed on the IETF Note Well, reminding participants of anti-harassment policies and promoting respectful discussions.</li>
+<li>The <code>svcd</code> draft was removed from the agenda due to a lack of new material.</li>
+</ul>
+</li>
+<li><strong>Discovery of Designated Resolvers (DDR) - <code>draft-ietf-add-ddr</code>:</strong>
+<ul>
+<li>Draft 03 was published, aligning with <code>dns svcb</code> and allowing client flexibility in resolver verification.</li>
+<li>An editorial change from &quot;authenticated mode&quot; to &quot;verified mode&quot; was made for clarity.</li>
+<li>A primary issue regarding <strong>what is being verified</strong> was discussed:
+<ul>
+<li>The proposal to verify only the IP address (if starting with an IP) or the hostname (if starting with a hostname) in the certificate was generally accepted to simplify verification, treating it similar to a CNAME resolution.</li>
+<li>Clarification was made that <code>resolver.arpa</code> should not be used as SNI or DOE authority if it was not the starting point.</li>
+</ul>
+</li>
+<li>Significant discussion occurred on <strong>intermediate target names</strong> and their use in SNI/Host headers:
+<ul>
+<li>Concern was raised that allowing clients to use an intermediate target name (e.g., <code>dns.google</code>) when starting with an IP (e.g., <code>8.8.8.8</code>) could lead to vulnerabilities like on-path attackers forcing different virtual host behaviors, and could violate HTTP semantics if the authority name is unverified.</li>
+<li>The current inability of SNI to directly carry IP addresses was highlighted as a practical deployment challenge, though RFC 8738 (ACME IP identifier validation extension) was noted as a potential path for IP addresses in SNI.</li>
+<li>There was a strong sentiment that, for simplicity and security, clients should stick to the original IP address when making connections for discovery initiated by an IP.</li>
+</ul>
+</li>
+<li>The draft is expected to be ready for Working Group Last Call (WGLC) after addressing these points.</li>
+</ul>
+</li>
+<li><strong>Discovery of Network Resolvers (DNR) - <code>draft-ietf-add-dnr</code>:</strong>
+<ul>
+<li>Authors indicated the draft is ready for WGLC.</li>
+<li>The chairs expressed intent to hold off on DNR's WGLC until DDR's updates are complete, to ensure synchronization between the two documents.</li>
+</ul>
+</li>
+<li><strong>Discovery of Designated Resolvers in Presence of Legacy Forwarders - <code>draft-ietf-add-forwarder-ddr</code>:</strong>
+<ul>
+<li>This informational draft explores client policy for upgrading to encrypted DNS when behind legacy forwarders that cannot be upgraded, which affects a large number of internet users.</li>
+<li>The policy discussed removes the requirement for the IP address to appear in the certificate if the resolver is identified by a network-local IP (where authenticated security isn't otherwise possible).</li>
+<li>Discussion covered various security concerns (long-lived attacker responses, forensic logging) and compatibility impacts (split horizon, interposable domains), along with proposed mitigations (TTL caps, reputation, NXDOMAIN fallback).</li>
+<li>The draft aims to enable more DDR upgrades and increase encrypted DNS usage.</li>
+<li>There was significant interest in adopting this draft to continue discussion and find solutions for this common real-world deployment scenario, even while acknowledging its complexities and potential &quot;harm reduction&quot; nature rather than perfect security.</li>
+</ul>
+</li>
+<li><strong>Split Horizon DNS Configuration - <code>draft-ietf-add-split-horizon-dns-config</code>:</strong>
+<ul>
+<li>The draft now focuses on non-enterprise (e.g., mobile ISP) use cases, with improved support for geographic sub-domains.</li>
+<li>The proposed mechanism involves clients verifying network-provided domain ownership against public DNS resolvers to prevent typosquatting by malicious local networks.</li>
+<li>Concerns were raised about the mechanism for verifying private (internal-only) domains with public resolvers, and the potential for leaking private names.</li>
+<li>It was broadly acknowledged that split-horizon DNS is a real and difficult problem, but there was no clear consensus on whether this specific draft's solution was appropriate or ready for adoption in the &quot;add&quot; working group.</li>
+<li>Suggestions included focusing on the more challenging &quot;dual-facing server&quot; problem (public names with different internal resolutions), and leveraging DNSSEC for authentication to simplify the approach.</li>
+<li>The Area Director indicated that while the problem is relevant to &quot;add,&quot; the draft's current abstract and content might not align perfectly with the working group's charter for immediate adoption as a standalone document.</li>
+</ul>
+</li>
+<li><strong>Deployment Considerations for ADD Protocols in Home Networks - <code>draft-ietf-add-deployment-considerations</code>:</strong>
+<ul>
+<li>This informational draft provides high-level architectures for ADD protocol deployment, particularly in managed/unmanaged home networks and with legacy routers. It covers scenarios for DNR, DDR, and ACME in this context.</li>
+<li>The authors found it useful during the development of DNR.</li>
+<li>The chairs suggested that this material could form a subset of a broader informational document already specified as a deliverable in the &quot;add&quot; charter.</li>
+<li>While some saw value in documenting these use cases as an informational reference, others expressed concerns about potential disagreements on specific details and whether it fully aligns with the &quot;add&quot; charter as a standalone document.</li>
+<li>The Area Director confirmed that, as it stands, the draft doesn't fit the charter for adoption but its content remains relevant and could be integrated into the charter's specified informational deliverable.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>DDR Verification Logic:</strong> The working group generally agreed on modifying the DDR draft to simplify verification: if discovery starts with an IP, verify the IP in the certificate; if with a hostname, verify the hostname.
+<ul>
+<li><strong>Action Item:</strong> Tommy Pauly to update the DDR pull request to reflect this decision, specifically stating that the original IP address should be used for authority/SNI when starting discovery with an IP.</li>
+</ul>
+</li>
+<li><strong>DNR Working Group Last Call (WGLC):</strong>
+<ul>
+<li><strong>Decision:</strong> DNR WGLC will be held off until DDR updates are complete to ensure synchronization.</li>
+</ul>
+</li>
+<li><strong>Split Horizon DNS Configuration:</strong>
+<ul>
+<li><strong>Decision:</strong> The draft is not ready for adoption as a standalone working group document.</li>
+<li><strong>Action Item:</strong> Discussion on this draft to continue on the mailing list. Chairs to consult with DNSOP and INT-AREA working group chairs regarding the appropriate venue and approach for this problem space.</li>
+</ul>
+</li>
+<li><strong>Deployment Considerations for ADD Protocols in Home Networks:</strong>
+<ul>
+<li><strong>Decision:</strong> The draft will not be adopted as a standalone working group document in its current form due to charter fit.</li>
+<li><strong>Action Item:</strong> Discussion to continue on the mailing list. Chairs will explore the possibility of incorporating relevant and useful material from this draft into the broader informational document deliverable specified in the &quot;add&quot; charter.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Tommy Pauly to submit the updated pull request for the DDR draft.</li>
+<li>Chairs to monitor DDR progress and coordinate DNR's WGLC.</li>
+<li>Chairs to gauge formal working group adoption interest for <code>draft-ietf-add-forwarder-ddr</code> via the mailing list.</li>
+<li>Continued discussion on the &quot;add&quot; mailing list for the Split Horizon DNS Configuration and Deployment Considerations drafts.</li>
+<li>Chairs to engage with DNSOP and INT-AREA working group leadership to determine the best path forward for the Split Horizon DNS Configuration problem space.</li>
+<li>Chairs to explore avenues for integrating relevant content from the Deployment Considerations draft into the &quot;add&quot; working group's charter-defined informational document deliverable.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="spring.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-SPRING-20220727-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 27 Jul 2022 14:00</p>
+<h1>spring</h1>
+<h2>Summary</h2>
+<p>The Spring Working Group meeting commenced with initial technical connectivity issues, leading to a delayed start. The chairs provided an update on the working group's document status, highlighting two drafts submitted to the IESG for publication and one new RFC on Segment Routing Policy Architecture. The session featured presentations and discussions on various Segment Routing topics, including circuit-style SR policies, SR path MTU, connection-oriented paths in SRv6, Network Resource Partition (NRP) ID in SRv6, generalized arguments for SRv6 segments, redundancy policy for preventive protection, SR for DetNet, and BGP SR policy extensions. Additionally, a problem statement for intent-aware routing using color was presented, along with an overview of MPLS MA encoding. Several drafts requested working group adoption, and active engagement on the mailing lists was encouraged for all discussed topics.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Circuit-Style Segment Routing Policies</strong></p>
+<ul>
+<li><strong>Motivation</strong>: Enable operators to run a single network carrying both connection-less (e.g., IP/L2 VPNs) and connection-oriented (e.g., private lines) services.</li>
+<li><strong>Requirements</strong>: Persistent traffic-engineered paths (stable, operator-controlled changes only), strict bandwidth commitments, end-to-end path protection (sub-50ms recovery), restoration for multiple failures, and path OAM.</li>
+<li><strong>Proposed Solution</strong>: Centralized PCE for path computation and bandwidth management. Bi-directional, co-routed SR policies formed by associating forward and reverse paths. Persistent paths achieved using strict hops of unprotected adjacency SIDs. Multiple candidate paths (working, protect, restore). STAMP for OAM. PCE prevents re-optimization unless requested by operator.</li>
+<li><strong>Updates</strong>: Clarified PCE role (computes disjoint working/protect paths, manages allocations), addressed maximum segment depth (MSD) limitations. Document renamed and moved to Spring WG.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Nitzan</strong>: Questioned how protection with resource allocation and bi-directional constructs are ensured; clarified that PCE computes and allocates bandwidth for both working and protect paths.</li>
+<li><strong>Robin</strong>: Suggested aligning the work with existing SR Path Segment work, noting similarities in OAM, protection, and bi-directional paths.</li>
+<li><strong>Dhruv</strong>: Noted the extensive use of PCE.</li>
+</ul>
+</li>
+<li><strong>Decision/Action</strong>: Authors requested working group adoption.</li>
+</ul>
+</li>
+<li>
+<p><strong>SR Path MTU for SR Policy</strong></p>
+<ul>
+<li><strong>Motivation</strong>: Avoid fragmentation at the SR head-end by being aware of SR Path MTU, enable ICMP messages, ensure interoperability, and use Path MTU as a path computation constraint.</li>
+<li><strong>Framework</strong>: SR head-end computes/knows Path MTU. Centralized controller (PCE/SDN) can push MTU constraints. Link MTU collection via BGP-LS.</li>
+<li><strong>Definition</strong>: SR PMTU for a segment list is the minimum link MTU of all links. For candidate paths/composites, it's the minimum SR PMTU of constituent segment lists/policies.</li>
+<li><strong>Computation</strong>: Defined for loose TE (minimum of all ECMPs), strict (minimum of all links), mixed, binding SID (includes encapsulation overhead), and TI-LFA repair paths. Examples showed how a controller could enforce an MTU constraint, overriding default lowest MTU choice.</li>
+<li><strong>Feedback Requested</strong>: Specifically on TI-LFA SR PMTU computation/fragmentation caveats, SRv6 source node encapsulation/fragmentation caveats, and SR PMTU binding SID path computation caveats.</li>
+</ul>
+</li>
+<li>
+<p><strong>Connection-Oriented Path in SRv6 (Hop-by-Hop Switching)</strong></p>
+<ul>
+<li><strong>Motivation</strong>: Support strict TE paths in SRv6 while reducing packet header size, offering an alternative to large SRH headers or complex SRv6/MPLS interop. Aims for a uniform SRv6 network programming platform.</li>
+<li><strong>Data Plane</strong>: Introduces a new set of SIDs (Endpoint X-Cap D function) where the argument field simulates an MPLS label for local allocation and swapping on each node (hop-by-hop switching).</li>
+<li><strong>Control Plane</strong>: Options include PCE server communicating labels, or simulating RSVP-TE procedures using &quot;Independent CoPS C function&quot; SIDs for path confirmation and mapping table establishment.</li>
+</ul>
+</li>
+<li>
+<p><strong>NRP ID in SRv6 Segment</strong></p>
+<ul>
+<li><strong>Motivation</strong>: Identify Network Resource Partitions (NRPs) in a network slicing context, allowing routers to forward packets based on the NRP ID.</li>
+<li><strong>Encoding</strong>: Proposes using the argument field of End.X type SIDs in SRv6 Segment Routing Headers (SRH) to carry the NRP ID.</li>
+<li><strong>Non-SRv6 Nodes</strong>: For nodes that do not process SRv6 SIDs directly, a &quot;slice prefix table&quot; is proposed. This table maps destination addresses to NRP ID positions, allowing the NRP ID to be extracted from the IPv6 destination address.</li>
+<li><strong>Framework</strong>: Head-end writes NRP ID into SIDs. SRv6 endpoints extract from local SID table. Non-SRv6 nodes look up the slice prefix table.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Joel Halpern</strong>: Requested clarification on whether strict or loose paths are assumed and how intermediate nodes not directly addressed by an SRv6 SID would extract and process the argument bits.</li>
+<li><strong>Darren Duke</strong>: Asked if this is a hop-by-hop mechanism for every SR and non-SR node.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Generalized Arguments of SRv6 Segment</strong></p>
+<ul>
+<li><strong>Motivation</strong>: New features (network slicing, IBN, APN6, DetNet) use IPv6 options, SRH TLVs, increasing packet header length and processing complexity. Aims to reduce overhead, improve forwarding performance, and unify processing.</li>
+<li><strong>Proposal</strong>: Structured and generalized arguments for SRv6 SIDs (End.X, End.DX) to carry instructions for multiple features.</li>
+<li><strong>Methods</strong>:
+<ol>
+<li><strong>Template</strong>: Pre-configured templates define argument structure and bit allocation for different features.</li>
+<li><strong>Bitmap</strong>: A bitmap in the argument indicates the presence and validity of instructions for specific features.</li>
+</ol>
+</li>
+<li><strong>SRv6 CC Compression</strong>: Discusses compatibility, ensuring C-SIDs can be placed from the most significant bit while other arguments are not shifted.</li>
+<li><strong>Next Steps</strong>: Define bit-to-feature mapping, allocate argument space for specific features, gather feedback.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Joel Halpern</strong>: Asked for clarity on feature definition and examples of how compression would work, especially with limited bit space.</li>
+<li><strong>Katan</strong>: Expressed concern that RFC 8986 (SRv6 Network Programming) defines argument usage based on explicit endpoint behavior. Generalized arguments would require a new behavior/flavor definition.</li>
+<li><strong>Greg Muravsky</strong>: Questioned the definition of &quot;guarantee&quot; for DetNet and how specific features like DetNet map to this generalized argument.</li>
+<li><strong>Robin</strong>: Emphasized the need for a structured argument due to multiple features being processed locally, suggesting refinement for use cases.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Redundancy Policy for Preventive Protection</strong></p>
+<ul>
+<li><strong>Background</strong>: A generalized protection mechanism where service packets are replicated on a redundancy node, transmitted over disjoint paths, and the first correct copy is selected at the merging node. Inspired by DetNet PARO (Packet Replication, Elimination, and Ordering).</li>
+<li><strong>Previous Work</strong>: Redundancy SID and Merging SID in the data plane (adopted by Spring WG).</li>
+<li><strong>Current Draft</strong>: Defines a &quot;redundancy policy&quot; as a variant of the SR policy, with minimal changes, to instruct packet replication and assign multiple redundancy forwarding paths.</li>
+<li><strong>Structure</strong>: Introduces an optional &quot;redundancy flag&quot; at the candidate path level. If set, all segment lists within that candidate path are used for redundancy forwarding, not load balancing, making weights inapplicable. Optionally associated with a redundancy SID (a variant of a binding SID).</li>
+<li><strong>Next Steps</strong>: Define the solution, align with SR policy, discuss alternative solutions (e.g., using multiple candidate paths for redundancy), and present BGP/PCEP extensions in future sessions.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Mike</strong>: Suggested replicating packets across candidate paths rather than segment lists to maintain load balancing capabilities.</li>
+<li><strong>Israel</strong>: Sought clarification on whether a &quot;redundancy binding SID&quot; takes all semantics of a standard binding SID or if a standard binding SID can function as a redundancy SID.</li>
+<li><strong>Greg Muravsky</strong>: Asked if the merge function works on a packet-by-packet or flow basis (confirmed packet-by-packet), and recommended presenting this work to the DetNet WG due to strong similarities with PARO.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>BGP SR Policy Extensions</strong></p>
+<ul>
+<li><strong>Segment List Identifier</strong>:
+<ul>
+<li><strong>Motivation</strong>: Current SR Policy encoding lacks an identifier for segment lists, making tasks like reporting statistics or distributing configurations inconvenient.</li>
+<li><strong>Proposal</strong>: Add SR Policy sub-TLVs for a 4-octet numeric identifier or a symbolic name for segment lists.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Chungli</strong>: Noted similar ongoing work and suggested collaboration to avoid redundant drafts.</li>
+<li><strong>Katan</strong>: Mentioned that the SR Policy Yang model already has a name for segment lists and suggested that feedback on BGP SR Policy encoding should be directed to the IDR mailing list.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Head-end Behavior</strong>:
+<ul>
+<li><strong>Motivation</strong>: While SRv6 policies using binding SIDs have defined behaviors, BGP SR Policy does not explicitly specify head-end behavior for steering without a binding SID.</li>
+<li><strong>Proposal</strong>: Add SR Policy sub-TLVs to specify head-end behavior for Layer 3 and Layer 2 traffic in SRv6.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Katan</strong>: Reiterated that feedback on BGP SR Policy encoding should be directed to the IDR mailing list.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Problem Statement for Intent-Aware Routing using Color</strong></p>
+<ul>
+<li><strong>Background</strong>: This document merges previous problem statements from Spring and BESS WGs as suggested by chairs.</li>
+<li><strong>Focus</strong>: Define requirements and use cases for building intent-aware paths across multiple domains using distributed routing, primarily focusing on BGP.</li>
+<li><strong>Why BGP</strong>: Operational familiarity, expectation of higher scale, and established trust models for inter-domain peering policies.</li>
+<li><strong>Content</strong>: Covers deployment scenarios, use cases, an intent-aware routing framework, and detailed technical requirements (intent, steering, deployment, scalability, network availability, and BGP protocol specifics). Placeholders remain for VPN, OAM, and multicast intent requirements.</li>
+<li><strong>Scalability</strong>: Focuses on scaling the MPLS data plane through hierarchy and reducing control/data plane state via a subscription-based pull model.</li>
+<li><strong>Decision/Action</strong>: Authors requested working group adoption.</li>
+<li><strong>Chair Comment</strong>: If adopted, the chairs requested cleanup of the document's front page regarding editor/contributor roles. It was also stressed that technical solutions for meeting these requirements should be discussed in the IDR Working Group, not Spring.</li>
+</ul>
+</li>
+<li>
+<p><strong>MPLS MA Encoding (Managed Abstraction Encoding)</strong></p>
+<ul>
+<li><strong>Context</strong>: A brief overview of one proposal for encoding changes to the MPLS header, an active discussion topic in the MPLS WG.</li>
+<li><strong>Key Features</strong>:
+<ul>
+<li><strong>Present Indicators</strong>: Uses an &quot;MA Lab&quot; label as an indicator, with flags in the next LSE (TC and TTL fields) to specify &quot;in-stack&quot; or &quot;post-stack&quot; actions and their length.</li>
+<li><strong>Network Actions</strong>: Defined as either flag-based or opcode-based. Opcode-based actions can include ancillary data, scope, and length within the same LSE for hardware parser friendliness.</li>
+</ul>
+</li>
+<li><strong>Encoding Flexibility</strong>: Easily extensible for more flags, opcodes, or data. Can carry multiple opcode-based actions, allowing the encapsulating node to define their desired order.</li>
+<li><strong>Backward Compatibility</strong>: Capabilities must be signaled. Designed to be ECMP friendly, avoid aliasing with existing reserved labels, not interfere with TTL propagation, and coexist with G-ACh.</li>
+<li><strong>Alignment</strong>: Aligned with the MNA framework and requirements for in-stack and post-stack. Emphasizes hardware parser friendliness and MSD efficiency.</li>
+<li><strong>Decision/Action</strong>: Authors requested working group adoption in the MPLS working group.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Circuit-Style Segment Routing Policies (draft-schmutzer-spring-sr-circuit-style-policy)</strong>: The authors requested working group adoption. This will be considered by the chairs.</li>
+<li><strong>SR Path MTU for SR Policy (draft-mishra-spring-sr-policy-path-mtu)</strong>: The authors requested specific feedback from the Spring WG experts on TI-LFA SR PMTU, SRv6 source node encapsulation, and Binding SID path computation caveats.</li>
+<li><strong>Generalized Arguments of SRv6 Segment (draft-mao-spring-generalized-arguments-srv6-segment)</strong>: The authors will continue to refine the draft, specifically addressing feedback regarding feature definition, bit-to-feature mapping, argument length allocation, and compatibility with RFC 8986.</li>
+<li><strong>Redundancy Policy for Preventive Protection (draft-fan-spring-sr-redundancy-policy)</strong>: The authors will discuss the solution definition, alignment with SR policy, and alternative solutions (e.g., replicating across candidate paths). Further BGP/PCEP extensions are planned.</li>
+<li><strong>BGP SR Policy Extensions (draft-halim-spring-bgp-sr-policy-segment-list-identifier &amp; draft-halim-spring-bgp-sr-policy-headend-behavior)</strong>: Authors are encouraged to consider feedback on the IDR mailing list for these BGP-related extensions.</li>
+<li><strong>Problem Statement for Intent-Aware Routing using Color (draft-shraddha-bess-spring-seamless-sr-problem-statement)</strong>: The authors requested working group adoption. The chairs requested cleanup of the document's front page (editor/contributor roles) if adopted.</li>
+<li><strong>General</strong>: All participants are encouraged to engage on the respective mailing lists for continued technical discussions and to provide feedback on drafts.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The Spring Working Group chairs will initiate discussion and potential adoption calls for <code>draft-schmutzer-spring-sr-circuit-style-policy</code> and <code>draft-shraddha-bess-spring-seamless-sr-problem-statement</code>.</li>
+<li>Authors of <code>draft-mishra-spring-sr-policy-path-mtu</code>, <code>draft-mao-spring-generalized-arguments-srv6-segment</code>, and <code>draft-fan-spring-sr-redundancy-policy</code> will continue to refine their drafts based on the feedback received and further discussions on the mailing list.</li>
+<li>Discussions on <code>draft-mao-spring-generalized-arguments-srv6-segment</code> will include defining specific bit-to-feature mappings and space allocation.</li>
+<li>The <code>draft-fan-spring-sr-redundancy-policy</code> work will include future presentations on BGP and PCEP extensions.</li>
+<li>Technical work on implementing solutions for the <code>draft-shraddha-bess-spring-seamless-sr-problem-statement</code> is expected to take place in the IDR Working Group.</li>
+<li>Continued collaboration with other working groups (e.g., DetNet for redundancy policy, MPLS for MA Encoding, PCE and IDR for SR Policy related topics) is anticipated.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

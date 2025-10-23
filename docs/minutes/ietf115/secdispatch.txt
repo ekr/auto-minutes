@@ -1,0 +1,71 @@
+**Session Date/Time:** 10 Nov 2022 17:00
+
+# secdispatch
+
+## Summary
+
+The secdispatch session included presentations and discussions on three distinct proposals: HTTP/A (Trusted HTTP), Signed Public Key and Challenge (SPKAC), and TLS Key Binding to Hash (TLS KBH).
+
+*   **HTTP/A** aimed to provide L7 trusted end-to-end communication for web services, particularly within Trusted Execution Environments (TEEs). The consensus was no immediate action, with significant concerns regarding its layering, use of HTTP methods, and lack of clear browser interest or integration strategy.
+*   **SPKAC** sought to formally standardize a widely deployed but undocumented ASN.1 format for proving private key possession. The outcome was a recommendation for AD sponsorship as an informational RFC, provided the document clearly addresses critical security considerations and does not introduce format changes.
+*   **TLS KBH** proposed a TLS extension for Kerberos-based authentication. The group recommended no immediate action, with any future work needing to occur within the TLS Working Group, contingent on addressing audience demand, security proofs, and integration with existing TLS key schedules.
+
+The session also included an announcement regarding the rotation of SEC Area Dispatch chairs, with Richard Barnes stepping down and Rifat taking over as co-chair.
+
+## Key Discussion Points
+
+### 1. HTTP/A (Trusted HTTP)
+
+*   **Proposal**: An L7 protocol (HTTP extension) for binding remote attestation messages to HTTP headers, enabling secure communication for web services inside Trusted Execution Environments (TEEs). It proposes new HTTP methods (e.g., `HTTP ATEST`) and headers for attestation, secure provisioning, and trusted transactions.
+*   **Comparison to HTTPS**: The presenter highlighted HTTP/A's finer granularity, treating the web service itself (within a TEE) as the endpoint, unlike HTTPS which often authenticates the gateway/website. It aims for "selected privacy" where parts of messages can be encrypted even without TLS.
+*   **Discussion**:
+    *   **Deployment & Layering**: Several participants questioned the architectural choice to operate at the HTTP layer, suggesting TLS as a more appropriate layer for such security guarantees. Concerns were raised about the implications of selective encryption/signature with middleboxes and potential confusion for gateways.
+    *   **Necessity of TLS**: Jonathan Hoyland asked why a TLS channel would be needed at all if HTTP/A provides confidentiality and integrity, noting that the draft does not bind the TEE attestation to the TLS channel. The presenter acknowledged TLS is not strictly necessary but noted ingrained trust in HTTPS.
+    *   **Browser/User Experience**: Ekr raised fundamental questions about how a browser would consume and present this information to the user, and if any browser vendors were interested. The presenter admitted it was currently a concept without browser interest.
+    *   **HTTP Semantics**: Mark Nottingham criticized the proposal for potentially misusing HTTP methods and violating HTTP semantics (BCP 56), and suggested the name `HTTP/A` was problematic. He called for community discussion on use cases and requirements before a solution.
+    *   **Existing Work**: Ben Schwartz recommended looking at existing HTTP multi-layer work like HTTP CONNECT UDP, MASQUE, and WebTransport as potentially more natural ways to express such concepts.
+    *   **Privacy Concerns**: Daniel Kahn Gillmor expressed privacy concerns, particularly regarding server-requested client attestation, likening it to a "mega-cookie" for device identification.
+
+### 2. Secure Routing
+
+*   The presentation for "Secure Routing" was skipped as the presenter was not available.
+
+### 3. Signed Public Key and Challenge (SPKAC)
+
+*   **Proposal**: To formally define and standardize the ASN.1 structure for a Signed Public Key and Challenge (SPKAC), which contains a public key and a challenge, cryptographically signed. This format originated from Netscape's `keygen` tag and has been widely implemented but never formally standardized.
+*   **History & Motivation**: The `keygen` tag, which generated a key pair in the browser and submitted proof of possession, was removed from browsers (Firefox, Google Chrome) and HTML5 around 2010 due to the lack of standardization and hardcoded use of MD5 in early implementations. The proponent argues the code is still widely deployed in libraries (e.g., OpenSSL, NSS), and there's a continuing need for proving private key possession outside of certificate-based PKI (e.g., DANE, DKIM).
+*   **Goals**: Formally define the SPKAC format according to IETF standards, update existing implementations to conform, and address shortcomings like the hardcoding of MD5 (OpenSSL has already addressed this).
+*   **Non-Goals**: Not to resurrect the `keygen` tag or related browser functionality, and not to change the format itself.
+*   **Discussion**:
+    *   **Informational RFC**: Eric Rescorla and Jonathan Hoyland strongly suggested that if the format is not changing, the correct venue is an informational RFC for AD sponsorship to document current practice.
+    *   **MD5 Issue**: Jonathan questioned if changing the MD5 usage meant it was no longer documenting current practice. The presenter clarified that the original format allowed for hash algorithm specification, and MD5 was an implementation oversight, which OpenSSL has fixed. The specification aims to describe the format correctly, without mandating MD5.
+    *   **Missing Fields/Security Considerations**: Robert asked for discussion on why certain fields (e.g., timestamp) are absent and why their absence is acceptable, or how they could be incorporated (e.g., within the challenge field). Daniel Kahn Gillmor stressed the need for robust security considerations that highlight the limitations of the format and recommend more modern protocols for new applications.
+    *   **Use Cases**: Stephen Farrell questioned the use case if not for `keygen`. The presenter gave an example of an application (not a browser) using SPKAC to prove possession of an old key when rolling over keys with a DNS or DANE provider, avoiding inventing new mechanisms.
+    *   **Alternatives**: Stephen concluded that due to the existence of many other ways to achieve proof of possession, no action should be taken for a new standards track document.
+
+### 4. TLS Key Binding to Hash (TLS KBH)
+
+*   **Proposal**: A TLS extension enabling Kerberos-based authentication for TLS, combining Kerberos tickets with the TLS handshake for mutual authentication and channel binding. Two modes: KDH-only (client ticket for mutual auth) and KDH-enhanced (x.509 server auth combined with client ticket Kerberos auth).
+*   **Use Cases**: Alternative to PKI or pre-shared keys for centrally managed systems (KDC), hardening TLS against quantum computing attacks (symmetric entropy), providing perfect forward secrecy for Kerberos sessions, and a potential Spinago alternative at the transport level.
+*   **Discussion**:
+    *   **Working Group Placement**: Eric Rescorla affirmed that if viable, this work should go to the TLS Working Group.
+    *   **Implementer Interest**: Eric and Roman asked about implementer and customer interest, drawing a parallel to IPsec KINK (RFC 4430) which saw close to zero implementation and use. The presenter mentioned internal project use, interest from the RADIUS group, and ongoing discussions with Microsoft.
+    *   **Authentication vs. Authorization**: Alex asked if it was for authentication or authorization. Primarily authentication, though authorization could be built on top. He warned against using it for web authorization due to poor user experience, similar to client certificates. For machine-to-machine, he questioned why existing GSSAPI channel binding with TLS isn't sufficient.
+    *   **Security Proofs**: Jonathan Hoyland raised a critical concern that the proposal involves changes to the TLS key schedule, which would break existing security proofs for TLS 1.2 and 1.3. He requested a formal analysis and proof that the modifications do not introduce new vulnerabilities. He also suggested considering his expired draft on TLS extended key schedule for safely injecting entropy. The presenter acknowledged this as a valid point and committed to addressing it.
+
+## Decisions and Action Items
+
+*   **HTTP/A**: **Decision: No action at this time.** The proposal requires further architectural thought, particularly regarding its layering (HTTP vs. TLS), integration with existing web infrastructure and browser expectations, and addressing fundamental questions about its use case and security model.
+*   **Signed Public Key and Challenge (SPKAC)**:
+    *   **Decision**: Recommend **AD sponsorship as an informational RFC**.
+    *   **Action Item**: The authors must significantly enhance the **Security Considerations** section to clearly outline the limitations of the format, especially regarding lack of context for the challenge and potential pitfalls for new deployments, and advise on safer alternatives for new protocol designs. The document should clearly state that it is documenting existing practice without modifying the format.
+*   **TLS Key Binding to Hash (TLS KBH)**:
+    *   **Decision: No immediate action.**
+    *   **Action Item**: If the proponents wish to pursue this work, they should initiate discussion on the **TLS Working Group mailing list**. Key issues to address include: demonstrating clear implementer and user interest, providing formal security analysis and proofs for changes to the TLS key schedule, and clarifying its relationship to existing channel binding mechanisms.
+
+## Next Steps
+
+*   **HTTP/A**: No specific next steps were identified for the proponents within the IETF dispatch process, as fundamental architectural and ecosystem questions remain unanswered.
+*   **SPKAC**: The authors should revise the draft based on the feedback, especially concerning security considerations, and then seek AD sponsorship for publication as an informational RFC.
+*   **TLS KBH**: Proponents should engage with the TLS Working Group on their mailing list to explore interest, address the security proof requirements, and clarify use cases, particularly distinguishing between machine-to-machine and end-user contexts.
+*   **SEC Dispatch Leadership**: Richard Barnes will be stepping down as a co-chair. Rifat will continue as co-chair. Kathleen is expected to rotate out mid-summer next year (IETF 117). The ADs at the time will select the next chair, aiming to foster a rotation pipeline.

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="bier.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-BIER-20211111-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 14:30</p>
+<h1>bier</h1>
+<h2>Summary</h2>
+<p>The BIER working group met to discuss the status of several drafts, including <code>mldp-bier-v2</code>, <code>pce-based-bier</code>, and <code>slicing-traffic-differentiation</code>. A new draft proposing a &quot;Recursive Bitstring Structure&quot; for BIER was also presented, aiming to simplify BIER-TE complexity. The group noted concerns about the slow pace of progress due to low mailing list activity and discussed the need for an interim meeting. The chair provided an update on <code>isis-bier-te</code>'s ISG review. Discussions also covered <code>te-lan-bfr</code> and <code>bier-protection</code> drafts.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Meeting Logistics:</strong> Tony volunteered to take minutes. The chair clarified the process for collaborative note-taking via the shared notepad and jabber logs.</li>
+<li><strong>Working Group Pace:</strong> Concerns were raised regarding the slow progress of drafts due to limited mailing list activity and short meeting slots. Alvaro suggested scheduling an interim meeting.</li>
+<li><strong>Dependency on BIER Ping:</strong> Human highlighted that the <code>BIER Ping</code> document has expired, blocking progress on Path MTU Discovery in BIER.</li>
+<li><strong><code>draft-ietf-bier-mldp-bier-v2</code> (Human):</strong>
+<ul>
+<li>Aims to facilitate incremental upgrades from MPLS LDP multicast (MLDP) to BIER without extensive software or configuration changes.</li>
+<li>Leverages RFC 7060, T-LDP between BIER edge routers for FEC signaling.</li>
+<li>Discussion points included ensuring proper cross-WG visibility (MPLS, BESS) during Working Group Last Call (WGLC).</li>
+<li>The draft was incorrectly marked as &quot;informational&quot; and lacked normative references, requiring correction.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-bier-pce-based-bier</code> (Juan Ali):</strong>
+<ul>
+<li>Introduced updates to PCE objects for BIER, defining new TLVs for multicast source/group addresses, VPN information (RD, forwarding label), and BIER information (router ID, subdomain ID, BF RID, BSL).</li>
+<li>Discussion included suggestions for a more precise document title and questions about the handling of &quot;non-BIER&quot; scenarios within BIER-specific objects. Torless suggested broadening the scope to a general BIER PCE architecture beyond just IP multicast.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-bier-slicing-traffic-differentiation</code> (Jeffrey):</strong>
+<ul>
+<li>Explored methods for network slicing and traffic differentiation in BIER.</li>
+<li>Proposed mapping slice aggregates (SAs) to BIER subdomains or directly to BIER Routing Tables (BIRT) for scalability, requiring IGP/BGP extensions.</li>
+<li>Suggested a &quot;BIER Extension Header&quot; to carry slice selectors for finer-grained traffic differentiation, aligning with similar concepts in IPv6 and MPLS for generic delivery functions and stateless QoS.</li>
+<li>Discussion touched upon the relationship with <code>flex-algo</code> and <code>IPA</code> drafts, which address similar slicing concepts.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-bier-isis-bier-te</code> (Torless):</strong>
+<ul>
+<li>Status update: ISG review completed in August, with one DISCUSS point (a typo) and numerous comments.</li>
+<li>The author is working on version -11, addressing feedback, including clarifying terminology (e.g., &quot;BIER,&quot; &quot;non-TE BIER,&quot; &quot;BIER-TE&quot;).</li>
+</ul>
+</li>
+<li><strong><code>draft-wibg-bier-rbs</code> (Torless):</strong>
+<ul>
+<li>Proposed &quot;Recursive Bitstring Structure (RBS)&quot; to address complexities and scalability limitations of BIER-TE's flat bit strings, particularly for sparse multicast trees.</li>
+<li>RBS structures the bit string to reflect the distribution tree, with &quot;recursive units&quot; extracted and rewritten at each hop, simplifying controller logic and reducing state on BFRs.</li>
+<li>The forwarding plane would incur some additional processing for address rewriting.</li>
+<li>Packet encoding could potentially use RFC 8296 as a new BIFT mode.</li>
+<li>The chair confirmed this work is within the BIER WG charter.</li>
+</ul>
+</li>
+<li><strong><code>draft-chen-bier-te-lan-bfr</code> (Chen Liya):</strong>
+<ul>
+<li>Addressed potential duplicate packets on broadcast links (LANs) in existing BIER-TE.</li>
+<li>Proposed introducing &quot;pursuit nodes&quot; and having real nodes act as proxies, managing two forwarding tables.</li>
+<li>The problem statement regarding duplicates was questioned, suggesting it might stem from sub-optimal mask generation by the PCE.</li>
+</ul>
+</li>
+<li><strong><code>draft-chen-bier-protection</code> (Chen Liya):</strong>
+<ul>
+<li>Extended BIER protection mechanisms to cover &quot;Case B,&quot; where a backup node protects a primary node, but they send packets to <em>different</em> CE receivers (unlike &quot;Case A,&quot; where they send to the same receivers).</li>
+<li>Utilizes a flag (<code>s=0</code>) to indicate different CE receivers and requires BFRs to extend forwarding tables with backup entries.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>General:</strong>
+<ul>
+<li>Tony volunteered as the minute taker for this session.</li>
+<li>The chairs will coordinate an interim meeting, targeting mid-late January, to address the backlog of documents and foster more active discussion.</li>
+<li>The chair will review the status of all current BIER documents and communicate updates on the mailing list, particularly for the expired <code>BIER Ping</code> draft.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-bier-mldp-bier-v2</code>:</strong>
+<ul>
+<li><strong>ACTION:</strong> Human to correct the draft's status to &quot;standards track&quot; and add necessary normative references.</li>
+<li><strong>ACTION:</strong> Chairs to coordinate with Human to send WGLC notification emails to the MPLS and BESS working groups when the WGLC begins.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-bier-pce-based-bier</code>:</strong>
+<ul>
+<li><strong>ACTION:</strong> Juan Ali to clarify the purpose of the &quot;known beer&quot; flag on the mailing list and consider expanding the draft's scope to a more general BIER PCE architecture.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-bier-slicing-traffic-differentiation</code>:</strong>
+<ul>
+<li><strong>ACTION:</strong> Jeffrey to review <code>flex-algo</code> and <code>IPA</code> drafts to understand their relationship and potential synergy.</li>
+<li><strong>ACTION:</strong> Jeffrey to initiate a discussion on BIER extension headers within the BIER working group for broader generic delivery functions and stateless QoS.</li>
+</ul>
+</li>
+<li><strong><code>draft-ietf-bier-isis-bier-te</code>:</strong>
+<ul>
+<li><strong>ACTION:</strong> Torless to submit <code>v-11</code> addressing ISG review comments, including clarifying terminology.</li>
+</ul>
+</li>
+<li><strong><code>draft-chen-bier-te-lan-bfr</code>:</strong>
+<ul>
+<li><strong>ACTION:</strong> Chen Liya to provide further clarification on the problem statement (duplicate packets on broadcast links) and solution details on the mailing list.</li>
+</ul>
+</li>
+<li><strong><code>draft-chen-bier-protection</code>:</strong>
+<ul>
+<li><strong>ACTION:</strong> Chen Liya to clarify the use cases and the relationship between &quot;Case A&quot; and &quot;Case B&quot; for BIER protection on the mailing list.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The working group will focus on increasing activity on the mailing list to facilitate discussion and document review.</li>
+<li>An interim meeting will be scheduled for mid-to-late January.</li>
+<li>Authors are encouraged to progress their drafts and address identified action items, particularly those related to WGLC and ISG review.</li>
+<li>Further discussions on new concepts like BIER Extension Headers and Recursive Bitstring Structure are expected.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

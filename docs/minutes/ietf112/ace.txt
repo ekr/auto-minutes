@@ -1,0 +1,85 @@
+**Session Date/Time:** 09 Nov 2021 14:30
+
+# ace
+
+## Summary
+
+The ACE Working Group meeting focused on the progression of existing documents towards RFC status, with several drafts nearing or entering Working Group Last Call (WGLC) or IESG review. Key technical discussions revolved around refining CoAP-EEP with OSCORE integration, aligning Group Communication documents, and proposing new work items for token revocation and TLS applicability. Two new drafts, "Token Revocation List" and "DTLS/TLS OSCORE Profile," were proposed for adoption and will proceed with calls for adoption.
+
+## Key Discussion Points
+
+*   **Working Group Document Status:**
+    *   `coap-east`, `dtls-authorized-oauth-os-os-params`, and `osco-profiles` are in the RFC Queue.
+    *   `aif`, `cmpv2`, and `mqtt-tls-profile` are in IESG evaluation. The `cmpv2` draft requires parallel progression with Lamps documents due to a shared IANA registry.
+    *   `keygroup-coms` and `coap-eep` are in Working Group Last Call (WGLC).
+    *   `keygroup-combo-osco` is expected to move to WGLC shortly.
+
+*   **`ace-coap-eep` Document Update:**
+    *   Integrated comments from Christian Carsten, restructured the document, and added an annex for TLS usage.
+    *   **Key modifications:**
+        *   Discovery of the authenticator is left out of scope, with discussion on CoAP resource discovery and IP layer approaches (DHCP, mDNS).
+        *   Optimization to send the resource URI in the first message from the e-pier to the authenticator to save bytes.
+        *   `sender-id` and `recipient-id` for OSCORE are sent in the second and third messages, reusable as `key-id` for TLS.
+        *   Confirmed OSCORE usage for key confirmation and establishing an OSCORE Security Association (SA). An incomplete OSCORE security context is used, completed upon successful authentication, with the first OSCORE message acting as a success indication.
+        *   Considerations for proxies due to role reversal in CoAP (client to server).
+        *   A CBOR structure was defined to carry negotiation information (`cypher-suite-negotiation`, `sender-id`, `recipient-id`, `session-lifetime`), designed to be extensible.
+        *   The annex detailed using DTLS for SA establishment, including crypto suite negotiation and `key-id` generation from concatenated IDs.
+    *   The document is deemed ready to be shipped to the IESG.
+
+*   **`ace-keygroup-coms` Document Update:**
+    *   Addressed WGLC reviews, including general terminology, parameter semantics, and message flows.
+    *   Text organization was improved, with error handling grouped.
+    *   **Design changes:** Moved parameter definitions from `keygroup-common-oscor` to this document.
+    *   Introduced new parameters for KDC control messages (multicast for advanced group re-keying).
+    *   Enforced categorization of parameters (`MUST`/`SHOULD`/`MAY`) and functionalities (minimal/additional support) for profiles.
+    *   Provided guidelines for error handling consistent with the main ACE framework.
+    *   Group re-keying section: Included an optimization for public keys of newly joined members in re-keying messages and high-level guidelines for different approaches (1-to-1, 1-to-many).
+    *   The document is considered ready for shepherd review and IESG submission.
+
+*   **`ace-keygroup-com-osco` Document Update:**
+    *   This profile document was updated to be consistent with the `ace-keygroup-coms` draft (parameter definitions, terminology, optimizations, categorization).
+    *   Clarifications were made on resource access, error handling, and IANA considerations.
+    *   Version 12 is stable and aligned with `keygroup-coms` and `group-oscore`.
+    *   An implementation exists for Eclipse Californium.
+    *   Ready for WGLC.
+
+*   **`ace-authz-trl` (Token Revocation List) Presentation:**
+    *   **Problem:** Access tokens can be revoked before expiration, requiring a mechanism to inform clients and resource servers beyond pull-based introspection.
+    *   **Solution:** Defines a new service at the Authorization Server (AS) with a single resource: the Token Revocation List (TRL).
+    *   The TRL contains short, hash-based identifiers (using RFC 6920) of revoked but not-yet-expired tokens.
+    *   Clients and Resource Servers can register, GET, or CoAP Observe the TRL endpoint to receive notifications about pertaining revoked tokens.
+    *   **Operation Modes:**
+        1.  Simple polling (mandatory for AS).
+        2.  Query for N most recent updates.
+        3.  STP-based mode (currently an appendix, proposed for document body) for updates after a resumption point.
+    *   The document is considered stable, with an ongoing implementation.
+
+*   **`ace-dtls-tls-profile` (DTLS/TLS OSCORE Profile) Presentation:**
+    *   **Purpose:** To state the applicability of the `ace-dtls-authorized` draft to TLS, not just DTLS. This would allow using the same access token and profile.
+    *   **Rationale:** To address scenarios where UDP might be blocked (NAT/firewall traversal) and 3GPP use cases (CoAP in service-based architecture with TLS 1.3 and OAuth 2.0).
+    *   **Discussion on approach:** The AD (Ben Kaduk) advised against modifying `ace-dtls-authorized` (currently in AUTH48) due to the significant overhead of pulling it back and re-doing last call/IESG review. He recommended adopting this new, short document.
+    *   The document states that the `ace-dtls-authorized` profile applies to TLS as well.
+
+*   **`ace-oscore-gm-admin` (OSCORE Group Manager Admin) Document Update:**
+    *   This draft defines a RESTful interface at the OSCORE Group Manager for administrator users to create, delete, configure, and reconfigure OSCORE groups.
+    *   Supports interactions based on link-format and CBOR/CoRL.
+    *   **Functionalities:** Create new groups, retrieve lists, retrieve/override/selectively update (via PATCH) group configurations, delete groups.
+    *   **Updates:** Improved error handling; concept of multiple administrators (primary and secondary) with defined scope semantics (work in progress); introduced PATCH for selective updates; refined default value handling; added parameters for OSCORE groups supporting cachability of protected responses (referencing `core-cacheable-oscore` informatively).
+    *   Further work is needed on defining scope semantics for multiple administrators.
+
+## Decisions and Action Items
+
+*   **`ace-coap-eep`**: The document is considered ready and will be shipped to the IESG.
+*   **`ace-keygroup-coms`**: The document is considered ready and will proceed to shepherd review and IESG write-up.
+*   **`ace-keygroup-com-osco`**: A Working Group Last Call (WGLC) will be issued shortly for a two-week review period.
+    *   **Action Item:** Goran to review the `ace-keygroup-com-osco` document.
+*   **`ace-authz-trl` (Token Revocation List)**: A call for adoption will be initiated.
+    *   **Action Item:** Christian to review the `ace-authz-trl` document if adopted.
+*   **`ace-dtls-tls-profile` (DTLS/TLS OSCORE Profile)**: A call for adoption will be initiated for this document, with a goal for fast progression.
+
+## Next Steps
+
+*   **Working Group Chairs**: Issue WGLC for `ace-keygroup-com-osco` and initiate calls for adoption for `ace-authz-trl` and `ace-dtls-tls-profile`.
+*   **Document Authors**: Address any feedback from WGLC and adoption calls.
+*   **AD (Ben Kaduk)**: Review the newly published revision of `mqtt-tls-profile` with the aim of moving it directly to IETF Last Call.
+*   **`ace-oscore-gm-admin` Authors**: Continue work on defining detailed scope semantics for multiple administrators, with plans for discussion at a future interim meeting.

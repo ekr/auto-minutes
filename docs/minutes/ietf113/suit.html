@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="suit.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-SUIT-20220324-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 24 Mar 2022 12:00</p>
+<h1>SUIT Session</h1>
+<h2>Summary</h2>
+<p>The SUIT session covered the status of several drafts, with significant discussion around mandatory-to-implement (MTI) cryptographic algorithms for the SUIT Manifest, especially in the context of post-quantum cryptography (PQC) and constrained devices. Key decisions were made regarding the approach to PQC MTI and the relationship between SUIT Reports and RATS claims. The group also reviewed progress on Trust Domains, Update Management, and Firmware Encryption drafts, identifying areas for further review and contribution.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Hackathon Report:</strong> Hollis provided a brief summary, noting good attendance and work on firmware encryption, despite changes in the face-to-face meeting experience.</li>
+<li><strong>SUIT Manifest Draft (version 16):</strong>
+<ul>
+<li><strong>Open Issues:</strong> MTI algorithms and crypto agility.</li>
+<li><strong>PQC MTI Discussion:</strong>
+<ul>
+<li>Questioned whether PQC MTI should apply to authors, bootloaders, update clients, or all. Consensus that authors should at minimum support it.</li>
+<li><strong>HSS-LMS:</strong> Research showed 74x signature size (4KB) compared to ECDSA, 2/5 verification time, 1.5x stack size, 2x code size. Concerns raised about the feasibility of 4KB signatures and high resource demands for constrained bootloaders.</li>
+<li><strong>Falcon 512:</strong> Exhibited smaller signature size and high speed but required ~4KB RAM and ~57KB code size (for both sign/verify). A verification-only implementation might be around 10KB. Not yet NIST finalized.</li>
+<li><strong>Crypto Agility:</strong> Considered plausible for update clients (with hardware over-specification) but not for non-updatable code like stage zero bootloaders. The idea of dual signatures (classical for bootloader, PQC for update client) was introduced.</li>
+<li>Concerns were raised about the large code size for bootloaders, lack of standardization for HSS-LMS, and the timing of NIST competition results vs. SUIT finalization.</li>
+</ul>
+</li>
+<li><strong>Proposed Solution for PQC MTI:</strong> It was suggested to specify MTI for <em>update clients</em> but not for bootloaders, possibly by separating algorithm specifications into a normative reference document, allowing for independent evolution and better decision-making as implementations catch up.</li>
+</ul>
+</li>
+<li><strong>SUIT Trust Domains Draft:</strong>
+<ul>
+<li>Re-submitted as a working group draft.</li>
+<li>Covers delegation chains, dependencies, integrated dependencies, multiple SUIT processors, and the unlinked directive.</li>
+<li>Highlighted as important for TEEP, which depends on <code>dependencies</code> and <code>unlink</code>.</li>
+<li>A call was made for review, particularly on the correct use of CWT/Proof of Possession claims. Ken from <code>libsuit</code> confirmed support for dependencies and integrated dependencies, offering samples.</li>
+</ul>
+</li>
+<li><strong>SUIT Update Management Draft:</strong>
+<ul>
+<li>Re-submitted as an individual draft.</li>
+<li>Details update management metadata, including version matching, battery levels, expiry dates, image mismatch checks, authorization, and directives like &quot;wait for event.&quot;</li>
+<li><strong>CoSWID vs. CoRIM:</strong> Currently uses CoSWID, but CoRIM appears to be a better option; however, it's not yet a working group document and would block progress. A path to proceed with CoSWID and potentially add a CoRIM extension later was suggested.</li>
+<li>A call for feedback, use cases, and contributions was made, as the document is not yet considered comprehensive.</li>
+</ul>
+</li>
+<li><strong>Firmware Encryption Draft:</strong>
+<ul>
+<li>Updates include backporting payload structure changes decided in the CoSy working group for CoSy HPKE.</li>
+<li>Code using CoSy HPKE and a crypto adaptation layer has been developed and updated during the hackathon. AES KeyWrap support is still a work in progress.</li>
+<li><strong>Open Issues:</strong> Incorporating further CoSy WG decisions, providing more complete examples (e.g., <code>CoSy Encrypt</code> wrapped in <code>CoSy Sign1</code> or <code>CoSy Mac</code>), and clarifying the binding of context to encryption.</li>
+<li>Detailed discussion occurred on the <code>CoSy _structure</code> for AAD and the <code>contextInfo</code> structure, seeking expert interpretation on how to avoid redundancy and correctly bind identities, especially with the layered payload structure.</li>
+</ul>
+</li>
+<li><strong>SUIT Report and SUIT-Related RATS Claims Drafts:</strong>
+<ul>
+<li>The SUIT Report carries a log of decisions made by the SUIT manifest processor, designed for efficiency on constrained devices.</li>
+<li>The SUIT-Related RATS Claims draft defines SUIT-specific elements for attestation. A previous proposal to merge this with the SUIT Report was rejected by the RATS interim, due to perceived duplication of claims.</li>
+<li><strong>Proposed Resolution:</strong> SUIT Reports should be treated as <em>evidence</em>, not <em>attestation results</em>. A verifier should translate SUIT reports into generic EAT claims. This moves complex translation overhead from constrained end-nodes to the verifier (e.g., data center), allowing for a single EAT claim to encapsulate the entire SUIT report.</li>
+<li><strong>Interaction with TEEP:</strong> Dave Taylor presented multiple ways to handle SUIT reports in TEEP (as evidence, encapsulated in EAT, translated into EAT, or sent in parallel). Raised concerns about the efficiency for TEEP and whether a requirement to track boot-time SUIT reports would be introduced if no direct claims existed in EAT.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Notetaker:</strong> Mike Jenkins volunteered to take notes in CodyMD.</li>
+<li><strong>SUIT Manifest MTI:</strong> The working group agreed to pursue a strategy of defining MTI for <strong>update clients</strong> but not for bootloaders, likely by moving algorithm specifications into a separate normative reference document. This allows for more flexibility and independent evolution.</li>
+<li><strong>SUIT Trust Domains:</strong> Brendan Morin will add examples to the draft based on Ken's <code>libsuit</code> implementation.</li>
+<li><strong>SUIT Report / RATS Claims:</strong> The discussion on how SUIT Reports interact with RATS and TEEP (especially the proposal to treat SUIT Reports as evidence encapsulated in a single EAT claim) needs to continue on the mailing list.</li>
+<li><strong>Next Steps:</strong> A virtual interim meeting will be scheduled to recap mailing list discussions, reach consensus on outstanding issues (including SUIT Report/RATS claims, MTI algorithms), and discuss MUD. A Doodle Poll will be circulated for scheduling.</li>
+<li><strong>General Review:</strong> Multiple drafts (Trust Domains, Update Management, Firmware Encryption) have explicit calls for review and contributions from the working group.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Mailing List Discussion:</strong> Continue the detailed discussion on the SUIT Report and SUIT-Related RATS Claims, particularly regarding their treatment as evidence within the RATS architecture and implications for TEEP.</li>
+<li><strong>Virtual Interim:</strong> Participate in the doodle poll to schedule a virtual interim meeting to consolidate discussions, aim for consensus, and address the MUD charter item.</li>
+<li><strong>Draft Updates &amp; Contributions:</strong>
+<ul>
+<li>Brendan Morin to update the Trust Domains draft with examples.</li>
+<li>Hollis to incorporate CoSy WG decisions into the Firmware Encryption draft, add more complete examples, and seek expert advice on context binding.</li>
+<li>Working group members are encouraged to review the SUIT Trust Domains and SUIT Update Management drafts and provide feedback, use cases, or contributions.</li>
+</ul>
+</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

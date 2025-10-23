@@ -1,0 +1,75 @@
+**Session Date/Time:** 28 Jul 2022 21:30
+
+# dhc
+
+## Summary
+
+The DHC working group session at IETF 114 covered three main topics: advancing RFC 8415 (DHCPv6) to Internet Standard, a proposal for distributed SRv6 locators using DHCP, and a draft for registering self-generated IPv6 addresses via DHCPv6. A key decision was made to proceed with the work on advancing RFC 8415 to Internet Standard, leading to the creation of an "8415-bis" document to address errata and potential deprecation of unused features like IATA. Discussions around the new drafts focused on interoperability, appropriate DHCP mechanisms, and the intended scope of information versus enforcement.
+
+## Key Discussion Points
+
+### Advancing RFC 8415 (DHCPv6) to Internet Standard
+
+*   **Motivation:** The charter established a goal to advance DHCPv6 to Internet Standard, and RFC 8415 consolidated previous base specifications.
+*   **Internet Standard Requirements Review:**
+    *   **Implementations:** Widespread deployment and interoperability were confirmed (cable modems, home gateways, routers, servers, mobile devices, IETF network, Comcast). Previous testing at UNH-IOL and CableLabs demonstrated success.
+    *   **Errata:** Three reported errata exist. One minor typo in section 6, one client/server typo in 18.3.8. A more involved erratum concerns inconsistencies regarding server unicast use with Information Request messages and in Reconfigure messages, which could arguably cause interoperability issues and likely requires correction. A minor documentation issue regarding a missing reference to RFC 7943 was also noted.
+    *   **Unused Features:** The "Identity Association for Temporary Addresses" (IATA) was highlighted as a potentially unused feature that adds complexity. A discussion point was whether to deprecate it.
+    *   **IPR:** No IPR has been filed or claimed for RFC 8415 or its predecessors.
+*   **Proposed 8415-bis Document:** An update, RFC 8415-bis, would be needed to address errata and potentially deprecate IATA. The goal is to minimize changes to simplify review.
+*   **Discussion on IATA:** Mike Ackerman raised concerns about deprecating IATA, suggesting that while not widely used now, enterprises might find it important for security in future IPv6 deployments.
+*   **Implementation Status:** Suresh Kumar emphasized the need for clear implementation status (especially for newer RFC 8415 features like SOL_MAX_RT and Solicitation Refresh Timer) to assist the AD in defending the advancement to Internet Standard. Tim indicated that the UNH-IOL's new DHCP logo program is designed to test these features and that results would be clearer by November.
+*   **Proposed Schedule:** Publish a 00 version of 8415-bis before the November IETF deadline, complete review in two months, and submit to IESG by the March IETF deadline.
+
+### Distributed SRv6 Locators by DHCP
+
+*   **Problem:** Telecom operators with large-scale SRv6 networks and numerous CPEs (often without IGP and high mobility) require a simpler way for CPEs to dynamically learn SRv6 locator subnet routes.
+*   **Proposal:** Treat an SRv6 locator as an IPv6 prefix within the DHCPv6 Prefix Delegation (PD) process.
+    *   A DHCPv6 server allocates the SRv6 locator as a prefix.
+    *   The Broadband Remote Access Server (BRAS) distributes the locator subnet routes locally and to ASNs.
+*   **DHCP Extension:** Define a new SRv6 locator option, encapsulated within the IA Prefix option, to identify SRv6 locator prefixes and carry subnet information. This option includes fields for locator block length, function length, and arguments length to describe SRv6 seed formats.
+*   **Discussion:**
+    *   **Interoperability:** Bernie raised a concern: if a client requests an SRv6 locator with the new option, but the server doesn't understand the option, it might still allocate a standard IPv6 prefix. The client wouldn't be able to use this for SRv6, potentially wasting the prefix.
+    *   **Mechanism:** Bernie and Eric Vyncke suggested that defining a *new IA option* specifically for SRv6 locators might be a more idiomatic DHCP approach to clearly signal intent and prevent misinterpretation by unaware servers.
+    *   **Review:** It was agreed that review from the Spring Working Group (SRv6 experts) would be essential for this draft.
+
+### Registering Self-Generated IPv6 Addresses using DHCPv6
+
+*   **Problem:** With SLAAC or static IPv6 addresses, helpdesks and security operations teams lack a central mechanism to correlate IP addresses with MAC addresses or devices, making troubleshooting and incident response difficult.
+*   **Proposal:** A client, using a self-generated or statically configured IPv6 address, sends a DHCPv6 Address Notification message to a DHCPv6 server.
+*   **Mechanism:** The server logs this information (including DUID and potentially client link-layer address), and optionally records it in its lease database to avoid handing out the same address. The draft aims to solve the helpdesk and security operations use cases by providing a log of address-to-device mappings.
+*   **Discussion:**
+    *   **Stateless/Best Effort:** The message is intended as "fire-and-forget," best effort. The server logs the information without strict sanity checking. There is no required acknowledgement from the server, and clients are expected to refresh the notification periodically.
+    *   **Timeouts:** Addresses should time out in the server's log, though the exact timer duration is still under debate among authors. Servers are allowed to discard notifications if resources are constrained (e.g., disk full).
+    *   **Security Implications (IP Source Guard):** Hazel Smith inquired about using an acknowledgement (ACK) from the server to enable IP source guard v6. It was noted that requiring an ACK could prevent clients from gaining access if the server doesn't support the mechanism, reinforcing the "best effort" approach.
+    *   **Informational vs. Enforcement:** Eric Vyncke cautioned against using this mechanism for anything other than purely informational logging. Using it for lease management or security enforcement could introduce significant complexity and "can of worms."
+    *   **Router Faking Messages:** A suggestion that routers could "fake" these messages to log non-collaborating clients was deemed a "bad idea" due to complexity and potential for "bad mojo."
+
+## Decisions and Action Items
+
+### Decisions
+
+*   The working group *decided to proceed* with advancing RFC 8415 to Internet Standard. A straw poll showed strong support for this endeavor.
+
+### Action Items
+
+*   **RFC 8415 Advancement:**
+    *   Co-authors of RFC 8415 (Bernie Volz, Tim Chown) and potentially new contributors are requested to form an "8415-bis" author team and begin drafting.
+    *   The working group will hold discussions on the mailing list regarding the specific errata fixes and the potential deprecation of IATA.
+    *   All DHC WG members are encouraged to report any known errata, typos, or issues with RFC 8415.
+    *   Working group members are requested to actively review the upcoming 8415-bis document.
+    *   Explore the development of a feature implementation matrix for RFC 8415 to aid the AD in assessing widespread deployment.
+*   **Distributed SRv6 Locators by DHCP:**
+    *   The authors are requested to consider the interoperability implications for servers unaware of the proposed SRv6 locator option, particularly regarding potential prefix wastage.
+    *   The authors should consider defining a new top-level IA option for SRv6 locators, rather than embedding the SRv6 locator option within the existing IA Prefix option.
+    *   The draft needs to be presented to and reviewed by the Spring Working Group.
+*   **Registering Self-Generated IPv6 Addresses using DHCPv6:**
+    *   The authors are requested to resolve the conflicting statements in the draft regarding the requirement and nature of acknowledgements for notification messages.
+    *   Finalize the specific timer values for how long self-generated address notifications are maintained by the server before timing out.
+    *   The draft should explicitly clarify its scope as purely informational logging, not for enforcement or lease management.
+
+## Next Steps
+
+*   The DHC chairs will take discussions regarding RFC 8415 advancement, errata, and IATA to the mailing list to gather broader working group input.
+*   Authors of the SRv6 locator and self-generated address drafts will revise their documents based on the feedback received and continue discussions on the mailing list.
+*   The DHC working group will monitor progress on the UNH-IOL DHCPv6 logo program results for RFC 8415 implementation status.

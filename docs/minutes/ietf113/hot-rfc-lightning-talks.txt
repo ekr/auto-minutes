@@ -1,0 +1,100 @@
+**Session Date/Time:** 20 Mar 2022 18:00
+
+# Hot RFC Lightning Talks
+
+## Summary
+
+This session featured a series of lightning talks, each four minutes in length, designed to provide presenters with an opportunity to introduce new ideas, ongoing work, or pressing issues to the IETF community. The goal is to spark conversations and connect individuals with shared interests, with follow-up discussions encouraged outside the session due to the rapid-fire format. Eight diverse topics were presented, ranging from network quality of service to supply chain security and IETF's environmental impact.
+
+## Key Discussion Points
+
+*   **Easy QoS for Applications via DNS (Donald Eastlake, Futurewei):**
+    *   **Problem:** Applications often need specific Quality of Service (QoS) for bandwidth or latency but are typically QoS-agnostic.
+    *   **Proposal:** Encode desired QoS requirements within DNS requests. The DNS response would then provide information (e.g., via "semantic addressing" in low-order IP address bits or new RR types) on how to achieve that QoS.
+    *   **Mechanism:** An early hop router could interpret this QoS information to modify packets or perform specific routing without requiring application changes.
+    *   **Benefits:** Allows QoS-ignorant applications to benefit from improved network services. QoS-aware applications could construct more detailed requests.
+    *   **Metrics:** Could specify coarse-grained needs (e.g., minimum latency, maximum bandwidth) or precise metrics (e.g., maximum jitter in microseconds).
+    *   **Further Information:** Referenced existing drafts on expressing QoS requirements in DNS and semantic routing. The QoS requirements draft will be presented at the DNSOP Working Group meeting.
+
+*   **Verified Internet Drafts using Computerized Specifications (Mark Pettigone):**
+    *   **Concept:** A methodology combining AsciiDoc, a dependently typed programming language (Idris 2), and the ability to inject computation results directly into the document.
+    *   **Tooling:** Developed a tool to generate XML to RFC v3, plain text, HTML, and PDF files from these computerized specifications, ready for submission as Internet Drafts.
+    *   **Benefits:** Ensures correctness and consistency. Examples include automatically updating numerical values based on computations, and verifying ABNF rules (unique names, all names used, no loops).
+    *   **Implementation:** Utilizes embedded Domain Specific Languages (DSLs) within Idris 2 for common IETF-related constructs (e.g., denominated numbers, ABNF, Petrinet).
+    *   **Further Information:** A comprehensive document is available detailing the tool and methodology.
+
+*   **IEEE 802.1 Initiatives for Low Latency Data Centers (Paul Condon, IEEE 802.1):**
+    *   **Motivation:** Addressing the needs of modern data center networks for low latency, low loss, and high reliability, particularly for RDMA, AI, and HPC workloads.
+    *   **Three Initiatives (amendments to IEEE 802.1Q):**
+        1.  **Congestion Isolation:**
+            *   **Problem:** Priority-based Flow Control (PFC) can cause head-of-line blocking and congestion spreading, and ECN feedback might not be fast enough.
+            *   **Solution:** Identify congestion-causing flows and move them to separate queues or traffic classes to avoid invoking PFC. This involves a one-hop Layer 2 or Layer 3 signaling mechanism. The standard is in its final stages.
+        2.  **PFC Enhancements:**
+            *   **Problem:** Calculating "headroom" (buffer space for in-flight packets) for PFC is complex due to dependencies on cable length, internal delays, and implementation details. Issues with PFC over MaxSec were also identified.
+            *   **Solution:** Use Precision Time Protocol (PTP) to automatically measure delays between end stations and calculate PFC headroom, eliminating manual configuration. Addresses MaxSec encryption issues.
+        3.  **Source Flow Control:**
+            *   **Concept:** A new project that leverages congestion isolation ideas but remotely invokes PFC across the network *without* moving traffic to different queues, aiming to avoid some of PFC's inherent problems.
+            *   **Status:** A new project, offering opportunities for community involvement.
+    *   **Next Steps:** A side meeting is scheduled this week for in-depth discussion, and an existing mailing list for RDMA congestion control is available.
+
+*   **Fixing DNSSEC Multisigner Inconsistencies (Ulrich Wistbacka, Swedish Internet Foundation):**
+    *   **Goal:** Resolve inconsistencies in DNSSEC RFCs to better support multi-signer environments.
+    *   **Multisigner Concept:** A DNS zone signed independently by two different providers, requiring ZSK (Zone Signing Key) exchange.
+    *   **Problem:** Current RFCs imply that if a DNSKEY is present, all corresponding signatures must also be present. This creates issues if multi-signers use different cryptographic algorithms, hindering smooth domain migration without going insecure.
+    *   **Conflict:** Some RFCs state that all DNSKEYs must have signatures, while others advise resolvers to only look for *any* valid signature.
+    *   **Proposed Solution:** Suggests modifying RFC 6840 from "should not insist on this" to "must not insist on all algorithms" for resolvers.
+    *   **Open Questions:** How to manage validation if a resolver does not support an algorithm used by one of the nameserver instances. Community input is sought regarding downgrade protection concerns, as enforcing all algorithms in all signatures is seen as a form of downgrade protection.
+
+*   **Virtualization of PLCs in Industrial Control Networks (Kiran Machani):**
+    *   **Context:** Rapid growth in industrial automation, with Programmable Logic Controllers (PLCs) forming the core for controlling sensors and actuators in factories.
+    *   **PLCs:** Consist of a control unit (CPU, memory) and I/O modules. They are crucial for robotics, motion control, and smart manufacturing.
+    *   **Proposal:** Virtualize the control unit, separating it from the I/O modules.
+    *   **Benefits:** Allows for customizable compute power and memory for control units, potentially reducing the need for rugged physical enclosures in harsh environments.
+    *   **Challenge:** Current industrial network architectures are highly hierarchical. Virtualization necessitates a disaggregation of this structure and a re-evaluation of network design.
+    *   **Work Focus:** Investigating network changes for virtualized PLCs, deployment strategies, addressing, verification, and compute resource allocation for these devices.
+    *   **Next Steps:** A more detailed discussion will take place during the Enduring IoT Ops session.
+
+*   **WAN Auto Scaling for Cloud Applications (Berta Serecanta, Universitat Politècnica de Catalunya):**
+    *   **Scenario:** Cloud applications consumed by users in company branches, connected via a Software-Defined Network (SDN) WAN.
+    *   **Problem:** Cloud applications often auto-scale (vertically by adding resources to existing replicas, or horizontally by deploying more replicas) in response to increasing user load. If the WAN does not react similarly, it can become a bottleneck.
+    *   **Proposed Solution:** A mechanism for the network to react to cloud auto-scaling events.
+    *   **Mechanism:** Leverage SDN capabilities and underlying network technologies (e.g., dynamic path selection, elastic bandwidth allocation at terminals) to translate cloud auto-scaling actions into corresponding network adjustments.
+    *   **Next Steps:** A presentation at PANARGY and a corresponding paper are available for more detailed information.
+
+*   **Trustworthy Digital Supply Chain Transparency Services (Hendrik Laitenberger, Futurewei):**
+    *   **Topic:** Focusing on Supply Chain Integrity, Transparency, and Trust (SKITT), particularly for software supply chains (driven by current cybersecurity mandates like the US Executive Order and SBOMs).
+    *   **Core Problem:** Ensuring the auditability and trustworthiness of software supply chains.
+    *   **Proposed Architecture:**
+        *   **Artifacts:** Any item in a supply chain (e.g., software binaries, SBOMs).
+        *   **Statements/Claims:** Signed statements about these artifacts are issued by participants in the supply chain.
+        *   **Transparency Service (Ledger):** An append-only, trusted ledger (conceptually similar to blockchain but not necessarily one) where signed claims are committed.
+        *   **Receipts:** Upon commitment, counter-signed, Merkle tree-based receipts are returned. These receipts allow for offline validation of the claim's presence and integrity in the ledger.
+    *   **Key Features:** Enables offline validation of claims using receipts and the trusted ledger. Provides an audit trail back to the service for auditors.
+    *   **Related Work:** Drawing on work from COSE (receipts), RATS (authenticating ledger), and RFC 6962 (Certificate Transparency).
+    *   **Next Steps:** Weekly SKITT meetings on Mondays; further presentation at SECDISPATCH.
+
+*   **Air Travel CO2 Emissions and IETF Meetings (Daniel Schauenberg):**
+    *   **Core Question:** Can the IETF maintain its current model of multiple in-person meetings per year given global climate change imperatives?
+    *   **Conflict:** In-person IETF meetings involve approximately 1000 international flights, contributing significantly to CO2 emissions, contrasting with urgent calls for emissions reduction (e.g., IPCC reports).
+    *   **Research Focus:** Investigating the impact of IPCC recommendations on the IETF, quantifying CO2 emissions per attendee per meeting, assessing sustainable aviation trends, and considering broader sustainability implications.
+    *   **Initial Findings (IAB Report):** "Cost of holding multiple in-person IETF meetings per year are likely unsustainable."
+    *   **Study Conclusions:** Holding three in-person meetings per year is unsustainable. Limiting to one in-person meeting per year is a probable goal. Sustainability considerations extend beyond CO2 emissions.
+    *   **Recommendation:** The IETF should consider adhering to sustainability programs.
+    *   **Next Steps:** A more detailed discussion of this study's findings and recommendations will occur during the SHMU session this week.
+
+## Decisions and Action Items
+
+*   No explicit decisions were made during this lightning talk session.
+*   **Action Items** for the community are primarily to engage with the presenters and their work.
+
+## Next Steps
+
+*   **Donald Eastlake:** Presenting the QoS requirements draft at the DNSOP Working Group meeting this week.
+*   **Mark Pettigone:** Community encouraged to review the documentation and install the tool for computerized specifications.
+*   **Paul Condon:** Side meeting scheduled this week to discuss IEEE 802.1 initiatives in more detail. Community invited to join the mailing list for RDMA congestion control.
+*   **Ulrich Wistbacka:** Seeking community input on DNSSEC multi-signer inconsistencies, particularly regarding downgrade protection and resolver validation challenges.
+*   **Kiran Machani:** Presenting more details on PLC virtualization at the Enduring IoT Ops session.
+*   **Berta Serecanta:** Presentation at PANARGY and a related paper are available for further information on WAN auto-scaling.
+*   **Hendrik Laitenberger:** Weekly SKITT meetings (Mondays) and a presentation at SECDISPATCH for those interested in digital supply chain transparency services.
+*   **Daniel Schauenberg:** Presenting further details and conclusions on IETF air travel CO2 emissions at the SHMU session this week.
+*   **General:** Attendees encouraged to follow up with presenters offline for deeper discussions on their respective topics.

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lake.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-LAKE-20211112-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 12 Nov 2021 14:30</p>
+<h1>lake</h1>
+<h2>Summary</h2>
+<p>The lake working group met to discuss the status of the Ad Hoc protocol specification, review progress on formal analysis, finalize the scope of the traces document, and address open issues. Key discussions included defining the test vector scope for the traces draft, privacy considerations related to connection identifiers, and preparing for a potential Working Group Last Call (WGLC) in early 2022.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Formal Analysis of Ad Hoc</strong></p>
+<ul>
+<li>Militia provided an update on a short paper being prepared for the academic cryptographic community.</li>
+<li>This document summarizes the Ad Hoc protocol, its security goals (from the requirements draft), protocol design, key schedule, cipher suite parameters, and specific constructs like the exporter interface and key update function.</li>
+<li>It also maps properties proven by existing formal analyses and identifies areas for further study.</li>
+<li>The paper will be published on Open Archives next week, with an invitation to the formal verification community to begin a 6-month analysis period. Karthik will assist in reaching relevant teams.</li>
+<li>Chairs clarified this is not a working group consensus document but an invitation for external review, open to iterative updates based on feedback. The 6-month period is a preliminary suggestion.</li>
+</ul>
+</li>
+<li>
+<p><strong>Traces Draft Adoption and Scope</strong></p>
+<ul>
+<li>The working group adoption call received positive feedback, supporting publication as an Informational RFC.</li>
+<li>A key remark emphasized the importance of verifying test vectors with multiple implementations to ensure correctness.</li>
+<li><strong>Discussion on Scope for the Traces Draft</strong>:
+<ul>
+<li>Current scope: <code>method_0</code> (signature) and <code>method_3</code> (static-static) with cipher suite 0 (X25519-based).</li>
+<li>Interest was expressed for NIST P256 curves (cipher suites 2 and 3).</li>
+<li><strong>Timothy's suggestion</strong>: Include all methods (0, 1, 2, 3) with cipher suites 0 and 2 in the draft; host a more exhaustive list of test vectors on a GitHub page.</li>
+<li><strong>John's suggestion</strong>: Select 2-3 core traces for the draft, focusing on detailed explanations and correctness. Maintain an extensive, JSON-formatted set of test vectors on GitHub.</li>
+<li><strong>Marco's suggestion</strong>: Methods 0 and 3 for cipher suites 0 and 2 would be a good compromise.</li>
+<li>Marek Serafin (Assa Abloy) is joining as a co-author to contribute test vectors for cipher suites 2 and 3.</li>
+<li>Existing test vectors are already on GitHub. The group needs to create a process for submitting new test vectors (e.g., via PRs).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Ad Hoc Main Specification Status and Open Issues</strong></p>
+<ul>
+<li>John provided an update on changes from draft-ietf-lake-ad-hoc-08 to -12.</li>
+<li>Changes from -08 to -11 (discussed at interim): Key derivation simplification, cipher suite negotiation changes, MAC length addition, 45-byte requirement for DY/ciphertext2, CWT/CCS support, EAD type restructuring, various fixes.</li>
+<li>Changes from -11 to -12 (post-interim): Mostly clarifications. COSE <code>sender_parameters</code> clarification, PQC CHEMs note for <code>method_0</code> (future work), support for all COSE signatures, cipher suite clarifications, MTI section updates, COSE processing moved to appendix, internal reference fixes.</li>
+<li><strong>Discussion on Open Issues</strong>:
+<ul>
+<li><strong>Cryptographic explanations</strong>: Minor clarifications added. MAC must be at least 8 bytes.</li>
+<li><strong>Privacy considerations</strong>: New issue based on Model-T discussions regarding tracking clients across multiple servers if the same identity is used. No technical change, but adds considerations.</li>
+<li><strong>PQC CHEMs</strong>: Clarified they could be added later to <code>method_0</code> (needs a new COSE draft/cipher suite specification).</li>
+<li><strong>Non-repudiation</strong>: Clarified that all input to the signature function must be saved by the other party to prove participation, unlike wire-visible proofs in some protocols.</li>
+<li><strong>Optimal Padding (Issue 190)</strong>: Ad Hoc currently reveals identity and EAD lengths. Proposal to add optional padding mechanism to security considerations.</li>
+<li><strong>EAD Internal Structure/API (Issue 186)</strong>: Needs further discussion on where CBOR encoding should occur and how the EAD interface should be specified (e.g., as a byte string).</li>
+<li><strong>Compact Representation</strong>: Alignment with CFRG HPKE draft. No strong positive feedback from CFRG.</li>
+<li><strong>Limited Randomness</strong>: PR submitted referencing OSCORE appendix.</li>
+<li><strong>Test Vector Issues</strong>: Need a table of contents for JSON test vectors; more cipher suites (P256 ecdsa is coming); use real certificates instead of placeholder keys.</li>
+</ul>
+</li>
+<li><strong>Reviews (4 received)</strong>:
+<ul>
+<li><strong>General</strong>: Reviews were positive, mostly editorial with some technical points.</li>
+<li><strong>EAD encoding</strong>: High-level answer is the API needs to be a byte string, with the Ad Hoc application handling encoding.</li>
+<li><strong>Error handling</strong>: Keep optional success error per IoT Ops suggestion.</li>
+<li><strong>MTI cipher suite</strong>: Discuss changing <code>0</code> and <code>2</code> to <code>0/1</code> and <code>2/3</code> later when defining MTI cipher suites.</li>
+<li><strong>Revocation</strong>: Ad Hoc doesn't provide specific guidance, but relies on X.509 mechanisms (CRL, OCSP - not stapling). Adding OCSP stapling would require COSE or Ad Hoc specification.</li>
+<li><strong>IANA considerations</strong>: Clarify what &quot;documentation required&quot; means.</li>
+<li><strong>P256 vs. 25519</strong>: Add guidance for implementers, suggesting 25519 unless hardware constraints require P256 (e.g., for constrained devices).</li>
+<li><strong>Connection Identifiers</strong>: Stephen Farrell raised concerns about tracking clients if IDs are sent in cleartext, especially in multiplexed environments. John noted current design matches OSCORE and allows tracking, suggesting more considerations or technical contributions for privacy. It's a fundamental design aspect that would be hard to change later.</li>
+<li><strong>Terminology</strong>: Clarify what is normative: CDDL, English text, or a mix. Most CDDL is normative but needs normative English for details.</li>
+<li><strong>Hash-based signatures</strong>: Questioned if Ad Hoc needs to support all COSE-approved signature types, given issues like statefulness. Ben suggests applications should profile down COSE algorithms to what makes sense for them.</li>
+<li><strong>KDF for public output</strong>: Add considerations regarding deriving public information from KDFs.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Formal Analysis</strong>: Proceed with publishing the &quot;letter&quot; to the crypto community and initiating the 6-month call for formal analysis.</li>
+<li><strong>Traces Draft Scope</strong>: The chairs will formulate a concrete proposal for the scope of test vectors to be included in the traces draft (based on group input favoring all methods, cipher suites 0 and 2, and 2-3 detailed traces) and send it to the mailing list for further discussion.</li>
+<li><strong>Open Issues</strong>: John will send an email to the mailing list proposing to close all issues that have received a proposed resolution, giving the working group a few days to comment before closing them on GitHub.</li>
+<li><strong>Connection Identifiers</strong>: John will add more security considerations regarding potential client tracking if the same connection identifier is used across different networks. Stephen Farrell will consider making a concrete technical proposal if he has ideas for improvement.</li>
+<li><strong>P256 vs. 25519</strong>: Guidance will be added to the document on when to choose P256 (e.g., due to pre-existing hardware constraints) and to provide default choices for implementers.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Schedule an interim meeting for early to mid-December to address remaining open issues and prepare for Working Group Last Call.</li>
+<li>Actively engage on GitHub with comments on proposed issue resolutions or new technical contributions.</li>
+<li>The working group aims to initiate a Working Group Last Call (WGLC) in January 2022, following the interim and stabilization of the document, to ensure a stable specification for the impending formal crypto analysis.</li>
+<li>Members are encouraged to provide further reviews, especially those who have not yet done so, and to comment on the timeline for WGLC.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

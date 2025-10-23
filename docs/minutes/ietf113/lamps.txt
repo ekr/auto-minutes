@@ -1,0 +1,108 @@
+**Session Date/Time:** 25 Mar 2022 09:00
+
+# lamps
+
+## Summary
+
+The lamps working group session covered updates on several drafts, including CMP, Lightweight CMP, and CMP Algorithms, with decisions made on progression paths and URI structures. Work in progress such as Document Signing EKU, RFC 3709bis, and RFC 8410 Key Usage Clarifications are moving towards Working Group Last Call or IESG review. A significant discussion occurred on Header Protection for S/MIME, where the design team presented a new approach for legacy client display and sought feedback on policy recommendations and implementation concerns. The session also initiated discussions on addressing ambiguities in RFC 7030 CSR attributes and the complex challenges of integrating Post-Quantum Cryptography (PQC) keys into existing certificate and key management infrastructures due to key size and legacy system constraints. A virtual interim was announced to cover remaining agenda items.
+
+## Key Discussion Points
+
+*   **CMP Updates (draft-ietf-lamps-cmp-updates)**
+    *   Addressed nits from nit checking tool, clarified CRL sources, referenced random number generation documents, opened CA search support for trusted root CAs, and rolled back OID registration for root CA updates.
+    *   All feedback from Roman (AD) except two points were addressed.
+    *   **Discussion on 4210bis vs. cmp-updates approach**: Roman suggested a 4210bis document due to the number of changes, but the WG previously decided on the `cmp-updates` approach. It was acknowledged that a `bis` would require significant effort, potentially also requiring a `6712bis`. The group agreed to proceed with `cmp-updates` as is, with potential for a `bis` if advancement to Internet Standard is sought later.
+    *   **Discussion on `.well-known` URI usage**: Ben brought up concerns that the current approach for profile/CA labels in the `.well-known` path segment (e.g., `/.well-known/cmp/profile-label/initialization`) does not align with `.well-known` specifications and limits future protocol expansion.
+        *   Alternative options considered: using query components, switching label order, or abandoning `.well-known`.
+        *   **Resolution**: Adopted Ben's proposal to add an explicit sub-component (e.g., `/p/`) to signal subsequent segments are profile labels (e.g., `/.well-known/cmp/p/profile-label/initialization`).
+*   **CMP Algorithms (draft-ietf-lamps-cmp-algorithms)**
+    *   Authors addressed working group and AD feedback, mainly by adding a table of algorithms sorted by cryptographic strength and incorporating feedback on Shake/KMAC. Security considerations were added, and the pre-work disclaimer removed.
+*   **Lightweight CMP Profile (draft-ietf-lamps-lightweight-profile)**
+    *   Not yet reviewed by Roman. Changes since IETF 112 include recommending implicit confirm for enrollment, adding conformance requirements section, clarifications, and alignment with `cmp-updates` changes.
+    *   Open points: implementing `.well-known` changes (as decided for `cmp-updates`), clarifying error message protection, and PKI management operations support level.
+*   **Lamps Samples (draft-ietf-lamps-samples)**
+    *   Document is in AUTH48. Minor editorial cleanups are being handled.
+*   **Document Signing EKU (draft-ietf-lamps-document-signing-eku)**
+    *   Currently in Working Group Last Call.
+    *   Changes queued: clarifying optional criticality, minor editorial issues, adding acknowledgements.
+    *   Expected to go to AD after WGLC.
+*   **RFC 3709bis (draft-ietf-lamps-rfc3709bis)**
+    *   Currently in Working Group Last Call.
+    *   Main change: removing SHA-1 and recommending use of the hash algorithm used to sign the certificate. No comments received yet.
+*   **RFC 8410 Key Usage Clarifications (draft-ietf-lamps-rfc8410-key-usage-clarifications)**
+    *   Working group adoption completed.
+    *   Purpose: Clarify key usages for EdDSA and X25519/X448 algorithms, specifically by defining "MUST NOT" for inappropriate usages (e.g., digital signature for key agreement algorithms, key agreement for signature algorithms). Addresses ambiguities due to lack of explicit definition in RFC 8410.
+    *   A new working group draft (00 version) was submitted.
+*   **Header Protection for S/MIME (draft-ietf-lamps-header-protection)**
+    *   **Recap**: Two schemes: wrapped message (low deployment) and injected headers (obscured headers to legacy clients). Previous fix (legacy display MIME part) broke Outlook.
+    *   **New approach for legacy display**: Modify the main body part (text/plain or text/html) directly to embed a decorative representation of obscured headers.
+    *   **Decision**: Conformant MUAs MUST generate injected headers (using the new legacy display mechanism). Conformant MUAs MAY generate wrapped messages. All receiving MUAs MUST consume/render both schemes. This provides an incentive for MUAs to adopt proper rendering.
+    *   **Design team activities**: Meeting bi-weekly, using GitLab for issue tracking. Actively seeking implementers from major MUAs (Outlook, Mail.app).
+    *   **Test Vectors**: Updated test vectors are available and community testing with various MTAs, mailing lists, bug trackers, and automated systems is requested.
+    *   **Header Confidentiality Policy (HCP)**: Discussion on recommending HCP Minimal (protecting only Subject line) for initial implementations. Design team is leaning towards this.
+    *   **Legacy Display Element Inclusion**: How should a composing MUA decide whether to include the legacy display element? Options: ecosystem survey or per-recipient signaling (which is tricky). Draft is currently silent, suggesting to include if unknown.
+    *   **Automated Mail Systems**: Concern about interference of legacy display elements with systems doing command processing (e.g., encrypted mailing lists, bug trackers).
+    *   **HTML Injection**: The legacy display element for HTML is a `div` with a specific class. Feedback requested on potential issues with HTML rendering in email clients.
+    *   **UI Representation of Protected Headers**: How should an MUA convey cryptographic status of headers to the user, especially when the unprotected copy might differ from the original (e.g., due to transit modifications or obscuring)? Aaron suggested signaling the status explicitly in the encrypted header. Consensus that strict rules are needed for implementers, not leaving it to interpretation.
+    *   **E2E Email Guidance (draft-ietf-lamps-e2e-email-guidance)**
+        *   One update: defined "user-facing" headers. Active outreach to MUA implementers for feedback.
+*   **RFC 7030 CSR Attributes (draft-ietf-richardson-lamps-rfc7030-csr-addrs)**
+    *   Problem: Previous ASN.1 interpretation of RFC 7030 by some implementers (e.g., in ANIMA) was incorrect, leading to an inability to specify a fixed Subject Alternative Name (SAN) value in CSR attributes.
+    *   Proposed solution (Michael Richardson): Add a new choice to the ASN.1 structure to explicitly carry a value.
+    *   **Counter-proposal (Sean Turner)**: The existing ASN.1 in RFC 7030 might be correct, but the *examples* were misleading or incomplete. He suggested that if a value needs to be included, it should be part of a defined attribute type within the existing structure.
+    *   **Decision**: Sean Turner to join the design team to investigate if the existing ASN.1 in RFC 7030 is sufficient with clarified examples, avoiding a new ASN.1 structure.
+*   **Quantum Safe Keys (PQC Keys) (draft-osborne-lamps-pq-keys)**
+    *   **Problem**: NIST competition didn't focus on key serialization for PQC. PQC keys are significantly larger than classical keys, causing issues with legacy systems and existing protocols/interfaces, especially for private keys.
+    *   Implicit key formats (OID-tied blob) are simple but problematic for future evolution, compression, and handling varying sizes.
+    *   **Challenges**: Legacy platforms (e.g., mainframes) cannot support large PQC keys without compression. Transporting keys securely to algorithm engines. Managing complexity of evolving algorithms and parameters.
+    *   **Discussion**: IPR concerns (Sean Turner), compressed variants being different schemes (Tobias Gneiss), only private keys are the focus (Daniel Kahn Gillmor).
+    *   **Scope**: Discussion on whether to include stateful signature schemes (adds another layer of complexity, possibly out of scope). Need for concrete examples of implementations with key size limits.
+    *   **Goal**: Provide a smooth path for transition to quantum-safe crypto, widen adoption, manage complexity upfront.
+*   **PQC Keys in Certificates (draft-turner-lamps-pq-kem-certs)**
+    *   Individual draft proposing how to put Post-Quantum Key Encapsulation Mechanism (PQC-KEM) keys into certificates.
+    *   **Approach**: Simple format – use NIST-defined OIDs for algorithms, parameters set to `NULL`, subject public key as a BIT STRING. Avoid complexity seen with elliptic curves.
+    *   **Discussion**: One draft for all PQC candidates (KEMs and Signatures) vs. multiple drafts (Panos suggested separate drafts for KEMs and signatures for clarity and reviewability). Prohibit specific key usages not applicable to PQC-KEM.
+
+## Decisions and Action Items
+
+*   **CMP Updates**:
+    *   Decision: Proceed with `draft-ietf-lamps-cmp-updates` as an update document. The option for a `bis` document will be reconsidered if advancement to Internet Standard is sought later.
+    *   Action: Roman (AD) to update the Shepherd Write-up to reflect the WG's discussion and rationale for not creating a `bis` document at this time.
+    *   Decision: For `.well-known` URI, adopt a structured path with a specific sub-component (e.g., `/p/`) to denote a profile label (e.g., `/.well-known/cmp/p/profile-label/initialization`).
+    *   Action: Hendrick (author) to implement the `.well-known` changes in the draft.
+*   **CMP Algorithms**:
+    *   Action: Roman (AD) to re-review `draft-ietf-lamps-cmp-algorithms` for changes.
+*   **Lightweight CMP Profile**:
+    *   Action: Authors to address and implement the `.well-known` changes (as decided for `cmp-updates`).
+    *   Action: Authors to clarify error message protection and PKI management operations support level (Section 7).
+*   **RFC 8410 Key Usage Clarifications**:
+    *   Decision: Issue a Working Group Last Call for `draft-ietf-lamps-rfc8410-key-usage-clarifications` when the two current WGLCs end next week.
+    *   Action: Sean Turner (author) to review `draft-ietf-lamps-rfc8410-key-usage-clarifications` against the `lamps-samples` draft (in AUTH48) for consistency.
+*   **Header Protection**:
+    *   Decision: Conformant Mail User Agents (MUAs) MUST be able to generate injected headers (using the new legacy display mechanism).
+    *   Decision: Conformant MUAs MAY generate wrapped messages.
+    *   Decision: All receiving MUAs MUST be able to consume and render both injected and wrapped schemes.
+    *   Decision: The design team is leaning towards recommending HCP Minimal for initial implementations.
+    *   Action: Design team to continue work, seek implementer feedback (especially Outlook/Mail.app), and explore explicit signaling for header confidentiality status (referencing GitLab issues 25 and 26).
+    *   Action: Working group members are encouraged to review the updated test vectors with their MUAs and automated mail systems.
+    *   Action: Design team to give a heads-up to the MOG group about this work.
+*   **RFC 7030 CSR Attributes**:
+    *   Action: Sean Turner to join the design team for `draft-ietf-richardson-lamps-rfc7030-csr-addrs` to investigate if the existing ASN.1 in RFC 7030 is sufficient, provided its examples are clarified, potentially avoiding a new ASN.1 structure.
+*   **Quantum Safe Keys (PQC Keys)**:
+    *   Action: Discussion to continue on the mailing list.
+    *   Action: Authors (Mike Osborne) to provide a concrete list of systems that have run into key size limits.
+*   **PQC Keys in Certificates**:
+    *   Action: Working Group adoption will be requested.
+    *   Action: Discussion on whether to have one draft for all PQC algorithms or multiple drafts (e.g., separate for KEMs and signatures) to be taken to the mailing list.
+
+## Next Steps
+
+*   A virtual interim meeting will be scheduled by the chairs to address the remaining agenda items, given the session's time constraints.
+*   Authors of `cmp-updates` and `lightweight-profile` to make the agreed-upon `.well-known` URI changes.
+*   Roman (AD) to provide pending reviews for `cmp-algorithms` and `lightweight-profile`.
+*   Working Group Last Calls for `document-signing-eku` and `rfc3709bis` to conclude, with documents then advancing to the IESG.
+*   Working Group Last Call for `rfc8410-key-usage-clarifications` to be issued next week.
+*   The `header-protection` design team will continue its work, focusing on implementer feedback and addressing open questions, with further discussion expected on the mailing list.
+*   The `rfc7030-csr-addrs` design team (now including Sean Turner) will investigate the ASN.1 interpretation.
+*   Discussion on PQC key management and certificates will continue on the mailing list, specifically regarding the need for structured key formats, identifying concrete system limits, and the strategy for standardizing PQC certificate key types (one vs. multiple drafts).
+*   NIST PQC announcements are expected by the end of the month, which will inform future work in this area.

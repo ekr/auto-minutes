@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="scitt.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-SCITT-20220728-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 17:30</p>
+<h1>scitt</h1>
+<h2>Summary</h2>
+<p>The session discussed the proposed SCITT (Supply Chain Integrity, Transparency, and Trust) BoF, focusing on a generalized notary service for attesting claims about artifacts. While initially driven by software supply chain integrity, there was significant debate and eventual consensus to start the working group with a primary focus on software, while designing for broader applicability to other use cases like hardware and firmware. The proposed architecture, terminology, and program of work were presented, followed by extensive discussion and community polls. The community demonstrated strong interest in forming a working group, with many willing to contribute to reviewing and writing documents.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Problem Statement and Scope</strong>:</p>
+<ul>
+<li>The core idea is a &quot;notary service&quot; that witnesses and records statements (claims) made by an issuer about an artifact, without necessarily validating the <em>content</em> of the claim.</li>
+<li>Initially focused on the software supply chain (e.g., Software Bill of Materials - SBOM), but designed for generic application to any supply chain (e.g., hardware, firmware).</li>
+<li>Tension was noted between a generic framing for the charter and a specific focus on software supply chain use cases.</li>
+<li>Several participants advocated for explicitly including hardware/firmware in the scope from the outset, arguing the problem statement is similar and avoiding re-inventing the wheel in other groups. Others argued that software has unique characteristics (e.g., Git integration, AI analysis) that make it distinct and a good starting point.</li>
+<li>Concern was raised regarding the lack of a specific threat model or detailed security problems being solved, beyond general trustworthiness. Proponents suggested this would be developed within the working group as part of the architecture document.</li>
+</ul>
+</li>
+<li>
+<p><strong>Proposed Architecture and Terminology</strong>:</p>
+<ul>
+<li><strong>Claim</strong>: Any statement made by an issuer about an artifact, signed by the issuer.</li>
+<li><strong>Issuer</strong>: Identifiable entity making a claim, providing non-repudiable statements (via signing).</li>
+<li><strong>Notary/Transparency Service</strong>: Takes signed claims, applies a designated registration policy, registers the claim into a transparency registry, and issues a receipt.</li>
+<li><strong>Transparency Registry</strong>: An append-only, tamper-evident data structure maintained by the notary. Transparency implies consistency, not necessarily full public access.</li>
+<li><strong>Receipt</strong>: A universally verifiable proof that a claim has been inserted into the registry, does not expire.</li>
+<li><strong>Transparent Signed Claim</strong>: A claim with an attached receipt, distributed to verifiers and auditors.</li>
+<li><strong>Security Properties</strong>: Provides a shared, authenticated data structure; common ground for referencing claims; disincentive for dubious claims; protection against presenting different claims to different relying parties.</li>
+<li><strong>Related Work</strong>: Acknowledges Certificate Transparency (CT), SBOM efforts, and applied cryptographic techniques (Merkle trees).</li>
+</ul>
+</li>
+<li>
+<p><strong>Relationship with Existing Work (e.g., Sigstore)</strong>:</p>
+<ul>
+<li>SCITT is seen as complementary to projects like Sigstore and Salsa. Sigstore could generate the content (claims) that SCITT would then notarize and record.</li>
+<li>Existing CT logging implementations were noted as facing scalability challenges, suggesting SCITT could offer a better future solution.</li>
+</ul>
+</li>
+<li>
+<p><strong>Notary Role and Decentralization</strong>:</p>
+<ul>
+<li>The notary is <em>not</em> intended to be a central authority like a Certificate Authority (CA) or to issue claims on behalf of others. Its role is administrative: to register and attest <em>that a claim was made at a certain time</em> by an identified issuer.</li>
+<li>The architecture does not presume a single, centralized notary. Multiple, interoperable notary services are expected, potentially run by different entities (e.g., open source, government, industry-specific).</li>
+<li>The question of &quot;who gets to be a notary&quot; is seen as a deployment/policy decision, not a protocol concern for the IETF.</li>
+</ul>
+</li>
+<li>
+<p><strong>Program of Work and Milestones</strong>:</p>
+<ul>
+<li>Potential milestones include:
+<ul>
+<li>Developing a detailed threat model.</li>
+<li>Defining architecture and terminology.</li>
+<li>Specifying information and interaction models.</li>
+<li>Defining consistent actor identification mechanisms.</li>
+<li>Extending COSE for counter-signing and receipts.</li>
+<li>Defining HTTP-based REST APIs for interactions.</li>
+</ul>
+</li>
+<li>Emphasis on long-term auditability and accountability.</li>
+<li>Reusing existing IETF technology where possible (e.g., COSE).</li>
+</ul>
+</li>
+<li>
+<p><strong>Implementation Incentives</strong>:</p>
+<ul>
+<li>Microsoft expressed intent to implement SCITT-based solutions for their software and hardware products, both as an issuer and a consumer, and potentially providing notary services.</li>
+<li>Other companies (e.g., Transmute, 14bis for aircraft components) also expressed interest in implementation.</li>
+<li>The benefit for consumers (e.g., app stores) to verify software trustworthiness was highlighted.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Problem Statement Clarity</strong>: The community generally understood the problem statement (56 raised hands vs. 13 not raised). However, some participants still requested more specific details on the security problems being addressed and a clearer threat model.</li>
+<li><strong>Charter Scope</strong>:
+<ul>
+<li>A poll on whether the charter should be focused <em>exclusively</em> on the software supply chain resulted in 27 &quot;Yes&quot; and 44 &quot;No&quot;, indicating a preference for broader applicability beyond an exclusive software focus.</li>
+<li>A subsequent clarifying poll on whether participants would <em>still support the work if it was scoped to software to start</em>, yielded strong consensus (69 &quot;Yes&quot; vs. 4 &quot;No&quot;).</li>
+<li><strong>Decision</strong>: The working group will proceed with a charter primarily focused on software supply chain integrity, but with a design that allows for generalization to other use cases (e.g., hardware, firmware) in the future.</li>
+</ul>
+</li>
+<li><strong>Community Engagement</strong>:
+<ul>
+<li>Strong willingness to review documents (57 &quot;Yes&quot; vs. 11 &quot;No&quot;).</li>
+<li>Significant willingness to write documents (31 &quot;Yes&quot; vs. 31 &quot;No&quot;).</li>
+<li><strong>Decision</strong>: The current draft charter (as discussed) has strong support to move forward (61 &quot;Yes&quot; vs. 9 &quot;No&quot;). Those who did not support are encouraged to provide specific feedback on the mailing list.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The Area Director (Roman) will take the feedback from the BoF, including poll results and discussion points, to the mailing list.</li>
+<li>A call for further comments on the proposed charter text will be issued for approximately two weeks.</li>
+<li>The chairs and AD will work to refine the charter text based on community feedback, particularly addressing the balance between software-specific focus and generic applicability, and incorporating threat model considerations into the working group's initial tasks.</li>
+<li>Participants with specific concerns or suggested text for the charter or other documents are encouraged to engage actively on the mailing list.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

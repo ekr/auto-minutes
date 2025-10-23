@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="bess.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-BESS-20211109-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 09 Nov 2021 12:00</p>
+<h1>bess</h1>
+<h2>Summary</h2>
+<p>The bess session at IETF 112 began with a status update, highlighting the publication of four new RFCs related to EVPN routing, and progress on numerous drafts across various stages including RFC Editor queue, IESG review, shepherd review, and Working Group Last Call. Several drafts are nearing or are ready for Working Group adoption. The session then moved into presentations covering a range of technical topics: MVPN seamless interop, EVPN fast reroute, securing EVPN with IPsec, extending BGP Domain Path for EVPN L2, IP aliasing, MVPN regional segmentation, controller-based MVPN provider tunnel discovery, SRv6 BGP services coexistence with MPLS, secure SLAAC integration with EVPN, advertising SPF discriminators in BGP, and distributed BUM forwarding in EVPN. Discussions focused on technical details, use cases, potential issues, and paths forward for these documents.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Status Updates:</strong></p>
+<ul>
+<li><strong>Published RFCs:</strong> Four new RFCs published, including two on EVPN routing (VRF IRB and IP prefix advertisement).</li>
+<li><strong>RFC Editor Queue:</strong> One RFC (Proxy ARP/ND).</li>
+<li><strong>IESG/Shepherd Review:</strong> Several drafts are under review, including EVPN LSP Ping (Matthew to write up) and Unequal Load Balancing (awaiting dependencies).</li>
+<li><strong>Working Group Last Call Queue:</strong> EVPN Fast DF Recovery, Multicast Flow DF Election (soon ready for WGLC), Monotony Split Horizon (ready for WGLC), BGP Multicast (ready after update).</li>
+<li><strong>Working Group Last Call:</strong> VSI-ETREE MAC Flash (low feedback, Routing Directorate review requested), EVPN VPWS FXC (missing IPR reply).</li>
+<li><strong>Working Group Adoption:</strong> BGP EVGP DMZ (missing IPR response).</li>
+<li><strong>Document Updates:</strong> MHPS BUM Protect (comments addressed, needs verification), EVPN Genies (comments to address), EVPN IPVPN Interworking (pending questions with IDR chairs).</li>
+<li><strong>EVPN SD-WAN Usage:</strong> Request for WG Last Call. Clarified no normative dependency on IDR companion work (which is adopted, but requires two implementations in IDR).</li>
+<li><strong>RFC 7432bis:</strong> Mechanical update incorporating auto-extract route targets (from RFC 8534) and specifying DF election behavior for IPv4 and IPv5.</li>
+<li><strong>YANG Models:</strong> Mostly on hold.</li>
+</ul>
+</li>
+<li>
+<p><strong>MVPN Seamless Interop (Cason):</strong></p>
+<ul>
+<li>Draft describes seamless interop between EVPN and MP-BGP (PE-PE), including optimized inter-subnet forwarding.</li>
+<li>Proposes using gateway devices (CPE) to reinterpret L2 EVPN in the MP-BGP domain, with DF election.</li>
+<li>Discussed four use cases based on IGMP/MLD proxy support and DF actions (learning L2 multicast state, acting as Latcher/FR, using BUM/MVPN tunnels).</li>
+<li>Proposed new flags (bit 12 and 13) in the EVPN Multicast Extended Community.</li>
+<li><em>Discussion:</em> Luke Henry noted that bits 12 and 13 are already allocated in the OISM draft (in WG Last Call), advising removal from this draft. He also asked about consideration of OISM L2 multicast procedures.</li>
+</ul>
+</li>
+<li>
+<p><strong>EVPN Fast Reroute (Luke Henry):</strong></p>
+<ul>
+<li>Addressed limitations of control plane-driven EVPN convergence (scale, topology dependent) and issues with using peer service label for edge redirect (loops, load balancing incompatibility).</li>
+<li>Proposed a local failure detection/restoration approach using a specially allocated <em>downstream &quot;reroute label&quot;</em> at the PE receiving the rerouted traffic.</li>
+<li>The reroute label's disposition is terminal (forward/drop regardless of AC state) to prevent loops and bypass DF election during reconvergence, achieving ~50ms restoration.</li>
+<li><em>Discussion:</em> Bo Liu noted a similar prior draft. Greg Mirsky raised concerns about VLAN-aware bundle services, label allocation schemes (per BD/MAC/VRF), and forwarding model at egress PE.</li>
+</ul>
+</li>
+<li>
+<p><strong>Secure EVPN (Ali):</strong></p>
+<ul>
+<li>Rev05 merges the companion IPsec NMM Control IKE draft, providing a comprehensive solution for rekeying, framework, architecture, and BGP routes.</li>
+<li>Key changes include new sections on IPsec SA generation, rekeying, and IPsec database generation (SPD/SAD/PAD).</li>
+<li><em>Discussion:</em> Sue Hares inquired about the dependence of the Web of Trust in BGP for security associations and how section 4 of the draft relates, with Ali clarifying that BGP sessions (PE-RR/PE-PE) must be fully secured as a baseline.</li>
+</ul>
+</li>
+<li>
+<p><strong>Domain Path for EVPN L2 Interconnect (Jorge):</strong></p>
+<ul>
+<li>Proposed extending the BGP Domain Path attribute (from EVPN IPVPN interworking) for EVPN Layer 2 routes, using SAFY type 70 for EVPN.</li>
+<li>This enables gateways to modify the D-path for loop detection, route traceability, and best path selection in scenarios like RFC 9014 interconnects.</li>
+<li><em>Discussion:</em> Ali indicated the draft enhances RFC 9014 for multi-domain loop prevention and best path selection.</li>
+</ul>
+</li>
+<li>
+<p><strong>IP Aliasing (Jorge):</strong></p>
+<ul>
+<li>Updated draft to include an example for interfaceless host routes and clarifications on using an Ethernet Segment Identifier (ESI) as a Layer 3 construct (set of L3 links, Type 4 ESI, router ID of multi-home SE).</li>
+<li>Added a section on compatibility with the unequal ECMP draft.</li>
+</ul>
+</li>
+<li>
+<p><strong>MVPN Regional Segmentation (Jeffrey):</strong></p>
+<ul>
+<li>Extended RFC 7524's inter-area segmentation concept to inter-region and intra-region (within a single AS), utilizing BGP neighbor groups and border routers modifying tunnel attributes/segmented next-hop communities.</li>
+<li>Proposed &quot;butt-node&quot; support to stitch segments and handle local IP forwarding by replicating incoming packets.</li>
+<li>Introduced an optional procedure for ABRs to request an extra copy for local IP forwarding through tunnel encapsulation attributes in Leaf-AD routes.</li>
+<li><em>Discussion:</em> Ali asked for clarification on redundancy and DF election aspects for multiple gateways, which Jeffrey stated is covered by RFC 7524 procedures.</li>
+</ul>
+</li>
+<li>
+<p><strong>MVPN Controller for Provider Tunnel Discovery (Jeffrey):</strong></p>
+<ul>
+<li>Explored the role of a controller in MVPN/EVPN networks for provider tunnel discovery, specifically focusing on the controller participating in MVPN signaling to collect tree information.</li>
+<li>Described how the controller can learn leaf information (from Leaf-AD routes directed to the controller's address via an extended community) and set up trees.</li>
+<li>Proposed the controller advertising PIM-AD routes on behalf of ingress PEs, simplifying configuration and Distributed Common Block (DCB) label allocation.</li>
+</ul>
+</li>
+<li>
+<p><strong>SRv6 BGP Services Coexistence with MPLS (Yao):</strong></p>
+<ul>
+<li>Identified issues with SRv6 BGP services coexisting with legacy MPLS VPNs, where legacy PEs might misinterpret SRv6 VPN routes as MPLS VPN routes, leading to traffic loss or misdirection.</li>
+<li>Proposed a new BGP capability code for SRv6 BGP Service. BGP speakers would only send SRv6 Service TLVs if this capability has been exchanged in the OPEN message, preventing misinterpretation by incapable devices.</li>
+</ul>
+</li>
+<li>
+<p><strong>Secure Stateless Address Autoconfiguration (Pascal):</strong></p>
+<ul>
+<li>New draft highlighting the unreliability and insecurity of IPv6 SLAAC snooping for building EVPN state (silent nodes, stale addresses, uncertain location, DDoS vulnerability).</li>
+<li>Proposed integrating IETF's stateful and secure approaches for address configuration (RFC 505 / 8928) into EVPN.</li>
+<li>This would involve EVPN acting as a distributed database for 6LVR, and modifying the MAC Mobility Extended Community to include &quot;proof of ownership&quot; (hash) and a Transaction ID (TID) for secure movement detection.</li>
+<li><em>Discussion:</em> Ali questioned why RFC 9047 (for ARP/ND extended community) wasn't used instead of extending the MAC Mobility Extended Community.</li>
+</ul>
+</li>
+<li>
+<p><strong>Advertising SPF Discriminators in BGP (Youbo):</strong></p>
+<ul>
+<li>Addressed the manual configuration burden and IGP flooding limitations of SPF discriminators (RFC 7880) for SRv6/IPv6 networks.</li>
+<li>Proposed reusing the BFD Discriminator attribute (RFC 9026) in BGP to advertise local discriminators.</li>
+<li>Introduced two new BFD modes: one for SRv6 Locator sessions and another for common sessions (detecting route nexthops), using optional TLVs for source addresses.</li>
+<li><em>Discussion:</em> Greg Mirsky asked for clarification on BFD control message encapsulation (SRv6 policy or other), noted BFD's limitation in differentiating path vs. node failure, and raised concerns about potential BFD session duplication in EVPN. Matthew requested clarity on the draft's scope and whether it belongs in BESS or BFD WG, with BFD chair Jeff Haas indicating BFD WG would review the scope.</li>
+</ul>
+</li>
+<li>
+<p><strong>Distributed BUM Forwarding in EVPN with L3 Out (Youbo):</strong></p>
+<ul>
+<li>Proposed enhancing RFC 9136 to support distributed BUM forwarding for intra-subnet communication, reducing pressure on centralized gateways (DGWs), especially when access switches (AWs) have FPVR flooding capability.</li>
+<li>Suggested configuring IP-VRF instances on host mobility endpoints (HMEs) and modifying RT1 advertisements with explicit targets for distributed inter-subnet forwarding.</li>
+<li>Addressed issues with distinguishing RT1s for the same ESI/Ethernet Tag ID by using the Ethernet Circuit ID (ECID) for the Ethernet Tag ID in a secondary RT advertisement specifically for FPVR forwarding.</li>
+<li>Proposed a new BGP extended community &quot;Super Limited ESI Index&quot; for RT5 routes for recursive route resolution in the SPF.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>MVPN Seamless Interop:</strong> The presenter (Cason) will re-check the proposed bits 12 and 13 in the EVPN Multicast Extended Community as they are noted to be taken. Further discussion on the draft will take place on the mailing list.</li>
+<li><strong>EVPN SD-WAN Usage:</strong> A Routing Directorate Review will be initiated for this draft. The working group is encouraged to review the draft and send comments to the list.</li>
+<li><strong>Secure EVPN:</strong> The draft is considered ready for a Working Group Adoption Call. Remaining comments will be sent via the mailing list.</li>
+<li><strong>Secure SLAAC:</strong> The presenter (Pascal) will examine the use of RFC 9047's extended community for ARP/ND related matters as an alternative to extending the MAC Mobility Extended Community. Further discussion on this will occur on the mailing list.</li>
+<li><strong>Advertising SPF Discriminators in BGP:</strong> The authors (Youbo) will clarify the encapsulation of BFD control messages in the draft. The BFD Working Group chairs will review the scope of this draft, with a possibility of it moving to the BFD WG.</li>
+<li><strong>Working Group Adoption:</strong> The following drafts are ready for or awaiting Working Group Adoption calls:
+<ul>
+<li>Secure EVPN</li>
+<li>IP Aliasing</li>
+</ul>
+</li>
+<li><strong>IPR Responses:</strong> Two drafts, EVPN VPWS FXC and BGP EVGP DMZ, are awaiting IPR responses before they can progress. Authors are urged to respond.</li>
+<li><strong>Shepherd Review:</strong> Matthew will do a write-up for EVPN LSP Ping.</li>
+<li><strong>Working Group Document Updates:</strong> The chairs will check if all comments have been resolved for MHPS BUM Protect and if comments for EVPN Genies have been addressed.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Mailing List Discussions:</strong> Several drafts require continued discussion and feedback on the mailing list, including MVPN Seamless Interop, EVPN Fast Reroute, Secure SLAAC, and Advertising SPF Discriminators in BGP.</li>
+<li><strong>Working Group Adoption Calls:</strong> Secure EVPN and IP Aliasing are expected to have Working Group adoption calls soon.</li>
+<li><strong>Working Group Last Calls:</strong> Multicast Flow DF Election, Monotony Split Horizon, and BGP Multicast (after an update) are anticipated to enter Working Group Last Call.</li>
+<li><strong>Routing Directorate Reviews:</strong> These will be initiated for EVPN SD-WAN Usage and VSI-ETREE MAC Flash.</li>
+<li><strong>Future Meetings:</strong> Hope for a physical IETF meeting for the next session.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

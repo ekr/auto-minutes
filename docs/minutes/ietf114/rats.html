@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="rats.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-RATS-20220725-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 14:00</p>
+<h1>rats</h1>
+<h2>Summary</h2>
+<p>The RATS working group session at IETF 114 covered updates on several key drafts including Event Stream Subscription, R4C, RATS Architecture, EAT, EAT Media Types, COORIM, and Concise TA Store. Significant discussion revolved around the clarity of the RATS Architecture diagrams, the scope and flexibility of EAT profiles, and the need for new registries and adoption calls for several documents. The group made progress on clarifying the RATS Architecture document and identified next steps for several drafts to advance towards Working Group Last Call or adoption.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Event Stream Subscription Draft</strong>:
+<ul>
+<li>Ready to progress now that Architecture and EAT drafts are stable and building on NETCONF subscriptions.</li>
+<li>Needs security considerations text to be added/updated.</li>
+<li>Anticipated to go to Working Group Last Call after security considerations are complete.</li>
+</ul>
+</li>
+<li><strong>R4C Draft</strong>:
+<ul>
+<li>Progressing, with ongoing dialogues with the Confidential Compute Consortium (CCC) to align terminology.</li>
+<li>Discussed incorporating new hardware types to align with EAT use cases.</li>
+<li>Clarified that R4C claims are intended to have fixed definitions, not varying with profiles, though they can be incorporated into profiles.</li>
+<li>Emphasized that R4C claims are never intended to be part of evidence, only attestation results.</li>
+</ul>
+</li>
+<li><strong>RATS Architecture Document</strong>:
+<ul>
+<li>Underwent significant editorial changes, including improved diagrams and terminology.</li>
+<li><strong>Primary Discussion Point</strong>: Clarification needed for how diagrams represent the handling of attestation results and evidence by different RATS elements.
+<ul>
+<li><strong>Passport Model</strong>: The attester may cache attestation results as an opaque blob and present them to multiple relying parties over time.</li>
+<li><strong>Background Check Model</strong>: The relying party acts as a pass-through for evidence, forwarding it opaquely to a verifier.</li>
+</ul>
+</li>
+<li><strong>Resolution</strong>: Agreed to add clarifying text to Section 4 (definitions of producers/consumers) to explicitly state that arbitrary RATS elements can transfer messages opaquely without being producers or consumers, with cross-references to Section 5 for specific behaviors like caching or forwarding.</li>
+</ul>
+</li>
+<li><strong>EAT Draft</strong>:
+<ul>
+<li>Underwent substantial reorganization for clarity, dividing claims into distinct sections.</li>
+<li>Manifest and software evidence claims are now pluggable, supporting formats like SPDX and CycloneDX via CoAP Content Identifiers (CIDs).</li>
+<li>A standard profile for constrained devices (CBOR-based) was added.</li>
+<li><strong>Work in Queue</strong>: Security considerations require further work. Discussions on making nonces optional (to accommodate timestamp-based freshness) and adding a standard JSON profile are open.</li>
+<li>Discussion on &quot;endorsements&quot; and their delivery via EAT remained open, with chairs indicating they would compile open issues.</li>
+<li>Confirmed that extensions like referencing a manifest (instead of embedding it) can be handled by separate extension documents, not blocking the core EAT spec.</li>
+</ul>
+</li>
+<li><strong>EAT Media Types Draft</strong>:
+<ul>
+<li>Proposes to register specific media types for EAT payloads (e.g., <code>application/eat-cot</code>, <code>application/eat-jot</code>) and a profile parameter for content negotiation in REST APIs.</li>
+<li>The TEEP working group has a dependency on this document for communicating EAT profiles.</li>
+<li>Concerns were raised regarding potential interoperability issues with existing implementations and the risk of content filtering by middleboxes that might identify attestation-specific media types.</li>
+</ul>
+</li>
+<li><strong>COORIM Draft</strong>:
+<ul>
+<li>Charter has been updated to include standardization of data formats for endorsements and reference values, which were previously out of scope.</li>
+<li>Draft 03 has been published with major revamps and open-source tooling.</li>
+<li>The document has received internal positive feedback (e.g., from Microsoft Azure for DICE implementations).</li>
+<li>Initial skepticism for using COORIM for endorsements (vs. EAT-based) was noted, but support for reference values was strong.</li>
+</ul>
+</li>
+<li><strong>Concise TA Store Draft</strong>:
+<ul>
+<li>A proposal for defining a structure to represent trust anchors (TAs) with limitations on context for verifiers.</li>
+<li>Built as an extension of COORIM, addressing issues with direct profiling (e.g., TA lifecycle, broader use cases, CO-MID tied keys).</li>
+<li>Structure includes environment definitions (CO-MID map, COSUID abbreviated SWID tag) and constraints (EKU-like purposes, permitted/excluded claims).</li>
+<li>Questions about its generalizability beyond RATS (TEEP and SUIT also need TA configuration) and the choice of COSUID for environment description.</li>
+<li>Positive feedback on synergy and reuse with COORIM, but calls for further review and discussion on its scope and format choices.</li>
+</ul>
+</li>
+<li><strong>EAT Collections Draft</strong>:
+<ul>
+<li>A proposal for an extension to the EAT top-level object to handle use cases with no obvious or varying top-level signer, such as ARM CCA and DICE chains.</li>
+<li>Allows for collections of independently verifiable tokens with custom-defined cross-element integrity relationships.</li>
+<li>Highlights shortcomings in current EAT sub-mods for complex nesting/aggregation.</li>
+</ul>
+</li>
+<li><strong>Freshness Mechanisms Registry (Open Mic)</strong>:
+<ul>
+<li>Discussion on creating a RATS-wide registry for freshness mechanism identifiers (e.g., nonce, timestamp, epoch ID).</li>
+<li><strong>Rationale</strong>: The TEEP protocol negotiates these mechanisms, and a centralized RATS registry would benefit multiple protocols and allow for vendor-specific registrations, preventing an &quot;explosion&quot; of EAT profiles based on freshness.</li>
+<li>No strong objections were raised against this approach.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>RATS Architecture Document</strong>:
+<ul>
+<li><strong>Decision</strong>: Chairs will merge the agreed-upon textual fixes to clarify diagram interpretations and push the document to IETF Last Call.</li>
+<li><strong>Action Item</strong>: Michael to post the updated draft before the end of the week.</li>
+<li><strong>Action Item</strong>: Roman to initiate the IETF Last Call before leaving Philadelphia.</li>
+</ul>
+</li>
+<li><strong>Event Stream Subscription Draft</strong>:
+<ul>
+<li><strong>Action Item</strong>: Eric to complete the security considerations text.</li>
+<li><strong>Action Item</strong>: Chairs to initiate Working Group Last Call once security considerations are addressed.</li>
+<li><strong>Action Item</strong>: Working Group members are encouraged to review the draft.</li>
+</ul>
+</li>
+<li><strong>EAT Media Types Draft</strong>:
+<ul>
+<li><strong>Action Item</strong>: Chairs to issue a formal call for adoption on the mailing list.</li>
+<li><strong>Action Item</strong>: Working Group members are requested to review the document and provide feedback, especially considering existing implementations and potential middlebox issues.</li>
+</ul>
+</li>
+<li><strong>COORIM Draft</strong>:
+<ul>
+<li><strong>Action Item</strong>: Chairs to issue a formal call for adoption on the mailing list.</li>
+<li><strong>Action Item</strong>: Working Group members are requested to provide at least three reviews and feedback on the mailing list.</li>
+</ul>
+</li>
+<li><strong>Concise TA Store Draft</strong>:
+<ul>
+<li><strong>Action Item</strong>: Chairs to issue a call for interest and topics on the mailing list to gauge working group direction and identify reviewers.</li>
+<li><strong>Action Item</strong>: Working Group members (including Dave Taylor and Kathleen Moriarty) expressed interest in reviewing and providing feedback.</li>
+</ul>
+</li>
+<li><strong>EAT Collections Draft</strong>:
+<ul>
+<li><strong>Action Item</strong>: Chairs to solicit more reviews and assess working group interest before discussing adoption.</li>
+<li><strong>Action Item</strong>: Working Group members are encouraged to review the draft.</li>
+</ul>
+</li>
+<li><strong>Freshness Mechanisms Registry</strong>:
+<ul>
+<li><strong>Action Item</strong>: Discussion will be initiated on the mailing list to formalize the proposal to move the freshness mechanisms registry definition into the Reference Interaction Models draft.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>EAT Draft</strong>: Chairs will reconvene to review remaining open issues and determine the path to Working Group Last Call, potentially scheduling an interim meeting to expedite this.</li>
+<li><strong>DAA ID Draft</strong>: Internal review is ongoing, with an aim to initiate Working Group Last Call soon.</li>
+<li><strong>Attestation Set Draft</strong>: A new revision is expected between meetings.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

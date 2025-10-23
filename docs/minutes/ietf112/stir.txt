@@ -1,0 +1,73 @@
+**Session Date/Time:** 12 Nov 2021 16:00
+
+# stir
+
+## Summary
+
+The stir session covered updates and discussions on Connected Identity, Identity Header Error Handling, Rich Call Data (RCD), and STIR Messaging. Key discussions included advancing the charter update for Connected Identity to address bi-directional call vulnerabilities, formalizing error handling with a new `STIR` reason code, and refining Rich Call Data specifications, particularly regarding URI types and integrity verification. For STIR Messaging, the focus was on leveraging the existing STIR PKI for message spam protection, with a proposal to keep the initial draft simple by punting complex conferencing scenarios to future work. Several action items were identified, including mailing list discussions and calls for adoption.
+
+## Key Discussion Points
+
+### Charter Update and Connected Identity
+
+*   **Charter Update:** The chairs noted a proposed charter text from John, which Murray (AD) had approved. This update is crucial for advancing the Connected Identity work.
+*   **Connected Identity Background:** This work aims to revisit RFC 4916 (identity header for responses) to address vulnerabilities in mid-dialogue and dialogue-terminating requests, such as arbitrage and route hijacking, which are beyond the current STIR threat model (RFC 7375).
+*   **Open Issues:**
+    *   Privacy implications of a "medialis dialogue" for mass data collection.
+    *   Interaction with anonymous communications.
+    *   Potential for a directory service to indicate expected connected identity (e.g., for high-risk use cases like healthcare, government); deemed orthogonal for now.
+    *   Future "busy work" includes revising examples and normative revisions to RFC 4916 (e.g., removing the `Identity-Info` header).
+*   **Community Feedback:** While acknowledging the "lift" required, strong support was expressed for this work, particularly from sectors like emergency services, banking, and government agencies facing rising fraud.
+
+### Identity Header Error Handling
+
+*   **Proposed Change:** The draft proposes switching from `SIP` as a protocol reason code to a new `STIR` reason code for identity header error handling. This separates STIR-specific reason codes, aligning with current STIR/SHAKEN standards.
+*   **Security Implications:** Discussion around the security implications of stripping the reason header as it propagates upwards. Concern was raised if authentication services not understanding the spec might fail to strip sensitive information. While acknowledged as a potential risk, it was noted that early adoption phases might see more vigilant implementation, and stripping at the sending authentication service is an option.
+*   **Alternative:** An options mechanism could allow downstream entities to signal their capability to handle such security aspects.
+
+### Rich Call Data (RCD)
+
+*   **JCL Key URI Types:** Debate on whether to limit JCL (JCard URL) keys to `https` URLs or to also allow `cid` (content ID) or `data` URLs for in-message body parts.
+    *   Arguments for `cid`/`data`: Flexibility for operators not wanting to maintain web servers, existing use in emergency services (by-value vs. by-reference).
+    *   Arguments against `cid`/`data`: Concerns about intermediaries inserting MIME bodies (protocol purity), integrity protection complexities.
+    *   **Conclusion:** More discussion is needed on the mailing list.
+*   **`nam` and `apn` Usage:** Clarified that `apn` (alternative number) must be explicitly used for alternative number display, rather than relying solely on JCard, especially for textual clients.
+*   **Security Considerations:** Added text emphasizing the need for vetting all identities, including alternative ones.
+*   **Verification of Integrity:** Extensive discussion on how to define "verification," especially when an RCD URL's content is not directly consumed by the verifying entity.
+    *   **Core Issue:** Should "passport verification" inherently include "integrity verification" of linked RCD content (like logos), or should these be separate steps?
+    *   **Concerns:** A "verified" passport with a malicious logo could be a security hole if integrity is ignored. Differentiating between "total picture" verification for end-user rendering versus partial verification by middle boxes.
+    *   **Proposal:** Split verification into two steps: 1) Passport validation (signature, JWT claims), and 2) Integrity verification of external content (only if passport is verified and content integrity is relevant). This aims to avoid semantic traps and allow for various use cases.
+    *   **Conclusion:** The authors (Chris, John) and key contributors (Jack, Ben) agreed to collaborate offline to propose revised text for discussion on the mailing list.
+
+### STIR Messaging
+
+*   **Objective:** To provide STIR protection for real-time text session negotiation (e.g., RCS) and individual messages, combating message spam by leveraging the existing STIR PKI.
+*   **Mechanism:**
+    *   Media stream security (similar to SIP Brandi) for MSRP sessions.
+    *   Individual message security via MIME-level protection with a message digest, using a new `message-i` element in passports of a new `message` type.
+*   **Updates in this Version:** Added security/privacy considerations, text on message conferencing, and CPIM (Common Presence and Instant Messaging) metadata.
+*   **Conferencing:** Proposed to largely defer complex multi-party conferencing specifics to the Connected Identity draft or future work, keeping this initial messaging draft simpler. This was generally accepted, as current MSRP implementations for multi-party chat are limited.
+*   **MLS (Message Layer Security):** Initial discussion on the relationship with MLS, with a hope that STIR credentials could serve as trust anchors for MLS. Further collaboration with MLS experts (e.g., Richard) is needed.
+*   **Emergency Services Use Case:** This work is highly valuable for emergency services, which use MSRP like calls and face similar spam and swatting issues. Locking down calls without messaging creates an exploit vector.
+
+## Decisions and Action Items
+
+*   **Charter Update (Connected Identity):** The working group agreed to proceed with the charter update process.
+    *   **Action Item:** Chairs to re-circulate the proposed charter text on the mailing list within the next week for review.
+    *   **Action Item:** Murray (AD) to begin processing the charter update immediately, considering working group feedback.
+*   **Identity Header Error Handling:** No opposition to adopting this draft.
+    *   **Action Item:** Chairs to issue a call for adoption to the mailing list for approximately three weeks.
+*   **Rich Call Data (RCD) - JCL URI Types:**
+    *   **Action Item:** Chris (editor) to generate more discussion on the mailing list regarding the inclusion of `cid` URLs.
+*   **Rich Call Data (RCD) - Integrity Verification:** The current text needs refinement.
+    *   **Action Item:** Chris, John, Jack, and Ben to collaborate offline (via email) to propose new, agreed-upon text for the integrity verification section to the mailing list.
+*   **STIR Messaging - Conferencing:** General agreement to punt detailed multi-party conferencing scenarios to future work or separate documents to keep the initial draft simple.
+*   **STIR Messaging - MLS Integration:**
+    *   **Action Item:** John (editor) to circle back with Richard (MLS expert) to discuss and potentially draft text on the interaction with MLS.
+
+## Next Steps
+
+*   **Connected Identity:** Complete the charter update process to enable formal adoption of the Connected Identity draft.
+*   **Identity Header Error Handling:** Initiate the Working Group Last Call process after the adoption call.
+*   **Rich Call Data:** Continue refining the draft based on mailing list discussions, particularly on JCL URI types and integrity verification text.
+*   **STIR Messaging:** Incorporate feedback from MLS discussions, and prepare for a potential Working Group Last Call in the near future, aiming for a simpler, tool-focused draft.

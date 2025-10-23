@@ -1,0 +1,50 @@
+**Session Date/Time:** 06 Nov 2024 15:00
+
+# sml
+
+## Summary
+
+This session covered three main topics: vacation notices, the core SML document, and use cases.  A significant portion of the meeting was dedicated to discussing how structured data should be included in email messages, specifically regarding full vs. partial representations and the use of MIME types like `multipart/alternative` and `multipart/related`. Testing legacy client behavior was a key concern. Ben presented a wide range of potential use cases for SML, sparking discussion about scope and security implications.
+
+## Key Discussion Points
+
+*   **Vacation Notices:**
+    *   Discussion around timestamp granularity (days vs. time) and the inclusion of time zones.  Some felt time zones were necessary to handle DST shifts. There was a suggestion to only use dates to avoid complexity.
+    *   Discussion on how to handle replacement persons (JSON-LD, vCard, URL).
+    *   Question of handling multiple periods of absence vs. proactively sending vacation notices.
+    *   The current draft focuses on user-initiated vacation notices, but the group discussed extending the scope to cover service-initiated notices.
+*   **Core Document:**
+    *   How to include structured data in email:
+        *   Discussion about embedding JSON-LD within the HTML body (legacy approach) vs. using a dedicated MIME body part.
+        *   Multipart/alternative for full representation:
+            *   A question was raised about the recommendation to position `multipart/alternative` in the middle of the chain (Gmail/AMP email). Need to test.
+        *   Multipart/related for partial representation:
+            *   Discussion on how to structure the MIME message and whether this conforms to the `multipart/related` spec.
+            *   Legacy client considerations and the potential for structured data to be displayed as attachments. The potential for a Content-Disposition inline might help to prevent this.
+            *   The use of Content-ID with a fragment ID was proposed for referencing structured data elements from HTML in multipart/related.
+    *   Non-representation cases were discussed and whether or not they should be allowed in multi-part related or multipat/mixed.
+    *   Client awareness of the relationship between structured data and HTML was reviewed. There was a conversation around the best way for a client to infer the relationship between HTML and Structured data.
+*   **Use Cases:**
+    *   Ben presented various use cases for SML including automatic email processing, loading data in other applications, invoicing, location sharing, meeting time coordination, travel coordination, Amazon order tracking, visualizing data, and polls.
+    *   Security implications of automated processing were raised.
+    *   The need for a common vocabulary and agreement on how to express specific use cases was mentioned.
+    *   The suitability of current email infrastructure as a transport medium for automated processes was questioned.
+
+## Decisions and Action Items
+
+*   **Vacation Notices:**
+    *   The draft should be updated to elaborate on the timestamp issue (time vs. date, time zone considerations).
+    *   Consider testing last and not last part, because the client might support or might not support
+*   **Core Document:**
+    *   Create a table of existing client testing results and share with the working group.
+    *   Test whether multi-part alternative works on the client.
+    *   Investigate automated testing infrastructure and report findings to the mailing list.
+    *   Document that clients supporting SML should not show SML as an attachment.
+*   **Use Cases:**
+    *   Address any security implications that are in the trust document.
+
+## Next Steps
+
+*   Update the vacation notice draft with timestamp and time zone considerations.
+*   Continue discussions on the mailing list regarding multi-part related and full representation.
+*   Address any security implications with the use cases in the trust document.

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="panrg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-PANRG-20220728-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 17:30</p>
+<h1>panrg</h1>
+<h2>Summary</h2>
+<p>The panrg session featured three main presentations and discussions. First, an in-depth component analysis of the SCION next-generation internet architecture was presented, detailing its PKI, Control Plane, and Data Plane, and discussing its interaction with existing protocols and deployment models. The second presentation outlined a problem statement for overlay routing in the context of evolving internet applications and proposed extensions. Finally, a proposal for the separation of data path and data flow sublayers in the transport area was introduced, aiming to address challenges posed by increased middlebox presence and new communication models. Key outcomes include the SCION team agreeing to further decompose and specify their architecture in multiple drafts and an agreement to continue discussions for all topics on the panrg mailing list.</p>
+<h2>Key Discussion Points</h2>
+<h3>SCION Component Analysis (Nikola from ETH Zurich)</h3>
+<ul>
+<li><strong>SCION Overview</strong>: A path-aware, inter-domain internet architecture prioritizing availability (including against adversaries), routing security, and scalability. It originated as a research project in 2009 and is now in production, notably for the Swiss inter-banking network.</li>
+<li><strong>Isolation Domains (ISD)</strong>: Autonomous Systems (ASes) are grouped into ISDs. Each ISD has an independent root of trust, providing flexible trust models and aiding scalability by splitting routing processes into intra-ISD and inter-ISD.</li>
+<li><strong>Three Core Components</strong>:
+<ul>
+<li><strong>Control Plane PKI (CP-PKI)</strong>:
+<ul>
+<li><strong>Function</strong>: Provides a per-ISD trust model, allowing flexible trust decisions for end hosts. Implements a voting mechanism for critical changes to ensure multilateral governance and prevent single points of compromise.</li>
+<li><strong>Dependencies</strong>: Minimal, requiring initial AS bootstrapping (ceremony) and time synchronization.</li>
+<li><strong>Outputs</strong>: Trust Root Configurations (TRCs) and AS certificates used for routing authentication.</li>
+<li><strong>Relation to existing PKI</strong>: Uses X.509 certificates but with unique voting mechanisms and an ISD-based trust model distinct from the web PKI.</li>
+</ul>
+</li>
+<li><strong>Control Plane (CP)</strong>:
+<ul>
+<li><strong>Function</strong>: Explores network topology via &quot;beaconing&quot; and disseminates authenticated path segments. Ensures authentication of control messages. Supports multi-path routing.</li>
+<li><strong>Dependencies</strong>: Relies on CP-PKI for certificates to authenticate path information. Uses ISDs for scalable routing (two-tier hierarchy).</li>
+<li><strong>Outputs</strong>: Authenticated hop-by-hop path segments for ASes and interfaces.</li>
+</ul>
+</li>
+<li><strong>Data Plane (DP)</strong>:
+<ul>
+<li><strong>Function</strong>: Constructs packets with the full path inscribed in the header. Performs forwarding using these paths. Authenticates segments at each hop with simple AS operations.</li>
+<li><strong>Dependencies</strong>: Takes authenticated segments from the control plane. Can be influenced by application requirements (e.g., latency-optimized paths).</li>
+<li><strong>Properties</strong>: Routers are simple (no forwarding tables). Inter-domain only; reuses existing intra-domain routing/forwarding (e.g., MPLS, IGP, Segment Routing). Multi-path for availability; end hosts perform path selection. Separates locator (ISD/AS tuples) and identifier (existing IPv4/IPv6 addresses).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Interaction with Existing Protocols</strong>:
+<ul>
+<li><strong>RPKI</strong>: SCION does not include prefix origin authentication. It is complementary, and transition mechanisms from IP to SCION leverage RPKI for prefix origin attestation.</li>
+<li><strong>LISP</strong>: Shares the idea of separating routing identifiers and locators. Similar gateway concepts (SCION-to-IP Gateway / SIG). LISP lacks multi-path and authentication.</li>
+<li><strong>Segment Routing (SR)</strong>: Primarily intra-domain, whereas SCION is inter-domain. Potential for cooperation (SR within an AS, SCION between ASes). SR lacks authentication for untrusted environments.</li>
+</ul>
+</li>
+<li><strong>Component Independence</strong>: While components offer some standalone benefits (e.g., PKI for symmetric key derivation), maximum properties and functionality are achieved when all three components work together.</li>
+<li><strong>Deployment &amp; Transition Mechanisms</strong>: Current deployments primarily use SCION-to-IP Gateways (SIGs) at the network edge (CPE or ISP core network) or within an AS (deployments 'B' and 'D' in the slides). Native SCION hosts ('A') are less common. SIGs enable significant benefits (e.g., multi-path, availability for critical industries like banking/healthcare) without requiring modifications to every endpoint. Full native SCION offers application-level path selection but requires wider endpoint adoption.</li>
+</ul>
+<h3>Overlay Routing Problem Statement (Gongli from Huawei)</h3>
+<ul>
+<li><strong>Motivation</strong>: Modern internet applications (real-time communication, VR/AR, metaverse) demand stricter network quality (latency, throughput, packet loss, jitter). Traditional internet is best-effort, BGP routing is business-driven, not performance-driven. Existing solutions like 5G/SDN are often single-domain.</li>
+<li><strong>Overlay Networks</strong>: An old technology revisited, deployed by large OTT providers. They use private or hybrid infrastructure to relay traffic via Points of Presence (PoPs) to offer better performance.</li>
+<li><strong>Current Overlay Routing Challenges</strong>:
+<ol>
+<li><strong>Local vs. Global Optimal</strong>: Current decomposition into access and backbone segments may not yield globally optimal end-to-end paths (e.g., example of routing via Dubai vs. South Africa).</li>
+<li><strong>Complex Signaling</strong>: Multiple steps (DNS query, access controller request, access point assignment) are needed to establish an overlay path.</li>
+<li><strong>Lack of Path Awareness</strong>: Endpoints have no information about the available paths, limiting flexibility for service-specific path selection.</li>
+</ol>
+</li>
+<li><strong>Proposed Extensions</strong>:
+<ol>
+<li><strong>End-to-End Joint Path Computation</strong>: Compute entire overlay path (access + backbone) by a centralized controller that can act as a root DNS server.</li>
+<li><strong>DNS Tunneling for Path Requests</strong>: Reuse DNS for path configuration. An endpoint queries DNS for a destination address and includes an overlay path request (e.g., via EDNS option code). The DNS response returns both the address and the end-to-end overlay path.</li>
+<li><strong>Endpoint Source Routing</strong>: Endpoints use source routing (or segment routing) by including the list of PoPs and optional path properties (latency, bandwidth) in packet headers. This allows for path selection directly at the endpoint and stateless forwarding by overlay nodes.</li>
+</ol>
+</li>
+</ul>
+<h3>Separation of Data Path and Data Flow Sublayers (Chris Casaei from WIDE Project)</h3>
+<ul>
+<li><strong>Motivation</strong>: The internet is evolving beyond a pure end-to-end model due to the proliferation of middleboxes (QoS, firewalls, edge computing, in-network computing). Current transport layer protocols (RFC 1122/1123) are tightly coupled, making it difficult to introduce new features or coordinate with the IP layer.</li>
+<li><strong>Transport Layer Functionality Review</strong>:
+<ul>
+<li>Some functions are purely end-to-end (reliable data, integrity checks, basic flow control, security).</li>
+<li>Some require data path information (Path MTU discovery, congestion control - e.g., ECN).</li>
+<li>Some are waypoint-aware (firewalls, policy-based routing).</li>
+</ul>
+</li>
+<li><strong>Problems with Current Protocols</strong>: Tightly coupled design (e.g., QUIC combines many functions). Reinvention is often needed for new transport protocols. Difficult to achieve IP layer cooperation (e.g., ECN).</li>
+<li><strong>Proposal</strong>: Separate transport layer into two sublayers:
+<ol>
+<li><strong>Data Path Sublayer</strong>: Sits above the IP layer, handles per-path or path-related state.
+<ul>
+<li><strong>Functions</strong>: Trajectory/waypoint handling, bi-directional connection management, resource monitoring for congestion, congestion control data, flow multiplexing (similar to QUIC connections), packet duplication/replication.</li>
+</ul>
+</li>
+<li><strong>Data Flow Sublayer</strong>: Sits above the Data Path Sublayer, handles per-flow state.
+<ul>
+<li><strong>Functions</strong>: Retransmission, flow control (buffer management for receiver), flow prioritization, end-to-end security, inverse multiplexing for multi-path protocols.</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><strong>Use Case (M2M Communication)</strong>: Machine-to-machine traffic often operates at maximum rate, causing congestion in best-effort networks. With network feedback (congestion, priority) from the Data Path layer, a Data Flow layer could arbitrate flow priority. For instance, a low-priority archive transfer could be throttled to allow a high-priority data processing flow to achieve a higher rate. This extends concepts like ECN with more precise feedback (e.g., streaming telemetry from data centers).</li>
+<li><strong>Next Steps</strong>: Continue discussion on the mailing list, review existing transport protocols for their functionalities, identify additional use cases for the proposed separation, and develop example protocols based on this architecture. The goal is to evolve the internet architecture without a clean-slate approach, focusing on distributed computing models.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>SCION Component Analysis</strong>:
+<ul>
+<li>The SCION authors (Nikola and team) will update their existing decomposition draft (zero-zero version) to incorporate feedback and the insights from the presentation.</li>
+<li>The SCION team will begin writing new drafts to document the specifications of the three core components (CP-PKI, Control Plane, Data Plane) in ID format, aiming to break them into smaller, more manageable pieces.</li>
+<li>The panrg chairs will schedule an interim meeting in mid-October to continue discussions on SCION, allowing sufficient time for the authors to prepare updated and new documents.</li>
+<li>Discussions will continue on the panrg mailing list.</li>
+</ul>
+</li>
+<li><strong>Overlay Routing Problem Statement</strong>:
+<ul>
+<li>Authors (Gongli and team) are encouraged to post their problem statement to the panrg mailing list to gauge broader interest and collect feedback.</li>
+</ul>
+</li>
+<li><strong>Separation of Data Path and Data Flow Sublayers</strong>:
+<ul>
+<li>Authors (Chris Casaei) are encouraged to continue the discussion on the panrg mailing list, focusing on the historical context, use cases, and reviewing existing transport layer protocols.</li>
+<li>Brian Carpenter will follow up offline with Chris Casaei regarding relevant RFCs from the IB stack evolution program (on path cooperation and wire images).</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>SCION</strong>: Authors to submit updated/new drafts for the component specifications. Interim meeting to be scheduled for mid-October to maintain momentum and discuss specifics.</li>
+<li><strong>Overlay Routing</strong>: Initiate discussion on the panrg mailing list to explore interest and potential next steps.</li>
+<li><strong>Data Path/Data Flow Separation</strong>: Continue discussion on the mailing list, provide historical context, explore further use cases, and begin developing example protocols.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

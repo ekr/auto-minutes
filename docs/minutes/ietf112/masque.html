@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="masque.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-MASQUE-20211108-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 12:00</p>
+<h1>masque</h1>
+<h2>Summary</h2>
+<p>The masque working group convened to discuss the ongoing development of HTTP Datagrams and CONNECT UDP, a unified proposal for CONNECT IP, and new work proposals for Path MTU Discovery (PMTUD) and datagram prioritization. Key discussions revolved around the complexity of HTTP Datagrams extensibility, the use of URI templates for CONNECT UDP configuration, and the HTTP/1 upgrade method. The working group decided to form a design team to resolve the HTTP Datagrams extensibility issues and showed strong support for adopting the unified CONNECT IP draft as a working group item.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>HTTP Datagrams Extensibility and Demultiplexing</strong>:
+<ul>
+<li>David Snazzy provided a recap of the HTTP Datagrams and CONNECT UDP drafts, highlighting the strong coupling between HTTP datagrams and request streams, and the use of the capsule protocol for HTTP/1 and HTTP/2.</li>
+<li>The goal is to support extensions like CONNECT IP header compression, ECN/ICMP conveyance, Path MTU Discovery, and WebTransport priorities, which all require demultiplexing.</li>
+<li>A critical requirement is &quot;zero-latency extensibility,&quot; allowing clients to optimistically use extensions in the first application flight without incurring an RTT delay for negotiation.</li>
+<li>The current design introduces &quot;Datagram Format Types&quot; and a <code>Uses-Datagram-Contexts</code> header for demultiplexing, which was criticized for being overly complicated (MT).</li>
+<li>A revised design was proposed, removing <code>Datagram Format Types</code> and relying on existing capsule types for extensibility. It suggests <code>DATAGRAM_WITH_CONTEXT</code> and <code>DATAGRAM_WITHOUT_CONTEXT</code> capsules to support zero-latency negotiation.</li>
+<li>Significant debate occurred regarding the role of HTTP intermediaries:
+<ul>
+<li>David argued for a design where extensions are transparent to intermediaries to allow quicker deployment without needing to update every hop.</li>
+<li>Ekr countered that intermediaries (e.g., load balancers) should be aware of and terminate/translate protocols, and that relying on intermediary transparency hoists complexity onto the client.</li>
+<li>Victor noted that proxy-to-backend standardization might be necessary for scenarios like CDNs.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>CONNECT UDP Design</strong>:
+<ul>
+<li>The draft now uses HTTP Extended CONNECT (RFC 8441 for H2, draft for H3) with <code>connect-udp</code> as the <code>:protocol</code> header.</li>
+<li>Discussion focused on client configuration using URI templates (RFC 6570) for specifying the target host/port. David highlighted implementation complexity with URI templates.</li>
+<li>An alternative proposed using a regular URI for configuration and separate HTTP headers for target information.</li>
+<li>MT argued that if access control depends on the destination, the target should be in the URI. Ben warned about the complexity and broad capabilities of URI templates (e.g., Unicode support). Tommy suggested using URI templates but with constraints.</li>
+</ul>
+</li>
+<li><strong>HTTP/1 Upgrade Method for CONNECT UDP</strong>:
+<ul>
+<li>The draft currently uses <code>CONNECT</code> with <code>Upgrade</code> (similar to Extended CONNECT, but for H1). WebSockets use <code>GET</code> with <code>Upgrade</code>.</li>
+<li>Martin suggested <code>GET</code> might lead to a more predictable failure path (e.g., 404) if a server doesn't understand the upgrade, compared to <code>CONNECT</code> which could lead to undefined behavior.</li>
+<li>Eric suggested consistency across extended connect methods.</li>
+<li>MT recommended seeking guidance from the HTTPBIS working group on this generic HTTP problem.</li>
+</ul>
+</li>
+<li><strong>CONNECT IP Unified Proposal</strong>:
+<ul>
+<li>Tommy presented a unified draft for generic IP proxying (VPN use cases), aiming for alignment with CONNECT UDP.</li>
+<li>It defines a <code>connect-ip</code> protocol token, uses a URI template, and introduces capsules (<code>ADDRESS_ASSIGN</code>, <code>ADDRESS_REQUEST</code>, <code>ROUTE_ADVERTISEMENT</code>) for negotiating source addresses and routing.</li>
+<li>The base datagram format is a full IP packet; compression and other features are left for extensions.</li>
+<li>The proposal includes mechanisms for limiting the scope of the tunnel (e.g., split tunnel VPNs, access control).</li>
+</ul>
+</li>
+<li><strong>Path MTU Discovery for HTTP Datagrams (Individual Draft)</strong>:
+<ul>
+<li>Ben presented a non-adopted draft proposing a <code>ping</code> datagram format for end-to-end PMTUD, RTT, and packet loss.</li>
+<li>This is motivated by CONNECT IP's requirement to guarantee a minimum MTU (e.g., 1280B for IPv6) even with Mask overhead.</li>
+<li>Magnus noted that PMTUD is inherently asynchronous and that first-hop QUIC MTU is insufficient for multi-hop paths.</li>
+<li>The draft serves as a test case to inform the HTTP Datagrams extensibility design team.</li>
+</ul>
+</li>
+<li><strong>Datagram Priorities (Individual Draft)</strong>:
+<ul>
+<li>Lucas briefly introduced a draft on datagram prioritization, noting that current QUIC, HTTP/3, and Mask drafts lack explicit mechanisms.</li>
+<li>The proposal defines a new <code>urgency</code> parameter, allowing datagrams to have different priorities than their associated streams, with sensible defaults.</li>
+<li>The question was raised whether this is a priority for the working group at this time or if another venue is more appropriate.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: A design team will be formed to address the HTTP Datagrams extensibility issues, including demultiplexing, capsule usage, and intermediary transparency.</li>
+<li><strong>Action Item</strong>: David Snazzy will lead the HTTP Datagrams extensibility design team. Interested participants should contact the chairs (Allan and Eric).</li>
+<li><strong>Action Item</strong>: The chairs will coordinate logistics for the design team.</li>
+<li><strong>Decision</strong>: The unified CONNECT IP draft is deemed a suitable starting point for working group adoption, based on a strong show of hands.</li>
+<li><strong>Action Item</strong>: The chairs will confirm the adoption of the CONNECT IP draft on the mailing list.</li>
+<li><strong>Action Item</strong>: David Snazzy will email the HTTPBIS mailing list to seek guidance on the appropriate HTTP/1 upgrade method (<code>CONNECT</code> vs. <code>GET</code>) for CONNECT UDP.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The HTTP Datagrams extensibility design team will convene and aim to present its results at an interim meeting before IETF 113.</li>
+<li>Further discussions on Path MTU Discovery and Datagram Priorities will be deferred, with the PMTUD discussion potentially feeding into the design team's work.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

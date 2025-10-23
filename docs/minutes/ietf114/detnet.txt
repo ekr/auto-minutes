@@ -1,0 +1,120 @@
+**Session Date/Time:** 28 Jul 2022 17:30
+
+# detnet
+
+## Summary
+
+The DetNet Working Group session at IETF 111 covered administrative updates, document status, and significant technical discussions on DetNet Operations, Administration, and Maintenance (OAM), and various proposals for enhanced queuing and data plane mechanisms for deterministic networking. A key theme was the exploration of solutions to provide bounded latency and jitter guarantees, particularly in large-scale or asynchronous networks, often involving new metadata or modifications to existing encapsulations. The session also initiated a discussion on multi-domain DetNet considerations.
+
+## Key Discussion Points
+
+*   **Administrative & Document Status**:
+    *   Reminder of IETF Note 12 and professional conduct.
+    *   Instructions for hybrid meeting participation, including Meetecho polls for questions.
+    *   A joint session was held with PALS and MPLS WGs on MPLS data plane evolution, relevant to DetNet.
+    *   Two documents (Bounded Latency, YANG) requested publication and are in the RFC Editor Queue.
+    *   The OAM Framework document is in Working Group Last Call (WGLC), closing August 3rd.
+    *   An IPR call process is ongoing for a candidate working group adoption draft.
+    *   The DetNet charter has been updated and approved to address enhanced requirements for queuing solutions.
+    *   Working group milestones were recently updated.
+    *   A liaison letter was received from ITU-T SG13 Q6; a response can be developed on the mailing list.
+    *   Bi-weekly Webex meetings are available for document progression, especially OAM drafts.
+
+*   **DetNet OAM Framework (draft-ietf-detnet-oam-framework)**:
+    *   Lists general and specific requirements for DetNet OAM, including proactive, on-demand, and measurement methods.
+    *   Identified active, passive, and hybrid OAM types.
+    *   Active OAM uses injected test packets; passive uses SNMP/RPC/YANG; hybrid combines elements, often with minimal data packet modification for on-path telemetry.
+    *   Supports unidirectional and bidirectional OAM (continuity check, packet delay, loss).
+    *   **Two sub-layers**:
+        *   **Forwarding Sub-layer**: Path MTU discovery, remote defect indication (e.g., BFD), monitoring path segment OAM.
+        *   **Service Sub-layer**: Discovery and functional verification of PREOF (Packet Replication, Elimination, Ordering Functions).
+    *   **IP Data Plane**: Discussed well-known mechanisms like ICMP (ping, traceroute), BFD, TWAMP Light.
+        *   Challenges with mapping these to specific DetNet flows due to reliance on IP/UDP ports and six-tuple identification.
+        *   Proposed using DetNet in UDP encapsulation for active OAM to ensure shared fate within the UDP tunnel.
+        *   Discussion on using aggregated state or new UDP tunnels via control plane for OAM, and IPv6 extension headers (e.g., Hop-by-Hop option) to tag packets for DetNet treatment, decoupling from transport ports.
+    *   **MPLS Data Plane**: Proposed MPLS-in-UDP encapsulation for service sub-layer OAM, using a modified ACH word for DetNet sub-layer OAM.
+
+*   **Asynchronous Deterministic Networking Framework (draft-ietf-detnet-adn-framework)**:
+    *   Aims for latency and jitter guarantee in large-scale networks with dynamic, arbitrary input patterns, avoiding time synchronization.
+    *   Highlights burst accumulation issues in DiffServ for medium/high utilization, especially with loops.
+    *   Proposed solutions to mitigate burst accumulation: slotted operation, metadata-based forwarding, flow regulation (e.g., ATS, FAA, port-based FAA).
+    *   Emphasized scalability by regulating flow aggregates instead of individual flows.
+    *   Discussed jitter guarantee by timestamping at network boundaries and reproducing inter-arrival processes.
+    *   **Discussion**: Questions raised about flow definition, rate determination, relationship to existing bounded latency work, and coordination with IEEE standards. Mentioned the need for common metadata or changes to the data plane.
+
+*   **DetNet Enhancements for Large-Scale D-to-P Networks (draft-zhang-detnet-data-plane-enhancement)**:
+    *   Discussed the "enhanced DetNet" charter mandate for flow identification and packet treatment.
+    *   Proposed enhanced treatment functions (flow aggregation, redundancy, service level aggregation) and multiple queuing mechanisms, deterministic paths, resource scheduling for the forwarding sub-layer.
+    *   Proposed new metadata (service level, aggregated flow, redundancy, path, queuing information) and encapsulations (IPv6, SRv6, MPLS).
+    *   Highlighted controller plane requirements for managing resources, distributed path calculation, and inter-domain paths.
+    *   **Discussion**: Questioned whether new controller plane considerations should be merged into the existing controller plane framework document. Clarification sought on what is new or enhanced compared to RFC 8938, suggesting some content might fit into an adopted requirements document.
+
+*   **DetNet Queuing Option for End-to-End Deterministic Latency (draft-zhang-detnet-queuing-option)**:
+    *   Focused on achieving end-to-end deterministic latency by considering queuing delay.
+    *   Proposed carrying queuing information in the data plane metadata to aid forwarding and scheduling.
+    *   Discussed various queuing mechanisms (TAS, CBS, CQF, ATS, ADN, Cyclic Queuing, Deadline-based Queuing).
+    *   Proposed queuing information parameters: planned/required delay, delay variation, cycle info, deadline, budget.
+    *   Proposed IPv6 extension solution (new IPv6 option for DetNet cycle Q information, queuing flags, sub-TLV).
+    *   Proposed MPLS extension solution (additional encapsulation, Spl to carry DetNet Q info, TRE, sub-TLV).
+    *   **Discussion**: Questions about system behavior when time budget is exceeded and the readiness of specific queuing options for coding.
+
+*   **DetNet Cyclic Queuing and Forwarding (CQF) for MPLS and IP (draft-thaler-detnet-mpls-cqf)**:
+    *   A revived draft adapting TSN's CQF to DetNet, aiming for bounded latency, minimal jitter, and reduced end-device cost without strict clock synchronization.
+    *   Emphasized scalability due to lack of per-flow state.
+    *   Mechanism: Cyclic Queuing and Forwarding adapted from TSN.
+    *   Sync based on a tag in the packet header (e.g., MPLS traffic class field).
+    *   Validated on 100Gbps FPGA in a 2000 km network in China.
+    *   Updates: reference to a published research paper, added pseudo-code for ingress operation (per five-tuple flow queuing into non-per-flow forwarding mechanism).
+    *   **Discussion**: Benefits of reusing existing data plane mechanisms (MPLS) for quicker deployment. Discussion on the scope for DSCP usage within a single administrative domain, noting that TSWG permission is not needed for intra-domain use.
+
+*   **DetNet CQF Enhancements for Wider Deployment in IPv6 (draft-li-detnet-cqf-enhancement)**:
+    *   Revisited fundamental CQF, noting its simplicity for latency bounds related to cycle interval and hops.
+    *   Discussed requirements for wider deployment: smaller latency, larger number of hops, longer links, larger processing time variance.
+    *   Identified "dead time" issues in fundamental two-buffer CQF that lead to low utilization with longer links/processing delays.
+    *   Proposed a "three-buffer" CQF variant.
+    *   Identified a "time ambiguity window" in the CQF variant.
+    *   Proposed solution: packet carrying a cycle ID as metadata to help downstream nodes determine the correct buffer.
+    *   Proposed IPv6 option format for cycle ID.
+    *   **Discussion**: Sought feedback on addressing ambiguity and collaborating with other working groups for IPv6 options.
+
+*   **DetNet Enhanced Queuing Based on Dynamic Queues (draft-yang-detnet-dynamic-queuing)**:
+    *   Addressed issues with existing mechanisms (CBS, ATS for high latency; CQF for time synchronization).
+    *   Proposed an adaptive FIFO scheme using "dynamic queues" (e.g., 39 queues) with Time-to-Deadline (TDL) attributes.
+    *   Packets are put into specific queues based on planned residence time and accumulated residence time.
+    *   Traffic shaping and regulation at the ingress.
+    *   Supports partial upgrade scenarios (mixed DetNet/legacy nodes).
+    *   Benefits: No time synchronization, no individual flow state, easy upgrade, scalability, performance.
+    *   **Discussion**: Requested to move questions to the mailing list due to time constraints.
+
+*   **DetNet Bounded Latency Information Data Plane (draft-fang-detnet-bli-data-plane)**:
+    *   Identified a missing metadata for end-to-end latency in the current DetNet data plane.
+    *   Proposed a new DetNet-specific metadata called Bounded Latency Information (BLI).
+    *   Design principles: carried in data plane, uniform format for interoperability, accommodates different mechanisms.
+    *   BLI classified into "requirement" and "resource" categories.
+    *   Proposed IPv6 extension header (BRI option) and MPLS extension header (BRI extension header).
+    *   **Discussion**: Questions about the benefit of hub-by-hop vs. end-to-end options in IPv6 and behavior when a node exceeds its time budget.
+
+*   **Multi-Domain DetNet Aspects (draft-roldan-detnet-multi-domain)**:
+    *   Initial work to study and analyze the needs for multi-domain DetNet support.
+    *   Domain defined as administrative and/or technology domain (e.g., wire vs. wireless).
+    *   Identified high-level gaps in application, control, and network planes.
+    *   **Application Plane**: User agent awareness of multiple domains.
+    *   **Control Plane**: Inter-domain interaction for discovery, authentication, negotiation; potential PCE coordination.
+    *   **Network Data Plane**: Exchange of information, protocol translation, OAM extension, PREOF challenges across domains.
+    *   **Discussion**: Support for the work to begin in DetNet, with PALS building on it. Debate on focusing scope (intra-enterprise vs. general multi-enterprise). Chairs noted that text for multi-domain aspects could be immediately suggested for inclusion in the existing DetNet controller plane working group document.
+
+## Decisions and Action Items
+
+*   **Working Group Last Call**: The OAM Framework document is in WGLC, closing on August 3rd. All are encouraged to review and comment.
+*   **Charter Update**: The DetNet charter has been updated and approved to enable the development of queuing solutions.
+*   **Liaison Response**: A response to the ITU-T SG13 Q6 liaison should be developed on the mailing list.
+*   **Requirements Document**: Chairs initiated a poll to gauge interest in adopting a DetNet requirements document. Participants are urged to review the existing requirements draft and provide comments on the mailing list, including terminology suggestions.
+*   **Controller Plane Document**: For multi-domain aspects, contributors are encouraged to suggest relevant text for immediate inclusion in the active DetNet Controller Plane Framework working group document.
+
+## Next Steps
+
+*   **Review and Comment**: Provide reviews and comments on the OAM Framework document (WGLC).
+*   **Engage on Requirements**: Actively review and provide feedback on the DetNet requirements draft, particularly regarding terminology and alignment with proposed solutions, to facilitate its working group adoption.
+*   **Mailing List Discussions**: Continue detailed technical discussions on the various proposed queuing, data plane enhancement, and metadata drafts on the DetNet mailing list.
+*   **Collaboration**: Explore collaboration with other working groups (e.g., TSVWG, 6MAN, MPLS) for specific encapsulations, IPv6 options, or related protocol work.
+*   **Multi-Domain Contributions**: Submit proposed text for multi-domain considerations to the DetNet Controller Plane Framework document.

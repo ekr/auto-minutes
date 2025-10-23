@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="priv.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-PRIV-20211110-1600">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 10 Nov 2021 16:00</p>
+<h1>priv Session Minutes</h1>
+<h2>Summary</h2>
+<p>This Birds-of-a-Feather (BoF) session explored the need and potential for an IETF Working Group focused on Privacy Preserving Measurement (PPM). The discussion highlighted the increasing necessity for collecting aggregate data (e.g., browser telemetry, public health metrics, advertising conversions) while safeguarding individual user privacy. Presenters detailed how multi-party cryptographic techniques, particularly Verifiable Distributed Aggregation Functions (VDAFs), can achieve this, differentiating them from traditional anonymization approaches. There was strong community interest in forming a working group, with significant feedback provided on the proposed charter to ensure its scope is flexible, inclusive, and addresses potential abuse cases and trust models.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Problem Statement:</strong>
+<ul>
+<li>Organizations need to collect aggregate data (e.g., demographics, product usage, website performance, behavioral patterns) for product development, public research, and operational insights.</li>
+<li>This data is often highly sensitive, and traditional methods of collecting individual-level data (even with promises of non-disclosure) are failing due to data breaches and re-identification risks (e.g., using sparse, high-dimensional datasets).</li>
+<li>The goal is to learn only aggregate statistics without ever exposing individual sensitive data.</li>
+</ul>
+</li>
+<li><strong>Existing Approaches &amp; Limitations:</strong>
+<ul>
+<li><strong>Anonymous Measurement (e.g., OHi, Mask, IPsec, Tor):</strong> Involves clients encrypting data to a collector, with proxies stripping metadata like IP addresses. Useful for boosting privacy of semi-sensitive data or collecting individual values.</li>
+<li><strong>Limitations of Anonymization:</strong> Not suitable for high-dimensional datasets (risk of re-identification via correlation), cross-tabulations, or &quot;heavy hitter&quot; problems (where revealing low-cardinality values could expose sensitive information, such as individual URLs).</li>
+</ul>
+</li>
+<li><strong>Multi-Party Cryptographic Techniques (PPM - Focus of BoF):</strong>
+<ul>
+<li><strong>Concept:</strong> Clients split their sensitive value into two (information-theoretically secure) shares. Each share is sent to a different, non-colluding server. Servers compute partial aggregates on their shares, then combine these partial aggregates to produce the final aggregate value without any single server ever seeing an individual client's full value.</li>
+<li><strong>Trust Model:</strong> Requires that the two (or more) aggregation servers do not collude to reconstruct individual data. Clients must trust at least one server not to cheat. The collector needs both servers to behave correctly for aggregate accuracy. While challenging to verify non-collusion, this approach aims to reduce and distribute trust compared to single-party data collection.</li>
+<li><strong>Verifiable Distributed Aggregation Functions (VDAFs):</strong> These are cryptographic primitives that capture the core functionality. They ensure inputs meet certain validity criteria (e.g., a reported height is within a plausible range) using zero-knowledge proofs, preventing malicious or erroneous inputs from corrupting the aggregate.
+<ul>
+<li><strong>Prio Protocol:</strong> For numeric aggregates (sum, mean, variance, etc.) using additive secret sharing.</li>
+<li><strong>Heavy Hitters (e.g., &quot;hits&quot; protocol):</strong> For identifying the most frequent strings (e.g., URLs) in a dataset without revealing less frequent ones.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Motivating Use Cases Presented:</strong>
+<ul>
+<li><strong>Browser Telemetry (Mozilla, Google):</strong> Collecting aggregate user interests (time spent on site topics) or identifying problematic websites (web compatibility issues, fingerprinting scripts) without logging individual browsing history.</li>
+<li><strong>Public Health (ISRG):</strong> The Exposure Notifications Private Analytics (ENPA) system, a collaboration involving Apple, Google, ISRG, and others, is a real-world deployment for COVID-19 exposure notifications. It aggregates millions of measurements per hour in 13 US states and DC, soon expanding internationally, demonstrating scalability and efficacy.</li>
+<li><strong>Advertising (Google):</strong> Measuring ad conversion and reach without relying on privacy-invasive third-party cookies. Instead, events (ad view, purchase) are processed within the browser and reported as aggregate contributions via PPM, enabling aggregate statistics for campaign analysis.</li>
+</ul>
+</li>
+<li><strong>Relationship to IETF/CFRG Work:</strong>
+<ul>
+<li>PPM protocols would define the framework and orchestration (e.g., built on HTTPS).</li>
+<li>VDAFs (the underlying cryptographic primitives like Prio and Hits) are expected to be defined and standardized within the CFRG (Crypto Forum Research Group) due to their specialized cryptographic nature.</li>
+<li>PPM is considered complementary to OHi (Oblivious HTTP), with OHi potentially used to enhance the privacy of client-to-PPM server communication.</li>
+</ul>
+</li>
+<li><strong>Challenges and Trade-offs:</strong>
+<ul>
+<li>Increased architectural complexity due to multiple servers.</li>
+<li>Computational and network overhead introduced by cryptographic proofs and multi-round communication.</li>
+<li>Less flexible than conventional telemetry; aggregations must be defined upfront.</li>
+<li>Discussions arose about whether these solutions primarily aid &quot;good actors&quot; or can also curb malicious tracking; proponents clarified that platform mediation can deprecate privacy-invasive methods once robust PPM alternatives are available.</li>
+</ul>
+</li>
+<li><strong>Charter Discussion Feedback:</strong>
+<ul>
+<li><strong>Use Cases:</strong> Strong desire to include motivating use cases within the charter for clarity.</li>
+<li><strong>Scope Flexibility:</strong> The charter's description of techniques (&quot;splitting measurements between multiple non-colluding servers&quot;) was seen as potentially too restrictive; a more general wording is needed to allow for alternative or evolving VDAF implementations.</li>
+<li><strong>Definition of Aggregation:</strong> Request for a clearer definition of &quot;aggregation&quot; to encompass scenarios like training privacy-preserving machine learning models.</li>
+<li><strong>Abuse Cases &amp; Mitigations:</strong> Emphasized the importance of documenting potential abuse cases (e.g., malicious collectors inferring individual data from small aggregates, civil attacks, manipulating opt-in mechanisms) and detailing possible mitigations within the working group's scope.</li>
+<li><strong>Trust Assumptions:</strong> Need to address how assumptions about non-collusion and server discovery/configuration are handled or documented.</li>
+<li><strong>Working Group Name:</strong> The proposed name &quot;priv&quot; was widely deemed confusing, overly broad, and not clearly descriptive of Privacy Preserving Measurement. A name change was strongly recommended.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> There is strong community support and critical mass of interest to form an IETF Working Group for standardizing Privacy Preserving Measurement (PPM) technologies.</li>
+<li><strong>Action Item (BoF Proponents/Chairs):</strong> Revise the proposed Working Group charter based on the feedback received during the BoF session and subsequent mailing list discussion. Key revisions will include:
+<ul>
+<li>Generalizing the language describing the technical approach to allow for flexibility across various VDAF instantiations and techniques.</li>
+<li>Clarifying the definition of &quot;aggregation&quot; to be inclusive of relevant advanced use cases (e.g., ML models).</li>
+<li>Adding clear documentation of motivating use cases.</li>
+<li>Incorporating work items related to analyzing and mitigating abuse cases and defining relevant threat models.</li>
+<li>Proposing a new, more descriptive and less ambiguous name for the Working Group.</li>
+<li>Considering how trust models and ecosystem deployment scenarios are addressed within the charter.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The revised Working Group charter will be distributed and discussed on the mailing list.</li>
+<li>The work on cryptographic primitives (VDAFs) will continue in the Crypto Forum Research Group (CFRG).</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

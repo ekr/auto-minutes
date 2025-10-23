@@ -1,0 +1,168 @@
+**Session Date/Time:** 07 Nov 2022 15:30
+
+# tsvwg
+
+## Summary
+
+The TSVWG session covered a broad range of transport-related topics, including updates on existing drafts, discussions on new proposals, and critical security issues within SCTP. Key highlights included a review of L4S deployment progress and interoperability, a detailed presentation on Multi-Path DCCP interoperability and its progression path, an urgent discussion on newly identified security vulnerabilities in SCTP Authentication and DTLS over SCTP, and proposals for SCTP Zero Checksum. The session also saw a welcome for a new co-chair and a farewell for a long-serving one, alongside the retirement of an outdated IANA registry.
+
+## Administrative Items
+
+*   **Chairs:** Gorry and David Black chaired the meeting. Martin Seemann was welcomed as a new working group chair.
+*   **Volunteers:** A note-taker and chat monitor were requested.
+*   **Meetecho/Blue Sheets:** Attendees were reminded to join the Meetecho session for blue sheets and to use the mic queue system.
+*   **Draft Reviewers:** A call was made for reviewers for upcoming drafts, specifically Multi-Path, DCCP, and UDP options. Draft authors were encouraged to add `tsvwg` to their draft names.
+*   **Chair Transition:** David Black announced he would be stepping down as working group chair in the coming months after a long tenure. Martin Duke offered a heartfelt thank you for David's significant contributions to the transport area and the IETF.
+*   **Liaison Communications:**
+    *   **WBA Liaison (5QI PHBs):** This liaison, which requested IETF to define PHBs and DSCPs for 5QI, was retired due to a lack of further communication from WBA after TSVWG responded with concerns about DSCP consumption and the need for 3GPP coordination.
+    *   **3GPP Liaison (SCTP and DTLS):** This liaison is active and will be discussed further at a coordination meeting.
+    *   **GSMA Liaison (Multi-Path DCCP):** GSMA is aware of the Multi-Path DCCP work.
+*   **IANA PHB ID Registry:** David Black announced plans to write an individual draft to obsolete the IANA registry for Per-Hop Behavior (PHB) Identification Codes (for non-standards track PHBs), which has been empty for over a decade. This would simplify RFC 340.
+
+## Document Status Updates
+
+*   **Published RFCs (Since IETF 114):** None.
+*   **At RFC Editor:** Three L4S drafts are currently being actively worked on and are expected to be published very soon.
+*   **At IESG (After IETF Last Call):**
+    *   "ECN Encapsulation for Lower Layer Protocols"
+    *   "ECN for Tunnels that use Shim Headers"
+    *   (Working through revised reframing interaction text for these two drafts).
+*   **Completed Second Working Group Last Call (WGLC):** "Considerations for Assigning a New Recommended DSCP" (discussed in this meeting).
+*   **In Working Group Last Call (WGLC):** "NQB PHB" (Greg White urged review, WGLC ends in two weeks).
+*   **Upcoming WGLC:** "Use Reports for Experiments" (expected shortly after this meeting).
+*   **Removed from Work Plan:** "SCTP NAT" (due to lack of convergence and agreement).
+
+## Key Discussion Points
+
+### Individual Draft Pitches (2 minutes each)
+
+*   **"Deployment Design Considerations for L4S" (Jason Livinggood):** This draft addresses common questions from policy makers and ISPs regarding L4S, specifically its relation to prioritization, capacity, and net neutrality. It suggests applications mark traffic rather than relying on network inspection, and that Edge providers should use it on an open basis with multiple equipment types.
+*   **HPCC++ (Michael from Alibaba):** Presented HPCC++, a novel congestion control mechanism leveraging in-band telemetry for IP networks, particularly in data centers for storage and machine learning. Claims it outperforms DCQCN, especially under high network load. Implementations are deployed by Alibaba, and all four major data center silicon vendors are adding support.
+*   **"Media Header Extensions for Wireless Networks" (John Denley):** This draft identifies minimal media header extensions (metadata) specific to wireless networks to support low-latency/high-bandwidth media applications. Proposed metadata includes packet priority, burst information for radio schedulers, and delay budgets. Transport options include HTTP/3, UDP options, and IP/shim encapsulation.
+
+### Considerations for Assigning a New Recommended DSCP (Gorry)
+
+*   Changes since the last WGLC (version 04) include clarifications, a mention of RFC 3086, explicit notes on different remarking behaviors, changing "pathology" to "observatory marking behavior," and editorial updates.
+*   A specific issue regarding "bleaching" (TOS precedence) behavior in remarking was discussed, but the group seemed to converge on the current text, which focuses on the *intent* behind remarking rather than encoding specifics.
+*   **Decision:** The updated draft, incorporating resolved comments, will be pushed after this meeting.
+
+### L4S Operational Guidance (Greg White)
+
+*   The "L4S Operational Guidance" draft (draft-ietf-tsvwg-l4s-operational-guidance-09) remains a "living document" to capture ongoing learnings from L4S deployment, especially regarding potential rate imbalances when sharing bottlenecks with classic ECN (RFC 3168) traffic. Contributions are welcome.
+*   **L4S Interoperability Events:**
+    *   IETF 114 (Philadelphia): First interop event, found/fixed bugs.
+    *   Cable Labs (Denver): Another interop, good results.
+    *   IETF 115 (current, hackathon): Ongoing testing with 5G, Wi-Fi, fixed network emulators, and various endpoint implementations. A happy hour with demos was announced.
+*   **Upcoming Interops:** Cable Labs (January), IETF Yokohama (possible, depending on interest).
+*   The July 2023 milestone for this document is currently considered reasonable but might be revised.
+
+### Multi-Path DCCP (MPDCCP)
+
+*   **"Multi-Path DCCP Interoperability Test" (Yu Maiying, Xiaomi):**
+    *   Xiaomi ported MPDCCP to Android 13 (based on a 5.10 Linux kernel) and conducted interoperability tests against a Deutsche Telekom server (Germany) and a virtual machine (China).
+    *   Successfully verified core MPDCCP functions including subflow handshakes (MP_CAPABLE, MP_KEY, MP_JOIN), address management (MP_ADD_ADDR, MP_REMOVE_ADDR, MP_CONFIRM), priority handling, and closing procedures (MP_CLOSE, MP_FAST_CLOSE), as well as fallback mechanisms.
+    *   The results confirmed compliance and maturity of draft-ietf-tsvwg-multipath-dccp-06.
+    *   Future plans include porting `tombprox` to Android, encapsulating any IP traffic over multi-path, and testing real-time services like Skype.
+*   **"Multi-Path DCCP Progress" (Marcus Ihlar, Deutsche Telekom):**
+    *   The draft is feature-frozen (v04) and is now at v06, having addressed numerous external reviewer comments, improving clarity and readability.
+    *   The Linux reference implementation is complete, including multi-path confirm, fallback mechanisms, and two closing procedures.
+    *   The interoperability tests with Xiaomi confirmed the specification's functionality and inter-vendor compatibility. A Wireshark dissector has also been updated.
+    *   **Discussion on Progression Track (Proposed Standard vs. Experimental):**
+        *   **Poll:** 13 people indicated they had read the draft.
+        *   **Concerns (Martin Duke, Lars Eggert, Meera):** Raised questions about the maturity of multi-path *scheduling* solutions (acknowledging it's implementation-specific for MPDCCP), fairness with shared bottlenecks, and whether the "Proposed Standard" track implies a level of "safety for non-experts" that might not be fully met for multi-path transports generally. Meera also questioned if porting a Linux implementation to Android constitutes a truly "independent" implementation for judging maturity.
+        *   Marcus responded that they adopted an existing mptcp scheduler and that the protocol provides the necessary information for schedulers.
+        *   **Action:** The AD and chairs will discuss the appropriate progression track (PS vs. EXP). A subsequent poll indicated 14 people would be willing to review the document for a Working Group Last Call.
+
+### SCTP Authentication Issues (Michael Tüxen for John Mattson)
+
+*   A joint analysis identified security issues in existing SCTP AUTH (RFC 4895) and DTLS over SCTP (RFC 6083 and draft-ietf-tsvwg-dtls-sctp).
+*   **Identified Issues:**
+    1.  **Reflection of authenticated data chunks:** Due to non-directional keys, an on-path attacker with read capabilities can reflect authenticated data, potentially corrupting user messages or causing association termination.
+    2.  **Replay protection limitations:** Reliance on a 32-bit TSN (2^32 values) allows replay of data after wrap-around, especially with large messages.
+    3.  **Same key with different algorithms:** The specification allows using the same key with different algorithms, which is generally not good practice.
+    4.  **Reflection of authenticated control chunks:** Easier than data reflection (no TSN match needed), potentially leading to availability attacks (e.g., error messages, heartbeat acks causing packet loss or association tear-down).
+    5.  **Replay of control chunks:** Similar to data replay but for control messages.
+*   **Impact:** These issues primarily affect availability and integrity (e.g., corrupted user messages). DTLS over SCTP is particularly vulnerable because it often uses multiple records per user message.
+*   **Discussion:** The analysis was acknowledged as a significant and valuable contribution, highlighting critical problems that need to be addressed. Martin Duke clarified that these replay attacks are more constrained than typical security replays (tied to TSN wrap-around) but are still actual attacks.
+
+### SCTP Security - Proposed Fixes (Michael Tüxen)
+
+*   An individual draft, "SCTP Authentication Extensions" (draft-tuxen-tsvwg-sctp-auth-bis-00), was presented to address the security issues identified in SCTP AUTH (RFC 4895).
+*   **Proposed Solutions:** Include direction-specific data (e.g., port numbers, verification tag) in the MAC computation, and potentially use directional/algorithm-specific key derivation.
+*   **Motivation:** Address the security flaws, improve textual clarity, and support additional HMAC algorithms (e.g., SHA-256 for DTLS over SCTP).
+*   **Status:** Version 00 was submitted, primarily for formatting and updating references, with no technical content changes yet.
+*   **Discussion:** The community expressed clear interest in addressing these security concerns. Chairs encouraged reading the draft and providing feedback for potential working group adoption.
+
+### DTLS over SCTP (Magnus Westerlund)
+
+*   The current draft (draft-ietf-tsvwg-dtls-sctp-05) is being revised based on Martin Thompson's review comments and is dependent on the SCTP AUTH fixes.
+*   **Security Impact:** High dependency on SCTP AUTH for ordered delivery and integrity. Replay of DTLS records could lead to corrupted user messages.
+*   **Mitigations:** Fixing SCTP AUTH (directional keys) and making re-keying mandatory on TSN wrap-around are considered. The question remains whether these mitigations are sufficient for demanding 3GPP/5G deployments.
+*   **Complexity:** The current DTLS over SCTP approach is complex. An individual draft for a simpler alternative is being explored to reduce implementation impact and potentially speed up completion.
+*   **DTLS Version Support:** A preference for supporting only DTLS 1.3 was discussed, but availability of DTLS 1.3 stacks (especially with features like Connection IDs) is currently limited.
+*   **Message Identification:** DTLS 1.3 encrypts content types, making it difficult to identify DTLS handshake/error messages for priority processing without exposing sensitive information. Using PPIDs was suggested as a potential identifier.
+*   **Timeline:** The draft's timeline is delayed, unlikely to meet the March deadline due to dependency on SCTP AUTH fixes.
+*   **Action:** A liaison from TSVWG to 3GPP will be sent to inform them of the delays and security issues.
+
+### UDP Options & DPL PMTUD (Gorry)
+
+*   An update on Joe Touch's UDP Options draft and the related DPL PMTUD for UDP Options was brief. The working group is awaiting a revised individual draft from Joe Touch, and a working group last call is intended upon its receipt.
+
+### SCTP over UDP Encapsulation (Michael Tüxen)
+
+*   An individual draft on SCTP over UDP encapsulation for NAT traversal was presented. It addresses how to handle packets containing inner chunks when a verification tag is unavailable, impacting port number updates.
+*   Existing open-source implementations in FreeBSD and Linux are covered, but a consolidated document is needed.
+*   **Discussion:** Feedback was encouraged, as this is seen as useful work for the group.
+
+### SCTP Zero Checksum (Michael Tüxen)
+
+*   An individual draft proposes adding a parameter to the SCTP handshake to allow for zero checksums when SCTP is used over protected links (e.g., DTLS for WebRTC).
+*   **Motivation:** Reduce CPU load on constrained devices where the lower layer already provides sufficient protection, and CRC-32C computation is unnecessary.
+*   **Support:** Implementer support was noted from Google (WebRTC/Chrome) and Mozilla (Firefox).
+*   **Discussion:** Lars Eggert noted that "Specification Required" (for IANA parameter assignment) does not strictly mandate an RFC, a stable draft might suffice. A poll indicated the community finds this a "useful piece of work" for TSVWG.
+
+### Careful Resumption of Congestion Control (Nicholas)
+
+*   This draft, previously discussed in Quick, proposes storing and reusing computed congestion control parameters (e.g., BDP, RTT) from previous connections to quickly ramp up new connections, particularly beneficial for high-BDP links like satellite.
+*   **Key Discussion Points:**
+    *   **Detecting Path Changes:** What event information (e.g., packet loss, minimum RTT, inter-packet time) indicates a path change, necessitating a fallback?
+    *   **Careful Resumption Algorithms:** How to carefully "jump" to previous parameters without immediately using the full bandwidth (e.g., specific slow start algorithms)?
+    *   **Reaction to Collisions:** How to react if congestion is detected after resumption?
+    *   **CC-Specific Considerations:** How different CC algorithms (Cubic, Reno, I-Start) interact with resumption.
+*   **Transport-Specific Issues:** How to identify and protect the stored information (e.g., using TLS certificates, specific frames in Quick).
+*   **Discussion:** Piers noted similar "TCP metrics" caching in the Linux kernel and encouraged Nicholas to consider its informing principles for an interoperable solution.
+*   **Next Step:** Martin Duke announced a side meeting on a possible Congestion Control Working Group on Thursday at 5 PM, which could be a home for this work.
+
+### General Congestion Control Guidelines (Gorry)
+
+*   Gorry presented "Guidelines for Congestion Control" (draft-gorry-tsvwg-cc-guidelines-07), an individual draft aiming to update and re-evaluate IETF's recommendations on congestion control.
+*   **Motivation:** Consolidate over 40 informative and 10 normative RFCs, and ensure the advice remains relevant for preventing persistent congestion and reacting to incipient congestion in the modern internet.
+*   **Call for Collaboration:** Gorry invited community members, especially those with diverse opinions, to collaborate on getting the document right.
+
+### ECN Interaction with Tunnels (Martin Duke)
+
+*   Martin Duke presented an individual draft on ECN behavior when tunneling multiple packets (e.g., IPsec). He identified ambiguities when different ECN markings (especially `CE`) are aggregated, leading to a complex "truth table" of potential outcomes.
+*   **Discussion:** David Black noted that this is a standalone piece of work and appears to be a useful update to RFC 6040.
+
+## Decisions and Action Items
+
+*   **Decision:** "SCTP NAT" has been removed from the TSVWG work plan due to lack of consensus.
+*   **Decision:** David Black will draft an individual document to obsolete the IANA PHB ID registry, which has not been used.
+*   **Decision:** The "Considerations for Assigning a New Recommended DSCP" draft (v04 with resolved comments) will be pushed after this meeting.
+*   **Action Item:** The TSVWG chairs will send a liaison to 3GPP to notify them of the delays and identified security issues in the DTLS over SCTP work.
+*   **Action Item:** The AD and chairs will discuss the appropriate progression track (Proposed Standard vs. Experimental) for Multi-Path DCCP.
+*   **Action Item:** Chairs will consider "SCTP Zero Checksum" for a future working group adoption call based on community interest.
+
+## Next Steps
+
+*   **NQB PHB:** Review the draft; Working Group Last Call ends in two weeks.
+*   **L4S Operational Guidance:** Provide contributions to the living document; monitor upcoming interop events.
+*   **Multi-Path DCCP:** Multi-path DCCP: Those who expressed interest in reviewing should do so.
+*   **SCTP Auth:** Read "SCTP Authentication Extensions" (draft-tuxen-tsvwg-sctp-auth-bis); provide feedback to aid in a working group adoption decision.
+*   **DTLS over SCTP:** Work to address the identified security issues, potentially explore a simpler alternative draft, and monitor the availability of DTLS 1.3 stacks.
+*   **UDP Options & DPL PMTUD:** Await the revised individual draft from Joe Touch; a WGLC is planned thereafter.
+*   **SCTP over UDP Encapsulation:** Encourage feedback on the individual draft.
+*   **Careful Resumption of Congestion Control:** Continue discussion and consider this work for the potential new Congestion Control Working Group.
+*   **General Congestion Control Guidelines:** Gorry seeks collaborators to refine this document.
+*   **ECN Interaction with Tunnels:** Continue discussion on this as a potential update to RFC 6040.
+*   **Congestion Control Working Group:** Attend the side meeting on Thursday at 5 PM if interested in the chartering discussion for a new CC working group.

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="jmap.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-JMAP-20211109-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 09 Nov 2021 12:00</p>
+<h1>jmap</h1>
+<h2>Summary</h2>
+<p>The jmap working group meeting at IETF 112 covered a wide range of topics, including updates on JMAP Blob, S/MIME for both received and sending mail, JMAP Calendars and Tasks, JSContact, and an IMAP extension for efficient searching and fetching in large mailboxes. Key discussions revolved around refining existing specifications based on feedback, addressing extensibility, and exploring new features. Decisions were made regarding certain properties in JMAP Blob and S/MIME, while several action items were assigned for further research, specification refinement, and community engagement. Milestone dates for various drafts were also reviewed and updated.</p>
+<h2>Key Discussion Points</h2>
+<h3>JMAP Blob</h3>
+<ul>
+<li><strong>Encodings</strong>: Discussion around specifying encodings for binary data.
+<ul>
+<li><strong>Base64</strong>: Need for explicit reference to RFC 4648, currently assumed.</li>
+<li><strong>Hex</strong>: Questioned if <code>asHex</code> is needed. If kept, should it enforce lowercase or align with RFC 4648's case-insensitivity.</li>
+<li><strong>Base32</strong>: Questioned if it should be included for completeness, despite no current use case.</li>
+</ul>
+</li>
+<li><strong><code>expires</code> Property</strong>: The <code>expires</code> property was included in examples (e.g., blob persists for a week) but lacked formal definition or assumptions. Considered if it should be removed.</li>
+</ul>
+<h3>JMAP S/MIME (Received Mail)</h3>
+<ul>
+<li><strong>Recent Changes</strong>: Extensive changes since the last meeting, primarily addressing Gen-Art and Art Directorate comments, improving formatting, clarifying the implicit trust model, enhancing security considerations, and refining S/MIME status attribute extensibility.</li>
+<li><strong>Caching Time</strong>: The <code>cacheTime</code> for S/MIME verification (currently 10 minutes) was discussed. The trade-off between DoS protection and quick revocation propagation was considered. A day was suggested as a reasonable default, especially given infrequent certificate expiration and the cost of checking CRLs.</li>
+<li><strong>S/MIME Status Extensibility</strong>: Discussed if an IANA registry is needed for future <code>sMimeStatus</code> values (e.g., <code>encrypted+signedVerified</code>). Given that JMAP relies on capabilities for extensions, the consensus was to define current values and allow future extensions to introduce their own via capabilities, avoiding a sparsely populated registry.</li>
+<li><strong><code>Email/query</code> for S/MIME Status</strong>: Proposed extending <code>Email/query</code> to search for S/MIME status at the time of delivery, similar to what <code>Email/get</code> already provides. This would allow clients to filter messages based on their validity at delivery without re-verification.</li>
+<li><strong><code>signed</code> Attribute</strong>: The <code>signed</code> attribute provides an optimization to indicate syntactic presence of an S/MIME signature without full verification. Clarification was sought on its interaction with <code>sMimeStatusAtDelivery</code> and how status is calculated/cached. The server-set nature of <code>sMimeStatusAtDelivery</code> implies it can change.</li>
+<li><strong><code>sMimeStatusAtDelivery</code> Immutability</strong>: Discussed implications of <code>sMimeStatusAtDelivery</code> changing due to trust anchor changes (addition/removal of CAs, certificate revocation/expiration). The desired user experience is to know if a message was trustworthy at delivery and if its key has since been revoked (meaning it's no longer trustworthy). Distinction between revoked and expired certificates was highlighted; expired keys should not invalidate past signatures, but revoked keys should.</li>
+<li><strong><code>signedVerified</code>/<code>signedFailed</code> Definition</strong>: These statuses contained too many implementation details. Suggestion to reference existing RFCs and clarify specific checks (e.g., <code>From</code> address matching certificate).</li>
+<li><strong>ISG Comments</strong>: Noted that ISG comments received were non-blocking but led to good discussions and improvements.</li>
+</ul>
+<h3>JMAP S/MIME (Sending Mail)</h3>
+<ul>
+<li><strong>Message Generation</strong>: The draft adds <code>isSigned</code> and <code>isEncrypted</code> boolean attributes to <code>Email/set</code>.</li>
+<li><strong>MIME Structure</strong>: Questioned if clients need to control <code>multipart/signed</code> vs. <code>application/pkcs7-mime</code> for signing.</li>
+<li><strong>Configuration</strong>: Suggested that signing/encryption preferences (and potentially key selection) should be set on an <code>Identity</code> object rather than per-message.</li>
+<li><strong>Automatic Decryption</strong>: Discussed if JMAP should automatically decrypt messages on retrieval or require explicit client requests. A boolean option in <code>Email/get</code> (similar to fetching text/HTML body parts) was suggested.</li>
+</ul>
+<h3>JMAP Calendars</h3>
+<ul>
+<li><strong>Status</strong>: Still seeking implementation experience. A few minor TODOs remain. No significant updates since the interim meeting.</li>
+</ul>
+<h3>JMAP Tasks</h3>
+<ul>
+<li><strong><code>assignee</code> Property</strong>: Minor change: <code>assignee</code> property moved to be a value within the <code>participantRole</code> property (similar to <code>JS Calendar</code>).</li>
+<li><strong>Task System Survey</strong>: A survey of various task systems (groupware, Kanban, issue tracking) was conducted.
+<ul>
+<li><strong>Heterogeneity</strong>: Task systems are heterogeneous regarding complex features (alerts, attachments, recurrence, relations). Many implementations might skip these.</li>
+<li><strong>Homogeneity</strong>: Most core features are homogeneous.</li>
+<li><strong>New Features</strong>: Identified features not yet in JMAP Tasks but common in systems: checklist, comment list/discussion, history, generic key-value properties.</li>
+</ul>
+</li>
+<li><strong>Extensibility Model</strong>: Proposed approach: Define a minimal core functionality that all servers supporting JMAP Tasks must implement. Servers can then advertise support for additional features (e.g., recurrence rules) via capabilities. This allows clients to adapt their UI.</li>
+<li><strong>Generic History/Comments</strong>: Discussion on whether &quot;history&quot; or &quot;comments&quot; should be a separate, generic data type across JMAP (for contacts, events, tasks) rather than task-specific.</li>
+</ul>
+<h3>JSContact</h3>
+<ul>
+<li><strong>Implementation Experience</strong>: Still actively seeking broader implementation experience. FastMail is working with an older version, and the RDAP working group is implementing a subset.</li>
+<li><strong>Unicode Personal Name Formatting</strong>: A Unicode Public Review Issue on personal name formatting is highly relevant.
+<ul>
+<li><strong>Alignment</strong>: The goal is to align JSContact's <code>nameComponents</code> with this Unicode effort, while keeping formatting/sorting out of scope for JSContact itself.</li>
+<li><strong>Renaming</strong>: Proposed renaming <code>personalName</code> to <code>given</code> and <code>additionalName</code> to <code>middle</code>.</li>
+<li><strong>Surnames</strong>: Discussion on handling multiple surnames (e.g., <code>surname</code>, <code>secondarySurname</code>) and their ordering, potentially using an array with an <code>nth</code> property or implicit order.</li>
+<li><strong>Unicode Liaison</strong>: Identified an IETF liaison manager for Unicode.</li>
+</ul>
+</li>
+<li><strong>Gender Property (vCard)</strong>: No resolution yet on how to best support the vCard <code>GENDER</code> property in JSContact. The primary use case is pronoun/addressing (Mr./Mrs.) in different languages. Seeking guidance from the IETF and/or the Unicode liaison.</li>
+</ul>
+<h3>IMAP Extended Search and Fetch for Large Mailboxes (Extra WG)</h3>
+<ul>
+<li><strong>Problem Statement</strong>: Current IMAP clients and servers struggle with large mailboxes (50k+ messages). Clients often fetch excessive flag data, and servers face high memory/resource usage for message ID to UID mapping.</li>
+<li><strong>Proposal</strong>: Extend IMAP <code>SEARCH</code> and <code>UID FETCH</code> with a <code>PARTIAL</code> option that specifies the maximum number of messages to return.
+<ul>
+<li><strong><code>SEARCH</code></strong>: Extend RFC 526's <code>PARTIAL</code> option to allow negative ranges (e.g., <code>-100</code> for the last 100 messages) in addition to starting from the first.</li>
+<li><strong><code>UID FETCH</code></strong>: Add a similar <code>PARTIAL</code> modifier.</li>
+</ul>
+</li>
+<li><strong>Benefits</strong>: Allows servers to stop processing early, optimizes network traffic, and enables clients to fetch only what they display (e.g., the most recent 100 messages).</li>
+<li><strong><code>PARTIAL</code> and <code>SAVE</code> Interaction</strong>: The draft also defines how the new <code>PARTIAL</code> extension interacts with the <code>SAVE</code> extension.</li>
+<li><strong>IMAP XVIEW</strong>: Mentioned as a previous attempt to address similar problems but deemed too complex.</li>
+</ul>
+<h3>Any Other Business (AOB)</h3>
+<ul>
+<li><strong>Sieve Implicit Conventions (Interoperability)</strong>: Discussion around managing Sieve rules, especially those generated by webmail systems (e.g., FastMail, Horde). These often rely on implicit conventions (e.g., comments for rule names, specific ordering) that are not formally part of Sieve or JMAP Sieve, leading to interoperability issues when migrating or managing rules from different systems.
+<ul>
+<li><strong>JMAP Workaround</strong>: For JMAP Sieve, a workaround using JMAP capabilities (e.g., conveying a <code>productID</code> like &quot;horde&quot;) was found to apply specific parsing logic for system-generated rules.</li>
+<li><strong>Sieve Blob vs. Inline</strong>: Re-opened discussion on whether JMAP Sieve should allow fetching raw script text inline, similar to email body parts, in addition to using blob IDs. This could simplify implementation for certain use cases.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<h3>JMAP Blob</h3>
+<ul>
+<li><strong>Decision</strong>: Explicitly reference RFC 4648 for Base64 encoding.</li>
+<li><strong>Decision</strong>: Remove <code>asHex</code> encoding due to lack of strong use cases and added complexity.</li>
+<li><strong>Decision</strong>: Remove the <code>expires</code> property due to undefined semantics.</li>
+<li><strong>Action Item (Ron):</strong> Update the JMAP Blob draft with the above changes and prepare for Working Group Last Call.</li>
+<li><strong>Action Item (Jim):</strong> Initiate Working Group Last Call for JMAP Blob next week after Ron's updates.</li>
+</ul>
+<h3>JMAP S/MIME (Received Mail)</h3>
+<ul>
+<li><strong>Decision</strong>: Change default caching time for S/MIME verification to 1 day.</li>
+<li><strong>Decision</strong>: Rely on JMAP's capability-based extensibility for <code>sMimeStatus</code> values; no IANA registry will be created for this attribute.</li>
+<li><strong>Decision</strong>: Add the ability to query <code>sMimeStatusAtDelivery</code> in <code>Email/query</code>.</li>
+<li><strong>Decision</strong>: Keep the <code>signed</code> attribute for optimization, clarifying its meaning (syntactic presence).</li>
+<li><strong>Decision</strong>: Clarify the semantics of <code>sMimeStatusAtDelivery</code> to reflect trustworthiness at delivery, potential change with trust anchor updates, and specific signature checks (e.g., matching the <code>From</code> address).</li>
+<li><strong>Decision</strong>: Refine the descriptions for <code>signedVerified</code> and <code>signedFailed</code> to reference relevant RFCs and highlight important checks.</li>
+<li><strong>Action Item (Alexey):</strong> Implement all the above changes and post a new draft of the JMAP S/MIME (Received Mail) specification.</li>
+</ul>
+<h3>JMAP S/MIME (Sending Mail)</h3>
+<ul>
+<li><strong>Action Item (Alexey):</strong> Define how to control <code>multipart/signed</code> vs. <code>application/pkcs7-mime</code> options on the JMAP <code>Identity</code> object.</li>
+<li><strong>Action Item (Alexey):</strong> Document how to list available keys for signing/encryption on the <code>Identity</code> object (without storing key material itself).</li>
+<li><strong>Action Item (Alexey):</strong> Add a boolean option to <code>Email/get</code> for clients to explicitly request automatic decryption of S/MIME messages.</li>
+</ul>
+<h3>JMAP Tasks</h3>
+<ul>
+<li><strong>Action Item (Harjoth, Alexey):</strong> Continue refining the task system survey, incorporate feedback, and reach out to developers/vendors for input.</li>
+<li><strong>Action Item (Working Group):</strong> Explore defining a &quot;core&quot; set of task features and using JMAP capabilities for optional/complex features (e.g., recurrence, alerts, attachments).</li>
+<li><strong>Action Item (Working Group):</strong> Investigate if complex features like &quot;history&quot; or &quot;comments&quot; could be defined as generic JMAP data types applicable across tasks, events, and contacts.</li>
+</ul>
+<h3>JSContact</h3>
+<ul>
+<li><strong>Action Item (Robert):</strong> Contact the IETF liaison manager for Unicode (Pete Resnick) to discuss alignment of JSContact name components with the Unicode Personal Name Formatting issue.</li>
+<li><strong>Action Item (Robert, Murray):</strong> Seek IETF/Unicode guidance on how to define and handle the vCard <code>GENDER</code> property in JSContact.</li>
+<li><strong>Action Item (Robert):</strong> Propose renaming <code>personalName</code> to <code>given</code> and <code>additionalName</code> to <code>middle</code> in JSContact to align with Unicode.</li>
+<li><strong>Action Item (Robert):</strong> Draft a generic history specification that could be applied across various JMAP data types (contacts, events, tasks).</li>
+</ul>
+<h3>IMAP Extended Search and Fetch (Extra WG)</h3>
+<ul>
+<li><strong>Action Item (Alexey):</strong> Propose adoption of the IMAP Extended Search and Fetch draft in the Extra Working Group.</li>
+<li><strong>Action Item (Alexey):</strong> Review the old IMAP <code>XVIEW</code> extension for any salvageable ideas.</li>
+</ul>
+<h3>Any Other Business (Sieve)</h3>
+<ul>
+<li><strong>Action Item (Alexey, Ken):</strong> Follow up on the Extra mailing list regarding the proposal for structured comments or annotations for Sieve rules to address interoperability issues and client UI management.</li>
+<li><strong>Action Item (Ken):</strong> Revisit the discussion on whether JMAP Sieve should allow fetching raw script text inline in <code>Script/get</code> in addition to using blob IDs.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>JMAP Blob</strong>: Aim for Working Group Last Call (WGLC) next month, pending updates.</li>
+<li><strong>JMAP S/MIME</strong>: Alexey to post new drafts incorporating discussion feedback for both received and sending S/MIME.</li>
+<li><strong>JMAP Tasks</strong>: Continue survey and analysis, with a focus on defining core features and an extensible capability model.</li>
+<li><strong>JSContact</strong>: Focus on alignment with Unicode name formatting and seeking guidance on the gender property. Begin implementation experience gathering.</li>
+<li><strong>IMAP Extended Search/Fetch</strong>: Alexey will push for adoption in the Extra WG.</li>
+<li><strong>Sieve Interoperability</strong>: Discussions to continue on the Extra WG mailing list.</li>
+<li><strong>Milestones</strong>: Update working group milestones to reflect revised timelines for JMAP S/MIME (adopted), JMAP Access to Address Books (April 2022), JMAP Sieve (early next year), and JMAP Quotas (pending Extra Quotas).</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

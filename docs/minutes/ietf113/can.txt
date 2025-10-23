@@ -1,0 +1,63 @@
+**Session Date/Time:** 22 Mar 2022 09:00
+
+# can
+
+## Summary
+
+The Computing Aware Networking (CAN) BOF session explored the problem of optimizing computing and networking resources by dynamically steering traffic to appropriate computing instances, considering both routing and computing resource metrics, as well as service affiliations. The session highlighted the importance of this problem through various use cases, discussed existing solutions and their limitations, and presented two potential solution approaches: a load balancer based model and a Dynamic Anycast (Dyncast) architecture. A core theme was the need for joint optimization and the challenge of integrating real-time compute and network metrics for intelligent traffic steering, particularly in operator-controlled edge environments. While the use cases were generally considered important, there was significant debate regarding whether existing technologies are sufficient, whether this work belongs in the IETF, and if so, in which working group. A strong sentiment emerged against injecting this work into the network underlay.
+
+## Key Discussion Points
+
+*   **Problem Statement & Motivation:**
+    *   CAN aims to optimize computing and networking resources by steering traffic based on routing metrics, computing resource metrics, and service affiliations.
+    *   The goal is to transition from research to early engineering.
+    *   Focus on use cases where operators control both network and computing resources (e.g., edge deployments).
+*   **Existing Industry Initiatives:**
+    *   **ETSI MEC (Multi-Access Edge Computing):** Evolves from mobile to multi-access (fixed/fiber) edge computing, focusing on contextual information, proximity, and distributed applications. Integrates with 3GPP (e.g., 5G core UPF) and can influence traffic steering via local breakouts.
+    *   **ITU-T CNC (Computing Network Convergence):** Focuses on advanced services (Beyond 5G) with high mobility and time-varying features, requiring compute awareness, fast routing, and flexible addressing.
+    *   Other initiatives include Linux Foundation and GSMA (Operator Global Platform for federation).
+*   **Use Cases:**
+    *   Rapid growth of integrated ICT infrastructure by operators, deploying diverse compute resources at the edge.
+    *   User demands for low latency, high reliability (e.g., VR, live broadcast) and stable experience across locations.
+    *   **"Closest is not best" Scenario:** A site geographically closest to a user may lack sufficient (dynamic or specific hardware like GPU) computing resources, necessitating traffic steering to a more distant but capable site.
+    *   Examples include mobile users temporarily moving to remote areas with limited local compute, or temporary high-load events (e.g., shopping festivals).
+    *   Applications like VR, intelligent transport, and connected cars require both low latency and high/specific computing resources, making joint optimization critical.
+*   **Gap Analysis & Requirements:**
+    *   **DNS-based solutions (e.g., GSLB):** Suffer from stale cached information, layer 7 decision slowness, high overhead for frequent health checks, and lack combined load/latency consideration.
+    *   **Load Balancers:** Single-site LBs have single points of failure and non-optimal network paths; per-site LBs lack inter-site balancing.
+    *   **Identified Gaps:** Lack of dynamicity for instance affinity, potential for additional latencies/inefficiencies, complexity in scheduling, insufficient metric exposure/semantics, and security concerns (DDoS risk on resolution systems).
+    *   **Requirements:** Dynamic multi-access to edge sites (anycast), joint network and compute metrics (with potential for a compute semantic model), effective resource representation, interfaces between network/compute components, session/service continuity, and resource management.
+*   **Potential Solution 1: Load Balancer Based:**
+    *   Load balancers (LBs) are "traffic cops" distributing requests based on server workload and health, ensuring high availability and session persistence.
+    *   Modern LBs support service discovery, health checks, and intelligent algorithms (e.g., keeping traffic within zones).
+    *   Network layer can provide strict SLA guarantees (bandwidth, latency) via traffic engineering or slicing.
+    *   **Proposed integration:** LBs (overlay) can abstract applications from the network and, with input from a network controller on path SLAs, combine this with compute load to choose the optimal site.
+    *   An architecture with LBs deployed at ingress points (near UPF) and a Global Load Balance Controller (collecting info from service instances and network controller) was presented.
+*   **Potential Solution 2: Dynamic Anycast (Dyncast) Architecture:**
+    *   Proposes "Dyncast Service Identifiers" (DC, anycast IPs for services) and "Dyncast Instance Identifiers" (DID/BID, unicast IPs for specific service instances).
+    *   **Distributed Mode:** "D-routers" (Dyncast-capable nodes) are aware of compute resource status (collected by "Dyncast Metric Agents" - DMA) and distribute this information. Ingress D-routers combine network and compute metrics to make optimal forwarding decisions.
+    *   **Centralized Mode:** A Compute Resource Management Platform collects resource status and feeds it to a Network Controller for decision-making.
+    *   **Traffic Steering:** Ingress D-router rewrites packet destination from the anycast DC to the unicast DID of the chosen instance.
+    *   **Flow Affinity:** A binding table in the ingress D-router can maintain session continuity by consistently mapping flow identifiers to a specific DID.
+*   **Open Discussion Themes:**
+    *   **Encapsulation vs. IP Architecture:** Strong concerns that Dyncast's proposed destination address rewriting is not permitted in IP architecture without encapsulation/tunnels, which would then make it an existing overlay solution rather than new routing work.
+    *   **Metric Challenges:** Difficulty in defining, measuring, normalizing, and comparing diverse metrics (CPU load, GPU, memory, etc.) for path computation, especially for fast-changing states (milliseconds). Suggestion for IPPM WG if it's a new performance metric.
+    *   **"Compute" Definition:** Need clearer definition of "compute" duration (milliseconds vs. hours) and scope (local vs. accessible from anywhere) to differentiate from existing CDN problems.
+    *   **3GPP vs. IETF Scope:** Discussion on whether proposed solutions overlap with existing 3GPP mechanisms (e.g., UPF selection) and if so, whether it should remain 3GPP work or how IETF work would interoperate.
+    *   **Underlay vs. Overlay:** A clear preference from routing experts to avoid injecting this work into the network underlay. Load balancers are an overlay solution.
+    *   **Standardizing Load Balancers:** A suggestion that perhaps the actual gap is the lack of standardization for currently proprietary load balancer control and metrics.
+    *   **Fundamental Problems:** An argument that the community needs a venue to discuss fundamental problems like mobility, diverse routing goals (beyond just "where"), and avoiding telco-specific architectural constraints being pushed into the IP world.
+
+## Decisions and Action Items
+
+No formal decisions were made regarding the establishment of a working group or specific architectural approaches. The AD noted that the proponents received a significant amount of valuable input and "homework."
+
+## Next Steps
+
+*   **Continue Discussion on Mailing List:** Participants are encouraged to continue the conversation on the `dimecast@ietf.org` mailing list, particularly by moving comments from the chat.
+*   **Clarify Requirements and Scope:** Proponents need to refine and clarify the requirements, especially regarding the definition of "compute," the specifics of session/flow continuity in a networking context, and the distinction from existing CDN solutions.
+*   **Address Architectural Concerns:** The Dyncast proponents need to address the fundamental architectural concerns raised, particularly regarding destination address rewriting in the IP underlay vs. using encapsulation in an overlay.
+*   **Define Metrics:** Significant work is needed to define the computing metrics, how they are measured, represented, normalized, and efficiently disseminated/used in decision-making.
+*   **Evaluate Existing Solutions Thoroughly:** Proponents should conduct a more detailed analysis of existing solutions (e.g., ALTO, 5G packet core/control plane, hyperscaler practices) to clearly articulate the remaining gaps that IETF work would address.
+*   **Determine IETF Work Area:** Further discussion is needed to determine if this is IETF work, and if so, which working group(s) are appropriate (e.g., Routing Area for metric injection/use, IPPM for performance metrics, or other areas for overlay solutions/application-network interaction).
+*   **Focus on Overlay vs. Underlay:** Future proposals should explicitly consider overlay architectures given the strong feedback against underlay modification.

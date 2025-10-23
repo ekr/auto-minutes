@@ -1,0 +1,75 @@
+**Session Date/Time:** 25 Jul 2022 17:30
+
+# tsvarea
+
+## Summary
+
+The tsvarea session focused on a proposal to address long-standing challenges in standardizing congestion control algorithms within the IETF. Martin Duke, a Transport Area Director (AD), presented a problem statement highlighting difficulties in getting congestion control documents through the IETF process, the prevalence of unilaterally deployed solutions, the outdated RFC 5033, and the need for a unified approach across multiple transports (TCP, QUIC, DCCP, SCTP). The proposed solution involves strengthening the ICCRG for experimental RFCs and chartering a new IETF working group to revise the process and standardize new congestion control algorithms. While some community members expressed concerns about the fundamental premise and potential for "busy work," there was strong support for the initiative to revise RFC 5033 and create a dedicated forum for congestion control discussions, with significant interest in contributing to related drafts.
+
+## Key Discussion Points
+
+*   **Transport Area Update:** Martin Duke provided a brief overview of progress in various working groups (QUIC, NFSd4, MASK rechartering), highlighted recent RFCs (H3, IPPM, SCTP revision, TCP 793bis), and called for volunteers for the Transport Area Review Team.
+*   **Area Director Nomination:** Zahid and Martin encouraged community members to nominate themselves or others for the upcoming Transport Area Director position.
+*   **Notable Side Meetings:**
+    *   **OpenSSL & QUIC:** A side meeting was announced to discuss community discontent regarding OpenSSL's QUIC support, with a possible path involving forking OpenSSL to Apache.
+    *   **IoT OPS (Defined Trust Transport):** A presentation by Kathleen Nichols and Van Jacobson on "Defined Trust Transport" for limited domains was noted as having significant transport elements.
+*   **Open Mic:** No non-congestion control topics were raised during the open mic session.
+
+### Discussion on the Congestion Control Problem and Proposed Working Group
+
+*   **Problem Statement (Martin Duke):**
+    *   **Difficulty in Standardization:** The process for standardizing congestion control is arduous, leading many to deploy solutions at scale without IETF ratification.
+    *   **Outdated Standards:** NewReno is the only proposed standard, yet it represents a minority of deployed TCP traffic.
+    *   **ICCRG Output:** The ICCRG (IRTFO) is not consistently producing documents.
+    *   **Multiple Transports:** Congestion control discussions are historically tied to TCP, but QUIC, DCCP, and SCTP now also require similar mechanisms.
+*   **Proposed Two-Pronged Strategy:**
+    1.  **Beef up ICCRG:** Potentially add a co-chair and expand its scope to include more experimental RFC production.
+    2.  **Charter a new IETF Working Group:**
+        *   **Short-term Goal:** Revise the current process (RFC 5033 bis).
+        *   **Long-term Goal:** Be open to standards-track proposals for new congestion control algorithms.
+*   **Community Discussion on Problem Agreement:**
+    *   **Jonah (Carmagenly stance):** Questioned the fundamental problem definition. Argued that congestion control is unilateral (does not require multi-party agreement) and deployed solutions (BBR, Compound TCP, FAST) often lack incentive to undergo IETF standardization due to continuous evolution and lack of "interoperable standard" value. Also noted that TCPM/TSVWG historically handled multi-transport issues.
+    *   **Jonathan:** Counter-argued that congestion control is *not* unilateral, as it interacts with other CPs sharing bottlenecks.
+    *   **Gorry:** Agreed RFCs are old and need updating, but highlighted the difficulty in measuring impacts on other flows.
+    *   **Torellis:** Emphasized the risk of duplicated work between QUIC and TCP, advocating for a modular approach to congestion control to avoid protocol-specific siloing.
+    *   **Matt (Co-chair QUIC):** Stressed the importance of distinguishing between **loss recovery** (often protocol-specific, e.g., in QUIC) and **congestion control**. Suggested loss recovery might be out of scope for a general CC WG.
+    *   **David:** Agreed there's a problem, noting distinct congestion dynamics in access networks, backbones, and data centers, with data center CPs often struggling in the IETF context due to their specific optimizations.
+    *   **Vidya (Apple):** Expressed strong interest in publishing standards-track congestion control, challenging the dominance of NewReno as the sole standard and noting the need for a proper venue for L4S congestion control, which currently doesn't fit solely within TCPM.
+    *   **Bernard:** Supported the revision of RFC 5033 as a clear, initial step.
+    *   **Torellis:** Suggested accommodating experimental RFCs in the new WG, potentially serving as a hub for academic research and allowing more rapid development for controlled networks (satellite, industrial, IoT).
+    *   **Zahid (AD):** Noted that experimental RFCs could come from IRTF, and any IETF WG would likely have a high bar for deployment and support.
+    *   **Jonathan:** Reaffirmed NewReno's importance as a minimum standard to prevent congestion collapse.
+
+### Discussion on Proposed Charter (Strawman)
+
+*   **Administrative Work Items:**
+    *   **RFC 5033 bis:** Revise the 15-year-old document to reflect the modern internet landscape, considering the trade-offs between performance gains and impact on existing users.
+    *   **Framework for Multiple Transports:** Develop a mechanism to accommodate congestion control across TCP, QUIC, DCCP, SCTP, etc. (e.g., how to standardize BBR for one transport and apply it to others).
+*   **Standardization Goals:**
+    *   The WG would be open to standardizing existing, stable informational RFCs (e.g., DCTCP) and potentially new algorithms once they mature from experimental stages.
+    *   The group would not remain open indefinitely solely for new algorithms, but would close once administrative tasks are complete if no mature algorithms are presented.
+*   **Scope:** The strawman charter proposed a broad scope including media, multipath, data centers, and IoT congestion control.
+    *   **Ian (Google):** Supported the charter with **loss recovery removed** from scope, noting issues with Cubic/BBR not having applicable QUIC specifications.
+    *   **Jonah:** Continued to question the fundamental premise, fearing the group would become "busy work" without clear input documents (e.g., BBR, Compound TCP, new loss recovery mechanisms). Argued that current IETF templates are not suited for the dynamic nature of congestion control.
+    *   **Martin:** Clarified that immediate standardization targets are well-established algorithms like Cubic (for non-TCP) and DCTCP. Other emerging algorithms like BBR/Prague would likely first go through experimental RFCs.
+    *   **Gorry:** Expressed concern that the broad scope (multipath, IoT, data centers) treated these as research problems rather than immediate standardization targets.
+    *   **Bob Briscoe (Independent):** Suggested expanding the scope to include **Active Queue Management (AQM)** due to shared expertise and problem-solving space (e.g., FQ-Coddle, PI, dual PI-squared).
+*   **Call for Engagement:** Attendees were encouraged to file issues on the GitHub repository for the proposed charter and continue discussions on the `tsvarea` mailing list.
+*   **Show of Hands:** A poll on interest in co-authoring drafts (RFC 5033 bis, multi-transport framework) showed significant positive interest (approx. 13 participants).
+*   **Jonah's Concluding Remarks:** Reiterated the need for a dynamic engagement model that supports community building and diverse formats (presentations, discussions) beyond traditional IETF standards documents, advocating for a broader conversation about how the IETF engages with the active congestion control space.
+
+## Decisions and Action Items
+
+*   **Decision:** There is a general consensus on the existence of a problem with the current IETF process for standardizing congestion control algorithms. There is strong, though not unanimous, support for proceeding with the idea of establishing a dedicated working group to address these issues.
+*   **Action Items:**
+    *   **Community Discussion:** Continue discussions on the proposed working group and charter on the `tsvarea` mailing list.
+    *   **Charter Feedback:** File specific, concrete issues and proposed changes on the GitHub repository for the strawman charter document.
+    *   **Author Recruitment:** Individuals interested in co-authoring initial drafts (e.g., RFC 5033 bis, framework for congestion control across multiple transport protocols) are encouraged to contact the Transport Area Directors (ADs).
+    *   **AD Review:** The ADs will review the discussion results, chat logs, and community feedback to determine the next steps for the working group proposal.
+
+## Next Steps
+
+*   **Charter Refinement:** The proposed working group charter will be refined based on feedback received via the `tsvarea` mailing list and GitHub issues.
+*   **BoF Decision:** The ADs will assess the level of interest and consensus to decide whether a Birds of a Feather (BoF) session is required at IETF 115, or if the proposal can proceed directly to chartering.
+*   **Draft Development:** Efforts will be made to organize authors and initiate the development of initial drafts, particularly for the RFC 5033 revision and the multi-transport framework.
+*   **ICCRG Collaboration:** Engage with the ICCRG and IRTF Chair to explore options for strengthening the ICCRG's role in producing experimental RFCs related to congestion control.

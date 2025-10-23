@@ -1,0 +1,63 @@
+**Session Date/Time:** 23 Mar 2022 12:00
+
+# taps
+
+## Summary
+
+The taps working group session provided updates on existing documents, discussed the upcoming Working Group Last Call (WGLC) for the Implementation draft, and presented a new QUIC mapping document. There was strong support for adopting the QUIC mapping, and a proposal to add a new charter milestone for general protocol mapping documents was introduced. Additionally, a presentation on the PanAPI system, a TAPS-like transport system developed for SCION, offered valuable feedback on the TAPS API design, particularly concerning property handling and the visibility of implementation flexibility.
+
+## Key Discussion Points
+
+*   **Chairs' Update and Document Status:**
+    *   Since IETF 111, the working group has held six interim meetings, focusing on resolving review comments.
+    *   The Architecture and API documents have concluded WGLC and received ART and internal deep reviews. The API document has only two open issues remaining.
+    *   The Implementation draft is nearing WGLC, with a handful of open issues still to be resolved.
+    *   An issue with author lists exceeding the recommended five for RFCs was resolved by some contributors electing to remove their names; justification has been prepared for the IESG for documents still above the limit.
+*   **Document Release Strategy:**
+    *   A suggestion was made to release the Architecture and Interface documents for IESG/IETF last call sooner, rather than waiting for the Implementation draft, to distribute the review workload and allow earlier feedback. The chairs acknowledged this for consideration.
+*   **Reviewers for Implementation Draft WGLC:**
+    *   A call for non-author reviewers for the Implementation draft's WGLC was made, emphasizing the need for fresh eyes to check for readability, consistency, and comprehension, rather than deep expertise.
+    *   Ideally, reviews should be completed within four weeks after IETF 113, around the time of the next interim. No volunteers stepped forward during the session.
+*   **Working Group Schedule:**
+    *   The working group plans monthly interims.
+    *   It was reaffirmed that the group will meet every other IETF, meaning no meeting at IETF 114, with the next IETF session planned for IETF 115.
+*   **Proposal for Protocol Mapping Milestone:**
+    *   A new milestone for the charter was proposed: "producing one or more protocol mapping documents." These documents would illustrate how higher-layer protocols or transport protocols would utilize the TAPS API. This would require Area Director approval.
+    *   HTTP was suggested as another protocol that could benefit from a mapping document due to its unclear mapping to TAPS.
+*   **QUIC Mapping Document Presentation (Tommy Pauly):**
+    *   Tommy Pauly presented a new draft (`draft-pauly-taps-quic-mapping-00`), providing an example of how TAPS can be used with QUIC.
+    *   The document defines what happens when TAPS API calls are used with QUIC, focusing on establishment, tear-down, and data transfer.
+    *   **Key Mapping:** A TAPS `Connection` maps to a QUIC `Stream`, and a TAPS `Connection Group` maps to a QUIC `Connection`.
+    *   It details how TAPS functions like `Initiate`, `Cloning`, `Sending`, `Receiving`, `Closing`, and `Aborting` map to QUIC stream and connection operations, including 0-RTT support for `Initiate`.
+    *   **Feedback:**
+        *   Suggestions to add a high-level summary of the mapping's use cases ("what is this good for / not good for") and to include QUIC datagram mapping within the document for completeness.
+        *   Discussion on how TAPS handles QUIC's `STOP_SENDING` frames; it's not a general TAPS API feature but could be exposed as protocol-specific metadata.
+        *   Confirmation that the mapping is sufficient for implementing an HTTP/3 client/server, possibly with protocol-specific metadata for stream IDs.
+        *   Clarification that TAPS `Connection Groups` can encompass both reliable (streams) and unreliable (datagrams) flows on the same underlying QUIC connection.
+        *   A need for "background information and surveys" within mapping documents, not just direct mappings, to address nuances.
+*   **PanAPI System Presentation (Thorben Krüger):**
+    *   Thorben Krüger presented PanAPI, a TAPS-like transport system developed for SCION (a future internet architecture focusing on path awareness).
+    *   PanAPI uses the TAPS API as its front-end and is implemented in Go, with a web-based scripting backend. It supports TCP, UDP, QUIC, and UDP/QUIC over SCION.
+    *   **Design Choices/Departures from TAPS:**
+        *   Explicit SCION support added.
+        *   **No Event System:** PanAPI leverages Go's native concurrency model (blocking calls, background dispatching for asynchronicity), finding an event-based system unintuitive for Go developers.
+        *   **Strongly Typed Objects for Properties:** A design choice to catch errors at compile time, which proved challenging.
+    *   Most TAPS concepts map well to SCION, but "active probing" (pinging alternative paths for latency) is a SCION-specific feature without a direct TAPS equivalent.
+    *   **Feedback for TAPS API:**
+        *   **Property Stages:** The TAPS drafts do not explicitly distinguish between mutable "preference" properties (settings) and converged "truth value" properties (results of selection). This dynamic behavior is difficult for statically-typed languages and could benefit from clearer conceptual distinction in the specification.
+        *   **Event System Visibility:** The current documentation on the flexibility to implement TAPS without an explicit event system (mentioned in an appendix) should be more prominently placed in the main document.
+
+## Decisions and Action Items
+
+*   **Decision:** The working group expressed strong support for adopting the QUIC Mapping document (`draft-pauly-taps-quic-mapping-00`).
+*   **Action Item:** Aaron Falk (chair) will solicit non-author reviewers for the Implementation draft WGLC via the mailing list.
+*   **Action Item:** The chairs will seek Area Director approval for the proposed new charter milestone for protocol mapping documents.
+*   **Action Item:** Tommy Pauly to consider incorporating QUIC datagram mapping and a high-level summary of the mapping's specific use cases into the QUIC mapping document.
+*   **Action Item:** Brian Trammell to address GitHub issue #1009, clarifying that TAPS implementations are not strictly required to be event-based, aiming for a PR by the end of the IETF break.
+*   **Action Item:** Rhys Engert (chair) to ensure the QUIC mapping document is properly associated as a related document in the DataTracker.
+
+## Next Steps
+
+*   The Implementation draft WGLC is planned to open after IETF 113, following resolution of current issues and securing reviewers.
+*   Further discussion on potential protocol mapping documents (e.g., HTTP) is encouraged.
+*   The next working group interim meeting is tentatively scheduled for early May.

@@ -1,0 +1,56 @@
+**Session Date/Time:** 21 Mar 2022 12:00
+
+# sedate
+
+## Summary
+
+The sedate working group met to discuss the status of the draft, recent changes in versions 03 and 04, and several open issues. Key technical discussions revolved around the handling of named IANA time zones when their rules conflict with an RFC3339 offset, the potential need for critical vs. elective extension tags, and the definition of an initial extension. The IETF-ISO liaison process is nearing completion.
+
+## Key Discussion Points
+
+*   **IETF-ISO Liaison Update**: The IETF has made a selection and communicated it to ISO. ISO's formal vetting and voting process concludes next week, with an announcement expected mid-next week on the mailing list.
+*   **Draft Version 03 & 04 Updates**:
+    *   **Version 03**: Main new item was simplification, removing the concept of registering extension namespaces. Extensions are now registered directly; namespaces will arise by convention.
+    *   **Version 04**: Added support for offset time zones (fixed offsets, not IANA named zones) and clarified the meaning of named IANA time zones.
+*   **Conflict Between IANA Time Zone and RFC3339 Offset**:
+    *   **Issue**: When a named IANA time zone (e.g., `Europe/Paris`) is provided alongside an RFC3339 offset (e.g., `+01:00`), and the rules for the IANA time zone change such that the offset becomes inconsistent, how should implementations resolve the conflict? The draft currently states the IANA time zone implies using rules current at interpretation time, potentially conflicting with the explicit offset.
+    *   **Discussion Points**:
+        *   Some argued for trusting the RFC3339 offset as the primary reference, treating the IANA name as an informative hint, especially for applications without user interaction.
+        *   Others argued that if an IANA name is provided, the intent is for it to be a "moving target," meaning the time zone rules should take precedence, and the offset is merely historical.
+        *   The consensus leaned towards the handling being highly application-dependent and that the format should ideally *indicate* a conflict rather than implicitly resolving it.
+        *   Strong sentiment emerged that there needs to be an **explicit mechanism or default rule** to state which part (offset or IANA name) takes precedence in case of conflict, or a way to mark intent, rather than leaving it to a "best guess" by implementations. A suggestion was made to use a non-sensical offset (e.g., `-00:00`) as a marker for IANA zone precedence.
+*   **Critical vs. Elective Extensions**:
+    *   **Issue**: Should the extension syntax include a way to mark certain tags as "critical" (must be understood and acted upon, or the entire timestamp rejected) versus "elective" (can be ignored if not understood)? Current draft assumes all tags are optional/ignorable.
+    *   **Discussion**: There was a proposal for syntax (e.g., `!` prefix) to denote critical extensions. The definition of "reject" (treat as malformed/do not act on) was clarified. A drawback noted was that introducing this now might break existing "de facto" non-compliant implementations.
+*   **Draft Name**: Discussion on a more descriptive name, with "Extended RFC3339" being a contender.
+*   **Defining an Initial Extension**:
+    *   **Proposal**: To define at least one common extension within the draft to make it more practical for implementers.
+    *   **Suggested Extension**: A "calendar hint" based on Unicode TR/CLDR locale information (e.g., `@cal=hebrew`).
+    *   **Benefit**: This would force examination of character sets allowed for labels and values (alphanumeric vs. full Unicode).
+*   **ABNF Production Order**: Proposal to change the ABNF definition order from bottom-up (as in RFC3339) to top-down for readability. This was generally accepted as an editorial change.
+
+## Decisions and Action Items
+
+*   **Time Zone Conflict Resolution**: No concrete decision was made on the specific mechanism, but it was agreed that the working group needs to define an explicit behavior (e.g., a default interpretation or an explicit marker) for resolving conflicts between IANA time zones and RFC3339 offsets.
+    *   **Action**: Take the discussion on time zone conflict resolution and explicit markers to the mailing list and GitHub issue for further debate.
+*   **Critical Extensions**: No concrete decision was made on whether to include syntax for critical extensions.
+    *   **Action**: Continue the discussion on critical vs. elective extensions on the mailing list and GitHub issue.
+*   **Calendar Hint Extension**: The proposal to define a calendar hint extension was accepted.
+    *   **Action**: Ujwal to write a Pull Request (PR) for the calendar hint extension.
+*   **ABNF Order**: Agreed to change the ABNF production order from bottom-up to top-down.
+    *   **Action**: Carsten to update the draft with the reordered ABNF.
+*   **Milestones**:
+    *   The August 2021 milestone for draft adoption is complete (will be marked as resolved).
+    *   The December 2021 milestone for submission to IESG for publication is outdated and needs to be updated.
+
+## Next Steps
+
+*   **Mailing List / GitHub Discussion**: Actively participate in discussions on:
+    *   Resolving IANA time zone and offset conflicts (explicit markers, default behavior).
+    *   Including critical vs. elective extension tags.
+*   **Draft Development**:
+    *   Ujwal to draft text/PR for the calendar hint extension.
+    *   Carsten to update ABNF order.
+*   **Milestone Update**: The publication milestone will be rescheduled. A target of **June 2022** was tentatively suggested for publication.
+*   **Interim Meeting**: An interim meeting is tentatively planned for **end of May 2022** if needed to resolve outstanding critical issues, particularly the time zone conflict. Mailing list discussion will be attempted first.
+*   **Blue Sheets**: Attendees who have not yet logged into MeetEcho were requested to do so for blue sheet recording.

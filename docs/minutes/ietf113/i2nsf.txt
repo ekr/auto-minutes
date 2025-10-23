@@ -1,0 +1,63 @@
+**Session Date/Time:** 24 Mar 2022 12:00
+
+# i2nsf Meeting Minutes - IETF 113
+
+## Summary
+
+The i2nsf working group met to discuss the status of existing drafts, particularly those under IESG review and those preparing for working group last call, and to explore potential future work items for a charter update. Significant progress was reported on drafts nearing IESG approval. A new draft on remote attestation was presented, initiating discussion on its scope and relationship with existing RATS work and virtualization environments. The consistency between consumer-facing and NSF-facing interfaces was clarified, and the registration interface draft was deemed ready. A wide range of potential future work, including security automation, container support, DLT, and new protocols, was proposed, prompting a discussion on scope management and prioritization.
+
+## Key Discussion Points
+
+*   **Status of Drafts under IESG Review**:
+    *   **Capability Data Model**: Has sufficient ballots; requires clearing existing "discuss" comments.
+    *   **NSF Facing Interface**: Same situation as the Capability Data Model; sufficient ballots, "discuss" comments need clearing.
+    *   **Monitoring Data Model**: Has "discuss" comments and still needs more ballots.
+    *   Paul indicated that he has addressed most "discuss" comments for these drafts, and expects them to move forward shortly. Roman noted that incoming SEC AD Ben's discusses would be adjudicated soon.
+
+*   **i2nsf Remote Attestation Interface Yang Data Model (draft-pan-i2nsf-remote-attestation-interface-yang)**:
+    *   **Rationale**: Draft name changed from "Trust Enhanced i2nsf" for better alignment with potential i2nsf charter and to avoid ambiguity.
+    *   **Granularity**: Defined three components for remote attestation: NSFs, the basic platform carrying the NSF, and the root of trust (e.g., TPM, TE).
+    *   **Interface**: Revised based on granularity, retaining RPC and notification functions. A temporary interface for reference values was added as RATS hasn't defined one yet.
+    *   **Relationship with RATS**: i2nsf focuses on NSF attestation within the i2nsf architecture, with the security controller as a potential verifier/relying party. RATS defines the basic architecture and evidence types.
+    *   **Necessity**: Driven by security (inappropriate deployment, attacks), practicability (ASF-specific target/granularity, unified interface for varied roots of trust), and future extensions (zero trust, SASE, security automation, decentralized security intelligence sharing).
+    *   **Current Interface**: Focuses on NSF remote attestation and reference value interfaces.
+    *   **Interface Details**: Proposed three groupings: NSF, platform, and root of trust remote attestation, mapping to RPCs and notifications. References RATS-related YANG models like `char-attestation-procedure-yang`.
+    *   **Issues for Discussion**:
+        *   **Trust Model**: Which components in the i2nsf architecture (NSF, security controller) require attestation?
+        *   **Granularity**: Definition of layers (root of trust -> platform -> service/application). Discussed challenges with vTPM in virtualization, preferring measurement of VM images loaded onto a hypervisor.
+    *   **Discussion Feedback**:
+        *   **Paul**: Work is important for protecting against supply chain attacks, aligns with previous i2nsf YANG models, feasible for future hackathons.
+        *   **Wepan**: Inquired about overlap with ETSI NFV's attestation for virtualization; Panlin will research. Suggested considering SASE integration in the future.
+        *   **Roman**: Clarifying questions on shimming down to TPM in virtualized environments and why existing `char` YANG models are insufficient. Panlin explained TPN's maturity issues for virtualization and `char`'s device-centric rather than NSF-centric attestation.
+        *   **Joao**: Noted no incompatibility with ETSI NFV work, suggesting i2nsf could build on ETSI's assurance levels. Agreed that `char`'s mechanisms are applicable but i2nsf needs to define claims, verification, and policies in its context, similar to TEE attestation work in TIP.
+
+*   **Consistency of Consumer-Facing Interface (CFI) and NSF Facing Interface (NFI) Data Models**:
+    *   **Paul's Update**: Presented a comparison showing top-level and low-level YANG tree similarities.
+    *   **Key Differences**: CFI omits `default-action` and `priority` to keep it simple for high-level policy specification, allowing the Security Policy Translator to handle these. CFI also omits `allow-connection` duration, simplifying policy for operators.
+    *   **Translation**: Endpoint groups and threat prevention information in CFI are for translation purposes. User/device groups in CFI are translated into IP addresses by the Security Controller.
+    *   **Conclusion**: CFI and NFI YANG data models are synchronized and can be easily translated by the Security Controller. Demonstrated feasibility through hackathon projects. Deemed CFI ready for WG Last Call.
+
+*   **Registration Interface Data Model (draft-paul-i2nsf-registration-interface-yang)**:
+    *   **Basis**: Primarily imports elements from the Capability Data Model.
+    *   **Features**: Provides NSF capability registration (by a development/management system) and querying (by security controller).
+    *   **Content**: Includes NSF capabilities (from the capability data model), performance capabilities, and access information (IP, port for NSF).
+    *   **Conclusion**: The draft is considered almost complete, with minor XML syntax updates based on the latest Capability Data Model. Deemed ready for WG Last Call.
+
+*   **Charter Update Discussion (Potential New Work Items)**:
+    *   **Application Interface**: To enable security management automation by providing monitoring data from NSFs to an "Attestation Analyzer" (using ML for attack/problem detection), which feeds back to the Security Controller for policy augmentation/creation.
+    *   **Supply Chain / Insider Attack Prevention**: Incorporate remote attestation, auditing, and Distributed Ledger Technology (DLT).
+    *   **Container Deployment**: Extend architecture and YANG models to support container-based (e.g., Kubernetes) deployments.
+    *   **New Protocols**: Accommodate new transport protocols like QUIC and HTTP/3 in existing CFI/NFI/Capability models.
+    *   **Scope Concerns**:
+        *   **Roman**: Expressed concern that the enumerated list of work items constitutes a "very, very large" scope, with each item potentially being a working group in itself (e.g., container orchestration, DLT). Noted that i2nsf has taken six and a half years to deliver its first set of drafts, urging careful prioritization.
+        *   **Diego**: Agreed on the complexity, especially for containers (Kubernetes, serverless), which may require rethinking architectural assumptions and trust models. Emphasized leveraging existing work from other groups (DLTs, attestation) rather than reinventing.
+
+## Decisions and Action Items
+
+*   Paul has addressed most "discuss" comments for the **Capability Data Model**, **NSF Facing Interface**, and **Monitoring Data Model** under IESG review, clearing the path for their progression.
+*   The **Consumer-Facing Interface Data Model** and **Registration Interface Data Model** are considered technically ready for Working Group Last Call.
+
+## Next Steps
+
+*   Initiate Working Group Last Call for the **Consumer-Facing Interface Data Model** and **Registration Interface Data Model**.
+*   Continue discussion on the mailing list regarding the proposed new work items for a potential charter update. The community needs to prioritize and define a manageable scope for future work, building on existing efforts from other working groups where possible.

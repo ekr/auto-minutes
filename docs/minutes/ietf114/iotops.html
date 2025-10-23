@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="iotops.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-IOTOPS-20220729-1630">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 29 Jul 2022 16:30</p>
+<h1>iotops</h1>
+<h2>Summary</h2>
+<p>The iotops working group meeting, held during a late Friday slot, covered several critical topics in IoT operations and security. Key discussions included the various methods for disseminating attestation information, a brief report on the likely formation of the SNACK working group, proposals for hardware-based authentication for ultra-massive IoT, a new transport protocol (Deft) integrating trust management, a practical evaluation of an IoT exposure analyzer (Issue) against a Mirai variant, and a draft on a threat model for IoT networks. The session concluded with a decision to hold a virtual interim to further discuss the <code>iot-threats-brendan</code> draft and encourage broader participation for its review and refinement.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Opening and Logistics</strong></p>
+<ul>
+<li>The session began with the chair acknowledging the late slot and the absence of co-chair Alexey.</li>
+<li>A call was made for a Jabber scribe and note-takers.</li>
+<li>The agenda was briefly reviewed, highlighting discussions on attestation, SNACK, hardware-based authentication, Deft, an IoT exposure analyzer, and the working group's future direction.</li>
+</ul>
+</li>
+<li>
+<p><strong>Attestation Information Dissemination (Hannes Tschofenig)</strong></p>
+<ul>
+<li><strong>Presentation</strong>: Hannes presented on models for passing evidence and attestation results, specifically the &quot;background check model&quot; from the RATS architecture. He noted diverse approaches being explored across the IETF and industry:
+<ul>
+<li>Embedding information in TLS handshakes (DLS working group).</li>
+<li>Using X.509 certificates (seen in Big Kicks WG).</li>
+<li>Higher-layer protocols like HTTP (Intel's proposal) and CoAP.</li>
+</ul>
+</li>
+<li><strong>Comparison Document</strong>: Hannes and NetSec agreed to work on a comparison document to highlight subtle differences and use-case suitability of these approaches. He suggested iotops as a potential home for this document, given its cross-group nature.</li>
+<li><strong>Privacy and Confidential Computing</strong>: Mentioned privacy aspects inherent in these use cases and collaboration with the Confidential Computing Consortium, including upcoming PoC implementations.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Jari Arkko</strong>: Supported the work, emphasizing the need for standardization and available implementations/libraries, potentially suggesting a hackathon to experiment with the software stack. Also raised concerns about interoperability if too many different options emerge.</li>
+<li><strong>Michael Richardson</strong>: Expressed interest in the document, especially for IoT devices, and suggested it aligns with the working group's charter. Supported a hackathon.</li>
+<li><strong>Hank</strong>: Highlighted the overloaded term &quot;attestation,&quot; noting it often refers to &quot;endorsement&quot; rather than evidence-based attestation, which can lead to miscommunication. Suggested including HTTP-A in the comparison.</li>
+<li><strong>Decision</strong>: Hannes confirmed he would initiate a &quot;nucleus&quot; document for the comparison.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>SNACK BOF Report (Michael Richardson)</strong></p>
+<ul>
+<li><strong>Report</strong>: Michael provided a brief update on the &quot;Service Network Access for Constrained Knowledge networks&quot; (SNACK) BOF held earlier in the week.</li>
+<li><strong>Outcome</strong>: Indicated that a working group is likely to be formed soon, with a well-discussed charter and problem statement. Noted its relevance to connectivity in home IoT networks.</li>
+</ul>
+</li>
+<li>
+<p><strong>Hardware-Based Authentication for IoT (Dirk von Hugo)</strong></p>
+<ul>
+<li><strong>Presentation</strong>: Dirk presented on authentication challenges for ultra-massive IoT, especially affordable household devices, where traditional methods like 802.1X are unsuitable due to human intervention requirements and cost.</li>
+<li><strong>Proposal</strong>: Proposed &quot;hardware-based authentication&quot; using out-of-band channels for device-to-access point authentication, such as video signals, LED lights, audio streams, gestures, or shapes. Mentioned <code>EAP-NOOB</code> as a precedent.</li>
+<li><strong>Requirements</strong>: Emphasized separate user/device identities, mutual authentication, simplicity, no pre-established relations, no pre-provisioned credentials, and support for one-directional out-of-band channels (e.g., radio signal sensing, IEEE Wi-Fi sensing, 3GPP for 5G/6G).</li>
+<li><strong>Next Steps</strong>: Asked for document review, aiming for adoption as a working group document.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Jan Vcelak</strong>: Offered to review the draft, noting his interest in <code>EAP-NOOB</code> and his work on a CBOR-based alternative.</li>
+<li><strong>Jari Arkko</strong>: Acknowledged the importance of out-of-band mechanisms. Raised concerns about the maturity of sensing technologies for practical application and highlighted the need for a robust security considerations section, particularly on proof of presence and simulation attacks.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Deft (Defined Trust Communications) (Catharine Meadows)</strong></p>
+<ul>
+<li><strong>Presentation</strong>: Catharine introduced Deft, a new transport protocol designed for limited IoT domains, aiming to address unmet security needs beyond device enrollment.</li>
+<li><strong>Key Ideas</strong>:
+<ul>
+<li>Integrates trust management into the transport layer, using &quot;trust schemas&quot; (rules compiled into a signed binary form) and &quot;chain of trust identities&quot; (roles, capabilities, attributes).</li>
+<li>Embraces a broadcast physical layer with topic-based pub-sub in the transport (not MQTT), allowing for order-of-N communication without brokers.</li>
+<li>Uses IPV6 link-local self-assigned addresses and IP6 multicast for rendezvous.</li>
+</ul>
+</li>
+<li><strong>Benefits</strong>: Enhanced security through enforcement of restricted roles/communication constraints, eliminates single points of failure, simplified addressing.</li>
+<li><strong>Trusted Execution Environments (TEEs)</strong>: Mentioned TEEs (e.g., TrustZone) as a way to harden security, though not strictly required.</li>
+<li><strong>Goal</strong>: Independent submission, informational RFC, seeking feedback and collaborators. Open-source reference implementation available.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Dave Taylor</strong>: Praised the use of TEEs in IoT and suggested presenting Deft to the Confidential Computing Consortium. Raised technical questions on roaming devices between networks/domains, discovery mechanisms in untrusted networks, and avoiding revealing trust domain membership.</li>
+<li><strong>Van Jacobson</strong>: Explained use of IP6 multicast for rendezvous and reconciliation of collections, using hash of trust zone identifier in the communication prefix.</li>
+<li><strong>Carsten Bormann (via chat)</strong>: Raised the &quot;secret handshake problem&quot; and the need for unlinkability, as linking transmissions of a trust schema hash could enable tracking.</li>
+<li><strong>Brenton Moran</strong>: Expanded on unlinkability, pointing out the broader challenge of traffic analysis and the &quot;stalker problem&quot; if trust domains are personally unique, suggesting that frequent changes to trust domains might be needed for mobile use cases.</li>
+<li><strong>Hank</strong>: Suggested that the discussion on scoping trust domains too narrowly, potentially creating surveillance vehicles, would be valuable content for the security considerations section of the document.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>IoT Exposure Analyzer (Issue) (Marcus do Vale)</strong></p>
+<ul>
+<li><strong>Presentation</strong>: Marcus presented results from running code tests of <code>Issue</code>, an IoT exposure analyzer, in a simulated home IoT network attacked by a Mirai variant.</li>
+<li><strong>Experiment</strong>: Used 112 simulated IoT devices (Docker BusyBox with vulnerable DNS server), building a network graph from <code>Mud</code> files. Compared <code>No Protection</code>, <code>Mud</code> (RFC 8520), and <code>Issue</code>.</li>
+<li><strong>Results</strong>: <code>Issue</code> successfully blocked all Mirai operation traffic (no DDoS packets generated/transmitted, no bots controlled, no new infections, no scanning), outperforming <code>Mud</code> and clearly superior to no protection.</li>
+<li><strong>Future Work</strong>: Expanding <code>Issue</code> to Smart Cities (better application understanding, more compute power) and Industrial IoT (critical systems, full understanding of application model, Modbus/Profibus networks).</li>
+</ul>
+</li>
+<li>
+<p><strong>Threat Model for IoT Networks (<code>iot-threats-brendan</code>) (Brenton Moran)</strong></p>
+<ul>
+<li><strong>Presentation</strong>: Brenton presented a revised draft outlining a threat model for IoT networks, emphasizing the need to know which threats a security architecture mitigates.</li>
+<li><strong>Content</strong>: Covers 10 top-level threats, guiding usability requirements, risks, mitigations, and technologies (9 covered, mostly IETF-developed or provisioning-related).</li>
+<li><strong>Limitations</strong>: Acknowledged the current threat model is minimal, missing transport protocols (TLS, DTLS, CoAP), and non-security aspects (e.g., human-readable formats for constrained nodes).</li>
+<li><strong>Call for Authors</strong>: Strongly encouraged more authors and input for a comprehensive document.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Michael Richardson</strong>: Not keen on current title, suggested it doesn't reflect content. Noted the abrupt ending of section two and lack of explicit security considerations (though the whole document is about security). Emphasized the need for &quot;actionable outcomes&quot; and clarity on the reader's next steps. Suggested the document could serve as a &quot;landing pad&quot; for IoT security. Proposed a virtual interim to focus on this document's purpose and scope.</li>
+<li><strong>Hank</strong>: Acknowledged that only two people had read the latest draft, indicating a need for broader review. Polled the room, and four attendees raised hands to commit to reviewing the document.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Attestation Comparison Document</strong>: Hannes Tschofenig and NetSec agreed to collaborate on a comparison document for various attestation approaches. Hannes will initiate this work.</li>
+<li><strong><code>draft-dirk-iotops-hardware-auth</code> Review</strong>: Jan Vcelak committed to reviewing the draft. The authors should consider Jari Arkko's feedback on the maturity of sensing technologies and the need for robust security considerations.</li>
+<li><strong><code>draft-moran-iotops-iot-threats</code> Review</strong>: Four attendees committed to reviewing the draft.</li>
+<li><strong>Virtual Interim for <code>draft-moran-iotops-iot-threats</code></strong>: A virtual interim meeting will be scheduled to have a more focused discussion on the document's content, purpose, and actionable outcomes, given its importance for the working group's direction.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Review and Comment</strong>: All interested parties are encouraged to read and provide comments on <code>draft-dirk-iotops-hardware-auth</code> and <code>draft-moran-iotops-iot-threats</code> on the working group mailing list.</li>
+<li><strong>Attestation Hackathon</strong>: Consider organizing a hackathon to experiment with the various attestation software stacks, as suggested by Jari Arkko.</li>
+<li><strong>Deft Feedback/Collaboration</strong>: Proponents of Deft are seeking feedback and potential collaborators. They may also present their work to the Confidential Computing Consortium.</li>
+<li><strong>WG Direction</strong>: The upcoming virtual interim for <code>iot-threats-brendan</code> will be crucial in shaping the future work and potential adoption of the document, and potentially guiding the working group's overall direction for the coming year.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

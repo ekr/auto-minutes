@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lsvr.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-LSVR-20220324-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 24 Mar 2022 09:00</p>
+<h1>lsvr</h1>
+<h2>Summary</h2>
+<p>The <code>lsvr</code> working group session covered the status of its core specification and proposals for new work. The main <code>BGP-SPF</code> specification (version 16) has secured IANA code points and is ready for submission to the IESG. Discussions are set to begin on re-chartering the working group to formally include Layer 2 L3DL (Layer 3 Discovery for L2) work. Two drafts were presented: an update on <code>BGP-SPF</code> flood reduction, which was simplified, and a new proposal for Layer 3 Neighbor Discovery, a &quot;cousin&quot; of L3DL tailored for data center BGP discovery. Technical discussions revolved around the specifics of these proposals, with calls for more mailing list engagement and clarification on the scope of future work within <code>lsvr</code>.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrivia</strong>:</p>
+<ul>
+<li>Noteworthy, anti-harassment policy, and code of conduct reminders were given.</li>
+<li>Meeting tools (Meetecho, Jabber) and minute taker (Victor) were confirmed.</li>
+</ul>
+</li>
+<li>
+<p><strong>Working Group Status</strong>:</p>
+<ul>
+<li>The primary <code>BGP-SPF</code> specification draft (version 16) has successfully secured IANA code points. The draft has undergone review and edits and is considered ready for submission to the IESG.</li>
+<li>The chairs announced plans to begin discussions next week on re-chartering the <code>lsvr</code> working group. The main goal of this re-chartering is to formally include the Layer 2 L3DL work as a core part of the working group's charter.</li>
+</ul>
+</li>
+<li>
+<p><strong>BGP-SPF Flood Reduction (Jaimo)</strong>:</p>
+<ul>
+<li>The draft was simplified by removing the &quot;group option&quot; from the Route Reflector (RR) model.</li>
+<li><strong>Revised Flooding Procedure (RR Model)</strong>: BGP-SPF speakers send link-state information to one or two RRs (even if multiple exist). The RR then forwards this information to other BGP speakers, reducing overall flooding. Details on RR selection (e.g., minimum ID) are in the draft.</li>
+<li><strong>Revised Flooding Procedure (Node Connection Model)</strong>: This remains unchanged, similar to IGP flooding reduction. Each node uses a defined flooding topology and only sends link-state updates to peers within that topology.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Alvaro inquired about the selection mechanism for RRs and the flooding topology, confirming these details are covered in the draft.</li>
+<li>Chair (Gunter) suggested more discussion on the mailing list to gauge interest and gather feedback before considering adoption of the draft.</li>
+<li>AC Lindem (Cisco Systems) commented that the work is consistent with the <code>lsvr</code> base specification, which had implicitly allowed for such flood reduction.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>L3 Neighbor Discovery (Randy Bush)</strong>:</p>
+<ul>
+<li>This draft is presented as a &quot;cousin&quot; of L3DL, specifically designed for IDR (BGP) discovery in data center environments, leveraging Layer 3 technology. It has not yet been customized for <code>lsvr</code>.</li>
+<li><strong>Philosophy</strong>: Designed to be &quot;boring,&quot; lockstep, non-probabilistic, and session-oriented, utilizing reliable protocols like TCP/TLS.</li>
+<li><strong>Mechanism</strong>: Uses a single UDP multicast hello for initial discovery to identify candidates for establishing real TCP/TLS sessions.</li>
+<li><strong>Features</strong>: Resumable sessions, no retransmission needed (TCP handles it), minimal state maintained, and only changes are transmitted.</li>
+<li><strong>Goal</strong>: Discover neighbors, learn Layer 3 addressing, and bootstrap BGP. It is not a routing protocol itself.</li>
+<li><strong>Implementation Note</strong>: The draft does not specify how BGPLS communicates parameters to BGP, as implementers typically handle this internally.</li>
+<li><strong>Hello PDU</strong>: Includes version, flags (TCP/TLS, self-signed/CA-based certs), and a port. The peer with the lowest IP address initiates the TLS session.</li>
+<li><strong>Security (TLS)</strong>: Supports &quot;Trust on First Use&quot; (for self-signed certificates) or CA-based keying (expected for production deployments), providing integrity.</li>
+<li><strong>Session Management</strong>: Within the TCP/TLS session, an L3 neighbor discovery session uses a nonce (session ID) and serial numbers for checkpointing and resumption. Miscellaneous attributes are operator-defined. All PDUs are acknowledged.</li>
+<li><strong>Address PDUs</strong>: Conveys IPv4, IPv6, MPLSv4/v6 addresses, including flags for announcement/withdrawal, primary/secondary, overlay, and loopback addresses.</li>
+<li><strong>Upper Layer Protocol (ULP) Configuration PDU</strong>: Currently defined only for BGP, carrying minimal configuration parameters (ASN, peering address, authentication data, GTSM TTL check) needed to bootstrap BGP without duplicating <code>BGP OPEN</code> messages.</li>
+<li><strong>Open Questions (from IDR)</strong>: How are parameters passed to BGP? How is BGP started/restarted/stopped, and when is discovery finished? Is restartability truly needed?</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>AC Lindem (Cisco Systems) clarified that the protocol should only provide hints, not install routes, and that clients of the discovery protocol (e.g., BGP) should manage session state (stop/restart).</li>
+<li>Gunter suggested including BFD (Bidirectional Forwarding Detection) negotiation and auto-discovery alongside BGP negotiation.</li>
+<li>Karthik agreed that the solution could benefit from auto-discovering and auto-negotiating BFD.</li>
+<li><strong>Working Group Scope for L3DL</strong>: Alvaro clarified that the WG's plan, agreed with IDR chairs, is to charter for the <strong>Layer 2 L3DL</strong> work. The <strong>Layer 3 version</strong> (Randy's draft) requires more conversation and re-syncing with IDR chairs before potentially being included in this WG's scope.</li>
+<li><strong>Multicast Containment</strong>: AC Lindem inquired how the multicast hello is contained. Randy explained it's for point-to-point links and uses GTSM TTL. Karthik added that using link-scoped &quot;all routers&quot; multicast addresses (IPv4/v6) would ensure containment to a single link.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: The main <code>BGP-SPF</code> specification draft (version 16) is ready for IESG submission.</li>
+<li><strong>Decision</strong>: The <code>lsvr</code> working group will initiate the re-chartering process to formally include the Layer 2 L3DL work.</li>
+<li><strong>Action Item</strong>: Chairs to submit the <code>BGP-SPF</code> draft (version 16) to the IESG shortly.</li>
+<li><strong>Action Item</strong>: Chairs to start discussions on the <code>lsvr</code> working group re-charter (focusing on Layer 2 L3DL) beginning next week.</li>
+<li><strong>Action Item</strong>: Jaimo to prompt discussion on his <code>BGP-SPF</code> Flood Reduction draft on the <code>lsvr</code> mailing list to gather feedback before requesting adoption.</li>
+<li><strong>Action Item</strong>: Gunter to send an email to the <code>lsvr</code> mailing list proposing the inclusion of BFD negotiation/auto-discovery capabilities in the Layer 3 Neighbor Discovery protocol.</li>
+<li><strong>Action Item</strong>: Chairs (Alvaro) to consult with IDR chairs regarding the potential scope and progression of the Layer 3 Neighbor Discovery draft within the <code>lsvr</code> working group.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The <code>BGP-SPF</code> specification will be advanced to the IESG.</li>
+<li>The <code>lsvr</code> working group will engage in discussions to redefine its charter, with the intent of incorporating Layer 2 L3DL.</li>
+<li>Further technical discussions on <code>BGP-SPF</code> Flood Reduction and the Layer 3 Neighbor Discovery (including BFD integration and its placement within the IETF) will continue on the mailing list.</li>
+<li>Consultations with the IDR working group chairs will determine the path forward for the Layer 3 Neighbor Discovery work.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

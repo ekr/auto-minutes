@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="opsec.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-OPSEC-20220726-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 26 Jul 2022 17:30</p>
+<h1>opsec</h1>
+<h2>Summary</h2>
+<p>The opsec session featured three presentations: a working group draft on Indicators of Compromise (IoCs), an individual draft on Source Address Validation (SAV) using AS-Path and RPKI (BAR-SAV), and an individual draft on attributing Internet measurement traffic. The working group draft on IoCs is nearing Working Group Last Call, while the other two drafts were presented for discussion and potential adoption. Discussions covered technical aspects, deployability, and potential side effects of the proposals.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Indicators of Compromise (IoCs) - draft-ietf-opsec-indicators-of-compromise</strong></p>
+<ul>
+<li><strong>Motivation:</strong> To document a widely used operational security technique, share best practices with the IETF, raise awareness for protocol designers regarding IoC usability, and bring cyber defense expertise into the IETF.</li>
+<li><strong>Definition:</strong> IoCs are artifacts (tactics, techniques, tools, IP addresses, domain names, hashes) used to identify attackers. The &quot;Pyramid of Pain&quot; illustrates the inverse relationship between the ease of finding an IoC and the difficulty for an attacker to change it.</li>
+<li><strong>Draft Content:</strong> Covers fundamentals (Pyramid of Pain, IoC lifecycle), effective usage, benefits, case studies, limitations (e.g., lightweight defense, precision vs. effort), and best practices for sharing IoCs.</li>
+<li><strong>Status:</strong> The draft has undergone several rounds of review and is considered stable. The authors are seeking final reviews.</li>
+<li><strong>Discussion:</strong> The chair emphasized the need for volunteers to review the draft during Working Group Last Call, stating that silence should not be taken as an indicator of consensus to progress.</li>
+</ul>
+</li>
+<li>
+<p><strong>Source Address Validation (SAV) with AS-Path and RPKI (BAR-SAV) - draft-lubachev-opsec-sav-aspa-raw</strong></p>
+<ul>
+<li><strong>Problem Statement:</strong> Address spoofing remains a significant problem after 22 years. Existing SAV techniques, primarily relying on BGP inferences (like RFC 8704), are often insufficient because BGP's reachability signal isn't designed for data plane forwarding validation. They fail in common scenarios like route filtering, traffic engineering, and Direct Server Return (DSR) use cases. Adoption rates for SAV remain low (around 15%).</li>
+<li><strong>Proposal (BAR-SAV):</strong> An improvement over RFC 8704 that augments BGP information with data from AS-Path Authorization (ASPA) and RPKI Route Origin Authorizations (ROAs). The key principle is deployability without requiring changes to existing protocols on the wire.</li>
+<li><strong>Algorithm:</strong> A two-phase process:
+<ol>
+<li><strong>Discover Customer Cone:</strong> Starting from the local AS, infer customer relationships by analyzing AS-Path data in BGP messages (any AS-Path hop) and ASPA records.</li>
+<li><strong>Discover Valid Prefixes:</strong> For each AS in the discovered customer cone, use ROA information and BGP updates (where the AS is the origin AS) to build the SAV list for the interface.</li>
+</ol>
+</li>
+<li><strong>Use Cases:</strong> BAR-SAV addresses the limitations of RFC 8704, enabling scenarios like DSR (by requiring ROAs for prefixes that might be sourced from non-originating ASes) and aiding in route leak detection by leveraging ASPA.</li>
+<li><strong>Discussion:</strong> No questions or comments were raised during the session.</li>
+</ul>
+</li>
+<li>
+<p><strong>Attributing Internet Measurement Traffic - draft-hoffman-opsec-measurement-attribution</strong></p>
+<ul>
+<li><strong>Motivation:</strong> Internet measurement campaigns inject synthetic traffic that can trigger security alerts, unusual traffic patterns, or even system crashes. Researchers need a standard way to attribute this traffic to an experiment and provide contact details, distinguishing it from malicious activity.</li>
+<li><strong>Proposal:</strong> Embed a Uniform Resource Identifier (URI) describing the experiment (including contact details) into the measurement traffic. The URI could be a URL, <code>mailto</code>, or phone number, following principles similar to RFC 9116 (security.txt).</li>
+<li><strong>Methods:</strong>
+<ul>
+<li><strong>In-band:</strong> Placing the URI directly into the packet's payload (e.g., ICMP, UDP, TCP SYN data) or within an IPv6 extension header option, terminated by null bytes.</li>
+<li><strong>Out-of-band:</strong> Relying on reverse DNS (e.g., a <code>.well-known/probing.txt</code> file on the source IP's domain, requiring an IANA registry) or running a web server on the source IP address that hosts the URI.</li>
+</ul>
+</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>Concerns were raised about potential filtering of packets containing the URI by network operators, which could bias measurement results. This was also noted as a potential feature, allowing operators to opt-out or for researchers to gauge network behavior.</li>
+<li>The risk of abuse (e.g., false attribution) was acknowledged, but the authors emphasized the intent for good-faith researchers to provide attribution.</li>
+<li>Using in-band data, especially in TCP SYN packets, might alter how the packet is processed by some systems. Out-of-band methods were suggested as potentially less disruptive to the probe's characteristics.</li>
+<li>A suggestion was made to include a specific identifier (e.g., a magic number) in the packet to allow tools like Wireshark to easily recognize and display the attribution information.</li>
+<li>The feasibility of running web servers on source IPs for measurements from numerous vantage points (e.g., RIPE Atlas) was questioned, with reverse DNS or generic flags being more practical alternatives.</li>
+<li>There was a general sentiment that even an imperfect attribution mechanism is better than none.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Indicators of Compromise:</strong> The chairs will initiate a Working Group Last Call (WGLC) for <code>draft-ietf-opsec-indicators-of-compromise</code> on the mailing list next week.</li>
+<li><strong>Attributing Internet Measurement Traffic:</strong> The chairs will run an adoption call for <code>draft-hoffman-opsec-measurement-attribution</code> on the mailing list after this IETF meeting.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Indicators of Compromise:</strong> Reviewers are encouraged to read <code>draft-ietf-opsec-indicators-of-compromise</code> and provide comments during the upcoming WGLC.</li>
+<li><strong>BAR-SAV:</strong> Authors of <code>draft-lubachev-opsec-sav-aspa-raw</code> will continue to engage with the working group for feedback and potential progression.</li>
+<li><strong>Attributing Internet Measurement Traffic:</strong> The community is encouraged to review <code>draft-hoffman-opsec-measurement-attribution</code> and provide feedback during the adoption call.</li>
+<li><strong>Opsec AD Role:</strong> Warren Kumari encouraged interested individuals to consider running for the opsec Area Director position, whose term ends in March.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

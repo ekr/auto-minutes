@@ -1,0 +1,115 @@
+**Session Date/Time:** 11 Nov 2021 12:00
+
+# coinrg
+
+## Summary
+
+The Computing in the Network Research Group (coinrg) met to discuss ongoing research and draft updates. The session featured presentations on architectural proposals for an extensible internet, in-network aggregation for machine learning, information-centric data flow for distributed computing, and an operating system vision for a distributed internet. Updates were also provided on the coinrg Use Cases, Transport Protocol Issues, and Enhancing Security and Privacy drafts, highlighting recent developments and future work. Discussions focused on the technical implications, challenges, and potential solutions for integrating computation deeply within the network.
+
+## Key Discussion Points
+
+*   **Chairs' Opening & Logistics:**
+    *   Jose M. & Eve S. welcomed attendees, emphasizing IRTF's research focus over standardization.
+    *   Noted recording, IPR disclosures, and Code of Conduct.
+    *   Audio issues were reported and addressed early in the session.
+    *   Agenda was packed with four research papers and three draft updates.
+
+*   **"The Extensible Internet" by Scott Shenker (UC Berkeley):**
+    *   **Problem Statement:** Decades of architectural research have had no discernible impact on the public internet, leading to stagnation. Hyperscalers build private IP networks with extensive in-network services (caching, load balancing), improving latency and reliability, but fragmenting the internet. The core issue is IP Layer 3's dual role (L2 interconnect and host service model) which prevents change due as it's ubiquitous, hardware-baked, and must support all application requirements.
+    *   **Proposal (Extensible Internet - EI):** Introduce a new "Service Layer" (L3.5) above IP, leaving IP unchanged. L3.5 offers new in-network services to hosts and decouples L3's two roles.
+    *   **Architecture:** L3.5 is implemented in "Service Nodes" (SNs) – racks of servers at the network edge, sparsely deployed. Communication tunnels over IP. Clients signal desired services using the tunneling protocol.
+    *   **Services:** All services are in software (open-source code), running in a standardized execution environment on SNs. This is not general computation, but limited packet forwarding, payload processing, and simple functions (e.g., caching, multicast, DDoS prevention, scalable attestation, ICN support). A governance process (e.g., IETF) decides public services, which are run on all service nodes.
+    *   **Why it might succeed:** Backwards compatibility (IP remains), utilizes existing edge computing/PoPs, industry "fear" of the internet becoming a last-mile provider, and the approach is proven by large private networks.
+    *   **Discussion:**
+        *   **Layering with Transport Protocols:** Questions arose on whether transport connections run end-to-end or are terminated at SNs, and the implications for encryption. Scott suggested flexibility for endpoints to expose parts of data to SNs for services like caching while keeping other parts private.
+        *   **Public Services Mandate:** The requirement for SNs to implement *all* public services was questioned as a potential barrier to entry. Scott emphasized uniformity is critical for application reliability, and given it's software, resource scaling is the main concern, not hardware changes.
+        *   **Service Composition:** Arbitrary user composition of services is explicitly not allowed; instead, pre-approved compositions or "stacks" are defined at the service definition level to avoid complex interaction issues. Internally, these composite services would be merged into a single service module.
+        *   **Relation to SFC/SD-WAN:** EI offers global service definitions and extensibility beyond just chaining boxes.
+        *   **SN Communication:** Control plane (discovery, management) can leverage SDN-like approaches.
+
+*   **"In-Network Aggregation for Multi-Tenant Learning" by Wen Say (Tsinghua University):**
+    *   **Problem:** Distributed Machine Learning (ML) using Parameter Server (PS) architecture suffers from communication bottlenecks during gradient aggregation.
+    *   **Solution:** Leverage in-network computation using programmable switches (P4) to aggregate gradients, reducing communication overhead.
+    *   **Limitations of Existing Work:** Static resource partitioning and single-rack star topologies limit scalability and efficiency.
+    *   **Proposed ATP (Aggregation Transmission Protocol):**
+        *   **Goals:** Maximize in-network computation, support multiple simultaneous jobs (multi-tenant), and multi-rack topologies.
+        *   **Dynamic Resource Allocation:** Switch memory organized as a shared resource pool, with packets randomly hashed to aggregation units.
+        *   **Correctness Challenges & Solutions:**
+            *   **Hash Collision:** Fallback to PS aggregation, aggregator not de-allocated until PS confirms.
+            *   **Membership Inconsistency/Deadlock:** Retransmission with deduplication at host and switch ensures complete aggregation and prevents memory leaks.
+        *   **Multi-Rack Aggregation:** Two-level hierarchy at Top-of-Rack (TOR) switches and then PS for final aggregation. Uses a bitmap per aggregator for sub-tree status. Fallback to PS for complex cases.
+        *   **Reliability:** Retransmission and bitmap ensures exact-once aggregation.
+        *   **Congestion Control:** Uses ECN as a signal, EIMD for control, as RTT is not available for consumed packets.
+        *   **Floating Point Overflow:** Fallback to PS aggregation with floating-point arithmetic.
+    *   **Implementation & Evaluation:** User-space networking stack on hosts, in-network aggregation services in switch. ATP outperforms other PS and Ring-Reduce architectures, especially for network-intensive workloads, and shows graceful degradation with dynamic allocation.
+    *   **Takeaways:** In-network computation offers significant performance gains, but correctness is challenging and requires careful host-switch co-design.
+    *   **Note:** Due to time constraints, questions were deferred to the mailing list/paper.
+
+*   **"Information-Centric Data Flow for Distributed Computing" by Dirk Trossen (Huawei):**
+    *   **Context:** Explores integration of computing and networking, focusing on structured data flow processing.
+    *   **Data Flow Paradigm:** Direct Acyclic Graph (DAG) based approach where data objects trigger computation across nodes. Supports batch and stream processing, windowing, and elasticity.
+    *   **Limitations of Current Systems (e.g., Flink):** Use connection-based overlays, treat the network as a black box, centralized orchestration, limited agility between compute and network performance.
+    *   **Proposed IceFlow (Information-Centric Data Flow):**
+        *   **ICN-based:** Network of named nodes and named functions.
+        *   **No Connections:** Computation triggered by requests for input data. Enables efficient data reuse (multicast).
+        *   **Challenges:** Asynchronous data production (push semantics), flow control, tracking data consumption.
+        *   **ICN Mechanisms:** Uses Dataset Synchronization (e.g., PSync) for consumers to learn about new named data objects under known prefixes. Uses ICN manifests and grouping for scalability.
+        *   **Runtime Information:** Consumer reports publish processed windows, enabling loose coupling, congestion control (adapting interest rate), and scaling out (creating new subgraphs when downstream cannot keep up).
+    *   **Conclusion:** Data flow systems are critical; current overlay approaches are limiting. ICN offers a promising alternative but requires performance optimizations and name-based routing infrastructure. This work presents an example of new protocol work leveraging ICN to break up overlays.
+    *   **Note:** Due to time constraints, questions were deferred to the mailing list/paper.
+
+*   **"Moda: Operating System for a Distributed Internet" by Marie-Jose Montpetit (on behalf of colleagues):**
+    *   **Motivation:** IoT environments are fragmented (verticalized, multiple gateways, cloud silos, security/privacy issues). The "Internet as a computer board" paradigm in coinrg suggests the need for an operating system. Data valorization is key in distributed systems.
+    *   **Moda Vision:** An operating system for a new distributed internet, providing infrastructure for easy application development. It embodies coinrg topics: discovery (functional, storage, compute), communications (pub/sub), semantic integration, common functionalities (name-based forwarding), and APIs for heterogeneous nodes.
+    *   **Core Functionalities:** Orchestration, on-device computing, reusability (lego brick approach), modularity, Network Processing Unit (NPU) management, data and intelligence services (AI in the network, data-driven features).
+    *   **Link to coinrg:** Shares common research topics (discovery, distributed abstractions/protocols, decentralized security/trust, federated learning, use cases).
+    *   **Status:** A proposed European-wide project.
+    *   **Discussion:** A request was made for pointers/website for the Moda project.
+
+*   **Draft Update: "Computing in the Network Research Group (coinrg) Use Cases" (draft-ietf-coin-use-cases) by Ike Drost:**
+    *   **Purpose:** Provide use case-driven requirements analysis and identify benefits of in-network compute (aligned with coinrg charter item 2).
+    *   **Changes (since last iteration):**
+        *   New co-authors: Xavier David, Miguel.
+        *   **Regrouped Use Cases:** Now organized into "New User Experiences," "Supporting New Coin Systems," "Improving Existing Coin Capabilities," and "Entirely New Coin Capabilities."
+        *   **Sharpened Taxonomy:** Split "Opportunities" and "Research Questions," linked descriptions to new groupings, focused requirements on *Coin capabilities*.
+        *   **Terminology Alignment:** Started aligning terminology with other coinrg drafts (e.g., Dirk's draft) and suggested a single, overall coinrg terminology document.
+        *   Initial preparation for analysis.
+    *   **Next Steps:** Finish aligning use cases, review terminology, start analysis (condense opportunities/requirements, identify similarities for charter input).
+    *   **Decision:** Chairs will discuss adopting this as an RG document on the mailing list.
+
+*   **Draft Update: "Transport Protocol Issues in Computing in the Network (Coin) Systems" (draft-ietf-coin-transport-protocols) by Dirk Trossen:**
+    *   **Purpose:** Outline challenges to traditional end-to-end transport protocols and identify opportunities/research questions arising from in-network computing (aligned with coinrg charter item 4).
+    *   **Changes (since last iteration):**
+        *   Restructured into a "Technology Areas" section (Section 3) and a mirrored "Gap Analysis" section (Section 5) to better highlight research questions.
+        *   Smaller updates linking to ongoing work in ICN addressing.
+    *   **Questions to the Group:** What other research questions/concepts/ongoing efforts should be included? Should the gap analysis section be maintained?
+    *   **Future Plans:** Link more clearly to the updated Use Cases taxonomy, add more existing work (e.g., from HotNets 2021, Bharaji's work), refine research questions into requirements language, fill the gap analysis section (seeking contributors).
+    *   **Suggestion:** Adopt this as an RG document.
+    *   **Discussion:**
+        *   **QUIC:** Peng Liu asked if QUIC could help with flow affinity/service equivalence due to its fixed connection ID. Dirk noted the linkage to Dyncast is still in the draft and needs clarification.
+        *   **GitHub for Gap Analysis:** Spencer Dawson suggested a GitHub repo for contributions, which Dirk affirmed is available and helpful.
+
+*   **Draft Update: "Enhancing Security and Privacy with In-Network Computing" (draft-ietf-coin-security-privacy) by Aina Doci:**
+    *   **Purpose:** Explore potential for coin to implement security and privacy mechanisms *within* the network to reduce latency, improve scalability, and provide quicker reaction to incidents (e.g., retrofitting for resource-restricted devices, industrial networks, transparent anonymization).
+    *   **Key Research Areas (summarized from slides due to audio issues):**
+        *   **Cryptographic Functions:** Implementing encryption and hashing in the data plane (e.g., IPsec, MACsec, onion routing, message authentication).
+        *   **Authentication:** Basic mechanisms like port knocking or one-time passwords in the data plane for continuous authentication without latency overhead.
+        *   **Anonymization:** Scalable, transparent, and lightweight anonymization (e.g., rewriting source addresses, hiding path info, encrypting IPv4 addresses) to address performance/usability issues of existing tools like Tor.
+        *   **Intrusion Detection:** Inline detection and quick reaction to anomalies, reducing load on existing IDS (e.g., rule-based pre-filtering in data plane).
+        *   **Network Monitoring:** Flow monitoring on P4-based hardware switches for efficient, high-performance, and cost-effective network forensics.
+    *   **Conclusion:** Growing research interest confirms coin's potential for security and privacy, with recent publications (e.g., Usenix Security) and proofs of concept demonstrating feasibility. It's a "hot research topic" with many ideas to investigate.
+    *   **Next Steps:** Seeking feedback and contributions.
+
+## Decisions and Action Items
+
+*   **Chairs:** Discuss adopting the "coinrg Use Cases" (draft-ietf-coin-use-cases) and "Transport Protocol Issues in Computing in the Network (Coin) Systems" (draft-ietf-coin-transport-protocols) as RG documents, with further discussion on the mailing list.
+*   **Marie-Jose Montpetit:** Share pointers or a website for the Moda project on the mailing list.
+*   **Dirk Trossen & Ike Drost (and co-authors):** Continue seeking contributions for gap analysis and related work for their respective drafts, utilizing GitHub repositories for collaboration.
+*   **Aina Doci (and co-authors):** Seek feedback and contributions for the "Enhancing Security and Privacy with In-Network Computing" draft.
+
+## Next Steps
+
+*   **Coinrg Chairs:** Plan an interim meeting to review the coinrg scope, aiming for a date halfway between the current IETF meeting and the next.
+*   **All Participants:** Continue discussions and provide input on the mailing list.
+*   **Presenters:** Incorporate feedback and contributions into their drafts.
+*   **Community:** Stay tuned for announcements regarding the interim meeting and opportunities to contribute to the drafts.

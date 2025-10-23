@@ -1,0 +1,71 @@
+**Session Date/Time:** 28 Jul 2022 14:00
+
+# icnrg (Joint ICNRG/COINRG Meeting)
+
+## Summary
+
+This was a joint session of the ICNRG and COINRG at IETF 114, focusing on common topics in distributed computing and networking. The first half covered ICN-specific topics including document status updates and a research presentation on selective content disclosure using zero-knowledge proofs. The second half focused on COIN-specific topics, featuring presentations on traffic steering at Layer 3, namespace security and network addressing, and building adaptive networks with machine learning, alongside discussions on COINRG document status and future interim planning.
+
+## Administrative Notes
+
+The meeting was co-chaired by Dirk Kutscher and Dave Oran (remote), with Lixia Zhang serving as local co-chair. Initial technical difficulties with MeetEcho delegate privileges were encountered. Standard IETF housekeeping announcements were made regarding mask wearing, MeetEcho queue management, IPR disclosure rules, privacy, and code of conduct. The session reminded participants that research groups focus on research and experimentation, not standards, referencing RFC 7418 for ICNRG's mandate.
+
+## Key Discussion Points
+
+### ICNRG Topics
+
+*   **Document Status Updates**
+    *   **ICN Ping and Traceroute**: Dave Oran provided an update. The drafts have completed a research group last call and IRSG review. Comments were received from Colin Perkins, Chris Wood, and Jude Chao, primarily concerning NDN packet format encoding, particularly for path steering capabilities. Updates are required for both Ping/Traceroute and the Path Steering draft to correct NDN packet encoding.
+    *   **CCNInfo**: Colin Perkins indicated that the document is awaiting further IRSG ballot responses. Existing comments have been reflected, and chairs will send another reminder to the IRSG.
+    *   **Alternative Delta Time Encoding (for CCNx)**: Thomas presented updates on this document, which was recently adopted as an RG document (version 00). The objective is to make time encoding more efficient for constrained IoT networks, building on RFC 9139 (ICNLoPAN). It introduces a compact time encoding supporting a dynamic range in milliseconds using an exponent and mantissa, providing higher precision for small values and coarser precision for larger values. The encoding scheme targets relative times (Interest Lifetime, Recommended Cache Time) for compression while leaving absolute signature times intact. A question was raised regarding its deviation from IEEE 754 floating-point formats and the benefits of using industry-standard silicon support, prompting further discussion on the mailing list.
+    *   **Path Steering Draft**: Dave Oran noted this is an individual draft. An IPR declaration by Cisco has been made, clarifying that while Cisco has a standard IETF royalty-free policy, they don't have a specific policy for IRTF (non-standards) documents. The declaration was made by Dave Oran as a third party. Discussion on adopting it as an RG document will follow on the mailing list.
+*   **Research Presentation: "Selective Content Disclosure using Zero Knowledge Proofs" (Nikos Fotiou)**
+    *   Nikos Fotiou (Athens University of Economics and Business) presented ongoing work using the BBS+ digital signature scheme to enable selective disclosure of content. This allows a prover (e.g., a storage node) to reveal portions of a signed data item and provide a zero-knowledge proof that the revealed items are correct and part of the original signed data, without exposing hidden parts or the signing key.
+    *   The solution involves two main problems: (1) **Canonicalization**: Transforming structured data (JSON objects) into a flat array of messages suitable for BBS+ signatures. An algorithm for this has been developed and formally verified. (2) **Framing**: Requesting specific properties of a data object using a JSON frame, which indicates desired keys.
+    *   **NDN Integration**: The scheme integrates with NDN by encoding the data item identifier and a hash of the JSON frame in the Interest message. Producers respond with a data packet containing the derived item and the zero-knowledge proof. Caching is preserved as identical frames result in identical identifiers, allowing caches to respond.
+    *   **Performance**: Evaluation showed constant time for proof generation (unaffected by revealed items) and decreasing time for proof verification as more items are revealed, both under 8ms on an ordinary machine with an unoptimized Python implementation. It offers significant storage and communication overhead benefits compared to individual signing of records.
+    *   **Future Work**: Integration of new key/signature types into NDN, further research on data framing/canonicalization for non-JSON objects, collaboration with other groups (Identity Foundation, W3C), and potential use cases in routing protocols (e.g., routers advertising partial network graphs).
+    *   A question on framing as a CRDT-like operation was discussed, noting current read-only nature and future research potential for combining responses.
+*   **New Work Item Ideas for ICNRG**
+    *   **Media over Quick / ICN**: Discussion around potential architectural improvements over current media distribution approaches using Quick.
+    *   **Self-learning Auto-configuration / NDN Switch Design**: Optimizing NDN C++ codebase and related topics.
+    *   **Web over ICN**: Addressing issues like name privacy and establishing TLS-like security contexts for broader web application support.
+    *   **General ICN Security Work**: Encouraging sharing of ideas in this field.
+    *   Lixia Zhang suggested focusing on "burning challenges" rather than just looking for work, emphasizing how ICN can solve problems that other solutions (like Quick) might not fully address, particularly around security.
+
+### COINRG Topics
+
+*   **Document Status and Interim Planning**: Eve Schooler outlined the status. Two RG documents need to move forward (one expired, one needs updates). Many other drafts exist, and authors are encouraged to state their intentions. The chairs plan an interim meeting in September for: (1) a more focused scoping discussion to synthesize mailing list debates and potentially re-scope the charter, and (2) revisiting existing drafts to position them within the architectural space.
+*   **Research Presentation: "Traffic Steering at Layer 3" (Dirk Trossen)**
+    *   Dirk Trossen presented CARDS (Compute-Aware Distributed Scheduling), a system for traffic steering at Layer 3 to optimize service request distribution in distributed service environments. The problem addresses runtime scheduling of service instances, considering compute capabilities and maintaining affinity for subsequent transactions.
+    *   CARDS uses service identifiers for routing and performs on-path forwarding decisions at network ingress points (semantic routers). Compute awareness is derived from normalized compute units assigned to service instances (e.g., cores, threads), which are distributed to routers. Scheduling is a distributed round-robin based on these compute units.
+    *   **Simulation Results**: CARDS significantly reduced request completion times (RCTs) in high load settings compared to random and site-based schedulers (STEAM), especially when compute unit distribution was imbalanced across or within sites. It served significantly more clients while maintaining latency bounds.
+    *   **Conclusion**: CARDS demonstrates that compute awareness can be integrated into data plane steering decisions with relatively static configuration and low signaling overhead, offering significant performance improvements. Follow-up work explores vertical comparison of CARDS at L3 vs. L7.
+    *   A question was raised about the term "semantic routing," with Dirk clarifying it refers to service identifiers. The advantage of L3 vs. L7 for such steering, particularly in reducing latency variance and improving resilience, was also discussed.
+*   **Research Presentation: "Namespace Security, Network Addressing" (Andy Bavier)**
+    *   Andy Bavier discussed the current microservices-based architecture and container modularization. While modularity offers benefits for development, testing, and distribution, challenges arise with physical distribution, fixed service abstraction scale, and heavyweight solutions (sidecars, proxies) for constrained environments.
+    *   **Use Cases**: Distributed video processing (edge vs. cloud trade-offs for bandwidth, privacy, cost) and smart factory automation (modular compute, complex production, reprogramming time) highlight the need for physical distribution and more integrated solutions.
+    *   **Proposals**: (1) Closer integration of application namespaces and network addressing by bringing together the compiler (maps app namespaces to compute architecture addressing) and orchestrator (maps services to network addresses), potentially avoiding sidecars. (2) Defining layering by observed function and transparency, rather than by intent. (3) Fundamentally private and extensible/contextualizable network addressing to cohere with application namespaces and facilitate security.
+*   **Research Presentation: "Building Adaptive Networks with Machine Learning" (Tushar Swami)**
+    *   Tushar Swami (Applied Networking Research Prize winner) presented work on integrating machine learning (ML) into network infrastructure to create adaptive networks. He highlighted the need for data-driven decisions over hand-tuned heuristics as network complexity increases.
+    *   **Taurus (Switch Architecture)**: An architecture enabling ML inference at line-rate, per-packet level in the data plane. It reuses programmable switch hardware (packet parsers, match-action tables) and inserts a MapReduce unit for ML inference. This ensures robustness through fast, per-packet ML reactions.
+    *   **Homunculus (Compiler Framework)**: A high-level compiler framework for generating data plane ML models. Users provide high-level directives, datasets (e.g., KDD intrusion detection), and network/resource constraints. The compiler then generates optimized ML models and binaries for specific data planes (e.g., Taurus switches). It uses multi-objective Bayesian optimization with feasibility constraints to navigate the AutoML search space, generating custom code for the switch.
+    *   **Results**: Homunculus-generated models achieved higher F1 scores compared to hand-tuned baselines for various applications (e.g., anomaly detection) without human intervention, by making better use of platform-specific resources.
+    *   **Adaptive Loop (Ongoing Work)**: The ultimate goal is to complete a feedback loop where the network takes telemetry measurements from its data plane, cleans the data, feeds it to Homunculus to build progressively newer/better ML models, which are then installed back into the data plane.
+    *   **Discussion**: Feature extraction is currently based on predefined headers. Future work includes image classification, though convolutional neural networks can be large for resource-limited switches. Model updates are managed by the control plane, which refines models based on network measurements and then pushes new static models to the data plane for inference.
+
+## Decisions and Action Items
+
+*   **ICNRG Ping, Traceroute, and Path Steering Drafts**: The authors (Dave Oran, et al.) will update these drafts in the coming weeks to address NDN packet encoding issues.
+*   **Path Steering RG Adoption**: ICNRG chairs will follow up on the mailing list to discuss the adoption of the Path Steering draft as a research group document, considering its IPR status.
+*   **CCNInfo Draft**: Colin Perkins will send another reminder to the IRSG to gather remaining ballot responses for the CCNInfo draft.
+*   **COINRG Interim Meetings**: COINRG chairs will plan interim meetings in the September timeframe to conduct a focused scoping discussion for the RG charter and to revisit existing drafts, assessing their architectural fit and future path.
+*   **Expired COINRG Drafts**: Authors of expired COINRG drafts are encouraged to inform the chairs of their intentions for these documents.
+
+## Next Steps
+
+*   **ICNRG**: Continue progress on the Ping, Traceroute, and Delta Time Encoding documents. Discuss Path Steering adoption on the mailing list.
+*   **COINRG**: Schedule and conduct interim meetings for charter scoping and document review in September.
+*   **ICN Conference**: The ICN Conference will take place from September 19th-21st in Osaka, Japan.
+*   **Future Collaborations**: Explore further joint meetings between ICNRG, COINRG, and other relevant groups (e.g., Distributed Networking).
+*   **Engagement**: Encourage presenters and attendees to join the mailing lists and continue discussions on the presented research topics.

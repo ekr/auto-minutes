@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="avtcore.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-AVTCORE-20220728-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 17:30</p>
+<h1>avtcore</h1>
+<h2>Summary</h2>
+<p>The avtcore working group held its session, beginning with a tribute to Steve Casner, a long-time contributor and former AVT chair, for his foundational work on RTP and multimedia networking. The session then proceeded to review the status of several drafts, including Cryptex, VVC, SKIP, and 7983bis, addressing IESG and Working Group Last Call comments. Significant discussion revolved around the adoption of Game State over RTP, the ongoing development of RTP over QUIC, and initial presentations for the V3C Payload Format and Green Metadata RTCP messages. Key decisions included advancing Cryptex and 7983bis, clarifying IANA registration for SKIP, and proposing a call for adoption for the V3C payload format.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Tribute to Steve Casner:</strong> Eve, Magnus, and Colin Perkins shared memories and highlighted Steve Casner's instrumental contributions to packet voice (NVP), video, RTP, the M-Bone, and his role as an exemplary IETF working group chair.</li>
+<li><strong>Game State over RTP:</strong> The call for adoption received limited interest.</li>
+<li><strong>Cryptex Association:</strong>
+<ul>
+<li>Feedback incorporated from 39 directorate comments.</li>
+<li>The term &quot;master key&quot; is difficult to change due to its reference in RFC 3711.</li>
+<li>No existing IANA registry for <code>definetby</code> profile values; proceeding without blocking the draft, but a registry might be considered later.</li>
+<li>Clarified that a parameter supports both session and media levels.</li>
+<li>IPR issues previously addressed.</li>
+<li>Decision not to formally update RFC 3711, but rather to include an informative reference to Cryptex.</li>
+<li>Discussion on deprecating RFC 6904: Decided against deprecation. If both RFC 6904 and Cryptex are supported, the sender <em>should</em> prefer Cryptex for enhanced security, with &quot;should&quot; vs. &quot;must&quot; to be further clarified regarding exceptions.</li>
+<li>Mandatory Cryptex: If an application considers Cryptex mandatory, receiving RTP packets without Cryptex headers &quot;MUST&quot; stop processing.</li>
+</ul>
+</li>
+<li><strong>VVC Payload Format:</strong>
+<ul>
+<li>Addressed 2 of 3 IESG discusses, remaining one related to &quot;sender properties&quot; (RFC 3984) and SDP semantics.</li>
+<li>Resolution: Add informative language to explain the SDP behavior.</li>
+</ul>
+</li>
+<li><strong>SKIP (Secure Key Information Protocol):</strong>
+<ul>
+<li>Awaiting external review resolution; Gen Art review was adequate, Art Art said &quot;not ready.&quot;</li>
+<li>References to <code>skip 214</code> and <code>210</code> were reaffirmed as informational, as the document specifies SDP, not the Skip protocol itself.</li>
+<li>Discussion on removing <code>skip 214</code> reference from the document, with IANA registration to be updated to point to the new RFC.</li>
+<li>Clarified process for IANA registration update to explicitly state the new RFC updates previous references.</li>
+<li>Narrative comments from reviewers (intro, abstract, background) were not incorporated as they did not impact technical information.</li>
+</ul>
+</li>
+<li><strong>7983bis (Demultiplexing Quick, SRTP, DTLS):</strong>
+<ul>
+<li>Working Group Last Call comments addressed.</li>
+<li>Removed explicit Quick version dependencies, referring generically to &quot;forward to Quick.&quot;</li>
+<li>Mandated against sending the Quick greasing transport parameter.</li>
+<li>Clarified multiplexing of Turn channels and Quick: The overlap is not an issue if Turn server IP addresses and ports are tracked, as Turn channel packets originate from the Turn server.</li>
+</ul>
+</li>
+<li><strong>RTP over QUIC (Working Group Draft):</strong>
+<ul>
+<li><strong>Scope:</strong> Draft describes minimal RTP over QUIC usage, expecting standard QUIC, benefiting from QUIC extensions, without changing QUIC or RTP itself. Signaling is separate.</li>
+<li><strong>ALPN:</strong> <code>rtpmux-quick</code> defined for multiplexing different flows. Discussion about the need for ALPN in SDP vs. QUIC connection setup.</li>
+<li><strong>API Considerations:</strong> Suggested QUIC implementations expose information (MDU size, ACKs, stream states) and methods (cancel streams, set congestion controllers) to RTP applications for optimization.</li>
+<li><strong>Restrictions:</strong> Current draft restricts RTP sessions to use <em>either</em> QUIC streams <em>or</em> datagrams, not both simultaneously (with intent to potentially loosen this later).</li>
+<li><strong>Open Issues:</strong>
+<ul>
+<li>RTP packets on QUIC streams potentially exceeding UDP MTU when translated.</li>
+<li>Guidance needed on stream concurrency (receiver credit management).</li>
+<li>Negotiation if datagrams are not enabled (ALPN, transport parameters, SDP). It was suggested to require datagram support in QUIC transport parameters.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>RTP over QUIC SDP (Individual Draft):</strong>
+<ul>
+<li>Proposed <code>quick/rtp/avpf</code> profiles.</li>
+<li>Discussion on including <code>stream</code>, <code>datagram</code>, and <code>shared</code> capabilities in SDP profile registration.</li>
+<li><strong>TCP/ICE Fallback:</strong> Roman raised a concern about fallback to TCP if ICE TCP candidates are used, proposing registering <code>tcp/quick/rtp/avpf</code> profiles. Concerns were raised about multiple layers of congestion control (QUIC over TCP) and the complexity with ICE.</li>
+<li><strong>QUIC Congestion Control Feedback:</strong> Discussion on enabling transport layer feedback from QUIC for RTCP, potentially using Quick timestamps.</li>
+</ul>
+</li>
+<li><strong>V3C Payload Format (New Draft):</strong>
+<ul>
+<li>Encodes volumetric video using existing 2D codecs. Decomposes 3D frames into video components and Atlas (metadata).</li>
+<li>Proposed encapsulation for Atlas NAL units into RTP packets, V3C-specific payload format parameters, and a new grouping type for streams.</li>
+<li>Stefan offered to provide private access to the relevant ISO standard document for reviewers.</li>
+</ul>
+</li>
+<li><strong>Green Metadata (New Draft):</strong>
+<ul>
+<li>Addresses ISO 23001-11 for energy-efficient media consumption, focusing on decoder feedback to the encoder.</li>
+<li>Proposed two new RTCP messages: Resolution Request (decoder to encoder) and Resolution Notification (encoder to decoder).</li>
+<li>Messages are similar to AVPF payload-specific feedback, not time-critical, and require integrity protection/authentication.</li>
+<li>Discussion on RTCP reliability for feedback and IPR disclosure (Qualcomm).</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Game State over RTP:</strong>
+<ul>
+<li><strong>Decision:</strong> Call for adoption extended until September.</li>
+<li><strong>Action Item:</strong> Colin Jennings (proponent) to engage the interested community to express interest in the document.</li>
+</ul>
+</li>
+<li><strong>Cryptex Association:</strong>
+<ul>
+<li><strong>Decision:</strong> <code>definetby</code> values will not require a dedicated IANA registry for this draft.</li>
+<li><strong>Decision:</strong> The draft will be updated to allow a parameter to be used at both session and media levels.</li>
+<li><strong>Decision:</strong> The draft will refer informatively to Cryptex rather than formally updating RFC 3711.</li>
+<li><strong>Decision:</strong> RFC 6904 will <em>not</em> be deprecated.</li>
+<li><strong>Decision:</strong> Text will be updated to state that if an application considers Cryptex mandatory, it &quot;MUST&quot; stop processing RTP packets that do not include Cryptex headers.</li>
+<li><strong>Action Item:</strong> Sergio to create a Pull Request (PR) for the remaining changes and publish a new draft.</li>
+<li><strong>Action Item:</strong> Chairs to shepherd the updated Cryptex draft to the IESG without another working group last call.</li>
+</ul>
+</li>
+<li><strong>VVC Payload Format:</strong>
+<ul>
+<li><strong>Action Item:</strong> Stefan to publish Version 18 of the draft with informative language explaining the SDP &quot;sender properties&quot; behavior.</li>
+</ul>
+</li>
+<li><strong>SKIP:</strong>
+<ul>
+<li><strong>Decision:</strong> References to <code>skip 214</code> and <code>210</code> will remain informational.</li>
+<li><strong>Decision:</strong> The explicit reference to <code>skip 214</code> will be removed from the document text.</li>
+<li><strong>Action Item:</strong> Mike/Dan to update the draft's IANA registration section to explicitly state it updates existing registrations (from <code>214.2</code>) to point to this RFC, rather than repeating them.</li>
+<li><strong>Action Item:</strong> Mike/Dan to update the draft to reflect these changes, targeting version 2 next week.</li>
+<li><strong>Action Item:</strong> Shepherd write-up to commence once IETF shepherding procedures are stable.</li>
+</ul>
+</li>
+<li><strong>7983bis (Demultiplexing):</strong>
+<ul>
+<li><strong>Decision:</strong> Draft is considered ready for IESG processing.</li>
+<li><strong>Action Item:</strong> Chair to take over shepherding the draft to the IESG.</li>
+</ul>
+</li>
+<li><strong>V3C Payload Format:</strong>
+<ul>
+<li><strong>Action Item:</strong> Chairs to issue a call for adoption on the mailing list for the V3C payload format draft.</li>
+</ul>
+</li>
+<li><strong>RTP over QUIC / RTP over QUIC SDP:</strong>
+<ul>
+<li><strong>Action Item:</strong> Continued mailing list discussion on TCP/ICE fallback and the implications of using ALPNs in SDP.</li>
+<li><strong>Action Item:</strong> More detailed discussion needed on how to specify/negotiate transport layer feedback from QUIC for RTCP.</li>
+<li><strong>Action Item:</strong> Participants interested in QUIC timestamp extensions for media congestion control should express support on the Quick list.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Cryptex:</strong> New draft will be published and submitted to IESG.</li>
+<li><strong>VVC Payload Format:</strong> New draft (version 18) will be published with informative language.</li>
+<li><strong>SKIP:</strong> Updated draft (version 2) will be published and shepherding process will begin.</li>
+<li><strong>7983bis:</strong> Draft will be shepherded to the IESG.</li>
+<li><strong>RTP over QUIC:</strong> Continue working with Spencer on SDP signaling.</li>
+<li><strong>RTP over QUIC SDP:</strong> Spencer will keep the draft synchronized with the working group draft and aim for working group adoption at the next avtcore meeting.</li>
+<li><strong>V3C Payload Format:</strong> A call for adoption will be initiated on the mailing list.</li>
+<li><strong>Green Metadata:</strong> Authors will incorporate feedback and gather more comments before seeking working group adoption.</li>
+<li><strong>Working Group:</strong> The chairs will discuss whether an interim meeting is needed before the next IETF session.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

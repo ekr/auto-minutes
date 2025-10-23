@@ -1,0 +1,87 @@
+**Session Date/Time:** 12 Nov 2021 16:00
+
+# dnssd
+
+## Summary
+
+The dnssd working group meeting covered the status of its three adopted documents: SRP, EDNS0 Update Lease, and Advertising Proxy. A significant decision was made to formally remove the "sleep proxy" section from the SRP document, to be potentially developed as a separate individual draft, to avoid holding up SRP. The EDNS0 Update Lease document is progressing towards Working Group Last Call (WGLC), with an emphasis on broader DNSOP review. The Advertising Proxy document requires updates to address name conflicts. The meeting also introduced several new individual drafts related to SRP replication, discovering DNS zones, and MDNS Timestamped Assertion Records (TSAR), with chairs emphasizing the need for co-authorship from diverse affiliations and prioritizing existing work before considering new adoptions.
+
+## Key Discussion Points
+
+*   **Working Group Logistics**:
+    *   Jonathan provided a volunteer to take minutes, with assistance from Barbara.
+    *   The Notewell and IETF Code of Conduct were highlighted.
+    *   The GitHub organization for tracking document comments was encouraged, with editors having the discretion to use it.
+*   **Chair Changes**:
+    *   Chris Box was introduced as the new co-chair.
+    *   Barbara Stark announced she is stepping down at the end of the meeting, and was thanked for her three years of service.
+*   **Working Group Adopted Documents Status**:
+    *   **Service Registration Protocol (SRP)**:
+        *   Entered Working Group Last Call (WGLC) in July.
+        *   The "sleep proxy" section was identified as underdeveloped and not ready, relying on MDNS updates, making it distinct from core SRP.
+        *   Proposal to remove the sleep proxy section from SRP and move it to a separate document (e.g., revive `draft-cheshire-edns0-owner-option`).
+        *   The sleep proxy section was already removed in a recent revision (v11/12) during WGLC, which extended the WGLC by two weeks. No objections to its removal were noted on the mailing list.
+    *   **EDNS0 Update Lease Option**:
+        *   Adopted in September as a normative reference for SRP.
+        *   Provides a general mechanism for DNS updates to include a lease time for resource records and key records, similar to DHCP leases, to prevent stale data.
+        *   Applicable beyond just SRP, useful for any machine-to-machine DNS updates.
+        *   Chairs confirmed that WGLC would be sent to DNSOP for broader review due to its general applicability.
+        *   Current status: Authors need to address comments from the adoption call and publish a new revision.
+    *   **Advertising Proxy**:
+        *   Adopted as a working group document.
+        *   Enables SRP updates to be advertised via MDNS, facilitating service discovery from stub networks on infrastructure networks, and allowing clients to stop using MDNS directly.
+        *   Needs re-upload with `draft.ietf.dnssd-` prefix.
+        *   Identified issues with name conflicts, as the MDNS conflict model is not well-suited for proxies; requires integration with the new TSAR document.
+        *   Current status: Author needs to update the document and address adoption issues before further reviews.
+*   **Individual Drafts (Potential Future Work)**:
+    *   **SRP Replication**:
+        *   Addresses the need for robust, unmanaged, authoritative DNS servers in home networks (e.g., home routers with limited resources).
+        *   Enables multiple SRP/Advertising Proxy servers (e.g., HomePod Minis) to collaborate and maintain a stable namespace without a single primary.
+        *   Proposes a new peer-to-peer protocol due to limitations of existing DNS replication (IXFR) in unmanaged environments and the need to leverage cryptographic client authentication.
+        *   Replicates SRP *updates* (including client key and timestamp) rather than raw data, allowing for validation and reconciliation.
+        *   Two implementations exist (tvOS 15, OpenThread).
+        *   Chairs encouraged finding co-authors from diverse affiliations and prioritizing existing work before seeking adoption.
+    *   **Discovering and Advertising DNS Zones**:
+        *   Motivation: Improve efficiency and reliability of service discovery for large numbers of IoT devices (50-100+) by moving from multicast MDNS to unicast DNS push over TCP.
+        *   Especially beneficial for "sleepy" devices (e.g., iPhones, watches) that can maintain long-lived TCP connections for immediate updates upon waking.
+        *   Proposes using MDNS to discover DNS servers advertising these zones, then using DNS push for queries.
+        *   Requires a new, dedicated DNS zone (e.g., `home.arpa`) to prevent security vulnerabilities (e.g., overriding DNS configurations) by isolating this discovery mechanism.
+        *   Implementation exists in tvOS (using NS records and legacy browsing domains; future proposed change to advertise as a dedicated service).
+        *   Stuart Cheshire highlighted significant external interest in this work from groups like Thread/Matter (Connectivity Standards Alliance), aiming to extend unicast discovery to Wi-Fi.
+        *   Chairs encouraged finding co-authors from diverse affiliations and prioritizing existing work before seeking adoption.
+    *   **MDNS Timestamped Assertion Record (TSAR)**:
+        *   Addresses MDNS name conflicts that arise with SRP replication or independent advertising proxies.
+        *   MDNS typically assumes a "first-responder wins" conflict resolution. However, with proxies, a newer legitimate update from the *same* device can still appear as a conflict.
+        *   Proposes an MDNS-specific resource record that includes the update timestamp. This allows MDNS servers to resolve conflicts by prioritizing newer, valid updates from the same source, preventing unnecessary renamings.
+        *   Considered necessary for the Advertising Proxy work.
+
+## Decisions and Action Items
+
+**Decisions:**
+
+*   Jonathan volunteered and was confirmed to take minutes for the session.
+*   The working group formally confirmed the decision to **remove the "sleep proxy" section from the SRP document** (already implemented in draft-cheshire-srp-11/12).
+    *   This section may be developed in a separate individual draft (e.g., by reviving `draft-cheshire-edns0-owner-option`).
+
+**Action Items:**
+
+*   **Chairs (David, Chris, Barbara)**: Assist Jonathan with minute taking.
+*   **Jonathan**: Take minutes for the session.
+*   **Ted Cheshire (SRP)**: Continue addressing any remaining comments during the extended WGLC period.
+*   **Ted Cheshire (EDNS0 Update Lease)**: Address comments received during the adoption call, publish a new revision, and notify the mailing list for further review.
+*   **Ted Cheshire (Advertising Proxy)**:
+    *   Re-upload the draft using the `draft.ietf.dnssd-` prefix.
+    *   Address issues raised during adoption.
+    *   Incorporate text and normative references related to name conflict resolution, specifically the TSAR document.
+    *   Publish a new revision and notify the mailing list for review.
+*   **Ted Cheshire (SRP Replication, Discovering DNS Zones, TSAR)**:
+    *   Seek co-authors from different affiliations for these individual drafts.
+    *   Prioritize addressing action items for the currently adopted working group documents before pushing for adoption of these new drafts.
+*   **Working Group Participants**:
+    *   Review the EDNS0 Update Lease draft once a new revision is published.
+    *   Review the Advertising Proxy draft once a new revision is published.
+    *   Review the individual drafts (SRP Replication, Discovering DNS Zones, TSAR) and provide feedback on the mailing list if interested, especially considering the strategic importance highlighted by Stuart.
+
+## Next Steps
+
+The immediate focus for the dnssd working group will be to finalize the SRP document (following the WGLC extension and sleep proxy removal), progress the EDNS0 Update Lease document towards WGLC (including review by DNSOP), and update the Advertising Proxy document to address existing issues and incorporate name conflict solutions. For the new individual drafts, the chairs encourage further development with diverse co-authorship and community engagement on the mailing list, while maintaining focus on the current adopted work. The broader implications of the new drafts for IoT, Thread/Matter, and unicast discovery on Wi-Fi will inform future adoption decisions.

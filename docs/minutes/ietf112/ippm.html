@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ippm.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-IPPM-20211111-1600">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 16:00</p>
+<h1>ippm</h1>
+<h2>Summary</h2>
+<p>The IP Performance Measurement (IPPM) working group session covered updates on several adopted documents, including IOM Data Integrity, IOM Deployment, IOM Conf State, Explicit Flow Measurements, Connectivity Monitoring, and STAMP Extensions for SR. Significant discussion points included refining security sections, aligning with YANG models for configuration, and clarifying measurement methodologies. The session also featured several &quot;elevator pitches&quot; for new proposed work, touching on topics such as advanced one-way delay measurements, enhanced alternate marking, IOM kernel implementation profiles, direct loss measurement, self-contained alternate marking, postcard-based telemetry, encryption for performance data, user device monitoring, and high-precision service metrics. A key announcement was the publication of RFC 9097 (One-Way IP Capacity Measurement).</p>
+<h2>Key Discussion Points</h2>
+<h3>IOM Data Integrity and Deployment Drafts</h3>
+<ul>
+<li><strong>IOM Data Integrity Draft</strong>:
+<ul>
+<li>Status changed from Informational to Standards Track.</li>
+<li>Adopted Method 3 (symmetric key-based signature) for integrity protection.</li>
+<li>Editorial changes made for generic applicability to all IOM options and terminology alignment.</li>
+<li>Concern raised about lack of active implementation/testing.</li>
+<li><strong>Feedback</strong>: The security section (Section 6) needs completion before a security review. The working group is seeking input on preferred hashing and signature algorithms to include, with a suggestion to focus on a small, optimal set.</li>
+</ul>
+</li>
+<li><strong>IOM Deployment Draft</strong>:
+<ul>
+<li>Revised to align limited domains with RFC 8799 and IOM data terminology.</li>
+<li>Authors plan to keep the draft updated with deployment experiences (Linux kernel, FIDO VPP, Wireshark).</li>
+<li><strong>Feedback</strong>: Suggested including IOM encapsulation over BIER, which authors agreed to address. Al Morton was thanked for extensive review.</li>
+</ul>
+</li>
+</ul>
+<h3>IOM Conf State Draft</h3>
+<ul>
+<li><strong>Updates</strong>:
+<ul>
+<li>Changed IOM capabilities query and response formats from TLV to container, and response contents from sub-TLV to object, to align with ICMPv6 extensions (e.g., RFC 8335).</li>
+<li>Positive feedback from 6MAN WG, with chairs indicating no objection if IPPM reaches rough consensus.</li>
+<li>Confirmed container/object headers are applicable to MPLS, SFC, and BIER ping.</li>
+<li>Clarified that namespace IDs &quot;MUST&quot; be included in echo requests.</li>
+<li>Added optional pre-conditions for the feature's operation (e.g., explicit path, single path, ECMP processing).</li>
+<li>A new bit was borrowed from tracing capabilities objects to indicate 16-bit or 32-bit egress interface ID.</li>
+</ul>
+</li>
+<li><strong>Feedback</strong>: Frank Brockners suggested aligning the IOM capabilities bit field definitions with the IOM YANG model to avoid re-inventing definitions, and to treat ICMP as a network management protocol with appropriate security language (e.g., &quot;shoulds&quot; for AH/ESP headers, similar to NETCONF RFCs). This discussion was noted for further exploration on the mailing list.</li>
+</ul>
+<h3>Explicit Flow Measurements (&quot;I Want More Than One Spin Bit&quot;) Draft</h3>
+<ul>
+<li>The draft was recently adopted by the IPPM Working Group.</li>
+<li><strong>Concept</strong>: Utilizes multiple marking bits in packet headers for various performance measurements.</li>
+<li><strong>Proposed Metrics</strong>:
+<ul>
+<li><strong>RTT</strong>: Spin bit, Delay bit, and a &quot;Hidden RTT&quot; which masks the true end-to-end RTT by delaying reflection on the client side, allowing for segment measurements without revealing the full path RTT.</li>
+<li><strong>Round-trip Packet Loss</strong>: Using spin bit and T-bit.</li>
+<li><strong>One-way Packet Loss</strong>: Options include the Square bit (from RFC 8321), Loss Event bit (L-bit), or Reflection Square bit (R-bit).</li>
+</ul>
+</li>
+<li><strong>Implementations</strong>: Existing experiments and field implementations across various platforms (Android, Ericsson, Akamai, UCAM, Huawei).</li>
+<li><strong>Updates (post-adoption)</strong>: Emphasized the &quot;beneficial approach&quot; per RFC 1965 and updated all relevant RFC references.</li>
+<li><strong>Next Steps</strong>: The draft presents a range of options, and the next phase involves selecting the most suitable bits for specific protocols (e.g., QUIC, TCP).</li>
+</ul>
+<h3>Connectivity Monitoring Draft</h3>
+<ul>
+<li>Status changed from Standards Track to Experimental.</li>
+<li><strong>Concept</strong>: Proposes a loss-based connectivity metric using three measurement loops per monitored connection/path.</li>
+<li><strong>Methodology</strong>: Connectivity loss is declared if no packet is received within one measurement interval on <em>all</em> measurement loops for a monitored interface. The timing involves sending the next measurement packet only after receiving the previous one from the loop with the longest delay.</li>
+<li><strong>Feedback</strong>: Greg Mirsky raised concerns about terminology overlap with fault management OAM (e.g., BFD) and the definition of &quot;connectivity loss.&quot; He noted that BFD typically requires three consecutive lost packets to declare a session down, and suggested that declaring loss on the first packet might lead to state flapping. The author clarified that the proposed method also accounts for multiple missed packets over time before declaring loss and committed to adding text relating to fault management OAM.</li>
+</ul>
+<h3>STAMP Extensions for SR Draft</h3>
+<ul>
+<li><strong>Updates (v02)</strong>: Minor editorial changes, converted Network Information (NI) to table format, and has no open issues.</li>
+<li><strong>Related Work</strong>: Noted ongoing work on STAMP for SRv6 in the SPRING WG and a new encapsulation for pseudo wires in MPLS.</li>
+<li><strong>Next Steps</strong>: Authors are seeking further review and comments and plan to request a working group last call after one more IETF.</li>
+</ul>
+<h3>Proposed Work (Elevator Pitches)</h3>
+<ul>
+<li><strong>Responsiveness Under Working Conditions</strong>:
+<ul>
+<li><strong>Problem</strong>: Persistent bufferbloat, lack of clear definition and measurement tools for end-user experience.</li>
+<li><strong>Proposal</strong>: Standardized metric for &quot;Responsiveness Under Working Conditions&quot; using modern protocols (HTTP/2, HTTP/3, QUIC, TLS) and measuring all connection stages (DNS, TCP, TLS).</li>
+<li><strong>Method</strong>: Creates &quot;working conditions&quot; by filling buffers with realistic traffic (e.g., multiple HTTP/2 bulk transfers), then measures responsiveness through additional GET requests on background connections or separate short-lived connections.</li>
+<li><strong>Metric</strong>: &quot;Round Trips Per Minute&quot; (RPM), a user-friendly number.</li>
+<li><strong>Implementation</strong>: Currently in MacOS Monterey and iOS 15, with server-side implementations on GitHub.</li>
+<li><strong>Next Steps</strong>: Call for contributions and feedback on methodology.</li>
+</ul>
+</li>
+<li><strong>Protocol for One-Way IP Capacity Measurement (v08)</strong>:
+<ul>
+<li><strong>Context</strong>: This is the underlying protocol used for the recently published RFC 9097.</li>
+<li><strong>Key Feature</strong>: The &quot;Test Controller&quot; function always resides with the server, even when sending and receiving roles change for uplink/downlink tests. This controller uses feedback to adjust load.</li>
+<li><strong>Flexibility</strong>: The load adjustment algorithm is pluggable, allowing for measurements beyond just RFC 9097 capacity (e.g., hybrid Type 2 measurements).</li>
+<li><strong>Updates</strong>: Version 8 will be the last described version, future updates will be v9+. Options for payload content and interface diagnostic measurements were discussed.</li>
+<li><strong>Next Steps</strong>: Authors welcome revisions to security modes and plan to seek an early security director review if the WG adopts it.</li>
+</ul>
+</li>
+<li><strong>Error Performance Measurement in Packet Switch Networks (EPM)</strong>:
+<ul>
+<li><strong>Concept</strong>: Defines metrics for error performance (e.g., availability/unavailability) based on conformance to Service Level Objectives (SLOs).</li>
+<li><strong>Updates</strong>: New co-authors. Sections added on &quot;Anything as a Service&quot; (XaaS) and mobile communication availability, arguing EPM provides more accurate real-time data than traditional MTBF/MTTR.</li>
+<li><strong>Next Steps</strong>: Authors seek working group adoption.</li>
+</ul>
+</li>
+<li><strong>One-Way Delay Measurement based on Reference Delay</strong>: Proposes a new method for accurate end-to-end one-way delay measurement without clock synchronization, leveraging &quot;reference delay&quot; from deterministic networking.</li>
+<li><strong>One-Way Delay Measurement based on Deterministic Networking</strong>: Another proposal for one-way delay measurement using a centralized control node and deterministic links to collect flow information from network elements.</li>
+<li><strong>Enhanced Alternate Marking</strong>: Seeks discussion on extending the &quot;Flow Monitor Identification field&quot; for more entropy, potentially using a next header approach, following IESG input during IPv6 Alternate Marking review.</li>
+<li><strong>IOM Linux Kernel Implementation Profile</strong>: Describes the IOM profile used by the Linux kernel, aiming to enable interoperable implementations. Discussion needed on whether this is the appropriate working group.</li>
+<li><strong>Simple Direct Loss</strong>: Defines a straightforward packet format for inline counter stamping to measure direct loss, supporting alternate marking, 32/64-bit counters, and DHCP scope counters.</li>
+<li><strong>Self-Contained AutoMark</strong>: Proposes a mechanism where block ID and color information are inserted directly at the coloring point, simplifying monitoring by potentially replacing the need for separate monitor reports.</li>
+<li><strong>Postcard-Based Telemetry</strong>: Positioned as a standalone method in the &quot;postcard mode&quot; family of on-path flow telemetry, distinct from existing IOM trace and instruction-based telemetry. Discussion requested on its suitability for standardization within IPPM, particularly its relation to existing IOM protocols.</li>
+<li><strong>Encryption for Performance Data</strong>: Highlighted the sensitivity of performance measurement data and the need for encryption. A side meeting was announced for interested implementers.</li>
+<li><strong>User Devices Explicit Monitoring</strong>: A sibling draft to Explicit Flow Measurements, suggesting placing measurement probes on user devices (smartphones, PCs) to leverage their hardware for scalability, precision, and coordinated network monitoring.</li>
+<li><strong>High Precision Service Metrics</strong>: Defines new metrics to capture service compliance with SLOs for precision services (e.g., capturing the number of violating packets or violated time units for latency objectives). Discussion will be held to differentiate it from EPM.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>IOM Data Integrity Draft</strong>:
+<ul>
+<li><strong>Action</strong>: Authors to complete the security section (Section 6).</li>
+<li><strong>Action</strong>: Working group to provide feedback on preferred hashing and signature algorithms for the integrity option.</li>
+</ul>
+</li>
+<li><strong>IOM Deployment Draft</strong>:
+<ul>
+<li><strong>Action</strong>: Authors to include IOM encapsulation over BIER.</li>
+</ul>
+</li>
+<li><strong>IOM Conf State Draft</strong>:
+<ul>
+<li><strong>Action</strong>: Discussion on aligning with the IOM YANG model and refining security language for ICMP-based measurements to be continued on the mailing list.</li>
+</ul>
+</li>
+<li><strong>Protocol for One-Way IP Capacity Measurement</strong>:
+<ul>
+<li><strong>Decision</strong>: The current version (v08) will be the last described, with future updates starting at v09+.</li>
+<li><strong>Action</strong>: Authors welcome revisions to security modes.</li>
+</ul>
+</li>
+<li><strong>Connectivity Monitoring Draft</strong>:
+<ul>
+<li><strong>Action</strong>: Author to add text clarifying relation to fault management OAM and BFD, and discuss further on the mailing list.</li>
+</ul>
+</li>
+<li><strong>STAMP Extensions for SR Draft</strong>:
+<ul>
+<li><strong>Action</strong>: Authors to seek more review comments.</li>
+<li><strong>Decision</strong>: A working group last call will be requested after one more IETF.</li>
+</ul>
+</li>
+<li><strong>Postcard-Based Telemetry Draft</strong>:
+<ul>
+<li><strong>Action</strong>: Discussion to determine if this can be defined as an IOM protocol, aligning with the existing IOM family.</li>
+</ul>
+</li>
+<li><strong>High Precision Service Metrics Draft</strong>:
+<ul>
+<li><strong>Action</strong>: Authors to review the EPM draft and discuss on the mailing list how efforts can be combined or differentiated.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>General</strong>: Continued discussion on the mailing list for all drafts, especially regarding technical details, security considerations, and potential working group adoption.</li>
+<li><strong>IOM Data Integrity</strong>: Completion of security section and gathering feedback on algorithms are prerequisites for a potential security review.</li>
+<li><strong>IOM Conf State</strong>: Detailed discussions on YANG model alignment and security wording will proceed on the mailing list.</li>
+<li><strong>Explicit Flow Measurements</strong>: The working group and authors will focus on selecting the most appropriate marking bits for different protocols.</li>
+<li><strong>Connectivity Monitoring</strong>: Further discussion on terminology and the definition of &quot;connectivity loss&quot; in relation to fault management.</li>
+<li><strong>STAMP Extensions for SR</strong>: Continued reviews and preparations for a working group last call.</li>
+<li><strong>New Proposed Work</strong>: Authors are encouraged to refine their drafts based on initial feedback, seek collaborators, and drive discussion on the mailing list towards potential working group adoption.</li>
+<li><strong>Side Meeting</strong>: Attendees interested in encryption for performance measurement data were invited to a side meeting.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

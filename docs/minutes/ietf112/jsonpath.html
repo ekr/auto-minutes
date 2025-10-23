@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="jsonpath.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-JSONPATH-20211110-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 10 Nov 2021 12:00</p>
+<h1>jsonpath</h1>
+<h2>Summary</h2>
+<p>The JSONPath working group meeting covered significant ground, making progress on several open issues and setting direction for the draft. Key decisions included simplifying the language by removing the <code>in</code> operator and standardizing on existence tests for boolean contexts. Discussions on comparison semantics for absent values and the inclusion of regular expressions were deferred to the mailing list for further input due to their complexity and potential impact on interoperability and development timeline. There was general optimism about bringing the draft to the ISG by the next IETF meeting if these remaining complex issues can be resolved.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative &amp; Logistics</strong>
+<ul>
+<li>Pull request #135 (creating <code>tools.md</code>) was merged.</li>
+<li>Notes for the meeting will be generated from the VOD. Blue sheets are automatic via Meetecho.</li>
+<li>Stefan will join 10-15 minutes into the session.</li>
+<li>Agenda adjusted to include regex in filters discussion.</li>
+</ul>
+</li>
+<li><strong>Document Status &amp; Schedule</strong>
+<ul>
+<li>The draft is in a good state, with core syntax and semantics mostly defined.</li>
+<li>Many open issues are concentrated in Section 4 (expression language).</li>
+<li>An appendix with examples for each selector in Section 3.5.2 is desired (Issue #136 opened).</li>
+<li>There is optimism about bringing the draft forward to the ISG by IETF 113 (mid-March).</li>
+<li>Glenn is currently not working on the compliance test suite or reference implementation.</li>
+</ul>
+</li>
+<li><strong>Issue #127: Structured Types in the <code>in</code> Operator</strong>
+<ul>
+<li>The discussion revolved around allowing structured values (objects, arrays) or paths yielding structured values on the right-hand side of the <code>in</code> operator.</li>
+<li>Initial consensus was to limit <code>in</code> to array literals of primitive values.</li>
+<li>Concern was raised about the complexity of defining deep equality for structured types and potential for &quot;least surprise&quot; violations.</li>
+<li>A use case from OpenAPI (Daryl) indicated a need for <code>in</code> with primitive literals, but not structured values.</li>
+<li>It was noted that <code>in</code> with array literals is largely syntactic sugar for a disjunction (<code>or</code>) of equality checks.</li>
+<li>Nested filter expressions were proposed as an alternative for more complex containment checks.</li>
+<li><strong>Decision:</strong> The working group decided to <strong>remove the <code>in</code> operator</strong> from the current specification. It was noted that it can be added back later if strong demand with clear use cases emerges, as its absence would result in a syntax error in the current draft.</li>
+</ul>
+</li>
+<li><strong>JSONPath XInclude-like Extension</strong>
+<ul>
+<li>A proposal for an extension resembling XInclude for JSONPath was discussed.</li>
+<li>Concerns included destroying data transparency (string values suddenly having special meaning) and adding significant complexity.</li>
+<li><strong>Decision:</strong> The working group decided <strong>not to include</strong> this functionality in the base RFC. It was suggested that this could be explored as part of future extension mechanisms or as a separate pre-processing step outside of JSONPath's core processing model.</li>
+<li><strong>Action Item:</strong> Carsten to comment on the issue with the working group's consensus.</li>
+</ul>
+</li>
+<li><strong>Issue #123: Absent Equals Absent</strong>
+<ul>
+<li>This issue concerns the comparison semantics when both sides of an equality comparison result in an empty node list (i.e., the queried path does not exist).</li>
+<li>Two primary interpretations were discussed:
+<ul>
+<li><strong>&quot;Undefined equals Undefined&quot; (True):</strong> Similar to JavaScript's <code>undefined == undefined</code>. Carsten favored this, suggesting that two missing items being &quot;the same&quot; is a valid use case (e.g., two issues both lacking a PR).</li>
+<li><strong>&quot;NaN equals NaN&quot; (False/Unknown):</strong> Similar to JavaScript's <code>NaN == NaN</code> being false, or a &quot;don't return it if the condition cannot be determined&quot; approach, which aligns with filter semantics. This was favored by others, citing greater potential for user surprise with the &quot;undefined&quot; behavior.</li>
+</ul>
+</li>
+<li>It was acknowledged that existence tests (<code>exists()</code>) could be used to explicitly check for presence/absence, mitigating either decision.</li>
+<li><strong>Action Item:</strong> Take this discussion to the mailing list with specific use cases to guide a final decision between the &quot;undefined&quot; and &quot;NaN&quot; semantics.</li>
+</ul>
+</li>
+<li><strong>Truthiness (Path expression in boolean context)</strong>
+<ul>
+<li>Discussion on the meaning of a standalone path expression (e.g., <code>$.foo</code>) when used in a boolean context (e.g., filter expression).</li>
+<li>Proposal: Treat such expressions as a <strong>pure existence test</strong> (i.e., &quot;does <code>$.foo</code> exist?&quot;).</li>
+<li>This approach avoids the &quot;truthiness weirdness&quot; found in JavaScript (where empty arrays/objects or specific strings can evaluate to <code>true</code> or <code>false</code>). If the <em>value</em> of the path is needed for comparison, an explicit comparison operator should be used (e.g., <code>$.foo == true</code>).</li>
+<li><strong>Decision:</strong> Strong consensus to define a path expression in a boolean context as a <strong>pure existence test</strong>.</li>
+</ul>
+</li>
+<li><strong>Issue #108: Normalization in Comparisons</strong>
+<ul>
+<li>The question was whether string comparisons should perform Unicode normalization by default.</li>
+<li>Existing implementations generally do not perform normalization.</li>
+<li><strong>Decision:</strong> Comparisons should <strong>not perform normalization by default</strong>. If normalization is required, it should be explicitly requested via an extension or feature. The comparison should operate on Unicode code points rather than byte strings.</li>
+</ul>
+</li>
+<li><strong>Issue #109: Filtering without child selection / Key Access</strong>
+<ul>
+<li>This issue highlights the difficulty in selecting or filtering based on an object's <em>key</em> rather than its value, especially at the top level, or to project (return) the key itself.</li>
+<li>JSONPath's processing model is primarily for <em>selection</em> of values, not <em>projection</em> (modifying structure or returning keys alongside values).</li>
+<li>Introducing a &quot;key&quot; operator (e.g., <code>@key</code>) would allow selection based on keys but would require changes to the processing model. Returning the key would be a projection.</li>
+<li>The issue was deemed complex and not a frequently raised concern.</li>
+<li><strong>Decision:</strong> The working group will <strong>acknowledge the issue but not address it</strong> in the current scope of the RFC, as it would require a significant extension of the processing model (projection capabilities). Community members are encouraged to bring more compelling use cases.</li>
+</ul>
+</li>
+<li><strong>Pagination/Limiting Results</strong>
+<ul>
+<li>The idea of limiting the number of results (e.g., &quot;give me the first 20 hits&quot;) was discussed.</li>
+<li>While the current <code>slice</code> operator applies to arrays, a general limit for a node list (result set) would be different.</li>
+<li><strong>Decision:</strong> This functionality was deemed to fall outside the scope of the core JSONPath expression language, feeling more like an API or post-processing concern. <strong>Not to be included</strong> in the specification.</li>
+</ul>
+</li>
+<li><strong>Regular Expressions in Filters</strong>
+<ul>
+<li>Revisiting the debate on including regular expressions and, if so, which flavor.</li>
+<li>Concerns about interoperability if implementers choose different regex libraries/standards.</li>
+<li>Five options were identified:
+<ol>
+<li>Adopt JSON Schema's approach (referencing ECMA-262 with a subset recommendation).</li>
+<li>Subset W3C XSD regular expressions.</li>
+<li>Define a new, minimal &quot;iRegex&quot; subset (Chomsky Type 3 languages).</li>
+<li>Factor out the regular expression language definition (allowing mix-and-match, but impacting interoperability).</li>
+<li>Do not include regular expressions at all.</li>
+</ol>
+</li>
+<li>This is recognized as a potentially significant blocker or delay point for the working group.</li>
+<li><strong>Action Item:</strong> Take this discussion to the mailing list, presenting the five options for wider input and decision.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision 1:</strong> The <code>in</code> operator will be <strong>removed</strong> from the JSONPath specification. Its functionality can be achieved using filter expressions.</li>
+<li><strong>Decision 2:</strong> The JSONPath XInclude-like extension will <strong>not be included</strong> in the base RFC.</li>
+<li><strong>Action Item 1:</strong> Carsten to comment on the XInclude-like extension issue, reflecting the working group's decision.</li>
+<li><strong>Action Item 2:</strong> The &quot;Absent equals Absent&quot; comparison semantics (between &quot;undefined equals undefined&quot; and &quot;NaN equals NaN&quot;) will be taken to the <strong>mailing list</strong> for further discussion and use cases.</li>
+<li><strong>Decision 3:</strong> A standalone path expression used in a boolean context (e.g., in a filter) will be interpreted as a <strong>pure existence test</strong>.</li>
+<li><strong>Decision 4:</strong> String comparisons in JSONPath will <strong>not perform Unicode normalization by default</strong>. They will operate on Unicode code points.</li>
+<li><strong>Decision 5:</strong> The issue of key access/projection (Issue #109) will be <strong>acknowledged but not addressed</strong> in the current scope, as it requires a significant extension of the processing model.</li>
+<li><strong>Decision 6:</strong> Pagination/limiting results will <strong>not be included</strong> in the JSONPath expression language.</li>
+<li><strong>Action Item 3:</strong> The discussion on regular expressions in filters, including the five identified options, will be taken to the <strong>mailing list</strong> for further deliberation.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Schedule an interim meeting for <strong>January 2022</strong> via a Doodle poll to the mailing list.</li>
+<li>Continue discussions on the mailing list regarding:
+<ul>
+<li>Comparison semantics for absent values (&quot;Absent equals Absent&quot;).</li>
+<li>The approach for including (or not including) regular expressions in filters.</li>
+</ul>
+</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

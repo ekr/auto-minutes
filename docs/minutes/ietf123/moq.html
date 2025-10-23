@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="moq.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF123-MOQ-20250722-0730">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF123-MOQ-20250724-0730">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 22 Jul 2025 07:30</p>
+<h1>moq</h1>
+<h2>Summary</h2>
+<p>The meeting covered several important topics, including a discussion on whether to rename the &quot;media over quick&quot; protocol, updates to the moq-transport draft, the introduction of Privacy Pass tokens for enhanced security, a proposal for distributing Open Cybersecurity Framework (OCSF) events over MoQ, and an update on secure objects. Key technical discussions and decisions revolved around the handling of header extensions in secure objects, the possibility of self-subscription, and error handling for fetch requests.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Protocol Naming:</strong> A vote was held regarding renaming the &quot;media over quick&quot; protocol. The majority favored keeping the current name, but the topic will be revisited on the mailing list.</li>
+<li><strong>moq-transport Updates:</strong> Alan presented updates to the moq-transport draft since IETF 122, focusing on new features, wire changes, and compression schemes. Changes included request IDs, authentication info structure, forward flags, and joining fetch.</li>
+<li><strong>Privacy Pass Tokens:</strong> Cullen introduced Privacy Pass tokens as an alternative to CAT tokens, designed to provide privacy-preserving authorization. The discussion covered the scope of authorization and the need for consistency with CAT tokens.</li>
+<li><strong>OCSF over MoQ:</strong> Suhas proposed using MoQ to distribute Open Cybersecurity Framework (OCSF) events for cybersecurity applications, emphasizing its potential to reduce latency and improve scalability compared to traditional systems. The discussion revolved around use cases and the applicability of MoQ's charter.</li>
+<li><strong>Secure Objects:</strong> Cullen updated the group on secure objects, focusing on the handling of header extensions. The proposal involves categories of header extensions that relays can modify, see but not modify, or cannot see (encrypted). There was debate on mutability and placement of the integrity marker.</li>
+<li><strong>Self-Subscription:</strong> A debate occurred about allowing a publisher to subscribe to its own track. Concerns revolved around potential loop issues. The preliminary conclusion was to allow it, enabling multi-publisher scenarios.</li>
+<li><strong>Fetch Range Errors:</strong> The group discussed how to handle fetch requests for ranges that are too large. The initial idea of providing an explicit fetch error for too-large requests was favored over more complex approaches like subsetting the fetch.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Protocol Naming:</strong> Stick with the current name &quot;media over quick&quot; but revisit the discussion on the mailing list.</li>
+<li><strong>Privacy Pass Tokens:</strong> Further discussion of Privacy Pass tokens on the mailing list, followed by potential adoption call.</li>
+<li><strong>Secure Objects:</strong> Take the discussion of header extensions and integrity markers to the mailing list for further consideration.</li>
+<li><strong>Fetch Range Errors:</strong> Add an explicit fetch error for requests with a range that is too large.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Magnus and the chairs will coordinate on adoption calls for Privacy Pass tokens and CAT tokens after mailing list discussion.</li>
+<li>Further discussions will take place on the mailing list regarding header extensions in secure objects, including mutability and integrity marker placement.</li>
+<li>A PR will be written to add an explicit fetch error code.</li>
+<li>The implementation of a PR that allows the feature of self-subscription in moq should include clarification about whether the publisher also receives their own objects when subscribed to the same namespace and track.</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 24 Jul 2025 07:30</p>
+<pre><code class="language-markdown"># moq
+
+## Summary
+
+This moq session covered several important topics, including the naming of the protocol, interop results, updates on the Warp draft, authentication and access control, open issues in the moq transport draft, and discussions around ABR and synchronization. The meeting involved a mix of presentations, discussions, and decisions regarding the direction of the moq protocol.
+
+## Key Discussion Points
+
+*   **Naming:** The group discussed the possibility of repurposing the &quot;MOQ&quot; acronym, but decided to stick with &quot;Media Over Quick&quot;.
+*   **Interop:** Mike presented interop results and raised the question of the best timing for cutting interop target drafts. There was a call for clearer communication about changes between drafts and mechanisms to announce bugs that impact interoperability. Also, ALPN is still blocking some functionality.
+*   **Warp:** Will Law provided an update on the Warp draft, focusing on changes related to group numbering, track roles, catalog generation, and live broadcast termination. A major point of discussion was the URL syntax for Warp, particularly how to separate connection information from namespace and name information. There was feedback regarding tokenization and concerns about including credentials in the URL path.
+*   **Authentication (CAT for MOQ):** Authentication and access control for MOQ using Common Access Tokens (CAT) was discussed, including updates to the MOQ claim, supported actions, and composite claims. The &quot;moq revalidate claim&quot; and its relationship to token expiration was discussed. There was an open question about the types of matches needed (exact, prefix, suffix, contains). A request for working group adoption was made, along with a discussion about whether the working group adopting the scheme precludes additional work on others with significantly different properties.
+*   **MOQT Open Issues:** Ali reviewed open issues, including issues related to varn format, and the `announce` verb.  Discussions were held about modularity and what is mandatory for relays to implement, also empty object returns on fetch. There was an issue on Should vs Must for multi-publisher relay handling and various use cases around those, that could be implemented.
+*   **ABR and Synchronization:** Ian presented on issues related to ABR and synchronization. Topics covered included bandwidth estimation, discovery, padding streams, probing, the priority of less than best effort and reserving congestion control.  There was also talk about grouping, in order to sync multiple sources like Audio and Video.
+
+## Decisions and Action Items
+
+*   **Naming:** Stick with &quot;Media Over Quick&quot; for the MOQ acronym.
+*   **Warp URL Syntax:** Will to review chat logs and continue discussion on the mailing list.
+*   **CAT for MOQ Adoption:** Conduct a confirmation poll on the working group mailing list.
+*   **MOQT: Feature Modularity:** Relays must implement everything, and applications are allowed to implement a subset of features. Discussion will continue on the PR.
+*   **MOQT: Multi-Publisher:** Create a PR that makes forwarding for Multi-publishers a MUST and then separately can propose a way to make it must when the publisher identifies that it is absolutely critical and should otherwise.
+*   **ABR and Synchronization:** Explore whether it can implement in a way to probe with duplicates as a kind of poor man's FEC just to have some way of implementing such a thing and discussion about the reserving capacity in the Lincoln not fully utilizing the congestion controller for a certain prioritization use cases.
+
+## Next Steps
+
+*   Magnus to take naming decision to the mailing list.
+*   Will to review the chat logs and create an issue on Github to track follow up discussions about warp url syntax.
+*   Ali to send the summarization of the discussion, with a link, to the mailing list.
+*   Ali to create PR for Multi-Publisher and then separately can propose a way to make it must when the publisher identifies that it is absolutely critical and should otherwise.
+*   Ian to provide links to the github issues on mailing list.
+*   Continue discussions asynchronously on GitHub and the mailing list.
+*   Present new drafts and updates at the next interim meeting in Toronto.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

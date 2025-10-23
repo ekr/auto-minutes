@@ -1,0 +1,101 @@
+**Session Date/Time:** 05 Nov 2024 16:30
+
+# sidrops
+
+## Summary
+This session of the sidrops working group covered two main topics: Manifest Numbers and a next-generation RPKI transport, and Constraining RPKI Trust Anchors. The Manifest Numbers discussion focused on a draft addressing the potential for manifest number exhaustion and aimed for working group last call. The next-generation RPKI transport discussion explored the potential benefits and drawbacks of existing transport mechanisms (R-Sync and RRDP) and proposed a requirements-driven approach for developing a new transport. The Constraining RPKI Trust Anchors presentation discussed approaches to locally constrain trust anchors, and requested feedback from the working group.
+
+## Key Discussion Points
+
+*   **Manifest Numbers:**
+    *   The current mechanism relies on incrementing a manifest number, but it has a limited range and can stall if the maximum value is reached.
+    *   The proposed solution involves resetting the manifest number when the manifest filename changes.
+    *   There was a discussion regarding deprecating the manifest number check entirely, but the consensus was that it's useful for diagnostics and provides a safeguard against invalid restores from backup.
+    *   Concerns were raised and addressed that CA regression would be a problem, and suggestion made that CAs should do a key rollover in these situations.
+
+*   **Next-Generation RPKI Transport:**
+    *   R-Sync and RRDP both have advantages and disadvantages. R-Sync offers resilience and local bandwidth performance, while RRDP provides transport security and CDN compatibility.
+    *   It was suggested to develop a requirements document that outlines the desired properties of a next-generation transport, as opposed to diving directly into specific solutions.
+    *   Requirements mentioned included direct access to individual objects, bandwidth efficiency, RPKI-aware compression, resumption capabilities, and minimizing the need for snapshot generation.
+    *   A small group has already volunteered to write an individual submission capturing transport requirements.
+    *   Rob Austine thought that criticisms were implementation related.
+    *   Andy Newton asked why not just patch RDP?
+    *   George Michaelson suggested that best current practices documents could be used to describe best practices.
+
+*   **Constraining RPKI Trust Anchors:**
+    *   Relying parties may want to limit the scope of trust they place in a given trust anchor.
+    *   One approach is to use local configuration to allow or deny specific Internet Number Resources (INRs) under a trust anchor.
+    *   Another approach is the NRO Experimental Trust Anchor, which signs over the public keys of the RER's trust anchor certificates and imposes constraints specific to each RAR.
+    *   Problems with the current RPKI validation algorithm prevent the NRO experimental trust anchor from being readily used.
+
+## Decisions and Action Items
+
+*   **Manifest Numbers:**
+    *   The presenter will consider adding recommendations for CAs regarding key rollover in the case of resource regression, possibly in a best current practice document.
+    *   Aim for working group last call.
+*   **Next-Generation RPKI Transport:**
+    *   A small group will continue working on the individual submission capturing transport requirements for an next-gen transport.
+*   **Constraining RPKI Trust Anchors**
+    *   It may be helpful to turn this into an informational RFC
+    *   The working group should consider the document and its usefulness in the future
+
+## Next Steps
+
+*   **Manifest Numbers:**
+    *   Address feedback from the discussion.
+    *   Move to working group last call.
+
+*   **Next-Generation RPKI Transport:**
+    *   The small group will publish a first version of the transport requirements document and solicit feedback from stakeholders.
+    *   Working group to further discuss requirements and potential solutions.
+
+*   **Constraining RPKI Trust Anchors:**
+    *   Working group to consider further exploration of a locally configured policy that relying party operators can impose on the outcome of the relying party implementation
+    *   Publish document via the independent stream
+
+
+---
+
+**Session Date/Time:** 05 Nov 2024 18:00
+
+# sidrops
+
+## Summary
+
+This session covered several topics related to RPKI and route security. Presentations included discussions on ASRA (Autonomous System Relationship Authorization), CSP (Connectivity Security Policy) objects, route partial visibility, route origin registry, and RPKI repository issues.  Significant discussion focused on the need for ASRA given existing mechanisms like BGPSEC and the operational complexities of new RPKI objects. Other topics covered proposed solutions to known issues.
+
+## Key Discussion Points
+
+*   **ASRA (Autonomous System Relationship Authorization):**
+    *   Purpose: Detect forged peering links not detectable by ASPA alone.
+    *   Mechanism:  Combines with ASPA to verify BGP peering links.
+    *   Debate:  Ben Winter argued that lying transit providers are rare and BGPSEC is the better solution to address concerns about falsified path information.  Charam addressed issues where ASRA would resolve vulnerabilities that ASPA can't.
+    *   Operational Complexity: Concerns raised by Warren Kumari; need to finalize ASPA before considering ASRA.
+    *   Deployment: Antwerp raised questions about deployment before ASPA, clarifying the need to deploy together.
+*   **CSP (Connectivity Security Policy) Objects:**
+    *   Purpose: Enable remote pinning and automatic peering for subnet adopting ASes.
+    *   Updates: Addressed comments from Ross re: ASN.1 format, class names, and address families.
+*   **Route Partial Visibility:**
+    *   Problem: Even with correct ROAs, partial route visibility can lead to vulnerabilities.
+    *   Types: Unilateral, SPDO, DPSO, DPDO.
+    *   Causes: Route filtering, route aggregation.
+    *   Mitigation: Local mitigation by each AS using ASPA and RPI level filtering of suspicious routes.
+*   **Route Origin Registry:**
+    *   Problem: Limitations of existing IRR and RPKI data sources for multi-origin AS announcements.
+    *   Proposed Solutions: Multi-party governance, leverage multiple data sources, cross-verification, anomaly detection.
+    *   Debate: Question about the necessity of a new system versus simply creating more ROAs to authorize multiple origin ASNs.
+*   **RPKI Repository Issues:**
+    *   Problems: Reliability, scalability, and security issues with current RPKI repository design.
+    *   Proposed Solutions: Distributed data storage, preventing unlimited PP growth, malicious behavior detection, complete RPKI object view, audit functions.
+    *   Concerns raised about operational practices and need for better training and guidance.
+## Decisions and Action Items
+
+*   ASRA: Review feedback and consider potential refinements, further discussion needed within the working group.
+*   Route Origin Registry: Author to consider feedback and re-evaluate the need for a new system given existing RPKI capabilities.
+*   Presentations cut short due to running out of time.
+
+## Next Steps
+
+*   Continue discussion on the mailing list for ASRA, route origin registry, and RPKI repository issues.
+*   Reschedule remaining presentations for a future session.
+*   Working group to focus on deploying and finalizing ASPA.

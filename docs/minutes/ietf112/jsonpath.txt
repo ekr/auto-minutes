@@ -1,0 +1,90 @@
+**Session Date/Time:** 10 Nov 2021 12:00
+
+# jsonpath
+
+## Summary
+
+The JSONPath working group meeting covered significant ground, making progress on several open issues and setting direction for the draft. Key decisions included simplifying the language by removing the `in` operator and standardizing on existence tests for boolean contexts. Discussions on comparison semantics for absent values and the inclusion of regular expressions were deferred to the mailing list for further input due to their complexity and potential impact on interoperability and development timeline. There was general optimism about bringing the draft to the ISG by the next IETF meeting if these remaining complex issues can be resolved.
+
+## Key Discussion Points
+
+*   **Administrative & Logistics**
+    *   Pull request #135 (creating `tools.md`) was merged.
+    *   Notes for the meeting will be generated from the VOD. Blue sheets are automatic via Meetecho.
+    *   Stefan will join 10-15 minutes into the session.
+    *   Agenda adjusted to include regex in filters discussion.
+*   **Document Status & Schedule**
+    *   The draft is in a good state, with core syntax and semantics mostly defined.
+    *   Many open issues are concentrated in Section 4 (expression language).
+    *   An appendix with examples for each selector in Section 3.5.2 is desired (Issue #136 opened).
+    *   There is optimism about bringing the draft forward to the ISG by IETF 113 (mid-March).
+    *   Glenn is currently not working on the compliance test suite or reference implementation.
+*   **Issue #127: Structured Types in the `in` Operator**
+    *   The discussion revolved around allowing structured values (objects, arrays) or paths yielding structured values on the right-hand side of the `in` operator.
+    *   Initial consensus was to limit `in` to array literals of primitive values.
+    *   Concern was raised about the complexity of defining deep equality for structured types and potential for "least surprise" violations.
+    *   A use case from OpenAPI (Daryl) indicated a need for `in` with primitive literals, but not structured values.
+    *   It was noted that `in` with array literals is largely syntactic sugar for a disjunction (`or`) of equality checks.
+    *   Nested filter expressions were proposed as an alternative for more complex containment checks.
+    *   **Decision:** The working group decided to **remove the `in` operator** from the current specification. It was noted that it can be added back later if strong demand with clear use cases emerges, as its absence would result in a syntax error in the current draft.
+*   **JSONPath XInclude-like Extension**
+    *   A proposal for an extension resembling XInclude for JSONPath was discussed.
+    *   Concerns included destroying data transparency (string values suddenly having special meaning) and adding significant complexity.
+    *   **Decision:** The working group decided **not to include** this functionality in the base RFC. It was suggested that this could be explored as part of future extension mechanisms or as a separate pre-processing step outside of JSONPath's core processing model.
+    *   **Action Item:** Carsten to comment on the issue with the working group's consensus.
+*   **Issue #123: Absent Equals Absent**
+    *   This issue concerns the comparison semantics when both sides of an equality comparison result in an empty node list (i.e., the queried path does not exist).
+    *   Two primary interpretations were discussed:
+        *   **"Undefined equals Undefined" (True):** Similar to JavaScript's `undefined == undefined`. Carsten favored this, suggesting that two missing items being "the same" is a valid use case (e.g., two issues both lacking a PR).
+        *   **"NaN equals NaN" (False/Unknown):** Similar to JavaScript's `NaN == NaN` being false, or a "don't return it if the condition cannot be determined" approach, which aligns with filter semantics. This was favored by others, citing greater potential for user surprise with the "undefined" behavior.
+    *   It was acknowledged that existence tests (`exists()`) could be used to explicitly check for presence/absence, mitigating either decision.
+    *   **Action Item:** Take this discussion to the mailing list with specific use cases to guide a final decision between the "undefined" and "NaN" semantics.
+*   **Truthiness (Path expression in boolean context)**
+    *   Discussion on the meaning of a standalone path expression (e.g., `$.foo`) when used in a boolean context (e.g., filter expression).
+    *   Proposal: Treat such expressions as a **pure existence test** (i.e., "does `$.foo` exist?").
+    *   This approach avoids the "truthiness weirdness" found in JavaScript (where empty arrays/objects or specific strings can evaluate to `true` or `false`). If the *value* of the path is needed for comparison, an explicit comparison operator should be used (e.g., `$.foo == true`).
+    *   **Decision:** Strong consensus to define a path expression in a boolean context as a **pure existence test**.
+*   **Issue #108: Normalization in Comparisons**
+    *   The question was whether string comparisons should perform Unicode normalization by default.
+    *   Existing implementations generally do not perform normalization.
+    *   **Decision:** Comparisons should **not perform normalization by default**. If normalization is required, it should be explicitly requested via an extension or feature. The comparison should operate on Unicode code points rather than byte strings.
+*   **Issue #109: Filtering without child selection / Key Access**
+    *   This issue highlights the difficulty in selecting or filtering based on an object's *key* rather than its value, especially at the top level, or to project (return) the key itself.
+    *   JSONPath's processing model is primarily for *selection* of values, not *projection* (modifying structure or returning keys alongside values).
+    *   Introducing a "key" operator (e.g., `@key`) would allow selection based on keys but would require changes to the processing model. Returning the key would be a projection.
+    *   The issue was deemed complex and not a frequently raised concern.
+    *   **Decision:** The working group will **acknowledge the issue but not address it** in the current scope of the RFC, as it would require a significant extension of the processing model (projection capabilities). Community members are encouraged to bring more compelling use cases.
+*   **Pagination/Limiting Results**
+    *   The idea of limiting the number of results (e.g., "give me the first 20 hits") was discussed.
+    *   While the current `slice` operator applies to arrays, a general limit for a node list (result set) would be different.
+    *   **Decision:** This functionality was deemed to fall outside the scope of the core JSONPath expression language, feeling more like an API or post-processing concern. **Not to be included** in the specification.
+*   **Regular Expressions in Filters**
+    *   Revisiting the debate on including regular expressions and, if so, which flavor.
+    *   Concerns about interoperability if implementers choose different regex libraries/standards.
+    *   Five options were identified:
+        1.  Adopt JSON Schema's approach (referencing ECMA-262 with a subset recommendation).
+        2.  Subset W3C XSD regular expressions.
+        3.  Define a new, minimal "iRegex" subset (Chomsky Type 3 languages).
+        4.  Factor out the regular expression language definition (allowing mix-and-match, but impacting interoperability).
+        5.  Do not include regular expressions at all.
+    *   This is recognized as a potentially significant blocker or delay point for the working group.
+    *   **Action Item:** Take this discussion to the mailing list, presenting the five options for wider input and decision.
+
+## Decisions and Action Items
+
+*   **Decision 1:** The `in` operator will be **removed** from the JSONPath specification. Its functionality can be achieved using filter expressions.
+*   **Decision 2:** The JSONPath XInclude-like extension will **not be included** in the base RFC.
+*   **Action Item 1:** Carsten to comment on the XInclude-like extension issue, reflecting the working group's decision.
+*   **Action Item 2:** The "Absent equals Absent" comparison semantics (between "undefined equals undefined" and "NaN equals NaN") will be taken to the **mailing list** for further discussion and use cases.
+*   **Decision 3:** A standalone path expression used in a boolean context (e.g., in a filter) will be interpreted as a **pure existence test**.
+*   **Decision 4:** String comparisons in JSONPath will **not perform Unicode normalization by default**. They will operate on Unicode code points.
+*   **Decision 5:** The issue of key access/projection (Issue #109) will be **acknowledged but not addressed** in the current scope, as it requires a significant extension of the processing model.
+*   **Decision 6:** Pagination/limiting results will **not be included** in the JSONPath expression language.
+*   **Action Item 3:** The discussion on regular expressions in filters, including the five identified options, will be taken to the **mailing list** for further deliberation.
+
+## Next Steps
+
+*   Schedule an interim meeting for **January 2022** via a Doodle poll to the mailing list.
+*   Continue discussions on the mailing list regarding:
+    *   Comparison semantics for absent values ("Absent equals Absent").
+    *   The approach for including (or not including) regular expressions in filters.

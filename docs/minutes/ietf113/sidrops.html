@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="sidrops.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-SIDROPS-20220325-1130">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Mar 2022 11:30</p>
+<h1>sidrops</h1>
+<h2>Summary</h2>
+<p>The sidrops session began with a reminder about the IETF Code of Conduct, emphasizing respectful communication. Key technical discussions included the Resource Sign Checklist (RSC) moving towards Working Group Last Call, a proposal for Discard Origin Authorizations (DOA) to secure RTBH signaling, and an analysis of BGPsec scalability issues, suggesting protocol-level changes for better performance. Enhancements to ASPA verification procedures, particularly concerning route servers, were presented, sparking further discussion. Finally, a proposal was made to explore RPKI Certificate Transparency (CT) to improve auditability, alongside an examination of several &quot;off-the-beaten-path&quot; RPKI edge cases and potential attack vectors.</p>
+<h2>Key Discussion Points</h2>
+<h3>IETF Code of Conduct Reminder</h3>
+<ul>
+<li>Allison Menken from the ombuds team highlighted an increase in concerns regarding discussions in sidrops, urging participants to adhere to the Code of Conduct (be neutral, equal, respectful).</li>
+<li>Personal attacks, especially using &quot;you,&quot; were identified as problematic and detrimental to new participants.</li>
+<li>Warren Kumari, co-chair, emphasized the need to channel passion constructively, avoiding &quot;beating up the artwork.&quot; He stressed disagreeing with ideas, not people.</li>
+<li>Lars Eggert suggested a &quot;cool-off&quot; period (e.g., a few hours with coffee) before sending potentially heated emails.</li>
+<li>Chairs committed to monitoring discussions and encouraged participants to reach out if they feel stressed or attacked.</li>
+</ul>
+<h3>Resource Sign Checklist (RSC) Update (Job Snijders)</h3>
+<ul>
+<li><strong>Concept</strong>: RSC is a simplification of the earlier RTA idea, allowing signing of arbitrary digital objects (hashes) with RPKI resources. RSC files are distributed <em>outside</em> the global RPKI publication system, making them useful for scenarios like &quot;bring your own IP/AS&quot; without burdening the RPKI repository infrastructure.</li>
+<li><strong>Status</strong>: Multiple signer and validator implementations exist. IANA code points were allocated and integrated into OpenSSL 3.0 and LibreSSL 3.4.0. Example files and an implementation report wiki are available.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Jeff questioned the load on the RPKI system. Job clarified RSC files are distributed one-to-one, not via rsync/RDP, so they do not add burden to the global RPKI repository. Revoking an RSC adds a few bytes to a CRL, which is a minimal load.</li>
+<li>The relationship with the &quot;RPKI has no identity&quot; draft was noted; RSC confirms possession of private keys and resource subordination, not identity.</li>
+</ul>
+</li>
+</ul>
+<h3>Discard Origin Authorization (DOA) (Ben Maddison)</h3>
+<ul>
+<li><strong>Problem</strong>: Existing Inter-Domain RTBH (Remotely Triggered Black Hole) signaling, often using BGP communities, conflicts with RPKI Origin Validation (ROV). RTBH for host-length prefixes requires ROAs with very long max-length values, which effectively disable ROV's protection against sub-prefix hijacks. Current workarounds (disabling ROV for RTBH routes) are problematic as they remove essential security. There is also a lack of secure attribution for RTBH communities.</li>
+<li><strong>Proposal</strong>: A new RPKI signed object, DOA, similar to ROAs but specifically for RTBH. It would include:
+<ul>
+<li><strong>Prefix and Length Range</strong>: Allows specifying a range (e.g., /16 to /32) rather than a single max-length, offering finer granularity.</li>
+<li><strong>Origin ASID</strong>: Same as ROA.</li>
+<li><strong>Peer ASIDs</strong>: To provide scoping, allowing recipients to act only if the BGP announcement comes from a listed AS.</li>
+<li><strong>Communities</strong>: A set of communities to cross-reference against the received BGP community for verification.</li>
+</ul>
+</li>
+<li><strong>Mechanism</strong>: DOAs would be validated by RP software and processed on a router <em>before</em> ROV checks, allowing parallel, orthogonal validation. This offers a stronger hint for RTBH routes, preventing mis-origination without weakening ROV for unicast routes.</li>
+<li><strong>Status</strong>: Early stages.</li>
+</ul>
+<h3>BGPsec Scalability Experimentation (Ignas Bagdonas)</h3>
+<ul>
+<li><strong>Experiment</strong>: Simulation using real-world data showed that a BGPsec-enabled global routing system took over 30 minutes to converge for a 400-neighbor topology, compared to 1.5 minutes for plain BGP.</li>
+<li><strong>Performance Bottlenecks</strong>:
+<ul>
+<li><strong>SHA2 Hashing</strong>: The wire format of BGPsec's secure path (6+94 bytes per hop) is not 4-byte aligned, hindering efficient vectorization (SIMD) on modern CPUs. Memory access for hashing is expensive.</li>
+<li><strong>Signature Generation</strong>: While computationally heavier, it's memory-independent and becomes less dominant for longer paths (4-5+ hops) compared to hashing.</li>
+<li><strong>Target AS Number</strong>: Located at the beginning of the hash block, it changes with each neighbor, preventing caching of pre-computed hash states even for stable paths.</li>
+</ul>
+</li>
+<li><strong>Proposed Solutions</strong>:
+<ul>
+<li>Define a new wire format (versioned protocol) where the message to be hashed is a single, contiguous block, improving vectorization.</li>
+<li>Algorithm identifiers could specify message format for future flexibility.</li>
+<li>Rearrange fields to allow caching of pre-computed hash states.</li>
+</ul>
+</li>
+<li><strong>Conclusion</strong>: BGPsec is not fundamentally broken in terms of security, but its current design (wire format, protocol mechanics) is poorly correlated with performant implementation on modern computing platforms.</li>
+<li><strong>Community Interest</strong>: Joe Snijders expressed strong interest in starting work on addressing these performance issues, suggesting that operational feedback from version 0 deployment could inform migration to an enhanced version.</li>
+</ul>
+<h3>ASPA Verification Procedures Enhancements (Sriram Kotapalli)</h3>
+<ul>
+<li><strong>Context</strong>: Discussion on enhancing ASPA upstream and downstream verification procedures, incorporating prior fixes (IETF 110), route server accommodation, and handling special/corner cases.</li>
+<li><strong>Route Server (RS) Handling</strong>:
+<ul>
+<li><strong>Recommendation</strong>: Each RS client should include the RS ASN in its ASPA (Set of Provider ASes). This simplifies validation for transparent and non-transparent RS scenarios.</li>
+<li><strong>Simplification</strong>: The validating AS, if it's an RS client, can determine if the RS is transparent by checking if the most recently added AS in the AS path equals the sender's AS. If not, the RS client can add the RS ASN to the AS path for verification purposes, then apply the downstream procedure. This avoids needing separate upstream/downstream algorithm choices at the RS client.</li>
+</ul>
+</li>
+<li><strong>Status</strong>: The algorithm description is complete, includes various corner cases and route server treatment, and is ready for updating the ASPA draft. Implementations are available in BGP-SRx.</li>
+<li><strong>Discussion</strong>: Ben Maddison expressed confusion, arguing that from an AS4 perspective (receiving the route), a transparent RS can be ignored, and a non-transparent RS is indistinguishable from a transit provider. He felt the proposed RS handling added complexity. Alexander responded that for non-transparent RS cases, particularly for a customer AS (e.g., AS4 being a customer of AS3), having AS1 and AS3 attest AS2 as a provider is necessary to avoid false positives for route leaks. Further discussion on the mailing list was requested.</li>
+</ul>
+<h3>RPKI CT and Discovery (Job Snijders)</h3>
+<ul>
+<li><strong>Motivation</strong>: Inspired by Web PKI's Certificate Transparency (CT), the proposal aims to introduce CT-like mechanisms to RPKI to improve transparency and auditability.</li>
+<li><strong>CT Concepts Mapped to RPKI</strong>:
+<ul>
+<li><strong>Believer</strong>: RPKI relying party cache implementations (e.g., RPKI Client, Routinator).</li>
+<li><strong>Verifier</strong>: Resource holders (AS/IP owners), security researchers.</li>
+<li><strong>Claimant</strong>: Trust Anchor Operators (TAOs) and their subordinate CAs.</li>
+</ul>
+</li>
+<li><strong>Why not existing mechanisms (rsync/RDP)?</strong>: RPKI publication mechanisms are optimized for the <em>current</em> state of objects, not a full, immutable historical log of all issued certificates. CT's purpose is to provide full insight into all CA certificates issued.</li>
+<li><strong>Benefits</strong>: Auditable logs of all RIR actions, allowing resource holders to inspect cryptographic entitlements over time. This raises the bar for RIR issuance processes, provides grounds for accountability, and helps in incident retrospectives.</li>
+<li><strong>Initial Scope Proposal</strong>: Track <strong>CA certificates only</strong>, excluding End-Entity (EE) certificates like ROAs, GBRs, BGPsec keys, ASPAs.</li>
+<li><strong>To-Do List</strong>: Draft an Internet-Draft outlining the plan, find entities willing to host CT logs, find entities willing to send pre-certificates to logs, and find CT experts to guide the community. This is seen as a multi-year project.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Questions were raised about including EE certificates initially, the impact on CA availability/brittleness if logs are required for issuance, and the end-game if an RIR misbehaves (since there are no alternatives).</li>
+<li>Job clarified that RPKI RPs (believers) would not directly check CT logs; rather, verifiers would use logs for monitoring and auditing. The goal is to proactively identify and address issues, avoiding the need to distrust a TA.</li>
+<li>Ruediger noted fundamental differences between Web PKI and RPKI, suggesting some CT principles might not directly apply, but the idea of tracking and monitoring RPKI issuance is valuable.</li>
+<li>Ben Maddison stressed the importance of distinguishing signing events (which CT addresses) from publication events (a separate problem) and the need for accountability to demonstrate trust in the RPKI system, especially during outages.</li>
+</ul>
+</li>
+</ul>
+<h3>RPKI Off-the-Beaten-Happy-Path (Kung-Ching Chang)</h3>
+<ul>
+<li><strong>Overview</strong>: Discussion of five edge cases and potential attack vectors in the RPKI ecosystem that could cause issues with current standards and implementations.</li>
+<li><strong>1. Partial RPKI Data</strong>: A hierarchical delegation where a child CA (e.g., CA3) becomes unavailable, causing a sub-prefix (e.g., /16 from CA2) to appear invalid even if a super-prefix (e.g., /8 from CA1) is valid, contradicting the &quot;fail-open&quot; principle.</li>
+<li><strong>2. Excessive Delegation Depth/Width</strong>: The ability to create millions of publication points (e.g., 9 children wide, 8 layers deep) could overwhelm RP software and underlying file systems, as limits are often implementation-defined, not specified.</li>
+<li><strong>3. File System Attacks (via rsync)</strong>: A malicious actor (or man-in-the-middle) could inject an extremely large number of directories and files into an rsync reply, potentially crashing or incapacitating RP software by exhausting file system limits.</li>
+<li><strong>4. Excessive VRPs from ROAs</strong>: A resource holder can create an astronomical number of valid route origin authorizations (VRPs) from a single ROA (e.g., a /48 prefix allowing 2^81 prefixes, 2^423 ASNs), overwhelming routers and RP software.</li>
+<li><strong>5. Attribution and Reporting for Attacks</strong>: How to effectively stop and report such attacks, prove the perpetrator's identity, and communicate malicious intent to a CA, especially for rsync-based attacks that bypass signed objects.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Job Snijders suggested &quot;publish-in-parent&quot; as a mitigation for partial data and excessive delegation, allowing parents to apply dynamic, local policy limits on children without burdening the global RPKI.</li>
+<li>Tim stressed that parent CAs are currently reactive, but proactive measures and examining publication protocols are needed.</li>
+<li>Ruediger noted that rsync is being replaced due to identified dangers. He also pointed out that the partial data example relies on non-hierarchical/overlapping delegations, which are generally understood to be problematic.</li>
+<li>Ben Maddison agreed these are important problems. He suggested that, rather than protocol changes, RP implementers should collaborate on an informational document to describe recognized attack vectors, how they deal with them, and the trade-offs involved. He acknowledged that building a system impervious to all abuse is impossible.</li>
+<li>Jared Mauch suggested abstracting data storage away from the underlying file system, similar to how early Usenet news servers handled large volumes of data, which could mitigate file system-based attacks.</li>
+<li>The overall sentiment was that some work is needed in this area, particularly for RP instances to detect administrative domain changes when traversing the tree and to investigate ways to set appropriate limits.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Code of Conduct</strong>:
+<ul>
+<li><strong>Action</strong>: All participants are encouraged to re-read the Code of Conduct and apply its principles in discussions.</li>
+<li><strong>Action</strong>: Participants feeling stressed or attacked should reach out to the chairs or the ombuds team.</li>
+</ul>
+</li>
+<li><strong>Resource Sign Checklist (RSC)</strong>:
+<ul>
+<li><strong>Decision</strong>: Chairs will initiate a Working Group Last Call (WGLC) for the RSC draft.</li>
+<li><strong>Action</strong>: Interested parties are requested to contribute to the implementation report and RIRs are encouraged to consider implementing RSC support in their hosted environments.</li>
+</ul>
+</li>
+<li><strong>Discard Origin Authorization (DOA)</strong>:
+<ul>
+<li><strong>Action</strong>: Working group feedback is requested on whether the DOA work should remain a single document or be split, and if it's a candidate for working group adoption at this stage.</li>
+<li><strong>Action</strong>: Ben Maddison to provide further context and discussion on the mailing list.</li>
+</ul>
+</li>
+<li><strong>BGPsec Scalability Experimentation</strong>:
+<ul>
+<li><strong>Decision</strong>: The community views BGPsec performance as a significant concern that needs to be addressed for future deployment.</li>
+<li><strong>Action</strong>: Further work to define a versioned protocol with an improved wire format and protocol mechanics for better performance on modern hardware is encouraged.</li>
+</ul>
+</li>
+<li><strong>ASPA Verification Procedures Enhancements</strong>:
+<ul>
+<li><strong>Action</strong>: Further discussion on the mailing list is requested, particularly regarding the route server handling. Ben Maddison is expected to post his concerns.</li>
+</ul>
+</li>
+<li><strong>RPKI CT and Discovery</strong>:
+<ul>
+<li><strong>Action</strong>: Interested parties are called upon to contribute to drafting an Internet-Draft on RPKI CT, hosting logs, sending pre-certificates, and providing CT expertise. Contact Job Snijders if interested.</li>
+</ul>
+</li>
+<li><strong>RPKI Off-the-Beaten-Happy-Path</strong>:
+<ul>
+<li><strong>Action</strong>: RP implementers are encouraged to collaborate on an informational document outlining recognized attack vectors, mitigation strategies, and trade-offs.</li>
+<li><strong>Action</strong>: Continue investigating issues related to excessive delegation, VRPs, and file system attacks, particularly mechanisms for detecting administrative domain changes when traversing the RPKI tree and setting appropriate limits.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The chairs will initiate the Working Group Last Call for the Resource Sign Checklist (RSC) draft.</li>
+<li>Discussions on Discard Origin Authorization (DOA) and ASPA verification procedures, especially route server handling, will continue on the mailing list.</li>
+<li>Community members interested in BGPsec performance, RPKI Certificate Transparency, or RPKI edge cases are encouraged to engage with the respective authors and propose further work or documents.</li>
+<li>RPKI implementers are urged to consider the discussed attack vectors and mitigation strategies in their software.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

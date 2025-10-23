@@ -1,0 +1,101 @@
+**Session Date/Time:** 25 Mar 2022 11:30
+
+# anima
+
+## Summary
+
+The anima working group met to review the status of its various drafts, including working group documents and several individual submissions proposing new work items. Key discussions revolved around progress towards Working Group Last Call (WGLC) for several BRSKI-related drafts (Constraint Voucher, JWS Voucher, BRSKI PRM, BRSKI AE, BRSKI Cloud), updates to RFC8366bis, and proposals for autonomic services deployment and policy enforcement. Interoperability efforts, early reviews, shepherding, and the use of GitHub for issue tracking were also highlighted. Several individual drafts were presented, seeking working group adoption.
+
+## Key Discussion Points
+
+*   **Logistics and Working Group Process**:
+    *   Reminders on IPR disclosure, errata system for RFCs, and note-taking via HedgeDoc.
+    *   Emphasis on mutual review of working group documents, early reviews from other IETF groups/directorates (e.g., IoT, Security), and volunteering for shepherding.
+    *   Importance of mailing list for technical discussions and GitHub for issue tracking.
+    *   BRSKI Design Team weekly meetings continue to be crucial for ongoing work.
+*   **Working Group Documents Status:**
+    *   **ASA Guideline**: Auth48 for three more days, expected to become an RFC soon.
+    *   **Constraint Join Proxy**: Currently in AD review.
+    *   **BRSKI ESSING and Enroll**: Awaiting a planned name change.
+    *   **Constraint Voucher (draft-ietf-anima-constrained-voucher)**:
+        *   Version 16, many small edits, examples fixed and validated.
+        *   Interop efforts are ongoing using IETF's L2 VPN, but time zone coordination is a challenge.
+        *   **Issues**: Still needs an early IANA allocation request for a CoAP content format. Issues with Authority Key Identifier in IDevID persist.
+        *   Ready for WGLC or additional reviews; examples can be refined during Auth48.
+        *   Suggested reviewers: IoT Directorate, Russ Housley, Christian, Yagi.
+    *   **JWS Voucher (draft-ietf-anima-jws-voucher)**:
+        *   Version 03, specifies JWS-signed JSON for vouchers.
+        *   Main change: Switched from JWS Compact Serialization to General JWS JSON Serialization to support multiple signatures.
+        *   Content-wise complete, needs enhanced description for clarity. POC implementations ongoing with BRSKI PRM.
+    *   **BRSKI PRM (draft-ietf-anima-brski-prm)**:
+        *   Two updates since last IETF, addressing GitHub issues and design team discussions.
+        *   Incorporated additional signature for the voucher (Proof of Possession for Registrar).
+        *   Defined a new endpoint on the Registrar for wrapped enrollment requests (signature-wrapped PKCS10).
+        *   Decided to support only a single CSR for generic LDevID, dropping multiple CSR support.
+        *   Aligned assertion type with RFC8366bis.
+        *   Registrar agent's signed certificates are now an array to support intermediate certificates.
+        *   No open issues in the draft or GitHub; security considerations need update. POC implementation and interop testing are ongoing.
+    *   **BRSKI AE (draft-ietf-anima-brski-ae)**:
+        *   Version 05, initially for Asynchronous Enrollment, now re-scoped to "Alternative Enrollment Protocols in BRSKI" (AE).
+        *   Proposed name change to "brski-ae-alternative-enrollment-protocols".
+        *   Allows using alternative enrollment protocols (e.g., CMP, CMC) instead of EST Simple Enroll, providing transport layer independence and flexibility in RA functionality.
+        *   Discussion on including network diagrams in RFCs; RFC editor policy might be a constraint but efforts to include will be made.
+        *   Next steps: Detail CMP/CMC instantiation, clarify certificate confirmation, consider PKCS10 format. POC implementation and interop testing ongoing.
+    *   **GRASP Distribution**: Shepherd review completed, authors working on replies, no slot this IETF.
+    *   **Voucher Delegation**: Expired, low priority compared to other drafts.
+    *   **RFC8366bis**:
+        *   Adopted by the WG, motivated by the need to extend the YANG 'assertion' enumerated type.
+        *   Solution: Moved 'assertion' to a sub-module managed by IANA, enabling a registry.
+        *   No expected wire changes, primarily YANG module expression. Converted to Markdown with `make-rfc` rules.
+        *   **Next Steps**: Update YANG to RFC8791 (essex structure), review 8366 for clarifications/removals, aim for Internet Standard (IS) publication.
+        *   **Discussion on IS vs. Proposed Standard (PS)**: AD suggested PS first due to potential changes, though the intent is no wire changes. Kent Watsen clarified YANG data vs. essence structure.
+        *   **Discussion on combining extensions**: Decided against pulling extensions from other documents (e.g., constrained voucher) into 8366bis to maintain modularity and avoid issues for dependent RFCs (e.g., 8572).
+    *   **Service Auto-Deployment**: Authors couldn't attend, no slot.
+*   **Individual Drafts Seeking Adoption:**
+    *   **Autonomic Mechanism for Resource-Based Network Services Auto-Deployment (draft-liu-anima-resource-based-services-auto-deployment)**:
+        *   Goal: Autonomic negotiation and distribution of network resources, supporting multiple negotiation rounds, adapting to network state.
+        *   Process: Discovery, Negotiation, ASA actions post-negotiation.
+        *   Key concept: Objective value combining service and resource info, expressed in JSON.
+        *   New: Example of negotiation process with parameters.
+        *   Feedback: Need more explicit examples, POC code for resource reservation, comparison with RSVP.
+    *   **Autonomic IP Address to Access Control Group Mapping (draft-geng-anima-ip-access-group-map)**:
+        *   Goal: Autonomically configure group-based policies for users in the network, ensuring consistent policies regardless of access point/IP changes.
+        *   Process: AP (Access point) discovers PP (Policy Enforcement Point), AAP (Authentication Point) maps MAC/IP to group ID (via AAA server), then pushes IP-to-group mapping to PPs. PPs enforce policy based on group IDs.
+        *   New: Detailed examples of AAP mapping and PP policy enforcement.
+        *   Seeking adoption.
+        *   Feedback: Clarify the "negotiation" as request/response, better showcase full GRASP/ANIMA integration, compare with existing AAA solutions (Radius/Diameter/TACACS) and explain advantages.
+    *   **Autonomic Infrastructure Services (draft-eckert-anima-ani-infrastructure-services)** and **GRASP DNS-SD (draft-eckert-anima-grasp-dns-sd)**:
+        *   Proposed to address troubleshooting and secure access to devices for centrally managed ACs.
+        *   **Core Services**: Syslog, clock synchronization (NTP), remote access (SSH with Radius/Diameter), Netconf Call Home, DNS auto-configuration.
+        *   **DNS Auto-Config (draft-eckert-anima-ani-infrastructure-services)**: Operator enables service announcements (DNS-SD over mDNS or edge router), AC nodes discover services via ACP/GRASP, auto-start local agents (ASA for NTP, DNS, Radius, etc.).
+        *   **GRASP DNS-SD (draft-eckert-anima-grasp-dns-sd)**: Reuses IANA DNS-SD service registry (RFC 6335) but decouples from DNS transport. Encodes DNS-SD data (service instance, priority, weight, parameters) into a single GRASP objective, with 'distance' as an added GRASP-specific parameter.
+        *   Proposal: Adopt both drafts.
+        *   Feedback: Michael Richardson suggested considering reverse DNS mapping via GRASP. Chair requested more mailing list discussion and commitment on energy for the work before adoption call.
+
+## Decisions and Action Items
+
+*   **Decisions:**
+    *   **BRSKI AE Name Change**: Provisional approval for the name change to "brski-ae-alternative-enrollment-protocols". Formal change to be done with the next draft revision and DataTracker upload.
+    *   **RFC8366bis Standard Status**: The document will target Proposed Standard (PS) for initial publication, rather than Internet Standard (IS), to allow for further review and maturity.
+*   **Action Items:**
+    *   **Chairs**:
+        *   Fix agenda slide mismatch for the Service Auto-Deployment document.
+        *   Send an update to the mailing list regarding the BRSKI design team weekly meeting time (moved half an hour later).
+        *   Work with Karl to follow up on the RFC Editor toolchain for including diagrams in drafts/RFCs.
+        *   Engage with authors of documents lacking shepherds.
+    *   **Michael (Constraint Voucher)**: Provide chair with suggestions for early reviewers (e.g., IoT directorate, Russ Housley, Christian, Yagi). Continue to push for the early IANA allocation request for the CoAP content format.
+    *   **Thomas (JWS Voucher)**: Enhance the description in the draft for better readability and clarity.
+    *   **Stefan (BRSKI PRM)**: Reach out to individuals for peer review and formally request working group review via the mailing list.
+    *   **David (BRSKI AE)**: Work on integrating diagrams into the draft. Further detail the CMP and EST with CMC instantiations. Seek informal reviews.
+    *   **Michael (RFC8366bis)**: Update YANG to use RFC8791 (essex structure). Review RFC8366 for optional items that need clarification or removal.
+    *   **Michael (BRSKI Cloud)**: Provide the chair with suggestions for targeted sector reviews (e.g., HTTP experts).
+    *   **Liu Yuhong (Service Auto-Deployment)**: Provide a more explicit and detailed example use case, potentially including POC code. Discuss how the mechanism compares to and improves upon prior solutions like RSVP. Engage on the mailing list.
+    *   **Geng Yu (IP Address to Access Control Group Mapping)**: Add a unified example using GRASP/ANIMA for context. Enhance the negotiation examples to include rejection scenarios. Provide a comparison with existing AAA solutions (e.g., Radius, Diameter, TACACS) and highlight the advantages of the ANIMA approach. Engage on the mailing list.
+    *   **Karl (Autonomic Infrastructure Services & GRASP DNS-SD)**: Foster more mailing list discussion for these drafts and ensure commitment to sustained effort for their development before a formal adoption call.
+
+## Next Steps
+
+*   The working group will continue to push adopted drafts towards WGLC, with specific focus on Constraint Voucher, BRSKI PRM, BRSKI AE, BRSKI Cloud, and RFC8366bis.
+*   Authors of individual drafts will incorporate feedback, refine their proposals, and engage more actively on the mailing list to build consensus for working group adoption.
+*   Continued interop efforts, particularly for constrained environments, remain a high priority.
+*   The chairs will actively facilitate early reviews and shepherding assignments.

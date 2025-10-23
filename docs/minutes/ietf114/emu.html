@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="emu.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-EMU-20220727-1900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 27 Jul 2022 19:00</p>
+<h1>emu</h1>
+<h2>Summary</h2>
+<p>The emu working group session at IETF 114 covered updates on several EAP-related drafts. The TLS-based EAP type and EAP Forward Secrecy drafts are progressing towards Working Group Last Call. A proposal for EAP-DPP onboarding, utilizing existing TLS mechanisms and RFC 9258 (External PSK Importer), was presented and is ready for an adoption call. The EAP Ad Hoc draft, which focuses on a compact, lightweight authenticated key exchange for constrained scenarios, requested adoption but requires further review and charter evaluation. A new draft proposing unauthenticated EAP-TLS for Brewski onboarding was introduced, prompting discussion on server authentication and its scope. The session concluded with a discussion on potential future work areas and charter adjustments, including certificate usage guidance and EAP for constrained radio networks.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>TLS-based EAP Type (draft-ietf-emu-eap-tls-eap-type):</strong></p>
+<ul>
+<li>The document is considered stable, with no known open issues or implementation challenges beyond specific vendor choices.</li>
+<li>One implementation chose not to support New Session Ticket for EAP-TLS, which can increase backend database load due to full re-authentication for every session.</li>
+<li>Multiple client and server implementations exist and interoperate.</li>
+<li>All prior review comments have been addressed. The document is believed to be ready for advancement.</li>
+</ul>
+</li>
+<li>
+<p><strong>EAP Forward Secrecy (draft-ietf-emu-eap-tls-pfs):</strong></p>
+<ul>
+<li>The draft is considered ready, with the latest version clarifying the encoding of cryptographic values.</li>
+<li>Emphasizes significant security improvements, particularly against pervasive surveillance, by providing forward secrecy.</li>
+<li>Recommendations include migrating existing systems to use this method.</li>
+<li>Revised warning regarding issues with smart cards, focusing on supply chain manufacturing and key provisioning.</li>
+<li>The public value encoding, previously discussed, aligns with 3GPP 5G specifications and open-source cryptographic libraries, supporting the current text.</li>
+<li>The document is now ready for a Working Group Last Call.</li>
+</ul>
+</li>
+<li>
+<p><strong>EAP-DPP Onboarding (draft-harkins-emu-eap-dpp-onboarding):</strong></p>
+<ul>
+<li>Addresses the &quot;onboarding catch-22&quot; for wired networks by reusing Wi-Fi DPP bootstrapping mechanisms and ECC key pair formats.</li>
+<li>Utilizes HKDF to derive a pre-shared key (PSK) from a public bootstrap key.</li>
+<li>Performs server-based EAP with external PSK addition to TLS, and raw public key authentication for the client.</li>
+<li>A key change from previous versions is the adoption of RFC 9258 (External PSK Importer) instead of an earlier &quot;extensible PSKs&quot; draft, eliminating the need for new TLS extensions or key schedule changes.</li>
+<li>The PSK is intended for single use; once a device is onboarded and has a certificate, the bootstrapping key is not reused unless the device is factory reset.</li>
+<li>The draft has received extensive review from the TLS working group.</li>
+<li>Running code exists, with efforts to integrate with OpenSSL's RFC 7250 support.</li>
+<li>The draft is considered stable and aligned with the working group charter item for bootstrapping keying material.</li>
+</ul>
+</li>
+<li>
+<p><strong>EAP Ad Hoc (draft-martinez-emu-eap-ad-hoc):</strong></p>
+<ul>
+<li>A new version with additional co-authors, incorporating feedback from the mailing list.</li>
+<li>Proposes a compact and lightweight authenticated Diffie-Hellman key exchange over COSE (Ad Hoc) for constrained scenarios, providing mutual authentication, forward secrecy, and identity protection.</li>
+<li>Key updates include:
+<ul>
+<li><strong>Privacy-Friendly Response Identity:</strong> Requirement to avoid permanent identifiers in clear text, recommending anonymous realms or unencrypted identities.</li>
+<li><strong>Fragmentation Support:</strong> Similar to EAP-TLS, using flags for request/response fragmentation.</li>
+<li><strong>Alternative Indication:</strong> Mandates the use of Ad Hoc message 4 for alternative success indication.</li>
+<li><strong>Error Handling:</strong> Defined specific error messages for incorrect processing of Ad Hoc messages.</li>
+</ul>
+</li>
+<li>The authors believe the draft is mature and ready for adoption.</li>
+</ul>
+</li>
+<li>
+<p><strong>EAP Unauthenticated TLS Onboarding (draft-mglt-emu-eap-unauth-tls-onboarding):</strong></p>
+<ul>
+<li>Aims to solve a &quot;Brewski&quot; onboarding problem where an unconfigured device needs to join a captive portal network using unauthenticated EAP-TLS (as per RFC 5216).</li>
+<li>Proposes explicit signaling via <code>eep.arpa</code> as an EAP identity, indicating a client's desire for a captive portal and lack of initial credentials. This signal cannot be forwarded or proxied.</li>
+<li>The device would authenticate the server using a CA root, leveraging existing web PKI.</li>
+<li>Compares to vendor-specific TLS types in Wi-Fi Alliance Hotspot 2.0, seeking to bring this functionality into the IETF.</li>
+<li>Discussion points included:
+<ul>
+<li>Concerns about using web CA roots for onboarding due to different due diligence requirements for web browsing vs. network service provider identity.</li>
+<li>Clarification that <code>eep.arpa</code> signifies &quot;I have no idea who I am, I want a captive portal&quot; in IoT/Brewski contexts.</li>
+<li>The relationship with Brewski's own network authentication mechanisms, suggesting Brewski could handle &quot;wrong network&quot; problems, potentially simplifying the EAP-TLS exchange to focus purely on IP connectivity.</li>
+<li>The draft intends to focus on EAP layer changes, with Brewski protocols running over full IP connectivity as a subsequent step.</li>
+</ul>
+</li>
+<li>The draft was published just before the cutoff; further elaboration and address of concerns are planned.</li>
+</ul>
+</li>
+<li>
+<p><strong>Working Group Future Direction / Charter Discussion:</strong></p>
+<ul>
+<li>Discussion on expanding the charter to cover new areas given the progress on current chartered items.</li>
+<li>Potential areas of interest raised:
+<ul>
+<li>Allen's other EAP document on discovery and configuration using OIDs in certificates and SRV records.</li>
+<li>The possibility of a new password-based EAP method using C-PACE (as EAP-PWD is informational and uses an older Dragonfly variant).</li>
+<li>Need for more guidance and requirements on using certificates and their configuration in EAP, and EAP in constrained radio networks (supported by John Torren).</li>
+<li>Update on Friedrich's <code>eap-outer</code> draft.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>
+<p><strong>TLS-based EAP Type (draft-ietf-emu-eap-tls-eap-type):</strong></p>
+<ul>
+<li><strong>Decision:</strong> To be moved forward, chairs to determine if another working group last call is required.</li>
+<li><strong>Action Item:</strong> Chairs to confer regarding the next steps for publication.</li>
+</ul>
+</li>
+<li>
+<p><strong>EAP Forward Secrecy (draft-ietf-emu-eap-tls-pfs):</strong></p>
+<ul>
+<li><strong>Decision:</strong> The draft is ready for a Working Group Last Call.</li>
+<li><strong>Action Item:</strong> Chairs will initiate a Working Group Last Call soon.</li>
+</ul>
+</li>
+<li>
+<p><strong>EAP-DPP Onboarding (draft-harkins-emu-eap-dpp-onboarding):</strong></p>
+<ul>
+<li><strong>Decision:</strong> The draft is considered stable and aligned with the charter.</li>
+<li><strong>Action Item:</strong> Chairs will start an adoption call after the IETF meeting.</li>
+</ul>
+</li>
+<li>
+<p><strong>EAP Ad Hoc (draft-martinez-emu-eap-ad-hoc):</strong></p>
+<ul>
+<li><strong>Action Item:</strong> The authors are requested to facilitate further review and discussion on the mailing list to gauge interest.</li>
+<li><strong>Action Item:</strong> Chairs will evaluate if the draft falls within the current charter or if a charter amendment would be required for adoption, pending community interest.</li>
+</ul>
+</li>
+<li>
+<p><strong>EAP Unauthenticated TLS Onboarding (draft-mglt-emu-eap-unauth-tls-onboarding):</strong></p>
+<ul>
+<li><strong>Action Item:</strong> Authors to flush out the draft, addressing concerns raised regarding server identification/authentication and the specific use cases of <code>eep.arpa</code>.</li>
+<li><strong>Action Item:</strong> The working group will monitor this draft, especially regarding its impact on other EAP-TLS usages and the appropriate working group (emu vs. anima) for its development.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Charter Review:</strong> Working group participants are encouraged to consider potential future work items and discuss whether the emu charter needs to be amended to accommodate new areas such as enhanced certificate usage guidance, EAP for constrained radio networks, or new password-based EAP methods. This discussion will continue on the mailing list, with a decision expected by the next IETF meeting.</li>
+<li><strong>Draft Updates:</strong> Authors of drafts presented (e.g., EAP Ad Hoc, EAP Unauthenticated TLS Onboarding, EAP-Outer) are encouraged to continue addressing feedback and driving discussion on the mailing list.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

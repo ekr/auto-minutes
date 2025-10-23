@@ -1,0 +1,70 @@
+**Session Date/Time:** 27 Jul 2022 17:30
+
+# wish
+
+## Summary
+
+The `wish` working group met to review and resolve outstanding Working Group Last Call (WGLC) comments for the `web` (WebRTC HTTP Ingest Protocol) draft (version 04). The session involved detailed discussions on several proposed changes and issues that were deemed resolved. Key updates to the draft include clarifications on ICE, authentication, and IANA considerations. Significant discussions occurred regarding error codes for multi-track offers and the process for providing TURN/STUN credentials. The working group also discussed its future, with a general consensus to finalize the `web` draft and then likely go dormant, allowing for practical experience with the protocol before pursuing extensions. A new draft, WHEP (WebRTC HTTP Egress Protocol), was briefly introduced as potential future work, though its discussion was cut short due to time constraints.
+
+## Key Discussion Points
+
+*   **`web` Draft v04 Updates (Addressed WGLC Comments):**
+    *   Rewritten abstract and introduction.
+    *   Added samples for SDP offer/answer.
+    *   Clarified support for trickle ICE / ICE restart (one but not both).
+    *   Included bundle support.
+    *   Added a section on handling multiple audio/video tracks in SDP offers from clients for future WHEP compatibility.
+    *   Clarified the term "i-service" (sourced from WCC standard).
+    *   Addressed IANA feedback regarding missing registration for extension superspace.
+*   **Issues Not Fixed (and Rationale - Considered Closed):**
+    *   **Normative Language**: Protocol operations and normative language are inherited from WebRTC; explicit re-statement is unnecessary and helps avoid inconsistencies.
+    *   **307 Error for Redirection**: Mandating HTTP 307 for redirection ensures proper behavior with HTTP POST, as other redirection codes are not consistently implemented for POST.
+    *   **Bearer Token Authentication**: Basic authentication is not recommended. Bearer tokens allow flexible authentication, and future HTTP authentication methods would require spec updates anyway.
+    *   **"Endpoints" Terminology**: The use of "endpoints" for TURN is consistent with REST API concepts, where they represent entry points for the API.
+*   **Proposed Changes Needing Consensus (and Outcomes):**
+    *   **Trickle ICE / ICE Restart Support with PATCH**:
+        *   Proposal for error codes when a server doesn't support trickle ICE, ICE restart, or both in a PATCH request.
+        *   **Feedback**: Adam Roach suggested the proposed 405/501 error codes might be technically correct in sentiment but confusing in wording, and potentially reversed in application.
+        *   **Outcome**: The general approach was accepted. Adam Roach agreed to provide a Pull Request (PR) for clearer language on the specific 405/501 error codes.
+    *   **TURN/STUN Credentials in OPTIONS**:
+        *   Proposal to remove authentication requirement for OPTIONS requests to retrieve STUN/TURN credentials, with a note regarding CORS preflight options.
+        *   **Feedback**: Julias expressed concern that making i-server provision in OPTIONS optional could lead to inconsistent client behaviors, especially on restrictive networks, making debugging difficult. Julias requested a strong recommendation for a specific client behavior. Adam Roach noted that providing i-servers in OPTIONS might require server resource allocation, which could be an issue. Cullen noted that the IETF can mandate behavior if the working group desires it.
+        *   **Outcome**: Discussions will continue on the mailing list to agree on specific text for client behaviors and TURN/STUN server provision. This point remains open.
+    *   **Passive Setup (`a=setup:passive`)**:
+        *   Recommended adherence to RFC5763 for `a=setup:active` and `a=setup:passive`. If an endpoint cannot support setting to active, it can send an update, but without guarantee of success.
+        *   **Outcome**: Consensus reached; accepted as a good way forward.
+    *   **ICE Restart Avoidance Note**:
+        *   An informative note was added specifying that, depending on ICE implementation, applying the local description after `setConfiguration` may be required to prevent ICE restarts.
+        *   **Outcome**: Accepted as an informative note.
+    *   **Handling Multiple Audio/Video Tracks or Streams**:
+        *   Proposal: If a client sends an SDP offer with multiple audio/video tracks or streams that the server doesn't support, the POST request should fail completely with an error code.
+        *   **Feedback**: Adam Roach indicated that HTTP 406 (Not Acceptable) is semantically incorrect for this use case (it's for content negotiation) and suggested 422 or 400 might be more appropriate. Jonathan Max raised concerns about backward compatibility with WebRTC's offer/answer model and how clients would know server expectations.
+        *   **Outcome**: The principle of failing the entire offer was accepted. Adam Roach will suggest a more appropriate HTTP error code. The issue of client awareness of server capabilities (e.g., audio-only vs. A/V) was noted as a potential area for future extensions.
+    *   **IANA Extension Superspace Registration**:
+        *   Addressing IANA feedback, a new superspace for protocol parameters will be registered.
+        *   **Outcome**: Accepted. Sergio will refine the text based on comments and seek further mailing list feedback.
+*   **WHEP (WebRTC HTTP Egress Protocol) Introduction**:
+    *   Sergio and Chen (ByteDance) introduced WHEP, a companion draft to `web` for egress scenarios.
+    *   **Use Cases**: Interoperability between WebRTC service providers (avoiding SDKs), common player software (e.g., for TVs), and integration with MPEG-DASH for mixed live/time-shifted experiences.
+    *   **Mechanics**: Largely reuses `web` mechanisms. Supports HTTP POST with SDP offer/answer and SDP DELETE. Includes an alternative flow for clients not supporting `createOffer` (empty HTTP POST from client, server returns offer, client sends answer via HTTP PATCH).
+    *   **Outcome**: Discussion was cut short due to time. Further discussion on WHEP will occur on the mailing list.
+
+## Decisions and Action Items
+
+*   The issues previously discussed and labeled as "will not be fixed" are considered **closed**.
+*   **Adam Roach**: Provide a PR for precise wording on 405/501 error codes related to trickle ICE/ICE restart support in the `web` draft.
+*   **Adam Roach**: Suggest a more appropriate HTTP error code for rejecting offers with unsupported multiple audio/video tracks or streams.
+*   **Sergio**: Refine the IANA extension superspace registration text based on comments and seek mailing list feedback.
+*   **Working Group**: Continue discussion on the mailing list regarding specific text for client behaviors and server provision of TURN/STUN credentials (Julias's point).
+
+## Next Steps
+
+*   **`web` Draft:**
+    *   Address remaining open issues (error codes, TURN/STUN client behavior).
+    *   Publish an updated draft (likely v08).
+    *   A new Working Group Last Call (WGLC) is anticipated, likely in September, to review changes that impact normative language and accommodate summer vacation schedules.
+*   **Working Group Future:**
+    *   The `wish` working group will likely go dormant after the `web` draft is finalized and submitted to the IESG, allowing for practical experience with the `web` protocol in the field.
+    *   Further work on extensions or new protocols (like WHEP) will be considered after gaining experience with `web`.
+*   **WHEP Draft:**
+    *   The WHEP draft discussion will continue on the mailing list. Slides are available in the data tracker.

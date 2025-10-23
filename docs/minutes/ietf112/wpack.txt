@@ -1,0 +1,46 @@
+**Session Date/Time:** 10 Nov 2021 16:00
+
+# wpack
+
+## Summary
+
+The wpack working group met to discuss its two adopted documents: the use cases draft and the bundle format draft. Key discussions centered on reorganizing the use cases, an update on web bundle implementation progress focusing on resource preloading, and the need to align the bundle format with the HTTP working group's binary HTTP format. Due to low attendance, specific GitHub issues were deferred to the mailing list.
+
+## Key Discussion Points
+
+*   **Agenda Overview:** The session focused on `draft-ietf-wpack-use-cases` and `draft-ietf-wpack-bundle`. An implementation update on bundles was also planned.
+*   **Scribe:** Justin volunteered to take notes.
+*   **Use Cases Document (draft-ietf-wpack-use-cases):**
+    *   Jeffrey outlined plans to move "controversial" use cases to an appendix, retaining core "prefetch of sub-resources" in the main body. Requirements would be similarly split.
+    *   Felipe inquired about the priority of "resource bundling." Jeffrey clarified that initial focus was on sub-resource loading due to broader community consensus, preceding more complex native-app-like sharing.
+    *   Discussion around Larry's multi-part comments: Jeffrey and Sean noted confusion regarding specific use cases Larry was proposing, as multi-part is a format rather than a use case. They committed to following up with Larry to elicit concrete use cases.
+    *   **Next Steps for Use Cases:** Jeffrey will submit a Pull Request (PR) to the GitHub repository for the reorganized document (moving "controversial" use cases to an appendix) and circulate it to the mailing list for comments. Coordination will happen on GitHub.
+*   **Bundle Implementation Experience (Felipe, Realia/IO):**
+    *   Realia/IO presented an update on their work on resource preloading using bundle responses. The approach involves a client requesting a list of resources not in cache, and the server responding with a web bundle containing those resources.
+    *   Individual resources from the bundle are stored in the cache. The proposal restricts origins/paths and enforces URL consistency.
+    *   Chromium has a similar implementation, with efforts to converge on a common specification.
+    *   A Node.js module has been developed to create and read bundles, updated to support the latest spec version while maintaining backward compatibility. This allows for prototyping bundle-aware servers.
+    *   A full prototyping strategy was described: client parses HTML preload declarations, sends HTTP requests with a specific header listing desired resources (via service worker cache), and a small web server creates and serves bundles on the fly, supporting subsetting (returning only requested resources).
+    *   Current syntax uses a reference web bundle file with listed resources (absolute/relative URLs).
+    *   Prototyping benefits include testing different syntaxes and scenarios. Examples include basic preloading and a React application showing performance improvements (parallel loading over sequential).
+    *   Learnings: The approach is effective for prototyping this use case. Performance is "reasonable" (acknowledging service worker overhead), with potential for improvement through reduced round-trips, parallel downloads, and individual resource caching.
+    *   Next steps for implementation: improve integration with bundler tools, further benchmarking, create more examples, and explore applicability of this prototyping approach to other wpack use cases. Felipe noted that some long-term use cases (e.g., web app installation with specific trust) might not be prototypeable in JavaScript due to bootstrapping requirements.
+    *   Sivajan expressed support for the client-choice preload approach.
+*   **Bundle Format Document (draft-ietf-wpack-bundle):**
+    *   Jeffrey raised the question of converging the bundle format with the HTTP working group's binary HTTP format (Martin Thompson's draft).
+    *   **Consensus:** The group agreed that convergence is desirable to minimize differences between formats. Jeffrey and Martin Thompson were tasked with exploring this convergence and identifying any challenges.
+    *   No specific GitHub issues for the bundle draft were discussed in detail due to low attendance and energy; these were deferred to the mailing list.
+
+## Decisions and Action Items
+
+*   **Decision:** Jeffrey will reorganize the `draft-ietf-wpack-use-cases` document, moving less agreed-upon use cases to an appendix and retaining primary use cases (e.g., prefetch of sub-resources) in the main body.
+    *   **Action Item (Jeffrey):** Submit a Pull Request (PR) to the GitHub repository for the reorganized use cases document.
+*   **Action Item (Jeffrey & Sean):** Follow up with Larry on the mailing list to clarify specific use cases related to his multi-part comments.
+*   **Action Item (Jeffrey & Martin Thompson):** Coordinate on converging the `draft-ietf-wpack-bundle` format with the HTTP working group's binary HTTP format, identifying potential challenges and proposing solutions.
+*   **Action Item (Chairs/AD):** Investigate setting up weekly summary emails for GitHub activity to the mailing list.
+
+## Next Steps
+
+*   Jeffrey to proceed with reorganizing the use cases document and submitting the PR.
+*   Discussions on the bundle format, particularly regarding convergence with binary HTTP, will continue on the mailing list.
+*   The working group will consider engaging with other drafts within its charter once progress on the current documents is further advanced.

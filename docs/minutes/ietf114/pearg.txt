@@ -1,0 +1,61 @@
+**Session Date/Time:** 25 Jul 2022 17:30
+
+# pearg
+
+## Summary
+
+The `pearg` session featured three technical presentations and an update on a working group draft. Sophia Celia presented an informal comparison of privacy-preserving measurement techniques, highlighting various schemes like Differential Privacy, Prio-based systems, and solutions for the Heavy Hitters problem, while emphasizing the importance of user consent. Bharath Ragunathan introduced the "Decoupling Principle" for Internet privacy, suggesting that effective privacy preservation often involves ensuring third parties know at most one of sensitive user identity or sensitive user data. Mike Rosulek discussed privacy and security issues in current SSH public key authentication and proposed a new protocol using anonymous multi-CHEM and Private Set Intersection to enhance privacy. Finally, Mallory Knodel provided an update on `draft-knodel-safe-internet-measurement`, outlining its structure, open issues, and plans to seek community feedback and engage with an upcoming IAB workshop and the IETF PPM working group.
+
+## Key Discussion Points
+
+*   **Privacy-Preserving Measurement Techniques (Sophia Celia):**
+    *   **Challenge:** Choosing suitable privacy-preserving schemes is complex due to the variety of techniques, varying privacy/security levels, and efficiency/cost considerations.
+    *   **Goal:** Enable collection of aggregate measurements while preserving user privacy, as explored by the IETF PPM working group.
+    *   **Differential Privacy:** Techniques like Rappor (costly) and Proflow (more efficient, uses Encode Shuffle Analyze (ESA) architecture but requires a trusted shuffler) add local randomness to data or function outputs. Aims for "epsilon differential privacy."
+    *   **Prio-based Systems:** Focus on privacy, robustness, and scalability with small servers and many clients. Offers "bounded privacy" (some leakage of aggregate function output, e.g., number of users). Uses secret sharing and Secret Shared Non-Interactive Proofs (SNIPs) to ensure valid numeric inputs without revealing individual values. Noted inefficiencies in client-to-server communication for SNIPs and numeric-only data support.
+    *   **Heavy Hitters Problem:** Addresses privacy-preserving collection of non-numeric data (e.g., strings).
+        *   **STAR:** Uses Threshold K-Anonymity (server learns data only if K-1 other clients submit same data) to prevent unique identification. Leverages Oblivious Pseudorandom Function (OPRF) for key derivation and Private Set Intersection (PSI) for aggregation. Considered monetary costs.
+        *   **Poplar:** Similar to Prio, finds most popular strings. Requires two non-colluding data collection servers.
+    *   **Comparison Factors:** Data type (numeric vs. string), robustness (trust assumptions), specific privacy notion (level of leakage), efficiency, and monetary costs.
+    *   **User Consent:** Emphasized the critical importance of user consent and consideration of "group privacy," noting that individual privacy may not be sufficient if aggregate results can still harm groups.
+*   **The Decoupling Principle for Internet Privacy (Bharath Ragunathan):**
+    *   **Core Principle:** "Decouple who you are from what you do" to achieve meaningful internet privacy.
+    *   **Application:** Applies across various network layers and protocols, often by splitting responsibilities among entities.
+    *   **Metadata Privacy:** While data confidentiality is largely solved (TLS, encryption at rest), metadata privacy remains a complex, layered challenge.
+    *   **Rule for Third Parties:** In privacy-preserving systems, third parties (e.g., network relays, intermediate services) should know *at most one* of sensitive user identity or sensitive user data.
+    *   **Examples:** Illustrated with Mixnets/Tor where the sender knows both, but subsequent hops know less. Also applies to Privacy Pass, Oblivious DNS, Private Relay, and Private Aggregate Statistics.
+    *   **Cautionary Tale:** Traditional "security gateway" middleboxes often violate this principle by having full access to user identity and data, requiring complete trust in a single entity.
+    *   **Caveats:** Identity and data are often nuanced; non-collusion assumptions, hardware enclaves, and side channels are also critical considerations.
+*   **Privacy-Preserving SSH Authentication (Mike Rosulek):**
+    *   **Current SSH Problems:**
+        *   **Client Fingerprinting:** Servers can learn all public keys offered by a client (e.g., from an SSH agent), potentially linking users to services like GitHub even if not authenticating to that server.
+        *   **Server Probing:** Clients can use others' public keys to check for account existence on a server.
+        *   **Non-Deniable Authentication:** Server learns which specific key was used and can prove the authentication event occurred.
+        *   **Unpredictable Success:** Servers can accept connections without knowing the client's public key in advance.
+    *   **Proposed Protocol:**
+        *   **Goal:** The server learns only that *at least one* of the client's keys is authorized, but not *which one*. The client learns which of *its own* keys are authorized but cannot probe others' keys.
+        *   **Mechanism:** Uses two components:
+            *   **Anonymous Multi-CHEM:** Server generates a ciphertext for a set of authorized public keys, hiding recipient identities.
+            *   **Private Set Intersection (PSI):** Client decrypts with all its secret keys; client learns intersection of its decrypted messages with server's expected messages; server only learns if the intersection is non-empty.
+        *   **Benefits:** No site-specific configuration needed. Authentication is deniable. Server cannot trick a client into believing a connection was successful unless the key was pre-authorized.
+        *   **Performance:** Implemented as an OpenSSH extension, showing practical performance (e.g., 60ms for 5 client/10 server RSA keys, 9ms for elliptic curve keys).
+        *   **Application to GitHub:** Would require changes to the GitHub SSH flow (e.g., `repositoryname@github.com` to provide context to the server before authentication).
+*   **Update on draft-knodel-safe-internet-measurement (Mallory Knodel):**
+    *   **Draft Status:** Working group adopted draft (`draft-knodel-safe-internet-measurement`).
+    *   **Scope:** Defines safe internet measurement, focusing on consent (informed, proxy, implied), safety considerations, and risk analysis.
+    *   **Recent Updates:** Reworked table of contents, subsumed case studies into consent subsections.
+    *   **Open Issues:** Several low-hanging fruit issues remain (elaborating citations, suggesting text).
+    *   **IAB Workshop:** An upcoming IAB workshop in Q4 on "Measurement Techniques in Encrypted Networks" is a potential venue for presenting the draft and gathering feedback. The draft approaches measurement from a safety/privacy perspective, complementing the workshop's focus on measurement in encrypted environments.
+    *   **PPM Cross-Pollination:** Discussion on how this broader `pearg` draft could provide guidance to the IETF PPM working group on privacy-preserving measurement.
+
+## Decisions and Action Items
+
+*   Mallory Knodel will send a message to the `pearg` mailing list to solicit feedback, text suggestions for open issues, and reviews for `draft-knodel-safe-internet-measurement`.
+*   Mallory Knodel plans to submit a paper based on `draft-knodel-safe-internet-measurement` to the IAB workshop on "Measurement Techniques in Encrypted Networks."
+*   Further discussion is needed on how `draft-knodel-safe-internet-measurement` can align with and inform the work of the IETF PPM working group.
+
+## Next Steps
+
+*   Continued development and community review of `draft-knodel-safe-internet-measurement`.
+*   Engagement with the IAB workshop to gather broader community feedback on safe internet measurement.
+*   Explore avenues for collaboration and cross-pollination between `pearg`'s work on safe internet measurement and the IETF PPM working group.

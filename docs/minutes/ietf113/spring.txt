@@ -1,0 +1,91 @@
+**Session Date/Time:** 25 Mar 2022 11:30
+
+# spring
+
+## Summary
+
+The spring working group meeting covered various technical drafts, including updates on IETF policies and AD transition. Key discussions revolved around the status of existing documents, proposed new IPFIX entities for SRv6, interworking solutions for SRv6 and MPLS, MPLS extension header encoding, BFDD for SRv6 policies, SR-based solutions for end-to-end IETF network slicing, path tracing in SRv6, SRv6 inter-domain mapping SIDs, and SRv6 policy groups. Several drafts requested working group adoption, while others received feedback highlighting potential overlaps or areas for further technical discussion before adoption could be considered. One presentation on Circuit Switched Segment Routing was postponed due to time constraints.
+
+## Key Discussion Points
+
+*   **IETF & Working Group Logistics**: The session began with announcements regarding in-room audio fixes, remote chairs (with Tom Hill assisting in-room), collaborative minutes, and new queue management procedures. Andrew was welcomed as the new IESG AD for the Routing Area, replacing Martin. Andrew emphasized focusing on technical content, reducing contention, adhering to guidelines, and maintaining open communication.
+*   **Document Status Updates**:
+    *   The draft concerning **Compressed SRv6 Segment List Encoding in SRH** is awaiting a recently published draft by Suresh dealing with the relationship between CCIDs and RFC 4291. The spring draft is now a working document, and an issue tracker has been initiated for modifications (with a request to copy the mailing list).
+    *   The adoption call for **SRT Path Midpoint Restoration** did not pass due to a lack of support for the proposed IGP extensions, particularly regarding traffic protection and sentinel policies. Authors were encouraged to continue work on the mailing list.
+    *   Two documents, "Path Segment in MPLS Network" and "Integration of NSH and Segment Loading for Service Function Chaining," have been submitted to the IESG for publication.
+    *   The "Segment Routing Policy Architecture" document was reported as accepted by the IESG.
+    *   No new documents were noted in the RFC Editor queue.
+*   **Export of SRv6 Information in IPFIX**:
+    *   A draft proposing IPFIX entities for SRv6 was presented, aiming to provide data plane visibility comparable to MPLS.
+    *   It decomposes the SRH into various IPFIX entities (e.g., segments left, tag, flex field, segment type, segment section as octet array, segment list as basic list).
+    *   Feedback was sought from network vendors on whether to expose the SID list as a basic list or an entire section (octet array).
+    *   Operational considerations for SRH compression were discussed, particularly distinguishing between IPv6 lists and CCID containers.
+    *   The document has incorporated feedback from ops, awg, and ipfix doctors and specifies new IPFIX registries, thus being designated an Internet Standard.
+    *   The authors requested adoption, citing missing data plane visibility and the current use of private enterprise code points in SRv6 deployments.
+    *   **Discussion**: Katana agreed that decomposing CCID containers might not add much value. Andrew (as a participant) asked for clarification on G-SIDs, which the author would check offline. Darren also agreed on not decomposing, letting the receiver determine behaviors.
+*   **SRv6 and MPLS Interworking**:
+    *   A draft detailing SRv6 and MPLS interworking for end-to-end L2/L3 services across heterogeneous domains was presented.
+    *   It introduces new SRv6 behaviors: `End.DTM` (decapsulates IPv6, looks up MPLS payload), `End.DPM` (decapsulates IPv6, pushes MPLS stack), and `H.Encaps.M` (encapsulates MPLS stack into IPv6/SRH).
+    *   The concept of interconnecting binding SIDs (e.g., MPLS label bound to SRv6 policy) was introduced to traverse different data planes.
+    *   Control plane solutions were proposed using SRPC (for path computation across discontinuous data planes) and BGP (using next-hop self at border nodes).
+    *   The authors requested working group adoption.
+    *   **Discussion**: Sully pointed out that `End.DPM` is similar to `End.DM` in another draft and suggested collaboration. Trove raised concerns about gaps in the SRPC solution, especially in multi-PC scenarios, and proposed offline discussion. Robin encouraged operators to provide feedback on the complexity versus simplicity of the proposed interworking solutions.
+*   **MPLS Extension Header Encoding**:
+    *   A draft proposing a generic framework for MPLS extension headers was presented to address the need for carrying additional in-stack forwarding instructions and ancillary data without drastically increasing the MPLS label stack.
+    *   The framework consists of an indicator (e.g., extending ELI, new special label, user-configured label) and a header format (in-stack and bottom-of-stack options).
+    *   Detailed fields for in-stack (opcode, data, data stacking bit, end-to-end bit) and bottom-of-stack (opcode, length, flags) were described.
+    *   The authors sought feedback, especially on the label indicator options.
+    *   **Discussion**: Jim inquired about previous discussions within the MPLS design team and similar existing drafts, which the authors stated were addressed in an appendix. Chong Li questioned the motivation for making MPLS more complex, suggesting a focus on IPv6. Rakesh highlighted IOM for MPLS as a relevant application. Greg noted that the MPLS open design team is actively discussing such proposals and requirements, implying more work is needed before working group adoption consideration. Jeff emphasized the large-scale deployment of IPv6 over SR-MPLS as current working technology.
+*   **SRv6 BFDD (Bidirectional Forwarding Detection for SRv6)**:
+    *   A draft for using BFDD to monitor SRv6 policies and detect segment list continuity was presented.
+    *   The problem of inconsistent forward/reverse paths causing false positives was highlighted.
+    *   The proposed solution uses SRv6 Path Segments to correlate unidirectional SRv6 paths, distributing this information via BGP SR Policy extensions.
+    *   The procedure involves the initiator encapsulating a path segment, and the reflector using this segment to determine the correct reverse path for the response packet, ensuring consistency.
+    *   No questions were raised during the presentation.
+*   **SR for IETF End-to-End Network Slicing**:
+    *   A draft proposing segment routing extensions to support end-to-end IETF network slicing across multiple network domains was presented.
+    *   It uses the concept of a "Resource Partition Binding Segment" (RPBSID) to steer traffic into a local Network Resource Partition (NRP).
+    *   Two main types of RPBSIDs (`RPT` and `RPB`) were introduced, with variants for SRv6 and SR-MPLS instantiations.
+    *   Updates included terminology alignment with IETF network slice and VPN+ drafts.
+    *   The authors welcomed comments and feedback.
+    *   **Discussion**: Linda asked about the applicability to 5G use cases, particularly source-address-based slicing. The authors clarified that this draft focuses on the transport network slicing aspect, not direct 5G E2E realization. Reza offered to provide references to relevant 5G/UE signaling drafts.
+*   **Path Tracing in SRv6 Network**:
+    *   A draft proposing a path tracing solution for SRv6 networks was presented, aiming to deterministically detect packet paths, discover ECMP routes, and record interface IDs, timestamps, and load.
+    *   It is designed for line-rate hardware, using minimal header space (3 bytes of "Midpoint Compressed Data" per hop).
+    *   Roles include a source node, midpoints, a sync node (using a new `End.B6` behavior), and a collector.
+    *   New hop-by-hop (HBHPT) and SRH (SRHPT TLV) headers are defined.
+    *   The authors reported experimental and interop implementations and requested vendor review of the data plane model.
+    *   **Discussion**: Greg asserted redundancy with IOM, stating that IOM can achieve the same goals, potentially out-of-band. Howie echoed concerns about IOM overlap and queried the timestamp format, referencing a "light IOM" solution. Pablo argued that IOM's data plane complexity makes it difficult for line-rate hardware ECMP monitoring, implying path tracing offers a simpler alternative.
+*   **SRv6 Inter-Domain Mapping SIDs**:
+    *   An updated draft was presented, introducing three new SRv6 `End.B6` behaviors (`End.Replace`, `End.Replace.B6`, `End.DB6`) to build paths across different SRv6 domains.
+    *   These behaviors cater to Option C style interworking (`End.Replace`, `End.Replace.B6`) and Option B style interworking (`End.DB6`).
+    *   The draft clarifies behavior for `Segments Left = 0`, provides details on new encapsulation header fields, and includes optimizations for best-effort and Flex-Algo scenarios.
+    *   A new section details interworking procedures with control and data plane examples.
+    *   The authors requested working group adoption.
+    *   **Discussion**: Ketan sought clarification on the necessity of the `End.Replace` behavior in Option C, particularly regarding SR policies and underlay BGP.
+*   **SRv6 Policy Group**:
+    *   A draft proposing the concept of an "SR Policy Group" was presented, aiming to provide good practice for using SRv6 policies for enterprise customers with different QoS requirements.
+    *   An SR Policy Group contains a group of constituent SR policies, identified by color and endpoint, with different colors for each constituent policy.
+    *   It enables customer-based policy configuration, improved efficiency, and fallback solutions.
+    *   Use cases include per-flow or policy-based steering, mapping DSCP to different SR policies (e.g., low-latency for VIP, normal for non-VIP), and providing a fallback path if no specific policy matches or is available.
+    *   **Discussion**: Ketan noted the similarity to "composite candidate paths" in the SR architecture draft but highlighted a deviation by proposing DSCP-based steering instead of weights for load balancing, suggesting further discussion on the mailing list. Guyin questioned if this introduced new concepts to SR policy and whether it could be integrated into the existing SR policy draft. Boris requested an update on the implementation status of the draft.
+*   **Circuit Switched Segment Routing**: This presentation was skipped due to lack of time.
+
+## Decisions and Action Items
+
+*   **Decision**: The **SRT Path Midpoint Restoration** draft was **not adopted** in its current form by the working group.
+*   **Action Item**: Authors of **SRT Path Midpoint Restoration** are encouraged to **continue working on the mailing list** to address concerns and requirements.
+*   **Action Item**: For the **Compressed SRv6 Segment List Encoding in SRH** draft, any modifications made through the issue tracker should **be copied to the spring mailing list**.
+*   **Action Item**: Authors of the **SRv6 and MPLS Interworking** draft (Sully) and the draft with `End.DM` behavior (Sully) should **collaborate to resolve potential overlap** in behavior definitions (e.g., `End.DPM` vs. `End.DM`) and potentially align on common naming.
+*   **Action Item**: Authors of the **SRv6 and MPLS Interworking** draft and Trove should **discuss offline** the potential gaps in the SRPC solution, especially regarding multi-PC scenarios and possible PCEP extensions.
+*   **Action Item**: Authors of the **MPLS Extension Header Encoding** draft are to **continue discussions within the MPLS open design team**, address the feedback received via email (Jim), and further analyze comparisons with existing solutions like IOM.
+*   **Action Item**: Authors of the **SRv6 BFDD** draft are requested to **update the draft with implementation status**.
+*   **Action Item**: Authors of the **Path Tracing in SRv6 Network** draft are requested to **provide further comparison with IOM** on the mailing list.
+*   **Action Item**: Authors of the **SRv6 Policy Group** draft are to **continue discussions on the mailing list** regarding the deviation from the SR policy architecture draft concerning DSCP-based steering versus weighted load balancing.
+
+## Next Steps
+
+*   The working group chairs will assess the adoption requests for **Export of SRv6 Information in IPFIX**, **SRv6 and MPLS Interworking**, **SRv6 BFDD**, **SR for IETF End-to-End Network Slicing**, **Path Tracing in SRv6 Network**, and **SRv6 Inter-Domain Mapping SIDs** based on feedback and discussions.
+*   Authors of various drafts are expected to continue technical discussions on the mailing list, address identified gaps, and refine their proposals.
+*   The **Circuit Switched Segment Routing** presentation will need to be rescheduled or discussed on the mailing list.
+*   The community is encouraged to provide detailed technical feedback on all presented drafts via the mailing list.

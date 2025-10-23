@@ -1,0 +1,92 @@
+**Session Date/Time:** 08 Nov 2021 14:30
+
+# netconf
+
+## Summary
+
+The NETCONF Working Group held its virtual meeting to discuss the status of existing chartered and unchartered drafts. Key discussions included the progress of the Client Server Suite of drafts, open security considerations for the UDP-based Notification draft, approaches to handling XPath complexity in Adaptive Subscriptions, and improvements/open questions for NETCONF Transaction IDs and List Pagination. Several drafts are nearing publication, while others require further discussion on the mailing list to resolve open issues.
+
+## Key Discussion Points
+
+*   **Administrative Items:** Standard IETF processes and policies apply. A countdown timer was used for speakers. Attendees were encouraged to use the Etherpad for notes and queue up to speak.
+*   **Chartered Workgroup Items Status:**
+    *   **YANG Push Notification Capabilities:** Past IESG review, currently in the RFC editor queue.
+    *   **HTTPS Notification:** Authors believe all open issues are addressed and it's ready for publication. A document shepherd is being sought.
+    *   **YANG Push Notification Messages:** The draft expired. Authors (if present or offline) are requested to revive and update it to finalize.
+    *   **UDP Notif:** Scheduled for discussion in this meeting.
+    *   **Distributed Notif:** Expired. Authors are planning to bring discussion back to the mailing list.
+    *   **SCTP CSR:** Updated by Kent (removed a duplicate paragraph) and is now considered ready for IESG Last Call.
+*   **Client Server Suite of Drafts (Kent Watsen):**
+    *   Last Call for the entire suite (Netconf client server, Restconf client server) was completed 2-3 weeks ago without objections.
+    *   **Open Issue 1 (TLS client server):** How to support raw public keys and pre-shared keys for TLS 1.3, an issue raised by P. Wouters. Resolution is pending.
+    *   **Open Issue 2 (Keystore and Truststore):** Ensure language does not preclude the ability to use system-defined configuration (Netmod WG work), allowing built-in keys to appear in the system datastore (preferably) rather than just copied to running.
+    *   **Open Issue 3 (Keystore Liaison):** A liaison request from IEEE 802.1AR regarding concerns about copying private keys to running config. This is believed to be a misunderstanding, as it's the YANG node (representing the key data) that needs to be copied, not the private key itself. Rob Wilton will set up a meeting with IEEE (Glenn Parsons) to clarify and determine if a formal liaison response is needed.
+*   **UDP-Based Transport (Alex and Pierre):**
+    *   **Changes (v03 to v04):**
+        *   Reserved `0` for encoding types and moved CBOR to the bottom for compliance.
+        *   Merged the DTLS version of the draft into the main UDP Notif draft. DTLS 1.3 is to be used, with messages sent as application data.
+        *   IANA requests for encoding types and option types.
+    *   **Comments Received:**
+        *   Andy Bierman: Add RFC references for encoding types (CBOR, XML). Discussion ongoing about which CBOR RFC version to use.
+        *   Mahesh Jethanandani: Feedback received and will be addressed.
+    *   **Working Group Discussion:**
+        *   **Security (Rob Wilton):** Concern raised by SecAD about standards-track documents sending data over an unencrypted channel. DTLS is included as an option, but the ability to send unencrypted UDP may be an issue for SecAD. Need to consult with them (via SecDir review or direct conversation). Kent expressed empathy for native UDP in private/local networks where crypto overhead is undesired, noting it's about configuring existing protocols. Pierre argued that current RFCs for UDP applications allow cleartext in certain deployment considerations.
+        *   **Congestion (Rob Wilton):** Need to ensure the document sufficiently covers transport requirements for handling congestion. Authors believe it's covered in the applicability section.
+        *   **Transmission Timeout (Chair):** Questioned if a configured transmission timeout in the YANG model (for segmentation retention) is intended and if it should be configurable. Authors clarified it relates to segmentation retention and may not need configuration beyond default.
+        *   **Well-known UDP Port (Chair):** Noted the draft removed a well-known UDP port. Authors stated it was removed as no one cared and load sharing deployments would likely configure multiple ports anyway.
+*   **Adaptive Subscription to YANG Notification (Kefang):**
+    *   **Motivation:** Address expensive data management for massive data collection by allowing dynamic streaming rates based on conditions (e.g., higher rate when signal strength drops below a threshold for troubleshooting).
+    *   **Proposal:** Client configures an adaptive subscription policy with a condition expressed using XPath evaluation criteria.
+    *   **XPath Complexity:** Acknowledged as a potential issue, similar to YANG Push selection filters. A new section in the draft discusses this.
+    *   **Design Principles to Reduce Complexity:**
+        *   XPath evaluation against a minimum set of data objects, advertised via a notification capability model.
+        *   Integer-based filters.
+        *   One-to-one numeric comparison, where one object is a leaf data node and the other an integer, resulting in a boolean value.
+    *   **Working Group Discussion:**
+        *   **Rob Wilton:** Agreed the proposed text is on the right track. Praised advertising supported objects via capabilities. Recommended requiring all implementations to support a basic set of filters, but allowing more complex ones (with a well-defined error code for unsupported complexity).
+        *   **Kent Watsen:** Noted similar XPath complexity concerns in the List Pagination work. Raised the need for servers to advertise what extra, complex expressions they support beyond the minimum set.
+*   **NETCONF Transaction ID (Jan Lindblad):**
+    *   **Motivation:** Reduces traffic and increases reliability for configuring multiple servers from multiple clients.
+    *   **Traffic Analysis:** Real-world application data showed 91% of traffic in YANG 1.0 hello messages. Transaction IDs could reduce round trips (569 to 378) and configuration data exchanged by nearly half. Emphasized reliability for multi-client/multi-server scenarios as the primary value.
+    *   **Changes (v00 to v01):** Clarified e-tag specifics, harmonized transaction ID names with RFC 7232/8040, and *removed the option for clients to set transaction IDs* due to controversy (though Jan still advocates for it). Adjusted the mechanism for transaction IDs to be returned.
+    *   **Open Questions/Alternatives (Current Draft Position):**
+        *   E-tag assignments: Matches Restconf/RFC 7232; no specific string formatting.
+        *   Timestamp support: Not included.
+        *   Client-assigned TIDs: Not allowed in the current draft (but Jan made a case for it, citing performance benefits by allowing clients to update their local database without waiting for server responses).
+        *   Free-form metadata string: Not included.
+        *   Granularity: Applies to datastores and server-picked containers/list elements, not individual leaves or client-decided elements.
+    *   **Future Development Ideas:** Indicate TID-associated elements via capabilities, reduce config false data, add e-tags for commit/other operations.
+    *   **Working Group Discussion:**
+        *   **Pierre (NetConf Chair):** Supported client-assigned TIDs or a mechanism to label transactions (e.g., with service request IDs from orchestrators) for improved lookup and multi-client scenarios.
+*   **List Pagination Mechanisms (Ching Chu):**
+    *   **Motivation:** Improve client interface, reduce latency and resource consumption when retrieving large lists, leveraging server-side processing and backend storage.
+    *   **Changes since IETF 109:**
+        *   Renamed `cong` and `escape` parameters to `limit` and `offset`.
+        *   Defined 5 query parameters (`where`, `sort-by`, `direction`, `offset`, `limit`) and `sublist-limit` (for descendant lists).
+        *   Extended server capabilities with `constraint` (for parent nodes) and `indexed` (for child nodes used in `where`/`sort-by`) parameters.
+        *   Netconf draft: New RPC augmenting `get-config`, `get`, and `get-data`.
+        *   Restconf draft: Updates RFC 8040, allowing list/leaf-list as valid resource targets for GET/DELETE, adds new media types, and six new query parameters.
+    *   **`remaining` Metadata Attribute:** Returns the number of entries *not* included due to `limit` or `sublist-limit`. Examples for both parent and descendant lists were shown.
+    *   **Open Issues for Discussion:**
+        *   **Cursor Support:** The draft uses offset-based pagination. Seeking compelling use cases for cursor-based pagination (which handles dataset changes during paging better) for config data. Current mechanisms (entity-tag, timestamp, error codes) might suffice.
+        *   **`remaining` Annotation:** Debate on whether to omit the `remaining` annotation if zero elements were removed, or use `0` to represent "no elements removed" versus omitting it to mean "unknown."
+
+## Decisions and Action Items
+
+*   **Decision:** The **HTTPS Notification** draft is considered ready for publication.
+*   **Decision:** The **SCTP CSR** draft has been updated and is ready for IESG Last Call.
+*   **Decision:** The **Client Server Suite** of drafts has completed its Last Call.
+*   **Action Item: Rob Wilton (Chair):** Solicit a document shepherd for the **HTTPS Notification** draft.
+*   **Action Item: Rob Wilton:** Schedule a meeting with Kent Watsen and IEEE 802.1AR liaison (Glenn Parsons) to resolve the liaison request issue regarding the **Keystore** draft.
+*   **Action Item: Alex/Pierre (UDP Notif authors):** Engage with the Security Area Directorate (SecAD) to address concerns about sending data over unencrypted channels in a standards-track document.
+*   **Action Item: Alex/Pierre (UDP Notif authors):** Address remaining comments on the mailing list (RFC references, CBOR version, congestion handling, transmission timeout configuration).
+*   **Action Item: Kefang (Adaptive Subscription author):** Refine the text regarding XPath complexity, consider implementing a minimum set of supported filters, and define error codes for unsupported complex queries. Explore mechanisms for servers to advertise supported expressions.
+*   **Action Item: Jan Lindblad (Transaction ID author):** Take the open questions and alternatives, especially the case for client-assigned Transaction IDs, to the mailing list for further discussion.
+*   **Action Item: Ching Chu (List Pagination author):** Take the open issues regarding cursor support and the `remaining` annotation to the mailing list for further discussion.
+*   **Action Item: All Authors:** Be proactive in bringing technical discussions and open issues to the working group mailing list.
+*   **Action Item: All Attendees:** Assist with note-taking during meetings.
+
+## Next Steps
+
+*   Continue discussions on all open issues via the working group mailing list.
+*   Authors are expected to update their drafts based on the feedback and discussions.

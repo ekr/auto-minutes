@@ -1,0 +1,80 @@
+**Session Date/Time:** 25 Jul 2022 19:00
+
+# savnet
+
+## Summary
+
+This was the inaugural meeting of the savnet working group. The session focused on establishing the working group's charter, milestones, and initial presentations detailing gap analyses, problem statements, and requirements for Source Address Validation (SAV) in both intra-domain and inter-domain networks. Preliminary solution approaches were also introduced to inform further discussion on requirements and feasibility. Key discussions revolved around the practical challenges of deploying SAV, the scope of what the working group can realistically address (e.g., compromised routers, misconfiguration vs. algorithm flaws), the difficulty of incentivizing deployment, and the potential scaling implications of proposed solutions.
+
+## Key Discussion Points
+
+*   **Working Group Status and Charter**:
+    *   The savnet working group was approved in June of this year.
+    *   The charter includes defining problem statements, use cases, requirements, SAV architecture documents (for intra- and inter-domain), and definitions for operation and management.
+    *   Charter items require analysis of current solutions, defining conditions for architecture improvement, privacy analysis, threat models, and comparison to existing mechanisms.
+    *   Milestones include adopting problem/use case/requirement documents (November this year) and architectural documents, with work planned to conclude by March 2025.
+
+*   **Intra-domain SAV: Gap Analysis, Problem Statement, and Requirements (Dan Lee)**:
+    *   **Background**: Source Address Validation (SAV) is crucial for defending against spoofing attacks (e.g., reflection attacks). Existing methods include ingress filtering (ACL, strict uRPF) defined in RFC 2827 and RFC 3704.
+    *   **Identified Gaps**:
+        *   **Improper Block**: Occurs with asymmetric routing or multi-homed subnets (e.g., a subnet advertising half its prefix to one router and half to another) when strict uRPF is applied. ACLs require manual, error-prone updates.
+        *   **Vulnerability in Inbound Direction**: Ingress filtering only checks traffic originating from directly connected subnets, failing to block spoofing traffic from external sources transiting the network.
+        *   **Misbehaved Router**: If a router is compromised or fails to strictly implement SAV, spoofing traffic may pass through. (Discussion point: Scope of considering compromised routers was raised as a significant challenge and suggested to be explicitly defined).
+        *   **Misaligned Incentive**: Deployment of ingress filtering only guarantees the *deployed* subnet won't *send* spoofed traffic, but doesn't protect it from *receiving* reflection attacks from non-deployed subnets.
+    *   **Problem Statement**: Existing mechanisms suffer from inaccurate validation (improper block under asymmetric routing), limited protection (cannot block inbound spoofing or handle misbehaving routers), and misaligned incentives (reflection attacks still occur).
+    *   **Requirements**:
+        1.  Must discover real data plane forwarding paths to avoid improper blocks.
+        2.  Must work for all intra-domain spoofing traffic (all directions) to block as close to the source as possible. (Discussion point: Feasibility of validating traffic from "all directions" and creating "direct incentives" was questioned, suggesting these might be aspirations rather than strict requirements due to technical/administrative/policy limitations and the BCP 38 deployment challenge).
+        3.  Must provide direct incentives to mitigate reflection attacks from undeployed areas.
+        4.  Must not induce excessive overhead (avoid data plane packet modification, limit control plane messages).
+    *   **Preliminary Solution Idea**: Hub-by-hub prefix notification to learn real incoming interfaces and generate local SAV tables. (Discussion point: Concern raised about trusting end-hosts and the need for a "zero trust" approach, or how to include host-level filtering in the problem statement).
+
+*   **Inter-domain SAV: Gap Analysis, Problem Statement, and Requirements (Len Chun Chi)**:
+    *   **Background**: RFC 8704 improved on earlier ingress filtering (RFC 2827, 3704) with Enhanced Feasible Path uRPF (EFP uRPF) for directly connected single-home stub ASes, and loose uRPF for provider/peer interfaces.
+    *   **Identified Gaps**:
+        *   **Improper Permit**:
+            *   Loose uRPF on provider interfaces may improperly permit reflection attacks.
+            *   EFP uRPF Algorithm B may improperly permit spoofing within the customer cone if it allows source addresses from all customer interfaces. (Discussion point: Whether this is a flaw in the algorithm when correctly implemented or a misconfiguration issue).
+        *   **Improper Block**:
+            *   `NO_EXPORT` BGP community can lead to improper blocking by EFP uRPF if the forwarding path is chosen via an AS that doesn't propagate the route. (Discussion point: `NO_EXPORT` often creates reachability issues, highlighting a conflict between routing objectives and validation behavior. Operators prioritize not breaking existing traffic).
+            *   Anycast/Direct Server Return (DSR) scenarios where the response source address (Anycast IP) is not advertised via BGP by the responding AS, leading to improper blocking.
+        *   **Misaligned Incentive**: Similar to intra-domain, victims with SAV deployed can still be attacked, and existing inter-domain SAV is vulnerable to spoofing from provider/peer interfaces.
+    *   **Problem Statement**: Inaccurate validation (local RIB doesn't match real data plane, complex topologies/tunnels) and misaligned incentives (victim still suffers reflection attacks).
+    *   **Requirements**:
+        1.  Must discover real data plane forwarding paths to avoid improper blocks and reduce improper permits.
+        2.  Must provide direct incentives to help deployed areas mitigate reflection attacks from undeployed areas and support incremental deployment.
+        3.  Must not induce excessive overhead (avoid packet modification, limit control plane messages).
+        (Acknowledged that similar concerns about feasibility and incentives apply as with the intra-domain requirements).
+
+*   **Working Group Direction (David Lamparter)**:
+    *   Suggested shifting perspective from constructing a "perfect filter" to focusing on "defense in depth."
+    *   Proposed asking: "For any specific router, what can *that* router do to help?" This approach could make scope questions (trust, compromise) less relevant and accelerate progress.
+
+*   **BAR-SAV Solution Proposal (Igor Lubashev)**:
+    *   **Context**: BCP 38 (2000) approaches rely on BGP updates. RFC 8704 (2020) improves this by considering origin AS, but still has limitations. Adoption rates remain low (15% since 2015).
+    *   **Motivation**: Solutions need to be technically better, deployable, offer immediate benefits to early adopters, and ideally incentivize non-adopters, while being easy for small networks.
+    *   **Approach**: BAR-SAV (BGP, ASP, RPKI ROA based SAV) augments BGP updates with information from AS Path (ASP) and Route Origin Authorizations (ROAs). It uses the full AS path (not just origin AS) and secure RPKI data.
+    *   **Algorithm Overview**: Two phases:
+        1.  **Discover Customer Cone**: Iteratively identifies customer ASNs using ASP data and BGP AS paths.
+        2.  **Discover Prefixes**: Uses ROA information to identify prefixes authorized by ASNs in the customer cone, and merges with BGP-advertised prefixes from customer cone origin ASNs.
+    *   **Benefits**: Claims to improve on RFC 8704 and allow DSR by publishing ROA even if a prefix isn't advertised via BGP.
+    *   **Discussion**: Questioned the reliability of IRR data vs. RPKI (RPKI adoption growing, IRR less reliable). Concern raised about RPKI object transience (blips in existence) potentially causing filter issues and support calls, suggesting that filter logic needs to handle temporary unavailability of RPKI data gracefully.
+
+*   **Intra-domain SAV Solution Proposal (Yang Xing)**:
+    *   **Approach**: Extends Interior Gateway Protocols (IGP) to advertise "protected prefixes."
+    *   Routers independently calculate SAV information (prefix, incoming interface) based on shortest path trees.
+    *   **Inter-Area Problem**: For inter-area routing, ABRs need to advertise the "total cost" (or reverse cost) from the prefix origin to the ABR via IGP extensions. This allows routers in other areas to determine the correct incoming interface.
+    *   **IGP Extensions**: Proposes `prefix-sav-sub-TLV` (to identify protected prefixes) and `prefix-reverse-cost-sub-TLV` (to carry total reverse cost) for IS-IS and OSPFv2/v3.
+    *   **Considerations**: Need to analyze interaction with policy-based routing (PBR) and QoS, as these can alter forwarding paths.
+    *   **Discussion**: Questioned reliance on trusted BGP for intra-domain SAV. Asked about the ability to determine *all* valid paths, not just one. Raised concerns about scaling, as disaggregating summarized routes to get accurate SAV information could blow up router CPU/memory usage, similar to existing routing challenges.
+
+## Decisions and Action Items
+
+*   No specific technical decisions were made during this initial meeting, beyond confirming the working group's charter and proceeding with the planned work items.
+*   **Action Item**: Participants were encouraged to review the meeting minutes in the data tracker and add or correct any points they raised during the discussion to ensure accuracy.
+
+## Next Steps
+
+*   Continue discussions on the mailing list.
+*   Refine problem statements, use cases, and requirements in forthcoming drafts, taking into account the issues and questions raised regarding scope, feasibility, incentives, and scaling.
+*   Solution proposals (like BAR-SAV and the IGP extension for intra-domain SAV) will continue to be presented to inform the discussion on requirements and potential gaps, but the focus for now remains on defining the problem space and requirements clearly.

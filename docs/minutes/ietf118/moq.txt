@@ -1,0 +1,91 @@
+**Session Date/Time:** 06 Nov 2023 12:00
+
+```markdown
+# moq
+
+## Summary
+
+This moq working group meeting covered several key topics, including interop updates, a summary of recent draft changes, object model to transport mapping, and various subscription-related issues. The main focus was on resolving the mapping of object model to transport and addressing concerns around subscription management.
+
+## Key Discussion Points
+
+*   **Interop Readout:** Ongoing interop efforts, hack-a-thon planned for tomorrow. Limited interop between different implementations so far.
+*   **Moku Changes Since 00:** Clarifications on version negotiation, splitting of "Set up," editorial fixes, addition of subscribe hints and reset messages. No direct TCP fallback.
+*   **Object Model to Transport:**
+    *   Discussion on implicit vs. explicit signaling for relay forwarding.
+    *   Implicit signaling: Relay forwards objects in the same way they were received.
+    *   Explicit signaling: moq messages carry information about how the relay should forward objects.
+    *   Proposal to add explicit signaling to the draft for implementation experience.
+    *   Consensus on explicit signal, however that if they don't match, consider it a bug.
+*   **Subscription Issues:**
+    *   **Track Names and Namespaces:** Agreement that there should be no restrictions on track names at the transport layer. Binary comparison to be used. Any escaping must occur before the comparison.
+    *   **Multiple Subscriptions:** Agreement to allow multiple subscriptions to the same track.
+    *   **Overlapping Subscriptions:** Initial proposal and then Ted’s final solution.
+    *   **Updating Subscriptions:** Consensus to include an "update subscribe" message in the next draft.
+    *   **Resource Limits:** Discussion on setting limits on the number of subscriptions. Aim to protect memory.
+    *   **Track ID Renaming:** Discussion if Track ID (compressing name) and Subscriber ID (for subscription transactions) should be related.
+        * Conclusion to keep track ID and subscriber ID separate
+
+## Decisions and Action Items
+
+*   **Object Model to Transport:**
+    *   Add explicit signaling to the draft.
+    *   A small group to write a PR to add a signal.
+*   **Track Names and Namespaces:** Editorial PR to specify no transport restrictions.
+*   **Multiple Subscriptions:** Allow.
+*   **Overlapping Subscriptions:** Ted’s solution will prevail to start. Get what the client asked for, even if duplicated. Let client decide to close the request to save resources
+*   **Updating Subscriptions:** Include "update subscribe" message in the next draft iteration.
+*   **Resource Limits:** Implement limits on the numbers of connections allowed.
+*   **Track ID Renaming:** Leave track ID untouched.
+
+## Next Steps
+
+*   Interop: Proceed with the hack-a-thon and report on Thursday.
+*   Object Model: Proceed to implementing explicit method of determining where to forward an object.
+*   Draft: Additions to be implemented into next draft.
+```
+
+---
+
+**Session Date/Time:** 09 Nov 2023 16:00
+
+# moq
+
+## Summary
+
+This moq session covered interop results, announce issues, catalog format discussions, parameter reforms and interim meeting plans. The group discussed several issues and made decisions on handling conflicting announces, relay matching behavior, and the need for an announce rejection message.  The catalog format was discussed with a focus on the common encryption DRM textion and bit rate definitions. Parameter reform discussions focused on handling length mismatches and track request parameters. The group also discussed the possibility of having an interim meeting and potential locations.
+
+## Key Discussion Points
+
+*   **Interop Results:** Implementers presented their progress on interoperability, highlighting successful connections between different implementations and various features implemented.
+*   **Conflicting Announces:** The group debated how to handle scenarios where multiple clients announce the same namespace.  Use cases included redundant publishers for high availability.
+*   **Relay Matching Behavior:** The group confirmed that relay matching behavior should be based on a bitwise comparison of namespaces.
+*   **Announce Rejection Message:** There was agreement on the need for a new message to inform publishers when their announce is no longer valid, allowing them to take corrective action.
+*   **Catalog Format - JSON Patch:**  The group discussed adopting JSON Patch for catalog updates. There was concern about library support, and it was suggested to move ahead with it.
+*   **Catalog Format - DRM:** The group decided against including DRM specific fields in the common catalog format.  Instead, they would focus on extensibility to allow streaming formats to define their own DRM elements.
+*   **Catalog Format - Bitrate:** The group debated how to define bitrate in the catalog, with varying opinions on whether to include average, peak, or custom bitrate definitions.
+*   **Catalog Format - Timeline Track:**  A "timeline track" for mapping group numbers and media times for scrubbable content was proposed. The participants discussed if that would be specific enough to CMAP.
+*   **Parameter Reform - Length Mismatch:** Handling of length mismatches in parameters was discussed.
+*   **Parameter Reform - Track Request Parameters:** Group explored removing the parameter in the track request, but there was no agreement.
+*   **Interim Meeting:** Discussed the possibility of an interim meeting before Brisbane, with a preference for in-person meetings in Denver or Seattle, if possible.
+
+## Decisions and Action Items
+
+*   **Conflicting Announces:** Adopted the approach of not disallowing duplicate announces at the moq layer, adding an announce error code and token for tie-breaking or replacement functionality.
+*   **Relay Matching Behavior:** Confirmed that relay matching behavior will use a bitwise comparison of namespaces.
+*   **Announce Rejection Message:** Agreed to add a new message for announce rejection.
+*   **Catalog Format - JSON Patch:** Move ahead with JSON Patch.
+*   **Catalog Format - DRM:** Drop the DRM PR and make extensibility sample use case.
+*   **Catalog Format - Bitrate:** Ali to return with some best-worst definition of bitrates.
+*   **Catalog Repo Adoption:** merge updates, publish another version and adopt it.
+*   **Parameter Reform - Length Mismatch:** Make a length mismatch be an error.
+*   **Parameter Reform - Track Request Parameters:** There was no resolve on what to do with track parameters, it will be on going,
+
+## Next Steps
+
+*   Continue discussions on the announce issue in a PR.
+*   Will to implement JSON Patch in the catalog format.
+*   Will to drop the DRM PR and test the extensibility model.
+*   Ali to investigate and propose the best approach for the bitrate definition.
+*   Martin to schedule design call on parameter reform.
+*   Alan to talk about interim location planning.

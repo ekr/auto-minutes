@@ -1,0 +1,93 @@
+**Session Date/Time:** 10 Nov 2021 12:00
+
+# madinas
+
+## Summary
+The first madinas Working Group meeting focused on reviewing the working group's charter and objectives, receiving status updates from other Standards Development Organizations (SDOs) including the Wireless Broadband Alliance (WBA), IEEE 802.1, and IEEE 802.11. The session also included presentations and discussions on two proposed drafts: `draft-henry-madinas-framework` which defines terminology and use cases for MAC address randomization, and `draft-sjuniga-madinas-mac-randomization` which documents current operating system practices. Key discussions revolved around the concept of "full trust" environments, the scope of MAC address changes during network association, and the best way to document evolving OS behaviors. Calls for adoption for both drafts were made and will be finalized on the mailing list.
+
+## Key Discussion Points
+
+*   **madinas Working Group Status and Charter**
+    *   The WG's purpose is to understand and mitigate the impact of Randomized and Changing MAC (RCM) addresses on network services that implicitly rely on permanent and unique Layer 2 identifiers, while preserving privacy.
+    *   Objectives include identifying affected scenarios, analyzing alternative identifiers beyond MAC addresses, and recognizing scenarios where identity is not required.
+    *   Deliverables include a Best Current Practice (BCP) document, use case documentation, and an informational document on the current state of affairs regarding RCM.
+    *   The WG is chartered to liaise with other IETF WGs (e.g., DHCP, IETF) and SDOs (WBA, IEEE 802.1, 802.11).
+
+*   **Wireless Broadband Alliance (WBA) Status Update (Tim):**
+    *   WBA initiated a "Wi-Fi Devices Identification project" to address RCM effects on services provided by WBA members.
+    *   Objectives include finding alternatives to MAC for user/device identification, identifying when identification is unnecessary, analyzing current solutions, liaising with SDOs, and recommending existing technologies.
+    *   **Use Cases Identified**: MAC addresses are used as long-term identifiers for services, requiring identification of users/devices within a network over time.
+    *   **Requirements**: Uniqueness (often for user within network), scope, and duration (long-term). Privacy and consent for identification are crucial.
+    *   **Existing Solutions Reviewed**: 802.1X-based authentications (WPA2/3 Enterprise, Passpoint, OpenRoaming), Private Pre-Shared Key (PPSK), device fingerprinting, proprietary external identification. "Doing nothing" is also considered.
+    *   **Identified Gaps**:
+        *   Wi-Fi network diagnostics (e.g., troubleshooting home/enterprise networks where devices fail to connect, distinguishing network vs. non-network devices without MAC).
+        *   Service providers with multiple SSIDs (e.g., hotel/conference): a device with RCM appears as different devices across SSIDs.
+        *   Lawful Intercept / Internet Connection Records (ICRs): MAC addresses used by law enforcement become unviable.
+    *   **Next Steps**: Recommendations for solutions per network type (hospitality, in-home, enterprise, public). A white paper is expected by the end of the year.
+    *   **Discussion**: The overlap with madinas's use cases is seen as positive, emphasizing collaboration. WBA documents may be shared with IETF via liaison.
+
+*   **IEEE 802.1 Update (Glenn Parsons):**
+    *   **802.1 Role**: Architecture and bridging working group, dealing with higher layers of the data link layer.
+    *   **MAC Address Structure**: 48/64-bit, individual/group, universal/local bits. IEEE Registration Authority assigns Universal MACs (OUIs).
+    *   **MAC Address Exhaustion**: Concerns due to virtualization led to a more structured use of the local space (extended local, standard assigned, administratively assigned, reserved). Randomization is intended for the administratively assigned space.
+    *   **Uniqueness Guarantee**: Presumed in 802 networks with global addresses. For local space, uniqueness is the administrator's responsibility.
+    *   **Future Work**: Study on "Evolved Link Layer Architecture" is underway, informing the revision of standard 802 (due by end of 2024), including discussions on MAC address mapping.
+    *   **Security Aspects**:
+        *   **MACsec (802.1AE)**: Data encryption and protection against man-in-the-middle attacks.
+        *   **802.1X**: Port authentication.
+        *   **802.1AR**: Secure device identity.
+        *   **802.1AEcg (MAC Privacy Protection)**: A new project enhancing MACsec by encapsulating the entire frame, padding data, and hiding MAC addresses and original frame sizes from observers. Expected final ballot early next year.
+    *   **Discussion (Michael)**: Query about stronger, verifiable device identities for industrial IoT, where a trust path up to IEEE via certificates linked to OUI would be beneficial. Glenn noted 802.1AR for secure device identity and 802.1CQ for MAC address assignment with potential trust relationships.
+
+*   **IEEE 802.11 Update (Jerome):**
+    *   **Context**: Devices increasingly use randomized MAC addresses for scanning and, in some cases, association.
+    *   **802.11aq (2018)**: Specifies that a non-MP (Multi-Peer) station connecting to an infrastructure BSS (Basic Service Set) must retain a single MAC address for the duration of its connection across an ESS (Extended Service Set) to maintain state.
+    *   **New Study Groups**:
+        *   **802.11bh (Enhanced Services with RCM)**: Focuses on maintaining services when RCM is in use. Aims to identify use cases where services might break due to MAC rotation (within the 802.11 context) and provide recommendations. Expected short-term (by 2023). Examples include IT support and troubleshooting. Many identified issues were deemed not strictly 802.11 functions.
+        *   **802.11bi (Enhanced Service with Data Privacy Protection)**: Addresses broader privacy concerns in Wi-Fi. Aims to list privacy-related issues with 802.11 (e.g., reassociation elements, MAC layer identifiers that can track devices) and propose improvements. Longer-term (by 2025).
+    *   **Liaison**: Critical to maintain communication between madinas, 802.11bh/bi, WBA, and Wi-Fi Alliance to avoid isolated work.
+    *   **Discussion (Bob)**: Raised a use case for Unmanned Aircraft (UAVs) in public airspace, where persistent MAC addresses are needed for identification and associating message streams, but smartphone APIs often obscure the real MAC.
+
+*   **Draft: `draft-henry-madinas-framework-03` (Jerome):**
+    *   **Purpose**: Define common vocabulary and a framework for discussing RCM issues.
+    *   **Key Definitions**:
+        *   **Device Types**: Personal devices (traffic relatable to a single user) vs. Managed devices (traffic not directly associated with a person, e.g., factory barcode scanner, network infrastructure).
+        *   **Entities**: Network Functional Entities (MAC used for network operation) vs. Human Related Entities (over-the-air observers, wired observers, network operators).
+        *   **Trust Levels**: Full Trust, Selective Trust, Zero Trust environments.
+        *   **Environments**: Home, Managed Residential Setting, Enterprise (BYOD vs. enterprise asset).
+    *   **New Consideration**: IoT devices identified as an important area for future consideration.
+    *   **Discussion on "Full Trust" Environments**:
+        *   Initial proposition (Jerome): Home could be a full trust environment.
+        *   Feedback (Michael, Joey, Matteo): Argued against home as full trust due to potential observers (neighbors, apps scanning) and lack of robust security mechanisms. Michael suggested enterprise (for enterprise-owned assets) as a more plausible candidate.
+        *   Feedback (Bob): Cautioned against oversimplifying enterprise environments as uniformly secure or trustworthy; authentication is shifting to user credentials, not just network layer.
+        *   **Conclusion**: General consensus leaned towards significant skepticism about the existence of truly "full trust" environments, or that they are highly niche (e.g., tightly controlled enterprise assets). The draft will be updated to reflect this nuanced view.
+    *   **Discussion on MAC Change During Connection (802.11aq)**:
+        *   Draft currently makes no specific assumption about MAC stability during an active connection, acknowledging ongoing discussions in 802.11.
+        *   Feedback (Dan): Endorsed this approach, noting 802.11bi aims to address PMK ID privacy to allow random MACs with secure state reuse. madinas should not over-specify future 802.11 behavior.
+        *   Feedback (Juan Carlos): Suggested mentioning the ongoing 802.11 discussions in the informational draft for context.
+        *   **Conclusion**: The draft's current approach of not assuming stable MACs within a connection is accepted, with a note to potentially reference ongoing 802.11 work.
+
+*   **Draft: `draft-sjuniga-madinas-mac-randomization-01` (Amelia/Juan Carlos):**
+    *   **Purpose**: Document the current state of affairs regarding MAC address randomization at the IETF and other SDOs.
+    *   **Key Update (v01)**: Added a section mapping how mobile operating systems (Linux, Android 10, Windows 10, iOS 14+) currently implement MAC randomization (e.g., persistence per SSID, daily changes, configuration options, scanning behavior).
+    *   **Discussion on OS Practice Table**:
+        *   Feedback (Rich): Concern about the table becoming quickly outdated once published as an RFC.
+        *   Feedback (Bob): Suggested referencing a GitHub repository for a "living" table, rather than embedding static data in the RFC.
+        *   Feedback (Michael, Dave): Suggested abstracting the table to define a taxonomy of MAC randomization policies/behaviors (e.g., "Type 1," "Type 2") rather than specific OS versions, making the document more durable and providing a valuable conceptual framework.
+        *   **Conclusion**: Authors will consider feedback on structuring the OS practices information, possibly moving towards a taxonomy of behaviors or referencing external, dynamic resources.
+
+## Decisions and Action Items
+
+*   **Decision**: A call for adoption for `draft-henry-madinas-framework-03` will be made on the madinas mailing list.
+*   **Decision**: A call for adoption for `draft-sjuniga-madinas-mac-randomization-01` will be made on the madinas mailing list.
+*   **Action Item (Authors of `draft-henry-madinas-framework-03`)**: Revise the "Full Trust" section to reflect the discussion's nuanced views, potentially limiting or redefining its applicability (e.g., to very specific enterprise asset scenarios or acknowledging its potential non-existence).
+*   **Action Item (Authors of `draft-henry-madinas-framework-03`)**: Consider adding a note to the draft regarding ongoing 802.11 discussions about MAC address changes within a connection, to provide context for the draft's open stance.
+*   **Action Item (Authors of `draft-sjuniga-madinas-mac-randomization-01`)**: Review the "OS current practices" section based on feedback, considering approaches like defining a taxonomy of randomization behaviors or referencing dynamic information (e.g., via GitHub).
+*   **Action Item (madinas Working Group)**: Continue active liaison with WBA, IEEE 802.1, and IEEE 802.11bh/bi to ensure coordination and avoid duplication of effort.
+
+## Next Steps
+
+*   Monitor the madinas mailing list for the formal calls for adoption for `draft-henry-madinas-framework-03` and `draft-sjuniga-madinas-mac-randomization-01`.
+*   Engage in mailing list discussions regarding the proposed revisions for both drafts.
+*   Authors to prepare updated versions of the drafts incorporating the feedback received during the meeting and on the mailing list.
+*   Further discussions and work on identifying use cases, identity requirements, and potential solutions will continue on the mailing list and in future meetings.

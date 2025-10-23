@@ -1,0 +1,75 @@
+**Session Date/Time:** 21 Mar 2022 13:30
+
+# masque
+
+## Summary
+
+The masque session focused on reviewing the status of the HTTP Datagrams, CONNECT-UDP, and CONNECT-IP drafts. The working group reached consensus to move HTTP Datagrams and CONNECT-UDP forward to Working Group Last Call (WGLC) following resolution of outstanding issues. Discussions for CONNECT-IP centered on MTU handling and error signaling, with a need for more implementation experience and further refinement of solutions.
+
+## Key Discussion Points
+
+### HTTP Datagrams Draft
+
+*   **Purpose and Design**: The draft defines HTTP Datagrams, used by CONNECT-UDP and WebTransport. The core design has undergone several revisions, with a recent design team output and interim consensus merging into the current drafts.
+*   **Capsule Protocol**: A bidirectional, end-to-end TLV-based protocol running on the HTTP data stream (after headers), used for sending datagrams. It includes an optional header to signal its use to intermediaries.
+*   **Relationship to Quick Datagram Frames**: HTTP Datagrams are tied to an open client-initiated bidirectional HTTP request stream. When sent over Quick, they use Quick Datagram frames, including the quarter stream ID and HTTP Datagram payload. A Datagram Capsule is also defined for use over HTTP/1.1 and HTTP/2.
+*   **Extensibility**: The contentious topic of extensibility and demultiplexing (Context IDs) was explicitly removed from HTTP Datagrams and moved into the CONNECT-UDP draft, as WebTransport did not require it.
+*   **Current Status**: All major issues are considered resolved. The draft is ready for Working Group Last Call, which will unblock other working groups like WebTransport.
+
+### CONNECT-UDP Draft
+
+*   **Upgrade Token**: CONNECT-UDP is defined as an HTTP Upgrade token, not an HTTP method. It uses the `Upgrade: connect-udp` header in HTTP/1.1, and the `CONNECT` method with a `connect-udp` protocol token for HTTP/2 and HTTP/3 (as documented in RFC8441 and a related HTTP/3 draft).
+*   **Context IDs for Extensibility**: The concept of Context IDs (from earlier HTTP Datagrams drafts) was moved here for extensibility. Context ID `0` is reserved for UDP payloads. Other Context IDs are dynamically allocated by client and server.
+    *   **Registration**: Discussion on how extensions register the semantics of Context IDs (e.g., via HTTP headers during the request/response cycle or new capsules).
+    *   **Decision**: The working group agreed to keep the CONNECT-UDP draft simple and defer the exact definition of context ID registration to a separate extension document. Authors will start work on such a document.
+*   **Client Configuration (URI Templates)**: The draft specifies URI templates for client configuration, including magic variables like `target-host` and `target-port`.
+    *   **Default URI Template**: Discussion on the format of a default URI template for UIs with limited configuration options (e.g., host and port only).
+    *   **Decision**: To use the `/.well-known/masque/udp/{target-host}/{target-port}` path for the default URI template. A warning will be added to the draft regarding potential interactions with existing `.well-known` rules in intermediaries.
+*   **HTTP/1.1 Method for Upgrade**: Debate over using `CONNECT`, `GET`, or `POST` as the HTTP/1.1 method accompanying the `Upgrade: connect-udp` header.
+    *   Arguments for `CONNECT`: Consistency with HTTP/2/3 extended connect.
+    *   Arguments against `CONNECT`: Unusual semantics in HTTP/1.1, potential for issues with legacy proxies/appliances.
+    *   Arguments for `GET`/`POST`: More consistent with WebSockets (`GET`), less likely to cause issues with proxies not understanding the upgrade. Concerns about caching with `GET` were discussed but deemed less critical in this context.
+    *   **Decision**: To use `GET` as the HTTP/1.1 method for the `Upgrade: connect-udp` header, with the understanding that this is a corner case not expected to see widespread deployment over HTTP/1.1.
+*   **Current Status**: All remaining open issues have been resolved. The draft is ready for Working Group Last Call.
+
+### CONNECT-IP Draft
+
+*   **Updates**: The draft has been updated to align with the changes in HTTP Datagrams and CONNECT-UDP, including datagram formats and context-based extensibility.
+*   **MTU Handling**:
+    *   **Problem**: Small Quick packet sizes can be insufficient to carry the minimum IPv6 MTU (1280 bytes), leading to protocol violations if the tunnel cannot guarantee sufficient size. Some Quick implementations start with minimum packet sizes and explore upwards.
+    *   **Discussion**: Options included failing the request stream, using reliable datagram capsules (fragmentation/reassembly), or providing strong recommendations for starting Quick connections with a sufficiently large MTU (e.g., 1300 bytes). Concerns were raised about the complexity and congestion control implications of fragmentation over reliable capsules versus strict failure. The potential for MTU changes mid-connection was also discussed.
+    *   **Outcome**: No immediate full consensus. The strong advice is to recommend starting Quick connections with an MTU large enough for IPv6. The document should describe how to signal an error if the minimum IPv6 MTU cannot be met. Further exploration of fragmentation/reassembly over capsules as an *extension* was suggested to provide resilience for challenging network scenarios.
+*   **Error Handling (Invalid Packet Routing)**:
+    *   **Problem**: What should a proxy do if it receives an IP packet within the CONNECT-IP tunnel that it refuses to route (e.g., invalid source/destination address, policy violation)?
+    *   **Options**: Silently drop, send ICMP messages back within the tunnel, or use HTTP-layer signaling (capsules, close stream).
+    *   **Discussion**: Many argued for using ICMP messages within the tunnel to mimic standard IP router behavior, providing useful debugging information to the client's virtual IP stack. Concerns about client misbehavior (sending invalid IPs) led to suggestions of terminating the stream/connection. Reference to existing IP RFCs (RFC 8504 for Unicast Reverse Path Forwarding, RFC 5656 for IPv6 MTU discovery) was made to leverage existing router wisdom. Silently dropping was generally disfavored unless for specific attack mitigation.
+    *   **Outcome**: Leaning towards incorporating ICMP messages within the tunnel for IP-level errors, consistent with IP routing principles. For explicit client misbehavior (e.g., sending from an unassigned source address), stream or connection termination was considered appropriate. Guidance should draw heavily on existing IP RFCs for behavior.
+*   **Interop Testing**: More interop testing is needed for CONNECT-IP to gain experience with its protocol behavior.
+
+## Decisions and Action Items
+
+### HTTP Datagrams
+
+*   **Decision**: Initiate a Working Group Last Call (WGLC) for the HTTP Datagrams draft. (Chairs)
+
+### CONNECT-UDP
+
+*   **Decision**: Context ID registration mechanism will be defined in a separate extension document. (Authors to start work on this)
+*   **Decision**: The default URI template for client configuration will be `/.well-known/masque/udp/{target-host}/{target-port}`. (Authors to PR change)
+*   **Decision**: The HTTP/1.1 method for the `Upgrade: connect-udp` header will be `GET`. (Authors to PR change)
+*   **Decision**: Initiate a Working Group Last Call (WGLC) for the CONNECT-UDP draft after incorporating the agreed-upon changes. (Chairs)
+
+### CONNECT-IP
+
+*   **Action**: Update the draft to provide strong recommendations for starting Quick connections with an MTU large enough for IPv6 (e.g., 1300 bytes) and specify error signaling if the minimum IPv6 MTU (1280 bytes) cannot be met. (Authors)
+*   **Action**: Explore fragmentation/reassembly via capsules as a future extension for CONNECT-IP to address challenging MTU scenarios. (Authors)
+*   **Action**: Update the draft's error handling to recommend using ICMP messages within the tunnel for IP-level errors, drawing guidance from relevant IP RFCs. Also, specify stream/connection termination for client misbehavior regarding tunnel configuration (e.g., invalid source/destination addresses). (Authors)
+*   **Action**: Encourage and coordinate more interop testing for CONNECT-IP. (Working Group, Authors)
+
+## Next Steps
+
+*   Chairs will initiate the Working Group Last Calls for HTTP Datagrams and CONNECT-UDP.
+*   Authors will implement the agreed-upon changes in CONNECT-UDP and CONNECT-IP drafts.
+*   New work will commence on a separate draft to define the Context ID registration mechanism for CONNECT-UDP.
+*   The working group will continue to refine solutions for CONNECT-IP's MTU handling and error handling based on further discussion and implementation experience.
+*   Community members are encouraged to engage in interop testing for CONNECT-IP.

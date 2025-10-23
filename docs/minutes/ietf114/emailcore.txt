@@ -1,0 +1,101 @@
+**Session Date/Time:** 26 Jul 2022 17:30
+
+# emailcore Session Minutes
+
+## Summary
+
+The emailcore session focused on advancing several key documents, primarily `5321bis` (SMTP) and the `Applicability Statement` (AS). Significant discussion revolved around the "Four" clause in Received headers, with a consensus leaning towards clarifying existing text rather than deprecating it, deferring specific wording to the mailing list. The working group also agreed on a registration policy for SMTP extensions, moving to an "expert review" model. Various issues for the Applicability Statement were reviewed, with several tickets proposed for closure and clear action items for others, including how web forms should handle email addresses and the treatment of MIME in the AS. The session concluded with a plan to send `5321bis` and `5322bis` to Working Group Last Call soon, followed by the AS.
+
+## Key Discussion Points
+
+*   **Session Logistics**: Alexey Melnikov (Chair) opened the session, noted the well, thanked Braun for note-taking, and reminded remote participants to use masks when speaking. The agenda was reviewed with two main items: `5321bis` (Four clauses, applicability statement) and registration policy. John Levine requested adding a discussion on `SHOULD NOT` vs `MUST NOT` for 550 codes at the end.
+*   **Tribute to Ned Freed**: Alexey briefly acknowledged the passing of Ned Freed in May, noting his significant contributions.
+*   **Discussion on `Four` Clause in Received Header Fields (`5321bis`)**:
+    *   John Levine presented slides, highlighting that the `Four` clause has been "seriously underdefined" since its inception. Its primary use is debugging, assuming the mailbox of the intended recipient, but this is complicated by multiple recipients (e.g., BCC, mailing lists) and potential information disclosure.
+    *   Current `5321bis` text warns against disclosure, especially for sites and special circumstances, and advises against providing `Four` with multiple recipient addresses.
+    *   **Proposed Solutions**:
+        1.  Deprecate `Four` entirely due to safety concerns.
+        2.  Allow it only at message submission time.
+        3.  Fix the "bad sentence" in the current text and retain the existing behavior (Option 3).
+    *   **Discussion Highlights**:
+        *   **Barry Lieber**: Supports deprecating (1.1) or disallowing in new messages, citing general exposure risks beyond multi-recipients.
+        *   **Alexey Melnikov**: Expressed a dissenting opinion, noting existing MTAs (Exim, Postfix) emit `Four` for single recipients. Sees utility for tracing list expansion (e.g., knowing a message arrived via a mailing list). Believes MTAs generally handle it correctly without leaking.
+        *   **John Levine**: Clarified his opposition to weakening the rule and that complex situations arise from forwarding and list expansion.
+        *   **Victor Ducovny (Postfix)**: Confirmed Postfix only adds `Four` for single recipients. Strongly advocated for Option 3, stating it's a useful trace header for postmasters and knowledgeable users (e.g., identifying which email address received spam). Predicted Postfix would make no changes regardless of the final spec.
+        *   **Pete Resnick**: Strongly encouraged Option 3, citing its usefulness for single addresses, widespread deployment, and arguing against new deprecations within the current charter. Challenged the "serious privacy implications" for single recipients, noting forwarding decisions are out of SMTP's hands.
+        *   **John Levine (revisited)**: Advocated for "3 minus minus," suggesting the discussion "reeks of hubris" as we cannot control all email rooting. Recommended a simple note that `Four` is visible to subsequent parties and constitutes a security issue to be considered before adding it.
+        *   **Braun**: Found `Four` very useful for header analysis. Stated that scrubbing efforts would need to cover many other headers anyway. Favored Option 3: clarify risks of forwarding.
+        *   **Daniel van Gils**: Favored Option 3, suggesting that comprehensive email scrubbing is a separate project. Emphasized clarifying the type of deprecation (reliance vs. inclusion).
+    *   **Decision**: Consensus leaned towards Option 3 (clarifying existing text). Further discussion on the specific wording (between Option 3 and "3 minus minus") will continue on the mailing list. John Levine will update the draft based on the discussion.
+*   **Registration Policy for SMTP Extensions (`5321bis`)**:
+    *   Alexey noted the mailing list discussion seemed less controversial than anticipated, with proposed text converging.
+    *   **John Levine**: Questioned if there were real-world cases justifying the worry, or if it's theoretical.
+    *   **Victor Ducovny**: Supported "expert review."
+    *   **Barry Lieber**: Confirmed agreement on the proposed guidance for the designated expert.
+    *   **Decision**: Working group agreed on the proposed text for the registration policy (moving from First Come First Served to Expert Review). This issue is considered closed.
+*   **Applicability Statement (AS) Issues**:
+    *   **Ticket on Bcc/From/Resent-From (`AS`)**: Alexey proposed closing the ticket, noting the text is "baked" after two rounds of discussion and incorporation into the latest revision. Will be moved to the mailing list for final confirmation.
+    *   **Ticket 34: Header Folding/Unfolding (`AS`)**: Pete Resnick's ticket about 78-character lines and fold points. No specific text proposed yet for AS.
+        *   **John Levine**: Questioned the use of "always" in current discussions.
+        *   **Action Item**: Pete, John Levine, and Ken Murchison will collaborate offline to propose text for the AS and bring it to the mailing list.
+    *   **Ticket 35: Erratum 3135 (Quoted String Definition)**: Relates to funky use of empty quotes in the left-hand side and real-world problems.
+        *   **Decision**: Proposal to close as done. No objections.
+    *   **Ticket 51: Format Elements in Web Forms (`AS`)**: Issue with web forms being too strict, not allowing valid characters (+, =, /) in email addresses.
+        *   **Barry Lieber**: Raised the question of internationalized email addresses (EAI) in forms, suggested it might be a separate ticket.
+        *   **Discussion**: Goal is to provide guidance for web form developers. John Levine mentioned the HTML Living Standard has a validation pattern, and engagement with that group might be necessary.
+        *   **Hans-Jürgen Gessinger**: Agreed on the usefulness for library developers, suggested a repository of example data.
+        *   **D. K. Gillmor**: Emphasized exerting influence on other standards bodies, suggesting test suites, specific regular expressions, and an English overview.
+        *   **Action Item**: Ken Murchison will draft initial text. The working group will investigate the HTML Living Standard's pattern and consider constructive engagement. EAI for forms will be a separate discussion.
+    *   **MIME Section in AS**: Currently a stub.
+        *   **Barry Lieber**: Suggested minimal text now, acknowledging MIME's importance and wide deployment, but deferring comprehensive revision until MIME itself is addressed (possibly the next work item for the WG). Pete Resnick agreed.
+        *   **Action Item**: Add minimal text about MIME to the AS, deferring deeper engagement.
+    *   **Other AS Tickets (55, 53, 52)**:
+        *   **Ticket 55 (Domain Names vs. Addresses)**: Proposed to close.
+        *   **Ticket 53 (IP Addresses in HELO)**: Proposed to close.
+        *   **Ticket 52 (Timeouts)**: Proposed to close. Discussion noted that existing timeouts are long but still relevant for some IoT networks; no strong call to change them. A note in AS about modern networks might be considered.
+*   **`SHOULD NOT` vs `MUST NOT` in 550 codes**:
+    *   **John Levine**: Raised the ongoing mailing list debate, arguing that `MUST NOT` is inappropriate for operational reasons.
+    *   **Barry Lieber**: Suggested that the only required change is to capitalize "NOT" for BCP14 compliance.
+*   **Review of Remaining Tickets**:
+    *   **Tickets 61 & 12 (Mailing Lists)**: Alexey suggested doing nothing for now due to lack of energy and Ned Freed's passing (who proposed a document). If a document emerges later, it can be revisited.
+    *   **Nullimax**: Current text deemed "okayish." Proposed to close.
+    *   **Email Address Complication (DMARC)**: Acknowledge, but won't deal with it.
+    *   **Extra Registry**: No consensus after long discussion. Proposed to drop it.
+
+## Decisions and Action Items
+
+*   **`Four` clause in Received Header**:
+    *   **Decision**: Consensus to clarify existing text (Option 3) rather than deprecate.
+    *   **Action**: John Levine to update the `5321bis` draft based on the discussion, and the specific wording (between Option 3 and "3 minus minus") will be finalized on the mailing list.
+*   **Registration Policy for SMTP Extensions**:
+    *   **Decision**: Adopted the proposed text for an "expert review" policy. This issue is closed.
+*   **Applicability Statement (AS) Issues**:
+    *   **Bcc/From/Resent-From Ticket**:
+        *   **Action**: Move to mailing list for final confirmation to close.
+    *   **Header Folding/Unfolding (Ticket 34)**:
+        *   **Action**: Pete Resnick, John Levine, and Ken Murchison to collaborate on new text for the AS and bring it to the mailing list.
+    *   **Erratum 3135 (Quoted String Definition)**:
+        *   **Decision**: Close this ticket as done.
+    *   **Format Elements in Web Forms (Ticket 51)**:
+        *   **Action**: Ken Murchison to draft initial text. WG to investigate the HTML Living Standard's email validation pattern and consider constructive engagement. EAI in forms will be a separate discussion.
+    *   **MIME Section in AS**:
+        *   **Action**: Add minimal text acknowledging MIME's importance and widespread deployment, deferring comprehensive revision to a later phase.
+    *   **Closing Other AS Tickets**:
+        *   **Decision**: Tickets 55 (Domain Names vs. Addresses), 53 (IP Addresses in HELO), and 52 (Timeouts) are proposed for closure.
+*   **`SHOULD NOT` vs `MUST NOT` (550 codes)**:
+    *   **Action**: The editor will correct the `NOT` to be capitalized for BCP14 compliance.
+*   **Remaining Outstanding Tickets**:
+    *   **Mailing Lists (Tickets 61, 12)**:
+        *   **Decision**: Close these tickets; no action for now.
+    *   **Nullimax**:
+        *   **Decision**: Close this ticket.
+    *   **Extra Registry**:
+        *   **Decision**: Drop this proposal due to lack of consensus.
+
+## Next Steps
+
+*   John Levine will update the `5321bis` and `5322bis` drafts.
+*   The updated `5321bis` and `5322bis` documents will be sent for Working Group Last Call (WGLC), tentatively in September.
+*   Work on the Applicability Statement (AS) will continue, incorporating the agreed-upon changes and addressing open action items.
+*   The AS will be submitted to the IESG after `5321bis` and `5322bis`, with awareness from the IESG that it is related but will follow.
+*   A call for new issues for the AS will be made on the mailing list.

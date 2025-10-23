@@ -1,0 +1,119 @@
+**Session Date/Time:** 09 Nov 2022 09:30
+
+# lamps
+
+## Summary
+
+The lamps working group session covered updates on numerous drafts, including those in ISG evaluation, PKIX-related documents, S/MIME, and new Post-Quantum Cryptography (PQC) initiatives. Key discussions revolved around the integration of PQC algorithms like Dilithium and Kyber into X.509 certificates and CMS, handling of composite keys/signatures, and a proposal for multi-authentication certificate binding. A significant decision was made to proceed with a specific mechanism for Chem Key support in CMP updates. The session highlighted the need for alignment across different PQC-related drafts and continued interoperability testing.
+
+## Key Discussion Points
+
+### IESG/RFC Editor Queue Documents
+
+*   **CMP Algorithms & Updates (draft-ietf-lamps-cmp-updates):**
+    *   A typo was spotted in RFC 4210 that needs fixing.
+    *   Proposed updating Appendix C of RFC 4210 to use the RFC 4211 syntax for encrypted values/envelope data, to be included in CMP updates.
+*   **Lightweight CMP Profile (draft-ietf-lamps-lightweight-cmp-profile):**
+    *   Addressed Roman's comments and other reviews. Two reviews are still open.
+    *   Document is scheduled for IESG telechat on December 1st.
+    *   Changes include: section pointing to RFC 4210bis/6712bis, extended wording for trust anchor self-signed certificates, and a security consideration.
+*   **RFC 3709 (No update).**
+*   **NFT Types for 5G (No update):** Confirmed no further 3GPP coordination needed.
+
+### PKIX-Related Documents
+
+*   **4210bis (draft-ietf-lamps-rfc4210bis):**
+    *   Submitted version 0 (original RFC text updated for XML), version 1 (CMP updates changes), version 2 (minor restructuring: Key Generation Authority EKU, original PKI message extracted, algorithm references removed, profile references added, scope broadened to devices/services, LDAP V2 to V3).
+    *   Version 3 fixed old/new certificate specification, shifted Appendix C text to Section 5, and added to-dos for Chem Key support.
+    *   **Chem Keys Support Proposal:**
+        *   **Proof of Possession (PoP):** The existing indirect PoP mechanism in CMP (used for encryption keys) works for Chem Keys.
+        *   **Message Protection:** Proposed a Mac-based protection, requiring an initial round trip to establish a shared secret.
+        *   Concerns were raised about waiting for other Chem Key mechanisms to mature versus proceeding with the current proposal to fulfill IESG requests for a consolidated document.
+*   **6712bis (draft-ietf-lamps-rfc6712bis):** Similar approach to 4210bis with XML updates, CMP updates changes, and minor alignments. Document is stable.
+*   **Reference to 8446bis:** Noted that RFC 8446bis is nearing completion; drafts should point to the latest ID.
+*   **PKCS12 Support for PBKDF2 (No update):** Skipped due to no speaker.
+*   **RFC 7030 CSR Attributes (draft-ietf-lamps-rfc7030-bis-04):**
+    *   Author Michael suggested remaining bugs in examples need fixing by end of November.
+    *   Co-authors are quiet and help is needed.
+*   **Dilithium Certificates (draft-ietf-lamps-x509-dilithium):**
+    *   New GitHub repository established. Aims to define algorithm identifiers for pure Dilithium certificates.
+    *   **Public Keys:** Moving forward with an octet string mapped to a bit string, following RFC 5208 precedent.
+    *   **Private Keys:** Data structure changed, calling out `OneAsymmetricKey`.
+    *   **Hackathon:** Focused on interop and consistency, with monthly follow-up meetings planned.
+    *   **Discussion points:** Deterministic vs. randomized signing (hedged mode), hash-then-sign (leaning towards not pre-hashing, similar to RFC 8410).
+    *   **Public Key in Private Key:** Discussed including the public key or values that allow its reconstruction (e.g., seed) within the private key structure. This could lead to multiple private key encodings.
+    *   **ASN.1 Definition:** Debate on defining public keys as an octet string in ASN.1 versus directly encoding into a bit string, with concerns about potential misinterpretations in implementations (as seen in the hackathon).
+*   **Kyber Certificates (draft-ietf-lamps-x509-kyber):**
+    *   Accepted as a working group draft. Focus is solely on Kyber.
+    *   Will include ASN.1 with TBD OIDs (waiting for NIST).
+    *   Needs alignment with CMS for recipient info.
+    *   Private key format issue (similar to Dilithium).
+    *   Noted that Kyber requires the public key for decapsulation, so private key should ideally not duplicate it.
+*   **Key Attestations (No update):** Skipped.
+
+### S/MIME-Related Documents
+
+*   **Header Protection (draft-ietf-lamps-mail-header-protection):** Editors plan to meet next week for an update.
+*   **End-to-End Mail Guidance (draft-ietf-lamps-e2e-mail):**
+    *   An update was released addressing e-fail attacks.
+    *   Still has "to-do" items and requires more feedback from the community. Not yet ready for WGLC.
+
+### CMS-Related Documents
+
+*   **CMS Cam (Kyber) (draft-ietf-lamps-cms-kyber):**
+    *   Editorial changes made based on comments.
+    *   Decided to use `KeyTransRecipientInfo` and introduced a new `CamTransParameters` type for algorithm parameters.
+    *   Algorithm choices limited to Kyber 512, 768, and 1024, with associated KDF and wrapping algorithms.
+    *   **Open points:** OIDs (IDKTrans, Kyber IDs) and whether to restrict algorithm combinations to three (one per security level) or leave open.
+    *   **Discussion:** Suggestion to drop 192-bit security level (AES-192) in favor of 256-bit equivalents. Concerns about Kyber 512 (lowest level) not meeting 128-bit security. Debate on using `KeyTransRecipientInfo` versus `OtherRecipientInfo` for clarity.
+*   **Sphinx+ with CMS (placeholder):** Group adopted, no discussion, requests for review.
+
+### Other Documents Under Consideration
+
+*   **Binding for Multi-Auth (draft-ietf-lamps-multiauth-binding):**
+    *   Presented in Philadelphia, received mixed feedback.
+    *   Authors clarified intent: a non-critical extension for specific transition scenarios (e.g., DOD PKI) where two independently issued/managed certificates (e.g., PQ and traditional) are held by the same entity. It is not a mimic of composite certificates and has a limited, specific function.
+    *   **Discussion:** Compared to RFC 5697 (Other Certs extension), this draft uniquely defines how the CA asserts the binding.
+    *   **Public CA Concerns:** Entrust expressed concern about receiving CSRs with binding attributes pointing to certs from *other* CAs, fearing validation burden and interoperability issues.
+    *   **Proposed Solutions:** Suggestion to either reject such CSRs or require pre-arrangement between CAs. Tim Hobby stated that public CAs should reject requests binding to unknown certificates. Sean Turner clarified that validation would involve path validation to a trust anchor, not necessarily deep human validation of another CA's process.
+    *   **Next Steps:** Authors should clarify these scenarios and potentially add text about required pre-arrangements for cross-CA binding.
+*   **Composite Keys and Signatures (draft-ietf-lamps-composite-keys):**
+    *   Mechanism uses existing data structures (sequence of `SubjectPublicKeyInfo`) to combine keys and signatures. Requires "ALL" signatures to validate.
+    *   **Use Cases:** Migration, backward compatibility, and an "Algorithm X" paradigm for simulating algorithm characteristics (memory, CPU) for testing/planning in large deployments.
+    *   **Document Updates:** Explicit composite key/signature combinations (7 signature, 3 KEM). Synchronized terminology with PQ Hybrid draft.
+    *   **"K-of-N" Authentication:** The "OR" authentication mode was removed and spun out into a new document proposing a "K-of-N" scheme using a `publicKeyParameter` in the composite signature.
+    *   **Patent Announcement:** Patents related to extension-based hybrid certificates (Troskowski draft) have been donated, potentially reviving that work.
+    *   **Hackathon Results:** Demonstrated interop with composite algorithms, addressed ASN.1 encoding issues (octet string vs. bit string), created an artifact repository for testing. Identified need for flexible OIDs (arc number versioning) due to ongoing algorithm tweaks.
+    *   **Discussion (Generic vs. Explicit):**
+        *   Some participants advocated for generic composite mechanisms (as shown to interoperate at the hackathon) to allow flexibility for future combinations not explicitly defined.
+        *   Others argued for explicit combinations to prevent a "combinatorial explosion" of weird mixes and potential security issues, stating that implementers would struggle with a generic approach.
+        *   The chairs requested a focused discussion on the list about the preferred approach (generic, explicit, or a hybrid).
+    *   **Mailing List for Implementations:** Questioned whether implementation-oriented discussions should be moved to a separate mailing list to avoid cluttering the main lamps list.
+*   **Hash-Based Signatures in X.509 (New Draft):**
+    *   An early draft was published, driven by interest from agencies/industry for using hash-based signatures (LMS, HSS, XMSS, Sphinx+, Pyramid) as a quantum-safe root CA for PKIs.
+    *   Goal is a unified nomenclature and information on differences between schemes.
+    *   **Discussion:** Emphasized the importance of aligning public key specifications with existing CMS drafts (RFC 8708 for HSS/LMS) to ensure consistency. Noted an Errata for XMSS key formats that needs an update.
+
+## Decisions and Action Items
+
+*   **Decision:** For Chem Key support in 4210bis, the working group will proceed with specifying the proposed indirect Proof of Possession (PoP) mechanism and the Mac-based message protection mechanism.
+*   **Decision:** The "K-of-N" authentication mode for composite signatures will be spun out into a separate document, rather than being part of the current composite keys draft.
+
+*   **Action Item (Chairs):** Provide guidance on where implementation-oriented discussions for composite crypto should occur (lamps list vs. separate list).
+*   **Action Item (4210bis Authors):** Add text detailing the Chem Key support mechanism to the draft.
+*   **Action Item (All relevant authors):** Update references to RFC 8446bis to point to the latest internet-draft version once available.
+*   **Action Item (Michael):** Fix remaining bugs in RFC 7030 CSR attributes examples by end of November; engage co-authors for assistance.
+*   **Action Item (Dilithium Certificates Authors):** Continue monthly hackathon meetings. Further consider Carl's suggestion regarding the clarity of ASN.1 octet string definition and John's point on hash-then-sign solutions.
+*   **Action Item (Kyber Certificates Authors):** Coordinate with Dilithium certificate authors to ensure alignment between the drafts.
+*   **Action Item (S/MIME Header Protection Editors):** Meet next week to prepare an update.
+*   **Action Item (End-to-End Mail Guidance Author):** Continue updating the draft and request community review and feedback.
+*   **Action Item (Binding for Multi-Auth Authors):** Send a summary of the discussion points to the mailing list to solicit further feedback (especially from Panos). Add text to the draft clarifying scenarios for public CAs and the need for pre-arrangement in cross-CA binding.
+*   **Action Item (Composite Keys and Signatures Authors):** Advocate for a specific approach (generic/explicit/hybrid) on the mailing list, then update the draft based on the discussion, in preparation for a call for adoption.
+*   **Action Item (Hash-based Signatures in X.509 Authors):** Ensure alignment of public key specifications with RFC 8708 (CMS HSS/LMS) in the new draft.
+*   **Action Item (XMSS Draft Authors):** Update the XMSS document to address the identified Errata on key formats.
+
+## Next Steps
+
+*   Continue discussions on the lamps mailing list regarding the generic versus explicit composite key and signature mechanisms.
+*   Await updates on drafts with open action items, particularly those in the IESG queue or with known issues.
+*   Further development and refinement of new PQC-related drafts, with an emphasis on inter-draft alignment and clear specification for implementers.

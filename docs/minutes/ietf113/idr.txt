@@ -1,0 +1,216 @@
+**Session Date/Time:** 22 Mar 2022 13:30
+
+# idr Session
+
+## Summary
+
+The idr working group session at IETF 113 focused on updates to the working group's status, progress in BGP auto-configuration, the BGP YANG model, and extensive discussion on BGP routes with color proposals (BGP CAR, BGP CT, and BGP LCU). Chairs presented a summary of the interim meeting discussions regarding the "routes with color" drafts and introduced additional clarifying questions. Three proposals for BGP routes with color were presented, followed by a lively discussion comparing their approaches to local convergence, NLRI design, extensibility, and operational models. The auto-configuration track saw the presentation of L3ND and a discussion on the path forward for adopting a solution.
+
+## Key Discussion Points
+
+*   **Working Group Status:**
+    *   RFC 9184 (BGP extended communities) published. RFC 9127bis (BFD YANG) in AUTH48.
+    *   Working Group Last Calls (WGLC) nearing completion for RPD and BGP Wide Community drafts.
+    *   Adoption calls in progress for FlowSpec V2, BGP IFIT capabilities, Max Prefixes procedures, and SR P2MP.
+    *   No consensus was reached on the VPN Prefix RF, but authors are encouraged to get a FCFS code point and implement.
+    *   Review requests from BESS, PCE, BEER, and SIDROPS working groups for various drafts, including SR-TE policy color bits, SRv6 services, EVPN PVPN internetworking, unequal load balancing, and ROV RR route refresh.
+    *   A successful interim meeting on January 24th focused heavily on "BGP routes with color" and BGP auto-configuration.
+*   **BGP Auto-Configuration:**
+    *   Currently, four proposals are being considered for adoption: LODP, L3DL, draft-minto, and the recently added L3ND.
+    *   **L3ND Presentation (Randy Bush):**
+        *   A Layer 3, session-oriented, resumable protocol over TCP/TLS for neighbor discovery and BGP bootstrapping.
+        *   Uses multicast UDP hellos for initial discovery. Peers establish TCP/TLS sessions based on lowest IP address as server.
+        *   Supports self-signed (Trust On First Use) or CA-based TLS certificates, configurable by the operator.
+        *   PDUs for session management (Open, ACK), address advertisements (IPv4/IPv6 encapsulations with flags for primary/secondary, loopback, etc.), and Upper Layer Protocol Configuration (ULPC) for minimal BGP parameters (AS, peering address, authentication).
+        *   Randy Bush raised open questions about how parameters are passed to BGP and the necessity of restartability complexity.
+    *   **Discussion on L3ND:**
+        *   Some participants argued that passing parameters to BGP is an implementation detail outside IETF scope, while Randy Bush stressed the need for interoperability.
+        *   The use of DANE for TLS was considered but deemed too complex due to adding DNS at this layer.
+        *   Signaling self-signed vs. CA-issued certificates on the wire was questioned as it could be a local configuration, but Randy argued it clarifies security assertions.
+        *   Questions were raised about L3ND's reliance on "hello" for bootstrapping (similar to other protocols) and the mechanism of determining a unique TCP server by IP address.
+    *   **Path Forward for Auto-Configuration Adoption:**
+        *   Chairs proposed additional questions for the adoption call, driven by the L3ND discussion:
+            1.  At what layer should the solution work (L2, L3, or both)?
+            2.  What security solution is desired (certificates, shared secret)?
+            3.  Is reliable transport required (and if so, does it need to be TCP)?
+        *   The working group will be polled on these questions after IETF 113 to guide the adoption process.
+*   **BGP YANG Model Update (Mahesh Jettenandani):**
+    *   Version 13 of the model maintains a robust structure for future BGP extensions.
+    *   Updates include aligning with RFC 9127bis (BFD YANG), adding BGP MED considerations, enhancing `send-community` to an identity for extensibility (e.g., white communities), and support for large communities.
+    *   The BGP Policy Model was updated to support `next-hop` match/set and large community sets.
+    *   Outstanding issues include IANA module for extended communities, generic community type formats, and handling vendor-specific AS Path regex and "replace pre-S" semantics. Collaboration on AS Path regex parsing was offered.
+    *   Next steps focus on interfacing with BFD, TCP, and Keychain YANG modules, and suggesting changes for L3VPN YANG model augmentation.
+*   **BGP Routes with Color:**
+    *   **Chair's Summary of Interim Discussion:**
+        *   CAR and CT proposals have comparable functional capabilities but different NLRI formats and operational models.
+        *   CAR introduces `optional-components` in the NLRI to decouple non-key data, similar to how BGP-LU carries a label stack.
+        *   Sue Hares posed clarifying questions on local convergence (especially for CT with same RD), the role of AIGP in convergence, and fallback handling (CAR explicitly defines, CT does not).
+    *   **BGP CAR Presentation (Dan Jayarao):**
+        *   Extends BGP-LU with intent-awareness using color (SR policy architecture).
+        *   Proposes a new SAF with NLRI containing prefix and color, acting as a distinguisher and intent indicator.
+        *   Emphasizes efficiency, local convergence (ECMP/backup at every hop), and a future-proof design with non-key TLVs and multiple encapsulations without duplicate routes.
+        *   Claimed local convergence advantage over CT by default.
+        *   Supports longest prefix match for next-hop resolution.
+        *   Compatible with SR Policy architecture. Uses Local Color Mapping (LCM) for inter-domain color mapping exceptions.
+        *   Two interoperable implementations exist.
+    *   **BGP CT Presentation (Kali Raj):**
+        *   Proposes a new AFI/SAFI for intent-driven service mapping to guarantee end-to-end SLA, as extending BGP-LU cannot guarantee this across old nodes.
+        *   Argues color is an adjective, best carried as an attribute rather than in the NLRI key.
+        *   Introduces "transport class" and "mapping community" to express intent and desired fallback mechanisms, offering more explicit signaling than CAR.
+        *   Claims CT's design with color outside the NLRI key is more flexible for LPM and other lookups.
+        *   Emphasizes protecting operator investment by using well-understood L3VPN machinery.
+        *   Acknowledges RFC 8277 limitations and suggests moving forwarding information out of the NLRI.
+    *   **BGP LU-Unicast (LCU) Presentation (Ron Chen):**
+        *   Uses existing BGP-LU technology with color extended communities and additional path functions (RFC 7911) or by configuring one prefix per color on the PE.
+        *   Proposes a capability advertisement for colored BGP-LU.
+        *   In non-supporting transit domains, colored BGP-LU routes are either re-advertised or downgraded to standard BGP-LU.
+        *   Route resolution is recursive and color-aware, using color and next-hop for lookup.
+        *   Claims simplicity and ease of implementation.
+    *   **General Discussion on Routes with Color:**
+        *   Debate centered on the NLRI design: whether to include color in the NLRI key (CAR) or carry it as an attribute/via mapping communities (CT). This impacts local convergence, path resolution, and extensibility.
+        *   Questions regarding color mapping complexity across domains, particularly CAR's LCM community, and whether this is a rare or common operational scenario.
+        *   Concerns raised about the efficiency and packing implications of carrying encapsulation information in attributes vs. the NLRI, especially for large-scale, multi-intent scenarios.
+        *   The sufficiency of CT's specification for multi-encapsulation (beyond MPLS) was questioned, with a request for more detail in the draft.
+        *   An operator use case for local repair for egress peer engineering was highlighted, suggesting the ability to advertise multiple prefix-to-label methods, which both drafts might address.
+
+## Decisions and Action Items
+
+*   **Action Item:** Chairs to send out adoption questions for BGP auto-configuration proposals to the idr mailing list after IETF 113.
+*   **Action Item:** Authors of BGP CAR with interoperable implementations (Dan Jayarao) are to address the issue of squatting code points as soon as possible.
+*   **Action Item:** All participants in the "BGP Routes with Color" discussion are requested to focus on functional details and avoid making value judgments about other implementations.
+*   **Action Item:** Srihari is requested to elaborate on his color mapping concerns for "BGP Routes with Color" on the mailing list to facilitate resolution.
+*   **Action Item:** Ketan is requested to send comments to the mailing list detailing the need for multi-encapsulation specification in the CT draft.
+*   **Action Item:** Ben is requested to send his comments on the egress peer engineering use case for routes with color to the mailing list.
+
+## Next Steps
+
+*   Chairs will summarize the remaining questions and points of disagreement from the "BGP Routes with Color" discussion and feed them back to the mailing list.
+*   The chairs will discuss whether to schedule another interim meeting for "BGP Routes with Color" or to wait for IETF 114 to continue discussions.
+*   The idr working group has another session scheduled on Friday at IETF 113.
+
+---
+
+**Session Date/Time:** 25 Mar 2022 09:00
+
+# idr
+
+## Summary
+
+The idr session addressed several BGP and FlowSpec related drafts, focusing on extensions for various networking paradigms including APN, SRv6 Traffic Steering, NAPT-PT Flow Mapping, Load Balancing Groups, Enhanced VPNs (Network Slicing), IFIT, and Metric advertisement. Discussions covered technical proposals, updates based on previous feedback, and questions regarding implementation, ordering, scalability, and alignment with existing or developing standards like FlowSpec v2 and various working group architectures. The session also noted some initial technical difficulties with slide loading.
+
+## Key Discussion Points
+
+*   **APN FlowSpec Extensions**
+    *   Presented by Shubang.
+    *   Introduced a new FlowSpec component, `apid`, with length and mask to indicate the base of the APN ID to be matched.
+    *   Defined four traffic filtering actions: marking entire APN ID, marking partial APN ID, inheriting APN ID, and stitching APN ID parts.
+    *   Proposed an ordering mechanism using "group ID" and "subgroup ID" to organize FlowSpec rules for APN and other co-existing rules.
+    *   **Comments (Jeff):** Requires FlowSpec v2 for extensions. The proposed ordering mechanism needs further discussion and alignment with ongoing FlowSpec v2 ordering discussions.
+    *   **Response (Shubang):** Acknowledged the need for FlowSpec v2 and willingness to discuss ordering.
+
+*   **Traffic Steering using BGP FlowSpec with SRv6 Policy**
+    *   Presented by Shown One.
+    *   This draft has been presented multiple times, and all previous comments have been addressed. The document has been changed to informational and includes a multi-implementation report.
+    *   Key aspects: Reuses components from existing drafts, supports one redirect IP community and one color community (multi-extended communities to be discussed in other drafts).
+    *   Supports both intra-AS and inter-AS use cases. Two options for prefix attribute component (especially for SRv6 SID flavored last SID).
+    *   **Implementation:** Implemented by multiple vendors, with successful interoperability tests hosted by China Mobile.
+    *   **Comment (Sun Liu):** Emphasized the usefulness for optimizing public network traffic in China Mobile's network.
+    *   **Comment (Wim):** Suggested checking for synergies with a similar, more progressed draft already in IDR.
+
+*   **BGP Flow Specification for NAPT-PT Flow Mapping**
+    *   Presented by Tren Show.
+    *   **Updates:** Clarified focus on TSN (Time-Sensitive Networking) mapping, not generic NAT. Draft name changed to "BGP Flow Specification for the Flat and TSN Flow Mapping." Extensions now target BGP FlowSpec version 2.
+    *   Proposed extensions: TSN subtree in L2 header GRE, Sequence Action sub-TLV, NAT List sub-TLV, and TSN Action sub-TLV in FlowSpec v2.
+    *   For TSN streams, proposed a new TSN sub-TLV to identify 64-bit Stream IDs for filtering, with actions to map to NAT flows.
+    *   For NAT flows, proposed a NAT sub-TLV for filtering, with actions to map to TSN streams.
+    *   **Comment (Zuosong):** Questioned the use of sequence number as a filter for TSN flow, requesting more explanation.
+    *   **Response (Tren Show):** Will add descriptions to clarify.
+
+*   **BGP FlowSpec Redirect Load Balancing Group Community**
+    *   Presented by Maui.
+    *   **Motivation:** Steer traffic to multiple paths with specified ratios (e.g., 1:2:2), adapt to network status, and support various network types (IP/MPLS/SRv6). Improve ECMP for SRv6 tunnels.
+    *   **Proposal:** A new `Redirect Load Balancing Global Community` as an extended community container attribute. Supports both ECMP and UCMP scenarios. Defines atoms for IPv4/IPv6 prefixes, color, and weight.
+    *   **Comments (Jeff):** Recommended seeking review from authors of white communities for atom extensions (e.g., potential for an integer for color instead of a new atom type). Requested discussion in the draft on the intended behavior or error handling if multiple types of redirect communities are present.
+    *   **Comments (Sue):** Asked for improved text on the weighting mechanism and clarification on how it compares to other aspects of FlowSpec v2.
+
+*   **BGP-LS Extensions for Scalable SR-based Enhanced VPN**
+    *   Presented by Jianbo Li (G).
+    *   **Context:** Aligning with TEAS working group's Enhanced VPN framework and Network Slicing concepts, where Network Resource Partition (NRP) is key. Addresses scalability of NRP.
+    *   **Goal:** Distribute intra-domain and inter-domain NRP topology and resource attributes to network controllers using BGP-LS extensions.
+    *   **Key Optimizations:** Map multiple overlay services to a shared NRP, decouple resource attributes for topology sharing, allow flexible resource isolation/sharing, and introduce a network-wide data plane identifier.
+    *   **Proposed Extensions:**
+        *   `NRP Definition` sub-TLV (for nodes) to advertise NRP relationships with topology/algorithms.
+        *   `NRP ID` sub-TLV (for links) to list NRPs associated with a link.
+        *   `Link Attribute Flags` TLV with a new E-flag for exclusive or load-balancing usage for NRP traffic.
+    *   **Resource Advertisement Options:**
+        *   Option 1: L2 bundle-based, treating resource partitions as bundle member links.
+        *   Option 2: `NRP Link TE Attributes` sub-TLV.
+    *   **Data Plane ID Options:**
+        *   Per NRP SR-C/SRv6 locators.
+        *   Dedicated NRP IDs in the data plane (requiring new encapsulations in separate drafts).
+    *   **Next Steps:** Align terminology with TEAS and IGP extension drafts.
+
+*   **BGP SR Policy Extensions for IFIT**
+    *   Presented by Giuseppe.
+    *   **Motivation:** Automate the enablement of In-situ Flow Information Telemetry (IFIT), including In-situ OAM (IOM) and Alternate Marking (AM), when an SR policy is activated.
+    *   **Proposal:** Extend BGP to distribute SR policy with IFIT attributes.
+    *   **Extensions:** IFIT attributes are included as sub-TLVs at the candidate path level within the Tunnel Encapsulation attribute. Five sub-TLVs are defined (four for IOM, one for AM), aligned with relevant IOM/AM documents.
+    *   **Benefit:** Allows the head-end to be informed about IFIT capabilities of multiple candidate paths, enabling selection and automatic IFIT method enablement based on local configuration.
+
+*   **Advertising SID Algorithm Information in BGP**
+    *   Presented by Yao Leo.
+    *   **Motivation:** Current FlowSpec v2 allows optional SR algorithm specification for prefixes, but more granularity is needed for SR policy delivery.
+    *   **Proposal:** Define new segment sub-TLVs that include optional algorithm information.
+    *   **New Types:**
+        *   SR-MPLS Adjacency with optional Algorithm (four new sub-TLVs).
+        *   SID Only with optional Algorithm (Type L for SR-MPLS SID, Type N for SRv6 SID) for verification, troubleshooting, and network management purposes.
+    *   **Comment (Chetan):** Adjacency SID with algorithm seems valid. Suggested seeking review from the SPRING working group.
+
+*   **BGP SR Policy Extensions for Metric**
+    *   Presented by Kaitan (Kar).
+    *   **Motivation:** Controllers deliver SR policies based on constraints (e.g., delay, bandwidth). However, P-routers sometimes need to choose a next-hop based on the IGP metric of SR policy paths. This requires the controller to deliver this metric information via BGP SR Policy.
+    *   **Proposal:** Add a `Metric` sub-TLV to the BGP SR Policy protocol, as a sub-TLV of the Segment List.
+    *   **Format:** Defines metric type (e.g., IGP, TE, Hop Count, Delay, Loss/Latency) and metric value (32-bit IEEE float).
+    *   **Local Policy:** If a candidate path has multiple segment lists with different metrics, the candidate path metric can use the minimum value. The SR policy metric is then the metric of the active candidate path.
+    *   **Comment (Luke):** Questioned considerations for inter-IGP domain policies.
+    *   **Response (Kaitan):** The controller, aware of multiple IGP domains, would calculate and download the IGP metrics for the entire path.
+    *   **Comment (Chair):** Suggested considering a specific metric type for AIGP.
+    *   **Response (Kaitan):** Agreed this could be added to the metric types.
+
+*   **BGP for BIER TE Path**
+    *   Presented by Haimo.
+    *   **Updates:** Incorporated previous comments, selecting TLV type 23 for tunnel encapsulation attribute, and made editorial changes.
+    *   **Proposal:** Defines a Tunnel Encapsulation TLV for BIER TE Paths, including sub-TLVs for the explicit path, path name, and path identifier (sub-domain ID, BFR ID, Tunnel ID, Path Number).
+    *   **Comment (Jeff):** Suggested calling it "BIER" instead of "BIER TE," as TE is implicitly part of the BIER context.
+    *   **Comment (Sue):** Noted the draft is in the adoption queue. Requested the Beer WG chairs to summarize their work in this area and how this draft aligns with the Beer architecture to provide context for the IDR working group prior to an adoption call.
+
+*   **Link Bandwidth Extended Community**
+    *   Presented by Weiyan.
+    *   **Updates:** Removed redundant unit definitions, now uses original units (bytes per second). Acknowledged the complexity of existing floating-point types and considered using unsigned integers.
+    *   **Proposal:** Extends the Link Attribute based on the 64-bit IPv6 address-specific extended community to represent 64-bit bandwidth values.
+
+*   **BGP Metric Correlated Path Attributes**
+    *   Presented by Shaofu.
+    *   **Motivation:** BGP intended load schemes need to account for specific cumulative delays (e.g., 100ms). A single template on an intermediate speaker is insufficient; this information should be carried in path attributes. Different segments may have varying delay requirements.
+    *   **Proposal:** For simple scenarios (single pass), defines a metric correlated attribute including target current, total/endpoint quality information, estimated hop counts, and optional quality per hop.
+    *   **Resolution Methods:** Proposed using an average inventory (total quality divided by estimated hop counts) or an exponential piece. An Explicit Propagation Object (EPO) is intended for future definition for more complex cases.
+
+## Decisions and Action Items
+
+*   **BIER TE Path Draft:** The draft is in the adoption queue.
+    *   **Action Item (Haimo, with Chair assistance):** Liaise with BIER Working Group chairs to get a summary of their work in this area and how the draft aligns with the BIER architecture, to inform IDR WG adoption call.
+*   **NAPT-PT Flow Mapping Draft:**
+    *   **Action Item (Tren Show):** Add more description regarding the use of sequence numbers for TSN flow filtering.
+*   **FlowSpec Redirect Load Balancing Group Community Draft:**
+    *   **Action Item (Maui):** Request review of atom extensions from white communities authors. Discuss in the draft how the feature behaves if multiple types of redirect communities are present. Improve text on the waiting mechanism.
+*   **SID Algorithm Information in BGP Draft:**
+    *   **Action Item (Yao Leo):** Seek review and feedback from the SPRING working group.
+*   **BGP SR Policy Extensions for Metric Draft:**
+    *   **Action Item (Kaitan):** Consider adding AIGP as a metric type.
+
+## Next Steps
+
+*   All presenters are encouraged to revise their drafts based on the feedback received.
+*   Authors should actively engage in mailing list discussions for their respective drafts, initiating new threads for any unaddressed questions.
+*   The chairs encouraged attendees to review and engage in ongoing mailing list discussions, and to initiate new discussion threads for any topics of interest or questions that were not fully covered.
+*   The next IETF meeting will be held in Philadelphia.

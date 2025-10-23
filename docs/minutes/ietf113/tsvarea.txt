@@ -1,0 +1,64 @@
+**Session Date/Time:** 22 Mar 2022 12:00
+
+# tsvarea
+
+## Summary
+
+The tsvarea session included an update from the Transport Area Directors on working group status, chair changes, and document progress. The core of the session was dedicated to a two-part invited talk on the Stream Control Transmission Protocol (SCTP). Michael Tüxen provided a historical overview of SCTP's design motivations, features, and evolution, including its use in WebRTC. Claudio Porfiri then detailed SCTP's critical role and specific deployment characteristics within 4G and 5G Radio Access Networks (RANs). The open mic discussion touched upon the lessons learned from SCTP influencing QUIC, the need for use-case driven development for future SCTP extensions, and the challenges of transport protocols like SCTP in cloud-native environments like Kubernetes.
+
+## Key Discussion Points
+
+*   **Transport Area Directors' Update**
+    *   **Working Group Status**:
+        *   ALTO: New chair Muhammad Bukader.
+        *   TCPM: New chair Ian Sweat. Request for editor/authors for RFC 5681bis (TCP core loss recovery) document; Lars Eggert volunteered as editor.
+        *   DTN: Re-chartering completed, new work on "green stuff" forthcoming.
+        *   QUIC: Championing deliverables, MP-QUIC extensions in progress, several drafts submitted to RFC Editor, new IDs on load balancing and path negotiation.
+        *   ARMCAT: One working group document in last call.
+        *   TAPS: Discussing mapping over QUIC.
+    *   **Document Progress**:
+        *   **To RFC Editor**: SCTP 4960bis, IOM data (in-band telemetry), four ALTO documents, QUIC datagram.
+        *   **Published RFCs**: DTN last charter documents, IAPPM documents, and RFC 9187 (Joe Touch's secret number extension) noted for its transport flavor.
+    *   **TSVART (Transport Area Review Team)**: Appreciation for reviewers, and a call for new reviewers to join the rotation to help with document volume and provide broader IETF perspective.
+*   **SCTP: History, Evolution, and WebRTC (Michael Tüxen)**
+    *   **Original Use Case**: SS7 signaling over IP (20+ years ago) with specific requirements:
+        *   Small, reliable messages.
+        *   Partial ordering (per-stream).
+        *   Strict time limits, minimizing Head-of-Line Blocking (HOLB).
+        *   Long communication lifetime and high reliability.
+        *   Fault tolerance via multi-homing.
+    *   **Base Protocol Features**: Message-oriented, message bundling, multiple streams (ordered/unordered), reliable transport, multi-homing for network resilience (path supervision), fine-grained configurability, support for large user messages (though not initial focus).
+    *   **Evolution/Extensions**: Dynamic address reconfiguration, dynamic stream management (increase/reset), partial reliability, concrete API specifications, improved failover, UDP/DTLS encapsulation, improved large message handling (to avoid HOLB), stream schedulers, TLS/DTLS integration.
+    *   **WebRTC Use Case**: SCTP used to multiplex data channels, providing configurable ordered/unordered and reliable/unreliable properties (retransmission limits, message lifetime limits).
+    *   **Unachieved Goals**: Parametrization guidelines for signaling networks, conformance tests, non-renegable ACK scheme, multi-homing for load sharing, ECN support.
+    *   **Current/Potential Future Work**:
+        *   Maintenance: NAT traversal document (relevant for Linux containers), DTLS over SCTP update (for DTLS 1.2/1.3), UDP encapsulation bis, SCTP auth algorithm update (e.g., obsoleting SHA-1).
+        *   New Features: WebRTC improvements (checksum removal, fast open), association forwarding (anycast-like), full mesh multi-homing model.
+    *   **Discussion**: Gary Fergus suggested revisiting multipath and ECN for SCTP. Jonna questioned current SS7 usage, which is still active and evolving (e.g., 5G signaling). Jake inquired about SCTP's role in video transport vs. SRT, with no definitive answer given. Lars Eggert highlighted historical challenges with finding reviewers for SCTP extensions due to a small community; Michael confirmed multiple SCTP implementations exist beyond a single vendor, including telco-specific and WebRTC-focused ones.
+*   **SCTP in 4G/5G Radio Access Networks (Claudio Porfiri)**
+    *   **Ubiquitous Use**: SCTP is widely deployed in RANs for control plane signaling (e.g., user equipment bandwidth requests).
+    *   **RAN Environment**: Not public internet, often VPN-based, IPsec encapsulated, statically routed, manual IP address assignment.
+    *   **Key Drivers**: Multi-homing for redundancy is critical for network resilience. Inter-generation communication (4G-5G) also uses SCTP. Vendor interoperability is high.
+    *   **Specific Usage Patterns**: Semi-permanent connections, typically two streams (one for generic control, one for independent signaling to avoid HOLB), in-sequence delivery (always used), strong encryption (IPsec/DTLS), active path monitoring (level path MTU discovery).
+    *   **Implementation Specifics (unofficial)**: Much faster timers (millisecond accuracy) than IETF recommendations, SCTP used for link supervision.
+    *   **Latency Requirements**: Critical for user experience (e.g., UE idle-to-active transition must complete 5-signal handshake in <100ms).
+    *   **Link Supervision for Radio Shutdown**: Rapid detection of control plane loss and radio shutdown (<20s) to prevent interference and enable handover.
+    *   **Weaknesses**: Difficulties with NAT traversal, cloud/Kubernetes deployments, non-native encryption. Scalability issues with single associations due to single-core CPU bottleneck (lack of offload, difficulty spreading computation).
+    *   **Discussion**: Confirmed the capacity issue stems from the inability to offload SCTP processing to NICs and distribute a single association's workload across multiple CPU cores, leading to saturation.
+*   **Open Mic Discussion**
+    *   **Jonna**: Acknowledged SCTP's influence on QUIC development. Stressed that future SCTP extensions should be driven by concrete use cases, which also helps identify suitable reviewers and implementers.
+    *   **Zaheed Sarker (AD)**: Agreed that maintenance is important, but new features must be justified by identifiable users and use cases.
+    *   **Mirja Kühlewind**: Pointed out a disconnect between the IETF's traditional transport perspective and the HTTP/REST-centric transport paradigm prevalent in cloud environments like Kubernetes, which poses challenges for protocols like SCTP.
+    *   **Michael Tüxen**: Reaffirmed that recent SCTP feature developments have indeed been in response to requests from other entities or working groups.
+
+## Decisions and Action Items
+
+*   **Decision**: Lars Eggert volunteered to act as an editor for a revision of RFC 5681 (TCP core loss recovery).
+*   **Action Item**: Individuals interested in contributing as authors to the RFC 5681bis document should contact Lars Eggert, Martin Duke, or the TCPM chairs.
+*   **Action Item**: Members of the IETF community interested in reviewing documents for the Transport Area (TSVART) should contact Magnus Westerlund to be added to the rotation.
+
+## Next Steps
+
+*   Continue maintenance and updates for existing SCTP specifications, particularly regarding NAT traversal and DTLS versions.
+*   For any new SCTP feature proposals, actively seek out and involve the specific user communities to drive development and provide necessary review.
+*   Further explore the interaction and potential challenges of transport protocols, including SCTP, within cloud-native and Kubernetes environments.

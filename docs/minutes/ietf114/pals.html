@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="pals.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-PALS-20220726-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 26 Jul 2022 14:00</p>
+<h1>pals</h1>
+<h2>Summary</h2>
+<p>This was a joint session of the pals, mpls, and detnet working groups, primarily focused on the ongoing work of the MPLS Network Action Indicators (MNAI) and Ancillary Data (MAD) Open Design Team. The session included a presentation on Private Line Emulation (PLE) for the pals working group, an Open Design Team (ODT) status report, and updates on several MNAI/MAD solution drafts. Key discussions revolved around the adoption status of MNAI framework and requirements documents, the outcomes of recent ODT polls regarding in-stack vs. post-stack data and Special Purpose Label (SPL) allocation, and the technical approaches of proposed in-stack and post-stack encoding solutions. A recurring theme in the discussions was the need to converge on a single, implementable solution for data plane mechanisms and to define clear metrics for comparing different proposals.</p>
+<h2>Key Discussion Points</h2>
+<h3>Private Line Emulation and Signaling (Christian Schmutzer)</h3>
+<ul>
+<li><strong>Motivation</strong>: Packet switching and DWDM integration into routers are making TDM switching layers (e.g., OTN) less necessary. Need to support existing TDM-based private line services.</li>
+<li><strong>Data Plane (draft-schmutzer-pals-ple-data-plane)</strong>:
+<ul>
+<li>Extends RFC 4553 (Structure-Agnostic Transport over Packet) to support higher speeds (10G, 100G, Fiber Channel, OTN, SONET/SDH).</li>
+<li>Underlay can be MPLS or SRv6.</li>
+<li>Defines three encapsulation types, optimized for ODUk frame alignment or 10/28-bit blocks for 200/400G Ethernet.</li>
+<li>Retains RTP header (sequencing, timestamps) and control word (L, R bits) for compatibility.</li>
+</ul>
+</li>
+<li><strong>Control Plane (draft-schmutzer-pals-ple-control-plane)</strong>:
+<ul>
+<li>Proposes BGP extensions (similar to EVPN VPWS) to signal TDM/interface-specific attributes for these pseudowires.</li>
+</ul>
+</li>
+<li><strong>Status</strong>: Presented at IETF 108. Significant interest from operators (Verizon, Deutsche Telekom) and vendors (Ciena, Xilinx). Draft was renamed and confirmed to fit within the pals WG scope.</li>
+<li><strong>Request</strong>: More feedback and consideration for adoption as a pals Working Group document.</li>
+</ul>
+<h3>MNA Open Design Team Report (Tariq Saad)</h3>
+<ul>
+<li><strong>Structure</strong>: ODT is a joint activity of MPLS, pals, and detnet, with weekly meetings and chair coordination.</li>
+<li><strong>Document Status Updates</strong>:
+<ul>
+<li><code>draft-ietf-mpls-mna-use-cases</code>: Adopted May 2022. ODT continues refining use cases.</li>
+<li><code>draft-ietf-mpls-mna-requirements</code>: Adopted May 2022. ODT continues refining requirements.</li>
+<li><code>draft-ietf-mpls-mna-framework</code>: Adopted July 13th, 2022. Authors to publish new revision with name change.</li>
+</ul>
+</li>
+<li><strong>Poll Outcomes</strong>:
+<ul>
+<li><strong>Poll 1 (Solution Independence)</strong>: Consensus that the MNA framework should support conveying ancillary data in multiple locations (in-stack, post-stack) and signaling in the control plane. Solutions proposing in-stack data (ISD) must provide strong motivation over post-stack (PSD).</li>
+<li><strong>Poll 2 (Special Purpose Label (SPL) Repurposing)</strong>: Strong consensus to allocate a <strong>new SPL for MNA</strong>. Repurposing existing SPLs for non-MNA applications must follow the normal Working Group process.</li>
+</ul>
+</li>
+</ul>
+<h3>MNA Requirements Draft (Matthew Bocci)</h3>
+<ul>
+<li><strong>Document</strong>: <code>draft-ietf-mpls-mna-requirements</code> (version 02).</li>
+<li><strong>Scope</strong>: Defines requirements for MPLS Network Actions, MNA Indicators (MNA label/SPL), and ancillary data for protocol design.</li>
+<li><strong>Changes (version 02)</strong>: Terminology aligned with framework draft, refocused on &quot;network actions,&quot; clarified in-stack vs. post-stack requirements (per ODT poll), distinguished MNA Sub-stack Indicator from MNA Indicator. User-defined actions require IANA range reservation.</li>
+<li><strong>Status</strong>: Draft is maturing towards Working Group Last Call.</li>
+</ul>
+<h3>MPLS MNA Header Draft (Jags)</h3>
+<ul>
+<li><strong>Document</strong>: <code>draft-balus-mpls-mna-header</code>.</li>
+<li><strong>Proposal</strong>: Solution for in-stack and post-stack MNA encoding.
+<ul>
+<li>Uses a new B-SPL for top-level Network Action Sub-stack presence, without repurposing B-SPL TC/TTL fields for backward compatibility.</li>
+<li>Next LSE contains granular flags: In-stack Network Action Presence Indicator (INI) and Post-stack Network Action Presence Indicator (PNI).</li>
+<li><strong>In-stack Encoding</strong>: Supports both flag-based (for actions without ancillary data) and opcode-based (for actions with ancillary data, like TLVs) formats. Includes length fields and extension indicators for flexibility and hardware-friendliness.</li>
+<li><strong>Backward Compatibility</strong>: Design minimizes impact on ECMP, ensures legacy nodes don't misinterpret MNA data, and supports coexistence with other architectures.</li>
+</ul>
+</li>
+<li><strong>Advantages</strong>: Flexible, extensible (opcode-based), hardware-friendly (length fields, TLV format), MSD efficient, backward compatible, ECMP friendly.</li>
+<li><strong>Request</strong>: Working Group adoption.</li>
+</ul>
+<h3>MPLS Post-Stack Extension Header (Howie Liu)</h3>
+<ul>
+<li><strong>Document</strong>: <code>draft-liu-mpls-ps-extension-header</code> (version 07).</li>
+<li><strong>Proposal</strong>: Defines how MNA data is encoded <em>after</em> the MPLS label stack.
+<ul>
+<li>Relies on an indicator in the label stack (out of scope for this draft).</li>
+<li>Structure: &quot;Header of Extension Header&quot; (summary of following EHs, total length, upper layer protocol type, next header type) followed by &quot;Standard Containers&quot; (individual EHs for specific actions).</li>
+<li>Similar to IPv6 Extension Headers, supporting up to 15 EHs, max 1KB total length.</li>
+<li>Defines new Next Header Types (shared with IP protocol numbers).</li>
+<li>Supports Hop-by-Hop (HBH) and End-to-End (E2E) EHs, with HBH EHs required before E2E EHs for optimization.</li>
+</ul>
+</li>
+<li><strong>Companion Documents</strong>: Being evolved or retired to integrate with broader MNA work.</li>
+<li><strong>Request</strong>: Working Group adoption as a solution for post-stack Network Actions.</li>
+</ul>
+<h3>Special Purpose Label for Forwarding Actions (Kiriti Kompella)</h3>
+<ul>
+<li><strong>Document</strong>: <code>draft-kompella-mpls-nffrr</code> (No ForFRR) and <code>draft-kompella-mpls-spl-fai</code> (Forwarding Action Indicator).</li>
+<li><strong>FAI Draft (In-Stack Data)</strong>:
+<ul>
+<li><strong>Major Change</strong>: Replaced continuation bits with length fields for the FAI block, standard in-stack data, and user-defined in-stack data, based on hardware implementation feedback. This is expected to facilitate easier implementation.</li>
+<li><strong>Status</strong>: Deemed ready for Working Group adoption. Authors plan internal prototyping.</li>
+<li><strong>Request</strong>: Early allocation of a B-SPL for FAI for prototyping purposes.</li>
+</ul>
+</li>
+<li><strong>NFFRR Draft (No ForFRR)</strong>:
+<ul>
+<li><strong>Change</strong>: Now proposes an &quot;action bit&quot; within the MNA framework, rather than a standalone B-SPL. This action requests a router not to perform FRR (Fast Reroute) for the path.</li>
+<li><strong>Status</strong>: Problem is acknowledged, no alternatives proposed. Ready for WG adoption and will be prototyped as part of the FAI document.</li>
+</ul>
+</li>
+<li><strong>General Discussion on ISD/PSD Convergence</strong>:
+<ul>
+<li>There are currently two competing in-stack data (ISD) solutions (<code>draft-balus-mpls-mna-header</code> and <code>draft-kompella-mpls-spl-fai</code>). The working group aims to converge on a single, optimal solution, especially for data plane mechanisms.</li>
+<li>Authors of different proposals are encouraged to collaborate and compare solutions based on defined metrics (e.g., overhead, performance, hardware implementation complexity).</li>
+<li><strong>Order of Operations</strong>: Discussion on how the order of execution for multiple in-stack, post-stack, or mixed actions would be dictated. It was suggested that the solution documents must define a deterministic order, and a composite network action could be defined.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>ODT Poll 1 Outcome (Solution Independence)</strong>: The MNA framework should support conveying ancillary data in multiple locations (in-stack, post-stack) and signaling in the control plane. Solution drafts choosing in-stack data (ISD) must provide strong motivation for this choice over post-stack (PSD). This is a guiding principle for MNA solutions.</li>
+<li><strong>ODT Poll 2 Outcome (Special Purpose Label Allocation)</strong>: Strong consensus to allocate a <strong>new SPL for MNA</strong>. Repurposing existing SPLs for non-MNA applications must follow the normal Working Group process. This is a clear decision against repurposing existing SPLs for MNA.</li>
+<li><strong>MPLS MNA Requirements Draft</strong>: The draft is maturing towards Working Group Last Call. Authors will remove the appendix containing adoption comments in the next revision.</li>
+<li><strong>MPLS MNA Framework Draft</strong>: The working group has adopted <code>draft-ietf-mpls-mna-framework</code>. Authors are expected to publish a new revision that includes the name change.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>pals Working Group (Private Line Emulation)</strong>: Christian Schmutzer requests more feedback on <code>draft-schmutzer-pals-ple-data-plane</code> and <code>draft-schmutzer-pals-ple-control-plane</code>, and consideration for Working Group adoption.</li>
+<li><strong>MNA Open Design Team</strong>:
+<ul>
+<li>Continue weekly meetings.</li>
+<li>Redirect efforts towards solution definition.</li>
+<li>Authors of similar solution drafts are encouraged to collaborate and align their proposals.</li>
+<li>A report from solution authors is expected post-IETF 114 to update on alignment progress.</li>
+<li>Continue refining existing use cases and requirements documents.</li>
+</ul>
+</li>
+<li><strong>MNA Requirements Draft</strong>: Further review and comments are requested from the Working Group to prepare for Last Call.</li>
+<li><strong>MNA Solution Documents (General)</strong>:
+<ul>
+<li>The Working Group will need to define metrics for comparing different in-stack data solutions to converge on a single, optimal approach.</li>
+<li>Authors (e.g., Kiriti Kompella) plan internal prototyping of their solutions to gather implementation feedback, which will be shared with the Working Group.</li>
+<li>Discussions on the order of operations for multiple in-stack and post-stack actions need to continue, with solutions clearly defining deterministic processing orders.</li>
+</ul>
+</li>
+<li><strong>MPLS Post-Stack Extension Header Draft</strong>: Howie Liu requests Working Group adoption and will work on a coherent extension header indicator scheme aligned with in-stack indicators.</li>
+<li><strong>NFFRR (No ForFRR)</strong>: The draft is requested for Working Group adoption and will be prototyped as part of the Forwarding Action Indicator (FAI) document. Discussions on control plane alternatives for some use cases will continue on the mailing list.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

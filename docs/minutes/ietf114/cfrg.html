@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="cfrg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-CFRG-20220725-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 14:00</p>
+<h1>cfrg</h1>
+<h2>Summary</h2>
+<p>The cfrg session covered updates on several in-flight documents and presented new work for potential adoption. Key discussions included the BBS signature scheme, the FROST threshold signature, updates on Key Binding and Blind RSA drafts, and the CPACE PAKE. A significant portion of the session was dedicated to an update on the NIST Post-Quantum Cryptography (PQC) standardization process, highlighting selected algorithms for key exchange and signatures, associated challenges (IPR, implementation complexity), and a proposal for a CFRG draft for Kyber.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Chair Updates (00:30:03)</strong></p>
+<ul>
+<li>The <strong>ASH-to-Curve</strong> document is proceeding to IESG review.</li>
+<li><strong>Madsen/CFRG Deterministic Signature with Noise</strong>: Discussed IPR concerns (even with expired IPR). Chairs are consulting the IRTF chair on the path forward, noting interest in the topic but conditional participation from many.</li>
+<li><strong>Aegis</strong>: Adoption call is extended due to recent support. Comments are encouraged on the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>BBS Signature Scheme (00:32:06)</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Tobias.</li>
+<li><strong>Description</strong>: A digital signature scheme supporting selective disclosure (multi-message signing), proof of possession, and unlinkable proofs via a Zero-Knowledge Proof (ZKP) protocol.</li>
+<li><strong>Technical Details</strong>:
+<ul>
+<li>Pairing-based, using Type 3 pairings (e.g., BLS12-381 curve). Curve-agnostic but current spec uses BLS12-381.</li>
+<li>Three parties: Signer, Prover, Verifier.</li>
+<li>Concepts: A &quot;header&quot; (always revealed) and &quot;messages&quot; (selectively disclosable).</li>
+<li><strong>Properties</strong>: Signature is constant size (112 bytes for BLS12-381), O(N) efficiency for signing/verification (or constant time if no selective disclosure). Proof size is linear to the number of hidden messages.</li>
+<li><strong>Security</strong>: Proofs provide integrity/authenticity of revealed messages/header, prove possession of the signature, and are unlinkable (generated under non-interactive ZKP). Unlinkability refers to the issuer's public key representing a group, providing anonymity within that group.</li>
+</ul>
+</li>
+<li><strong>Benchmarks</strong>: Sub-half millisecond for header-only signing/verification, linear scaling with messages.</li>
+<li><strong>Use Cases</strong>: Privacy-preserving anonymous credentials, Proof-of-Possession (PoP) enabled security access tokens (e.g., for OAuth2), non-correlating security token proofs.</li>
+<li><strong>CFRG Fit</strong>: Aligns with existing work on pairing-friendly curves, BLS signatures, and hash-to-curve.</li>
+<li><strong>IETF Relevance</strong>: Potential for JSON Web Proofs (JWP) and Privacy Pass.</li>
+<li><strong>Request</strong>: Called for adoption of the draft. Future work includes broader review, cipher suite definition refinement, and clarifying extensibility points.</li>
+</ul>
+</li>
+<li>
+<p><strong>FROST (Flexible Round-Optimized Schnorr Threshold) (00:48:00)</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Deirdre.</li>
+<li><strong>Description</strong>: A two-round threshold Schnorr signature scheme allowing <em>t</em>-of-<em>n</em> signers, producing a signature indistinguishable from a single-signer Schnorr signature.</li>
+<li><strong>Protocol Overview</strong>: Requires prior key generation. Round 1: participants generate nonces and publish commitments. Round 2: participants use commitments and key shares to generate signature shares, which a coordinator aggregates into the final signature.</li>
+<li><strong>Cipher Suites</strong>: Fully specified for Ristretto prime order group, P-256, Ed25519, and Ed448. API is compatible with Ed25519 and Ed448 verification. Multiple interoperable implementations exist.</li>
+<li><strong>Latest Updates (v7)</strong>:
+<ul>
+<li>A proposed order T scalar optimization was reverted due to concerns about inter-round malleability (difficulty in proving the same set of signers participated in both rounds).</li>
+<li>Clarified per-cipher-suite verification, particularly for Ed25519/Ed448 to emphasize the necessity of co-factor checks for security. Provided a general verification procedure for prime-order groups.</li>
+</ul>
+</li>
+<li><strong>Request</strong>: Seeking Crypto Panel review and wider CFRG review for clarity, ambiguity, technical correctness, and suitability for application protocols.</li>
+<li><strong>Discussion</strong>: Concerns raised about RFC 8032's &quot;looseness&quot; regarding Ed25519 verification (co-factor check). Presenter strongly advocated for updating RFC 8032, noting that robust implementations already include the co-factor check.</li>
+</ul>
+</li>
+<li>
+<p><strong>Key Binding for Signature Schemes (00:58:24)</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Chris Wood.</li>
+<li><strong>Description</strong>: An adopted draft providing an extension to digital signature schemes for &quot;key blinding,&quot; allowing unlinkability where the verifier does not learn which specific public key was used to generate a signature. This is critical for applications like Tor and Privacy Pass.</li>
+<li><strong>Mechanism</strong>: Adds three new functions (<code>BlindKeyGen</code>, <code>BlindPublicKey</code>, <code>SignWithBlindedKey</code>) to a classical scheme, with an optional <code>UnblindPublicKey</code>.</li>
+<li><strong>Update</strong>: Introduced a &quot;context&quot; string to <code>BlindPublicKey</code> for application-defined optionality. This allows applications (e.g., Privacy Pass) to enable unblinding by using an empty context, while others (e.g., Tor) can prevent it by including unique identifiers in the context.</li>
+<li><strong>Status</strong>: Implemented for EdDSA and ECDSA, with security analysis under peer review. Considered feature complete.</li>
+</ul>
+</li>
+<li>
+<p><strong>Blind RSA Signatures (01:07:56)</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Chris Wood.</li>
+<li><strong>Update</strong>: A recent security review highlighted concerns with the draft when the signer's public key is <em>maliciously generated</em> affecting the blindness property. This is particularly problematic for <em>deterministic variants</em> (e.g., full domain hash, PSS with zero salt) and <em>low entropy inputs</em> (e.g., voting applications). It is <em>not</em> an issue for high entropy inputs (e.g., Privacy Pass with a fresh 32-byte nonce).</li>
+<li><strong>Proposed Resolution</strong>:
+<ul>
+<li>Remove all deterministic variants from the draft.</li>
+<li>Require PSS with a salt length matching the underlying hash digest.</li>
+<li>Add guidance for applications with low entropy inputs to add local entropy (which has API implications as the verifier needs to consume this randomness).</li>
+<li>Leaning towards an external API approach for handling local randomness.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>CPACE (Password-Authenticated Key Exchange) (01:14:05)</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Thorsten.</li>
+<li><strong>Update (v6)</strong>: The draft's introduction was completely rewritten to focus on application architects, implementers, and testers, following the completion of its security analysis. No changes were made to the core technical content of the scheme itself.</li>
+<li><strong>Request</strong>: Seeking broader review, including from native English speakers, and eventual Crypto Review Panel review.</li>
+</ul>
+</li>
+<li>
+<p><strong>NIST Post-Quantum Cryptography (PQC) Process Update (01:17:02)</strong></p>
+<ul>
+<li><strong>Presenters</strong>: Sofia and Tom Biggs.</li>
+<li><strong>Key Encapsulation Mechanisms (KEMs)</strong>:
+<ul>
+<li><strong>Kyber</strong> was chosen for standardization. It is fast, efficient, and lattice-based.</li>
+<li><strong>Note</strong>: KEMs are interactive and not a direct replacement for non-interactive Diffie-Hellman in protocols like Signal.</li>
+<li>Other KEMs (McEliece, BIKE, HQC, SIKE) are still in the running but require more research/maturity. SIKE offers very small ciphertexts but is slow and new.</li>
+<li>No non-interactive post-quantum key exchange solution with high confidence currently exists.</li>
+</ul>
+</li>
+<li><strong>Digital Signature Algorithms</strong>: Three were chosen for standardization.
+<ul>
+<li><strong>Dilithium</strong>: General-purpose, main recommendation. Larger public key/signature sizes than classical, but faster computation. Lattice-based.</li>
+<li><strong>Falcon</strong>: Better sizes than Dilithium. Requires floating-point arithmetic and is <em>very</em> difficult to implement correctly (NIST recommends only if correctly implemented). Lattice-based.</li>
+<li><strong>SPHINCS+</strong>: Stateless hash-based signature. Nice public key size, but larger signatures and computationally slower. Chosen to provide <em>different security assumptions</em> (not lattice-based) for diversification.</li>
+<li><strong>Note</strong>: Existing IETF hash-based signatures (XMSS, LMS) are stateful; SPHINCS+ offers statelessness (important for key backups).</li>
+</ul>
+</li>
+<li><strong>NIST Next Steps</strong>: Process not ended. NIST is advancing certain algorithms to a fourth round and calling for new signature proposals, especially for schemes with smaller sizes suitable for network protocols. NIST standards are not expected before 2030.</li>
+<li><strong>Libraries</strong>: <code>liboqs</code> (safety checks, bindings), <code>pqclean</code>, <code>pqm4</code> (embedded) are available.</li>
+<li><strong>IPR Concerns for Kyber</strong>: Kyber faces plausible patent concerns. NIST has agreements with patent holders, but these are not public. NIST has stated that if patent issues are not resolved by the end of 2022, they will advance NTRU instead of Kyber.</li>
+<li><strong>Non-Lattice Based Signatures</strong>: UOV/Rainbow (very large public keys, small signatures) is a strong candidate for future signature calls.</li>
+</ul>
+</li>
+<li>
+<p><strong>Kyber Standardization Draft Proposal (01:35:46)</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Bass Westerman.</li>
+<li><strong>Proposal</strong>: To create an IETF RFC draft for Kyber <em>now</em>, ahead of NIST's final standardization (expected 2024).</li>
+<li><strong>Rationale</strong>:
+<ul>
+<li>Provide a reference for early adopters to prevent fragmentation.</li>
+<li>Include machine-readable specifications (e.g., Python) that NIST typically does not.</li>
+<li>Facilitate IETF engagement, as the Kyber team is eager to assist.</li>
+<li>Enable early usage in protocols like TLS (code points are cheap).</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Interest was expressed for its utility in establishing PQC-hardened shared secrets and routes of trust, even if the final specification diverges slightly from NIST.</li>
+<li>The importance of eventually matching NIST specifications to avoid fragmentation was highlighted.</li>
+<li>TLS chairs did not have immediate comments.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Chairs</strong>:
+<ul>
+<li>Consult with the IRTF chair regarding IPR concerns for the Madsen/CFRG deterministic signature document.</li>
+<li>Extend the adoption call for the Aegis draft.</li>
+<li>Discuss the BBS signature scheme adoption call and bring it to the mailing list.</li>
+</ul>
+</li>
+<li><strong>BBS Signature Scheme</strong>: The draft author is seeking adoption.</li>
+<li><strong>FROST</strong>: The draft authors are seeking Crypto Panel review and wider CFRG review.</li>
+<li><strong>Key Binding for Signature Schemes</strong>: The authors will merge the PR introducing the context string and then solicit Crypto Review Panel review.</li>
+<li><strong>Blind RSA Signatures</strong>: The authors will seek confirmation on the mailing list regarding any concrete applications requiring deterministic signing. They will then submit a Pull Request to implement the proposed resolution (removing deterministic variants, requiring PSS with matching salt length, and adding text for low-entropy inputs).</li>
+<li><strong>CPACE</strong>: The authors are requesting broader review, including from native English speakers, and eventual Crypto Review Panel review.</li>
+<li><strong>NIST PQC Follow-up</strong>: Scott Fluhrer indicated intent to submit a CFRG draft for NTRU as a potential alternative to Kyber, especially given IPR uncertainties.</li>
+<li><strong>Kyber CFRG Draft</strong>: Bass Westerman proposed creating a CFRG draft for Kyber; this will likely proceed given the expressed interest, though no formal adoption call was made.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>CFRG Chairs</strong>: Continue consultation on IPR, monitor Aegis adoption call, and initiate BBS adoption call on the mailing list.</li>
+<li><strong>Draft Authors</strong>: Proceed with the specified next steps for their respective drafts (merging PRs, soliciting reviews).</li>
+<li><strong>Community</strong>: Review and comment on the Aegis adoption call, the Blind RSA proposed resolution, CPACE updates, and engage in discussions around the proposed Kyber CFRG draft.</li>
+<li><strong>Scott Fluhrer</strong>: Proceed with drafting and submitting an NTRU draft to CFRG.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

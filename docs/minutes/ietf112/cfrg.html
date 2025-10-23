@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="cfrg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-CFRG-20211111-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 12:00</p>
+<h1>cfrg Meeting Minutes</h1>
+<h2>Summary</h2>
+<p>The cfrg session began with administrative updates, including newly published RFCs, drafts in review, and progress on various documents. A significant portion of the meeting was dedicated to presentations on several drafts and new potential work items. Discussions included the introduction of Verifiable Distributed Aggregation Functions (VDAF) and an update on the C-PACE protocol. A key discussion revolved around the transition of VOPRF to a Partially Oblivious PRF (POPPRF) and its implications for security proofs and threshold capabilities. Bob Moskowitz raised concerns about the lack of guidelines for using small hashes and the underutilization of KMAC as a keyed hash and KDF, proposing new guidance documents. Finally, a presentation on Private Access Tokens (PATs) introduced a novel cryptographic construction for wider review.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrative Updates</strong>:</p>
+<ul>
+<li>RFC 9106 (OPAQUE) has been published.</li>
+<li>HPKE and SPEKE2 drafts are in ISG/IRSG review.</li>
+<li>Hash-to-Curve is awaiting IETF chair after document shepherd review.</li>
+<li>Updates were noted for VPRF, Peripheral Curves, C-PACE, FROST, and Recipient Signatures.</li>
+<li>VRF and Kangaroo12 are in research group last call.</li>
+<li>The Crypto Panel is undergoing a rotation; a call for nominations will be sent to the cfrg list.</li>
+</ul>
+</li>
+<li>
+<p><strong>Verifiable Distributed Aggregation Functions (VDAF)</strong>:</p>
+<ul>
+<li>Chris Wood introduced VDAF as a new document in early stages, not yet seeking adoption.</li>
+<li>Purpose: Privacy-preserving aggregation of user measurements without revealing individual inputs, using multi-party computation (MPC).</li>
+<li>Aims to provide a consistent abstraction boundary for standardization, building on work like Prio.</li>
+<li>Framework involves client sharding measurements, aggregators running a preparation function (MPC for validity checks), and a collector combining aggregate shares.</li>
+<li>Discussed Prio3 (vector aggregation, arithmetic circuits for validity).</li>
+<li>Early implementation metrics show proof generation is computationally expensive but performant for target aggregate functions, with communication costs being a factor.</li>
+<li><strong>Discussion</strong>: The document is intended to guide the formation of a working group. Feedback is solicited on the concept and document structure, especially regarding any constructions that might not fit the proposed framework. Adoption will be considered after the &quot;priv-buff&quot; working group is chartered.</li>
+</ul>
+</li>
+<li>
+<p><strong>C-PACE Draft Update</strong>:</p>
+<ul>
+<li>Björn Schindeldecker presented updates on the C-PACE draft.</li>
+<li><strong>Security Analysis</strong>: A new revision of the security analysis paper by Julia Michelanny was uploaded, and a second paper by Edward Eaton and Douglas de Ville on quantum-annoying properties was released. The C-PACE paper was accepted for Asiacrypt, clarifying security definitions/proofs and covering both initiator/responder and parallel protocol settings.</li>
+<li><strong>Session ID</strong>: The role of the session ID was clarified, showing security without a pre-established session ID via game-based proof, though a unique, randomly generated session ID is recommended to bind protocol runs and improve quantum-annoying guarantees.</li>
+<li><strong>Implementer Focus</strong>: The internet draft is undergoing a major rewrite to focus on implementers, referring theoretical details to companion papers.</li>
+<li><strong>Protocol Changes</strong>: An associated data field was added to protocol messages for party identifiers or other authenticated data. Lengths of subfields are now prepended for prefix-free encoding and robustness.</li>
+<li><strong>Test Vectors</strong>: Test vector generation is in progress, with a first subset available on GitHub, aiming for a new draft upload once complete.</li>
+<li><strong>Discussion</strong>: Feedback is requested on object-style notation, explicit coverage of initiator/responder vs. parallel versions, and prefix-free encoding methods (e.g., UTF-8). Björn aims for the draft to be ready for Crypto Panel review by the end of the year.</li>
+</ul>
+</li>
+<li>
+<p><strong>VOPRF (Partially Oblivious PRF) Status</strong>:</p>
+<ul>
+<li>Chris Wood reported a major internal change to the VOPRF draft: transition from the two-hash Diffie-Hellman Oblivious PRF (OPRF) to the three-hash Diffie-Hellman Partially Oblivious PRF (POPPRF).</li>
+<li><strong>POPPRF</strong>: Introduces an additional shared public input <code>t</code> (tweak/metadata) that binds to the output <code>y</code>. This is a generalization, as it can emulate an OPRF with a fixed <code>t</code>.</li>
+<li><strong>Use Cases</strong>: Enables simpler key rotation in Privacy Pass, incorporating expiration timestamps, or geo-constraining tokens.</li>
+<li><strong>Security</strong>: The three-hash POPPRF reduces to the discrete log problem in the algebraic group model, with similar security parameters for static Diffie-Hellman attacks.</li>
+<li><strong>Concern</strong>: A UC-model security proof for the three-hash POPPRF is currently lacking (unlike the two-hash OPRF), which impacts OPAQUE's security analysis as it depends on VOPRF. Active work is underway to address this.</li>
+<li><strong>Threshold-Friendliness</strong>: The classical two-hash OPRF is threshold-friendly (non-interactive evaluation with Shamir sharing), but the three-hash POPPRF requires an interactive protocol for threshold deployment.</li>
+<li><strong>Discussion</strong>: Chris Paton suggested keeping both constructions due to the difference in security models. Bob Moskowitz emphasized that thresholding adds significant complexity and should only be included if there's a strong, explicit use case. Jonathan voiced concerns that the public <code>t</code> parameter could inadvertently leak sensitive information (e.g., IP addresses) if not handled carefully by applications. Sofia added that the two-hash OPRF also has unlinkability concerns if the server rotates keys too frequently.</li>
+</ul>
+</li>
+<li>
+<p><strong>Small Hashes, Shortcuts, and K-MAC for KDF</strong>:</p>
+<ul>
+<li>Bob Moskowitz highlighted challenges and a lack of clear guidance for using small hashes (e.g., 6-bit keyed hash in MAVLink2). Modern hardware changes collision attack risks, making probabilistic models insufficient.</li>
+<li><strong>Call for Guidelines</strong>: Requested cfrg to develop understandable guidelines for developers on measuring hash compromise risks and exposure to attacks, especially for constrained environments.</li>
+<li><strong>KMAC Advocacy</strong>: Positioned KMAC as an overlooked but powerful function, offering processing advantages over HMAC (one Keccak vs. two SHA) and explicit length output.</li>
+<li><strong>KMAC as KDF</strong>: Expressed interest in using KMAC as a KDF for ECDH, noting its efficiency compared to HKDF (4:1 advantage). Noted NIST 800-56C Release 1 does not recommend KMAC for KDF until 800-108 is revised.</li>
+<li><strong>Open Questions</strong>: How to derive multiple shared secrets from a single KMAC run (e.g., two 128-bit keys from 256 bits), and efficient key hierarchy using KMAC.</li>
+<li><strong>Future</strong>: Anticipates lightweight crypto competition results (e.g., Keccak-based Kudyak) will further increase KMAC-like usage in IoT.</li>
+<li><strong>Discussion</strong>: Watson Lad clarified that 48-bit hashes were for MACs, and attack analysis is highly context-dependent. Scott Fluhrer differentiated between hashes requiring pre-image/second pre-image resistance and those needing collision resistance, and the difficulty of guiding non-crypto experts. He also noted KMAC's 200-byte state might be an issue for very small devices, but lightweight crypto could offer alternatives. John Woskow suggested a guidance document for HKDF vs. HMAC vs. KMAC and offered to help. Philip agreed, pointing out HMAC's &quot;booby traps&quot; (e.g., null inputs) and the need for guidance on minimum safe message sizes for hashing. Chris Wood emphasized the importance of laying out use cases and required security properties.</li>
+</ul>
+</li>
+<li>
+<p><strong>Private Access Tokens (PATs)</strong>:</p>
+<ul>
+<li>Chris Wood presented PATs as a new topic, not a cfrg draft, seeking wider cryptographic review.</li>
+<li><strong>Goal</strong>: Deterministically compute a function <code>y</code> over a client's private input <code>x</code> and an issuer's private key <code>k</code>.</li>
+<li><strong>Conditions</strong>: Mediator only learns <code>y</code> if the client uses its <em>own</em> <code>x</code>. Client cannot use <code>x</code> values it doesn't own. Issuer learns neither <code>x</code> nor if requests come from the same <code>x</code>.</li>
+<li><strong>Construction</strong>: Uses an elliptic curve group, with secrets as scalars and commitments as public values. Employs a non-interactive Schnorr proof of knowledge for the discrete logarithm.</li>
+<li><strong>Protocol Overview</strong>: Client blinds its public value and sends it with a ZKP to the mediator, who forwards to the issuer. Issuer verifies the ZKP and computes the output. Mediator unblinds the result. The ZKP ensures the client knows <code>x</code> and prevents a malicious mediator from acting as a client.</li>
+<li><strong>Discussion</strong>: Seeking feedback on the security model, clarity of the problem statement, and whether the proposed protocol intuitively meets the goals (e.g., behaving like a PRF). Noted some overlap with OPRF but argued it's a simpler construction. Chris will condense the problem and solution to the mailing list for further discussion.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Verifiable Distributed Aggregation Functions (VDAF)</strong>: Chris Wood will continue to solicit feedback on the document and concept, awaiting the chartering of the &quot;priv-buff&quot; working group before formally seeking cfrg adoption.</li>
+<li><strong>C-PACE Draft</strong>: Björn Schindeldecker will aim to complete the draft rewrite and test vector generation, targeting readiness for a Crypto Panel review by the end of 2021.</li>
+<li><strong>VOPRF Draft</strong>: Chris Wood will engage with implementers and the community for feedback on the necessity of threshold-friendly OPRFs and the implications of moving to the three-hash POPPRF construction. Active work continues on proving the security of the three-hash POPPRF in the UC model.</li>
+<li><strong>Small Hashes and KMAC Guidelines</strong>: Bob Moskowitz will initiate a discussion thread on the cfrg mailing list to frame use cases for small hashes and KMAC usage. He will collaborate with John Woskow and Mohit to draft a guidance document.</li>
+<li><strong>Private Access Tokens (PATs)</strong>: Chris Wood will summarize the problem statement and proposed cryptographic solution for PATs on the cfrg mailing list to garner broader review and feedback.</li>
+<li><strong>Threshold Encryption Draft</strong>: Bob Moskowitz reiterated the need for discussion on the adoption of his threshold encryption draft and will follow up on the mailing list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>cfrg Chairs</strong>: Monitor discussions on the mailing list for VDAF, C-PACE, VOPRF, Small Hashes/KMAC, PATs, and Threshold Encryption. Facilitate adoption calls or crypto panel reviews as drafts mature and consensus builds.</li>
+<li><strong>Chris Wood (VDAF)</strong>: Gather feedback, await priv-buff WG charter.</li>
+<li><strong>Björn Schindeldecker (C-PACE)</strong>: Finalize draft rewrite and test vectors, prepare for crypto panel review.</li>
+<li><strong>Chris Wood (VOPRF/PATs)</strong>: Follow up on the mailing list for both topics, especially regarding POPPRF security proofs and thresholding for VOPRF, and the cryptographic underpinnings of PATs.</li>
+<li><strong>Bob Moskowitz (Small Hashes/KMAC)</strong>: Start a mailing list discussion, outline use cases, and begin drafting a guidance document with collaborators. Re-engage on the threshold encryption draft adoption.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

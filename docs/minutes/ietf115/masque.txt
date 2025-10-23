@@ -1,0 +1,137 @@
+**Session Date/Time:** 09 Nov 2022 09:30
+
+# masque
+
+## Summary
+
+The MASQUE working group session at IETF 115 covered significant progress on existing documents and explored numerous proposed extensions and a recharter for the group. Connect-IP was confirmed ready for Working Group Last Call after successful hackathon interop and all open issues being closed. Discussions on new proposals, including a Connect UDP Listener, QUIC-aware proxying, access service descriptions, HTTP Proxy Status parameters, sequence numbers for HTTP Datagrams, and datagram prioritization, revealed strong interest in several areas but also raised questions about scope and whether MASQUE is the appropriate venue. The session concluded with an initial debate on rechartering MASQUE, focusing on the balance between addressing real-world HTTP-based proxying needs and avoiding an overly broad scope that might turn MASQUE into a general HTTP proxy working group.
+
+## Key Discussion Points
+
+### Connect-IP (RFC 9298) Readiness
+
+*   **RFC Publication**: Congratulations were extended for RFC 9297 (HTTP Datagrams in the Capsule Protocol) and RFC 9298 (Connect-IP: Proxying UDP and IP in HTTP).
+*   **Hackathon Interop**: Alex Tremachowsky (Google) reported excellent progress at the hackathon, achieving interoperability between three client and two server implementations. Issues encountered were primarily related to network configuration (e.g., Linux routing/firewall, certificates) rather than Connect-IP specification.
+*   **Closed Issues**: All seven previously open issues on the Connect-IP draft were closed:
+    *   **MTU Clarification**: Added text clarifying that ICMPv6 must be used with intermediaries (unless out-of-band info exists) and Connect-IP streams must abort if QUIC MTU doesn't allow 1280 bytes for IPv6.
+    *   **ICMP Errors**: Provided specific guidance on using RFC 4443 and RFC 792 error codes and recommendations for handling ICMP when no route advertisement capsules are used.
+    *   **Address Request Capsule (Any Address)**: Clarified that requesting `0.0.0.0` with a desired subnet mask (e.g., `/24`) can be used to ask for any available address/subnet.
+    *   **Request/Response IDs**: Added request and response IDs to address assignment capsules to prevent timeouts when waiting for specific address assignments and distinguish unsolicited assignments.
+    *   **V4/V6 Capsule Split**: Decided against splitting V4/V6 fields into separate capsules, finding no clear benefit.
+*   **WGLC Discussion**: The working group generally agreed that Connect-IP is ready for WGLC.
+    *   **David Schenazi (Google)** supported WGLC, noting the hackathon validated design choices (e.g., ICMP handling). Suggested a brief editorial pass.
+    *   **Tommy Pauly (Apple)** agreed on WGLC readiness and parallel inter-area review.
+    *   **Lorenzo Colitti (Android)** inquired about mapping Connect-IP semantics to BSD sockets APIs (bind, connect, get sock name, dual-stack sockets). Alex Tremachowsky clarified two modes:
+        1.  **TUN Device Mode**: Operates like a traditional VPN with a virtual network device (e.g., Linux `tun` device), where applications don't need to be aware of Connect-IP.
+        2.  **Direct Flow Mode**: User-space stacks (e.g., QUIC) can use it directly, requiring application awareness.
+    *   **David Schenazi** further explained Connect-IP as a "catch-all" for non-TCP/UDP traffic, while `CONNECT` and `CONNECT UDP` handle specific port-level tunneling. He likened it to a NAT running over HTTP, potentially allowing "fake" addresses on the client side.
+
+### Connect UDP Listener
+
+*   **Problem**: Existing Connect UDP supports a single target, which causes issues for protocols like WebRTC (e.g., ICE) that need to communicate with multiple endpoints (STUN/TURN servers, peers) and rely on consistent source IP/port mapping. Multiple Connect UDP connections are not guaranteed to map to the same proxy instance, breaking ICE.
+*   **Proposed Solution**: Extend Connect UDP with listener support, allowing one connection to handle infinitely many UDP targets by using `*` in the path field of the `CONNECT` header.
+*   **Mechanism**: A `connect-udp-listen` section in the QUIC frame would carry the target IP address. In the reverse direction, it represents the source IP from which the proxy received packets.
+*   **Open Question**: Does the proxy validate source packets? Need expertise from WebRTC/TURN.
+*   **Discussion**:
+    *   **Lorenzo Colitti** and **Tommy Pauly** confirmed the usefulness and necessity for WebRTC and browser use cases. Tommy called it a "clear bug fix" in the Connect UDP ecosystem.
+    *   **David Schenazi** clarified it converts Connect UDP from a "connected UDP socket" to a "non-connected UDP socket," aligning with `bind` semantics. He suggested an optional feature for the proxy to inform the client of its public address for ICE.
+    *   Interest in extending this concept to Connect TCP was also expressed.
+
+### Quick Aware Proxying using HTTP
+
+*   **Problem**: Using Connect UDP for QUIC proxying can lead to IPv4 port exhaustion, MTU loss (especially with chained proxies), and processing overhead.
+*   **Proposed Solution**: Quick-aware proxying using HTTP. The client shares inner QUIC connection IDs (CIDs) with the proxy using the capsule protocol.
+*   **Benefits**:
+    *   **Port Reuse**: Proxy can reuse target-facing ports based on CIDs.
+    *   **Forwarded Mode**: For short header packets, encapsulation inside HTTP datagrams can be skipped, sending raw QUIC packets over UDP to the proxy. This eliminates MTU loss.
+    *   **Virtual CIDs**: The connection ID bytes between client and proxy can be different from those between proxy and target. This helps with load balancing (proxy chooses CIDs) and connection migration.
+*   **Lab Results**: Significant CPU efficiency (insignificant CPU use for forwarding).
+*   **Discussion**:
+    *   **Martin Duke (Google)** acknowledged the clear use case but raised concerns about "foot guns":
+        *   Binding virtual CIDs one-to-one with real CIDs.
+        *   Lack of ACK feedback on the MASQUE connection if entirely in forwarded mode, potentially causing idle timeouts or congestion control issues for the MASQUE transport.
+    *   **Tommy Pauly** supported the work, noting it's an elegant solution with clear benefits and that some usage patterns need to be worked out.
+    *   **Alessandro Ghedini (Cloudflare)** highlighted the clear benefits and need to hammer out edge cases, especially for load balancing and different deployments.
+    *   **Martin Thompson (Mozilla)** raised concerns about traffic analysis, suggesting re-encryption at the proxy (in both directions) for stronger privacy properties, even if less efficient.
+    *   **David Schenazi** agreed on the need and the working group being the right place. He noted Martin Thompson and Eric Rosenberg might be operating under different threat models; re-encryption would provide stronger privacy, while no re-encryption (forwarded mode) enables highly efficient eBPF implementations that avoid CPU usage.
+
+### Access Service Description Objects
+
+*   **Problem**: Users face multiple, disparate configuration UIs (HTTP proxy, VPN, DoH server) and repeated authentication for conceptually related "access services" that use different underlying protocols (Connect IP, Connect UDP, DoH).
+*   **Proposed Solution**: Ben Schwartz (Alphabet) proposed a single URI that a user can enter into a UI. The client fetches this URI, which returns a structure describing various sub-services (Connect UDP, Connect IP, DoH, potentially Connect TCP/HTTP proxy templates). Authentication for the main URI automatically transfers to the sub-services.
+*   **Changes since last presentation**: Removed normative mention of Oblivious HTTP, added authentication discussion, suggested a "mask:" vanity URI scheme.
+*   **Discussion**:
+    *   **Eric Nygren (Akamai)** expressed support for the concept but questioned if it fits MASQUE's scope, fearing it might turn MASQUE into a "general proxy working group." Suggested HTTP WG as a possible alternative.
+    *   **Tommy Pauly** found the updated proposal clearer but was "on the fence." He noted existing short-term solutions (well-known URIs, MDM profiles) and sought clarification on the exact user flow and who needs this information.
+    *   **Alex Tremachowsky** found it "very cool" but wanted a clearer "user story" to inform the specific design and questioned if MASQUE is the right group.
+    *   **Martin Thompson** (suggested "dispatch") highlighted concerns about "centralization" if one UI affordance and one authentication point becomes dominant for diverse services.
+    *   General consensus that the work is interesting but its scope likely transcends MASQUE.
+
+### HTTP Proxy Status Parameters
+
+*   **Problem**: RFC 9209's `Proxy-Status` header allows proxies to report errors (e.g., DNS failures) but lacks a mechanism to convey successful DNS response details (e.g., CNAME chain, resolved IP address) to the client. This prevents clients from detecting CNAME/IP cloaking (where a benign-looking domain resolves to a known tracking/concerning endpoint).
+*   **Proposed Solution**: Tommy Pauly proposed adding a simple `DNS-Used` parameter to the `Proxy-Status` header. This parameter would be a string listing the IP address and any aliases or CNAMEs in the resolution chain.
+*   **Benefits**: Allows clients to apply policy (e.g., prevent cookie sharing, block resources) without needing to perform their own (less performant) DNS lookups or DoH through the proxy.
+*   **Limitations**: This is a minimal proposal and doesn't address more advanced DNS over proxy use cases (DNSSEC validation, SVCB parameters, ECH/ALPN negotiation).
+*   **Discussion**:
+    *   **David Schenazi** found it useful, seeing a general need for more DNS information via HTTP proxies. Leaned towards HTTP WG for the work.
+    *   **Martin Thompson** felt it was an "extraordinarily narrow solution" and preferred exploring more general DNS proxy solutions first, as clients often need more comprehensive DNS query information.
+    *   **Ben Schwartz** found it useful for emulating `getaddrinfo` (which surfaces CNAME results) but agreed it's distinct from a deeper DNS results system. Suggested a better name than `DNS-Used`.
+    *   **Alessandro Ghedini** supported including DNS use cases in the recharter to address more work in this space.
+
+### Sequence Numbers for HTTP Datagrams
+
+*   **Use Case**: 3GPP's ATSS (Access Traffic Steering, Switching and Splitting) for 5G, specifically for traffic splitting/bandwidth aggregation using MP-QUIC over MASQUE. It requires limited reordering to compensate for path delay differences across multiple access paths.
+*   **Problem**: QUIC streams provide full reordering but introduce delay/jitter. Raw QUIC datagrams have no reordering, leading to out-of-order delivery.
+*   **Proposed Solution**: Marcus Karlsson (Ericsson) proposed extending HTTP datagrams with an explicit sequence number.
+*   **Mechanism**: A new payload format (`sequence-number-datagram`) adds a sequence number before the payload. Capsule types would indicate support, sequence number size, context ID, and payload format.
+*   **Discussion**:
+    *   **David Schenazi** was concerned it smells like a "TCP accelerator," which historically leads to ossification and performance degradation. He strongly felt it should *not* happen in 3GPP and that MASQUE is the right place to discuss it, but questioned its fundamental goodness.
+    *   **Haoyu Song (Huawei)** supported reordering at the proxy, but acknowledged ossification concerns.
+    *   **Alessandro Ghedini** noted that QUIC intentionally avoided exposing sequence numbers to prevent such issues, and this proposal might negate a core QUIC achievement.
+
+### HTTP Datagrams UDP Processing and Extensible Prioritization
+
+*   **Background**: QUIC (RFC 9000) lacks a mechanism for exchanging prioritization information. HTTP/3 punted on stream prioritization. RFC 9218 (Extensible Prioritization) was developed for HTTP/2 and HTTP/3 streams. QUIC datagrams lack a multiplexer identifier.
+*   **Problem**: HTTP datagrams (and QUIC datagrams generally) are a "big bucket" without internal prioritization. When combined with streams and capsules, this creates complexity for scheduling and resource allocation, potentially hindering application performance.
+*   **Proposed Solution**: Lucas Pardue (Cloudflare) proposed extending the existing extensible priority scheme (RFC 9218) to accommodate HTTP datagrams, defining how to share bandwidth between datagrams and streams.
+*   **Discussion**:
+    *   **Tommy Pauly** supported adoption in MASQUE, noting that if extensible prioritization had been ready when HTTP datagrams were defined, it would likely have been included.
+    *   **Ben Schwartz** questioned the existence of a "queue" for datagrams, arguing they should be "in and out" without buffering. He suggested that if queuing happens, it should be on the sender side or handled by the kernel via OS prioritization, not at this layer. He also raised a general MASQUE issue: how to signal *when* to use such extensions.
+
+### Connect TCP / HTTP Proxy Template
+
+*   **Problem**: Existing "old-fashioned" HTTP request proxies and TCP proxies suffer from limitations (e.g., virtual hosting issues, Happy Eyeballs problems for TCP proxies).
+*   **Proposed Solution**: Ben Schwartz briefly presented an idea to apply MASQUE's templated approach (`CONNECT :protocol`) to HTTP request proxying and TCP proxying.
+*   **Discussion**:
+    *   **Tommy Pauly** found the TCP listening case more compelling, as it offers new functionality (e.g., `start.star` for a TCP listener). He suggested that a new normal HTTP proxy format should be in HTTP WG, but TCP listening might be more "Masky."
+
+## Recharter Discussion
+
+A proposed recharter text was presented, significantly broadening MASQUE's scope to include "further extensions to its core documents (HTTP Datagrams, Connect UDP, Connect IP) and for other real-world use cases where HTTP-based proxying is employed to tunnel UDP and IP traffic." It explicitly mentioned "Discovery and configuration, transparent modification of proxied content, and extensible authorization mechanisms."
+
+Key feedback on the proposed recharter:
+
+*   **Scope Concerns**:
+    *   **Eric Nygren, David Schenazi, Martin Duke**: The proposed text is too broad and risks turning MASQUE into a "general proxy working group" or a "permanent" group (MASQUE-M), which was previously disfavored.
+    *   **Martin Thompson**: The broad interpretation needs a very specific "exclusion clause" for generic HTTP authentication mechanisms or other non-MASQUE-specific work.
+*   **Desired Focus**:
+    *   Focus on extensions that add missing functionality, improve performance, or address specific use cases for **MASQUE's core documents** (HTTP Datagrams, Connect UDP, Connect IP).
+    *   Tighten the definition of "real-world use cases."
+*   **Specific Items**:
+    *   **Discovery and Configuration**: This was previously explicitly out of scope. While some see value (e.g., "coordination between different resources" as Tommy suggested), others believe proposals so far are not MASQUE-specific and should be handled elsewhere (e.g., DoH, OHTTP).
+    *   **Transparent Modification of Proxied Content** and **Extensible Authorization Mechanisms**: These were questioned for clarity and appropriateness within MASQUE's scope.
+    *   **Connect TCP**: Generally agreed that generic HTTP/TCP proxying belongs in HTTP WG, but the specific "TCP listening" case (mimicking UDP listener functionality) might be more aligned with MASQUE if HTTP WG declines it.
+    *   **DNS Use Cases**: Strong interest in including DNS-related proxying (e.g., `DNS-Used` parameter, more advanced DNS-over-proxy) within MASQUE's scope, coordinating with ADD/DNSOPS.
+*   **Informational Document**: **David Schenazi** suggested writing an informational document answering "What is a MASQUE proxy?" to clarify how `CONNECT`, `CONNECT UDP`, and `CONNECT IP` fit together, potentially within this working group.
+*   **Core Goal**: **Lorenzo Colitti** suggested defining MASQUE's core goal as "the ability to basically proxy at the fine-grain IP level" to enable a client to appear at the proxy as if directly connected to the internet.
+
+## Decisions and Action Items
+
+*   **Connect-IP**: The draft editors will perform a quick editorial pass. The working group will then proceed with a Working Group Last Call (WGLC) and simultaneously request an Inter-Area Review.
+*   **Recharter**: The chairs will follow up on the mailing list with links to specific proposed text revisions for the recharter, taking into account the feedback received during the session, particularly regarding scope, focus on core documents, and potential explicit exclusions.
+
+## Next Steps
+
+*   **Mailing List Discussion**: Continue the recharter discussion on the MASQUE mailing list, with a focus on refining the charter text based on the input from this meeting.
+*   **Draft Development**: Authors of proposed extensions (Connect UDP Listener, Quick Aware Proxying, HTTP Proxy Status Parameters, Datagram Prioritization, Connect TCP/HTTP Proxy Template) should continue refining their drafts, considering the feedback and the ongoing recharter discussion regarding MASQUE's scope.

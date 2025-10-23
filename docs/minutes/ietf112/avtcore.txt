@@ -1,0 +1,72 @@
+**Session Date/Time:** 12 Nov 2021 12:00
+
+# avtcore
+
+## Summary
+The avtcore session covered updates on various drafts, discussed two liaison statements (W3C Web Transport on congestion control and ISO/IEC on green metadata), and featured a detailed presentation on RTP over QUIC. Key discussions ensued regarding the optimal approach for congestion control and prioritization of real-time media when using QUIC. Updates were provided for the VVC, EVC, and sRTCP drafts, including a philosophical debate on the inclusion of comprehensive examples in payload format specifications. A new informational draft on the Skip Communications Interoperability Protocol sparked discussion on IETF processes for documents referencing closed specifications. Finally, significant progress on S-frame was reported, leading to an architectural discussion on its RTP and SDP integration and the need for further work on signaling encrypted content.
+
+## Key Discussion Points
+
+*   **Meeting Logistics**: Bo was volunteered as the notetaker. The IETF Notewell and anti-harassment policy were read.
+*   **Draft Status Update**:
+    *   RFC 9134 (JPEG XS) has been published.
+    *   VP9 is in the RFC Editor Queue, dependent on LRR (waiting on Frame Marking).
+    *   CryptREC has a Pub-Req.
+    *   Frame Marking draft was updated to Experimental and is awaiting write-up.
+    *   Tetra was dropped from the agenda.
+    *   QUIC Multiplexing and VVC were adopted. VVC is in its first Working Group Last Call (WGLC), with significant comments from the VVC community.
+*   **Liaison Statements**:
+    *   **W3C Web Transport Working Group (Congestion Control)**: Yanivar from Mozilla presented a request regarding real-time audio/video over Web Transport. The core problem is the client's inability to know when to reapply a multiplicative increase in media send rate after congestion, lacking sufficient information to recover effectively. The WG seeks to understand if RTP over QUIC can satisfy this use case, what browser measurements could assist, and if selectable/replaceable congestion control (and which algorithms) would be required. This issue was noted as broader than just RTP over QUIC.
+    *   **ISO/IEC JTC1 SC29 WG3 (Green Metadata)**: A liaison from ISO/IEC detailed progress on standard 2301-11, Energy Efficient Media Consumption (Green Metadata), now in its third edition. New features include interactive signaling for remote decoder power reduction, and VVC SAI messages for complexity metrics and quality recovery after low-power encoding. The group was interested in potential IETF work on receiver-to-sender feedback over RTCP for green metadata.
+*   **RTP over QUIC**:
+    *   **Draft Context**: Two similar drafts exist, both providing basic encapsulation for RTP/RTCP over QUIC using unreliable datagram extension with a flow identifier. One draft (presented) focuses more on congestion control.
+    *   **Demultiplexing**: Discussion on the use case for demultiplexing multiple RTP sessions over a single QUIC connection, compared to using different UDP ports.
+    *   **Congestion Control Experiments**:
+        *   **Quick CC disabled, Scream used**: Results were similar to UDP, suggesting feasibility.
+        *   **Scream + Quick CC (NewReno) enabled**: Both CCs competing led to target bitrate drops to near zero and poor ramp-up, especially with reduced link capacity. Concluded that running two separate CC loops simultaneously is problematic.
+        *   **Reduced RTCP Overhead**: Experiments to use QUIC connection statistics (datagram ACKs, RTT samples to infer receive timestamps) to reduce RTCP overhead showed promise but also instability and slower ramp-up with higher delays. Potential improvements noted from QUIC timestamp and received packet timestamp drafts.
+    *   **Prioritization**: Experiments with a second constant-data QUIC stream showed real-time data degradation and potential starvation, highlighting the need for prioritization mechanisms.
+    *   **Conclusions**: Two separate CC loops are problematic. Using QUIC state for RTCP feedback is possible but needs optimization. Prioritization is necessary.
+    *   **Discussion**: Justin suggested focusing on replicating UDP's information for real-time CC, limiting scope to real-time/non-real-time via separate QUIC connections, and analyzing overhead. Sergio emphasized the focus on native applications and the need to consider Web Transport/JavaScript API implications. Colin raised the broader issue of CC and the pain of separate QUIC connections.
+*   **Secure RTP (sRTCP) Authentication after Encryption**: Minor clarifications were made to the draft (authentication after encryption, `crypto` attribute with bundle), which is now in good shape and requested for publication.
+*   **VVC Payload Format**:
+    *   **WGLC Feedback**: Over 30 emails and extensive comments were received, mostly from the VVC community, leading to version 12. Version 13 (with additional text on offer/answer) is in the works.
+    *   **Examples in Drafts**: A philosophical debate was raised regarding the utility of comprehensive SDP examples. Stefan argued that oversimplified examples lead to copy-pasting without full understanding and often cause implementation issues. Bernard suggested examples should convey "high order bits" of negotiation. The current draft's examples are considered sufficient for simple use cases.
+*   **EVC Payload Format**: The draft is being held off until lessons learned from the VVC WGLC (especially on security considerations) can be applied. No "keeper-live" drafts are desired.
+*   **Skip Communications Interoperability Protocol**:
+    *   **Presentation**: Mike Faller (General Dynamics) presented on the informational RFC draft for Skip, a DoD/NATO standard since 1994. The issue is OEM/network administrator unawareness of Skip and its SDP contents (audio/skip, video/skip), leading to its removal from SIP messages and operational problems. The RFC aims to provide global access to this information and a single reference point.
+    *   **Discussion**: Skip establishes an opaque application channel for end-to-end bit integrity. The core question for avtcore is the publication path (WGLC vs. independent stream) for an informational RFC that references a "need-to-know" (classified) background document (Skip Standard 214.2). Concerns about IETF's policy on referencing non-public specifications were raised, with Colin advocating for standard IETF publication if reviewers can access the underlying spec.
+*   **S-frame**:
+    *   **Progress**: S-frame WG issued a call for adoption for the Omar S-frame draft, interest exists for S-frame outside RTP (Web Transport, RTCDataChannel), and WebRTC WG adopted WebRTC Encoded Transform (shipping in Chrome).
+    *   **Problem Statement**: Multiple incompatible end-to-end encryption solutions are being deployed in WebRTC (Google, Facetime, WebEx), highlighting the urgent need for a standardized S-frame solution.
+    *   **RTP/SDP Integration**: Discussion on where S-frame RTP integration work (architecture) should occur (avtcore vs. S-frame WG) and SDP integration (mmusic).
+    *   **Signaling Encrypted Content**: SFUs need information for routing transformed packets (e.g., SVC, simulcast). Discussion on how to signal that content is encrypted/transformed and the underlying codec type (payload type, header extension, RTP payload). Consensus emerged that if the content is changed (encrypted), it constitutes a new payload format (a wrapper format, like RED/FEC), rather than a new profile (like SAVP). This would require a different payload type number.
+    *   **Future Discussion**: Need for an interim meeting to achieve architectural convergence on S-frame integration and signaling, especially concerning packet vs. frame level.
+
+## Decisions and Action Items
+
+*   **VVC Payload Format**:
+    *   The authors will publish one more revision (version 13) of the VVC draft soon, likely later today.
+    *   Another Working Group Last Call (WGLC) is suggested after version 13.
+    *   The Working Group (WG) decided against adding more detailed examples to the draft unless a strong, specific need is expressed quickly.
+*   **EVC Payload Format**: The draft will remain on hold until lessons are learned from the VVC WGLC process, particularly regarding security considerations. No "keeper-live" drafts are necessary.
+*   **Skip Communications Interoperability Protocol**:
+    *   The Chairs will initiate a discussion on the avtcore mailing list regarding the appropriate publication path for the informational RFC (WG adoption and WGLC vs. independent stream).
+    *   The Chairs will coordinate with the authors to identify IETF reviewers for the Skip draft and facilitate access to the non-public Skip Standard 214.2, in line with IETF policies for such documents.
+    *   The authors will clarify the description of "clear channel data" in the draft to be more concise and exact.
+*   **S-frame**:
+    *   **RTP Architecture Integration**: Work related to S-frame's RTP architecture will be handled in the avtcore working group.
+    *   **SDP Integration**: Work related to S-frame's SDP integration will be handled in the mmusic working group.
+    *   **Interim Meeting**: The Chairs will arrange an interim meeting to discuss S-frame architecture and signaling, particularly concerning packet vs. frame level, to achieve convergence.
+*   **RTP over QUIC**:
+    *   Discussions specifically on RTP over QUIC should primarily occur on the avtcore mailing list.
+    *   General media over QUIC discussions should occur on the mock mailing list.
+
+## Next Steps
+
+*   Continue experiments on RTP over QUIC, including different congestion control algorithms, competing traffic forms, and network topologies, as well as developing better prioritization mechanisms.
+*   Engage in mailing list discussions on RTP over QUIC, including defining specific goals and milestones for the work.
+*   Publish VVC draft version 13 and initiate another WGLC.
+*   Advance the sRTCP authentication after encryption draft towards publication.
+*   The Chairs will engage the avtcore community and IETF leadership to determine the best path forward for the Skip informational RFC.
+*   Hold an interim meeting for S-frame to achieve architectural convergence on RTP and SDP integration, including the signaling of encrypted/transformed content and the underlying codec type.

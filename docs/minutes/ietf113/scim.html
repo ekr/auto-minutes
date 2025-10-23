@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="scim.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-SCIM-20220323-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 23 Mar 2022 13:30</p>
+<h1>scim</h1>
+<h2>Summary</h2>
+<p>The SCIM Working Group session focused on the progress of updating existing specifications and exploring new areas. Key discussions revolved around modernizing the SCIM use cases and concepts document (RFC 7642), defining a path forward for SCIM protocol and schema updates (SCIM 2.0 vs. 3.0), and the applicability of Security Event Tokens (SET) and Shared Signals and Events (SSE) for SCIM event-based communication. The group reached consensus on incorporating IoT/device use cases into the main use cases draft and for the protocol/schema editors to prepare a preliminary draft for further discussion and adoption.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>SCIM Use Cases and Concepts Document Update (Pam Dingle)</strong>
+<ul>
+<li><strong>Goal</strong>: Update RFC 7642 to better serve as an overview and guide for modern SCIM implementers, explaining core concepts and use cases not fully covered in the original document.</li>
+<li><strong>Proposed Outline</strong>:
+<ul>
+<li><strong>Definitions</strong>: User management, group management, provisioning.</li>
+<li><strong>Concepts</strong>: Start of authority (authoritative source for attributes/accounts), data directionality (master/slave, bi-directional sharing), Just-In-Time (JIT) provisioning, schema and resource types, mutability and uniqueness, identifiers and primary keys (e.g., <code>externalId</code>), API security, hard/soft deletion, privilege elevation.</li>
+<li><strong>Feedback on Concepts</strong>: General agreement on the proposed concepts. Suggestion to consider &quot;connection directionality&quot; beyond RESTful protocols (e.g., gRPC, WebSockets) to account for reverse connectivity.</li>
+<li><strong>Implementation Use Cases</strong>: Negotiating schema, search and query, object synchronization, massive dataset maintenance (pagination, bootstrapping, bulk operations, reconciliation).</li>
+<li><strong>Feedback on Use Cases</strong>:
+<ul>
+<li>Need to address sensitive data protection (e.g., URLs to photos).</li>
+<li>Consider more business-oriented &quot;self-service&quot; scenarios.</li>
+<li>Incorporate scenarios for change of ownership on devices and managing long-term authority changes for trust relationships, especially relevant in IoT.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>IoT/Device Use Cases (Elliot Lear)</strong>
+<ul>
+<li><strong>Distinction</strong>: Device identities differ from user identities (e.g., light bulb lacks user interface).</li>
+<li><strong>Onboarding Challenges</strong>: Multiple onboarding standards (Wi-Fi DPP, 802.1AR, BLE OOB, FIDO FDO) require automated, seamless credential transfer. This necessitates schema design that supports various key materials (public keys, vouchers).</li>
+<li><strong>SCIM Implications</strong>: This is primarily a <strong>schema issue</strong> for SCIM, not an authentication issue. It requires a device hierarchy or schema within SCIM to describe device capabilities and onboarding mechanisms.</li>
+<li><strong>Directionality Flip</strong>: SCIM traditionally has enterprise provisioning cloud services. For devices, the supplier may act as the SCIM client, transmitting device credentials to the enterprise (SCIM server).</li>
+<li><strong>Differences from Parent SCIM</strong>:
+<ul>
+<li>Bootstrapping credential movement is always required.</li>
+<li>Supplier as SCIM client.</li>
+<li>Clear scoping for device identities (preventing one supplier from affecting another's devices).</li>
+<li>Device attributes vary based on capabilities, impacting schema.</li>
+<li>Need for extensibility (e.g., Software Bill of Materials, device type information).</li>
+</ul>
+</li>
+<li><strong>Schema Language</strong>: JSON Schema was found to be sufficiently rich for these needs, in contrast to some challenges encountered with Swagger for a fully normalized view.</li>
+<li><strong>Discussion</strong>: Confirmed that the scope should be &quot;devices&quot; generally, not just &quot;IoT.&quot; The concept of a &quot;bootstrap IDP&quot; and a &quot;final IDP&quot; was introduced for devices.</li>
+</ul>
+</li>
+<li><strong>SCIM Protocol and Schema Updates (Danny Zolner &amp; Janelle Allen)</strong>
+<ul>
+<li><strong>Charter Goal</strong>: Progress SCIM 2.0 from Proposed Standard to Internet Standard.</li>
+<li><strong>Core Question</strong>: Should the group &quot;polish&quot; SCIM 2.0 (error correction, clarity, minor enhancements) and finalize it, or should it target a new major version (2.1, 3.0) to incorporate more significant enhancements from the charter?</li>
+<li><strong>Chartered Enhancements</strong>: Many proposed enhancements (e.g., clarifying <code>externalId</code> usage, account state changes, multi-value query filtering/paging) are too substantial for a 2.0-level update.</li>
+<li><strong>Implementation Survey</strong>: Proposed to gauge adoption of existing SCIM 2.0 features (e.g., basic auth, passwords in core schema, <code>photos</code> as URI) to identify parts that are not widely adopted or cause interoperability issues.</li>
+<li><strong>&quot;Photos&quot; Discussion</strong>: While described as a URI, cross-cloud security concerns, latency, and the lack of a standardized approach for servers to pull/store images lead to limited adoption.</li>
+<li><strong>Broader Context</strong>: SCIM 2.0 has wide adoption in IdP-SP provisioning, raising concerns about backward-breaking changes.</li>
+<li><strong>Path Forward</strong>:
+<ul>
+<li>Option 1: Finalize 2.0 with light edits/clarifications and build out a series of extensions for new features.</li>
+<li>Option 2: Drive towards a 3.0 (vNext) that incorporates significant changes.</li>
+</ul>
+</li>
+<li><strong>Guidance Needed</strong>: Consensus sought on how light or extensive the changes should be. An issue tracker (GitHub) is being set up for managing discussions.</li>
+<li><strong>Relationship with Use Cases</strong>: The scope of use case revisions (2.0 vs. vNext) will inform protocol/schema work. Some protocol/schema work can proceed in parallel with use case definition.</li>
+</ul>
+</li>
+<li><strong>SCIM Events Profile (Phil Hunt, presented by Nancy Cam-Winget)</strong>
+<ul>
+<li><strong>Proposal</strong>: Profile existing Security Event Tokens (SET, RFC 8417) for use within SCIM. SETs are specialized JSON Web Tokens (JWTs) for secure, asynchronous event messages.</li>
+<li><strong>Distinction from SCIM Protocol</strong>: SCIM protocol involves synchronous HTTP requests as &quot;commands&quot;; SETs are asynchronous, signed &quot;statements of fact&quot; (triggers/signals) enabling independent action by the receiver.</li>
+<li><strong>Importance</strong>: Facilitates coordination of resource lifecycles across domains (e.g., user disabled in one domain leads to action in another). The receiver, with local domain knowledge, reconciles the event.</li>
+<li><strong>Delivery</strong>: Leverages SET Push (RFC 8935) and SET Pull (RFC 8936) delivery specifications.</li>
+<li><strong>Shared Signals and Events (SSE)</strong>: Mentioned as a framework (OpenID Foundation) that uses SET for delivery streams (e.g., Continuous Authentication and Evaluation Protocol - CAEP).</li>
+<li><strong>SCIM Event Use Cases</strong>:
+<ul>
+<li><strong>Domain-based Replication</strong>: Event repeats the original SCIM protocol request with all data, allowing replicas to stay in sync.</li>
+<li><strong>Coordinated Provisioning</strong>: Event contains minimal data (ID, externalId, changed attributes). Receiver marks resource as stale, then performs a SCIM GET to retrieve the current state. This avoids sharing confidential data, allows filtering attributes via access control, and supports periodic reconciliation for rapidly changing resources.</li>
+</ul>
+</li>
+<li><strong>Event Claims</strong>: Defines common claims like <code>toe</code> (time of event for reordering), <code>txn</code> (transaction ID for de-duplication), <code>event</code> (JSON structure with <code>id</code>, <code>externalId</code>, <code>attributes</code>, <code>data</code>). The JWT <code>sub</code> claim is the URI of the changed SCIM resource.</li>
+<li><strong>Subject Identifiers</strong>: Recommended against using the <code>sec-event-subject-identifiers</code> draft, as SCIM's existing <code>id</code> and <code>externalId</code> mechanisms, along with resource URIs and SCIM GETs, sufficiently address identification.</li>
+<li><strong>Other Events</strong>: Beyond CRUD, also includes feed events (alerting receiver of new entity), activate/deactivate events, and risk-like signals (auth method change, password reset).</li>
+<li><strong>Delivery Mechanisms</strong>: Discussed bus-based systems (for internal, scalable event recovery) and point-to-point systems like SSE (for cross-domain flow control).</li>
+<li><strong>Scope</strong>: Does not prescribe receiver actions; focuses on triggers.</li>
+<li><strong>Discussion</strong>: Concern about using SSE (designed for observations/signals) for SCIM (which involves commands/protocol operations). Preference for a simpler event model that just signals &quot;something happened&quot; and lets the SCIM client figure out reconciliation, avoiding complexity of sending large data payloads within events.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Use Cases Document Update (Editors: Pam Dingle, Elliot Lear)</strong>
+<ul>
+<li><strong>Decision</strong>: The outline presented by Pam Dingle in HackMD, combined with Elliot Lear's IoT/device use cases, will serve as the base content for the updated SCIM Use Cases and Concepts draft.</li>
+<li><strong>Action Item</strong>: Pam Dingle and Elliot Lear to collaboratively incorporate the IoT/device use cases into the evolving use cases draft and prepare it for further working group review.</li>
+</ul>
+</li>
+<li><strong>Protocol and Schema Updates (Editors: Danny Zolner, Janelle Allen)</strong>
+<ul>
+<li><strong>Action Item</strong>: Danny Zolner and Janelle Allen to prepare a first rough draft of proposed protocol and schema updates. This draft should categorize changes into what can be accomplished independently versus what reasonably depends on the revised use cases. This will form the basis for a call for adoption and further discussion on the 2.0 vs. vNext scope.</li>
+</ul>
+</li>
+<li><strong>SCIM Events Profile (Author: Phil Hunt)</strong>
+<ul>
+<li><strong>Action Item</strong>: Phil Hunt to solicit more feedback on the SCIM Events profile draft via the mailing list, specifically addressing concerns raised about its applicability for SCIM commands versus signals and implementation complexity.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Working Group Chairs</strong>: Schedule a virtual interim meeting in approximately six weeks to continue progress discussions.</li>
+<li><strong>Working Group</strong>: Provide feedback on the SCIM Events profile draft on the mailing list.</li>
+<li><strong>Working Group</strong>: Further discussion is needed on the overarching question of whether to finalize SCIM 2.0 with minimal changes or to transition to a SCIM 3.0 (or 2.1) to encompass more significant updates and new use cases.</li>
+<li><strong>Working Group</strong>: Provide an overview of existing SCIM domains and implemented use cases to inform future decisions on standard evolution.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

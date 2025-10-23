@@ -1,0 +1,93 @@
+**Session Date/Time:** 28 Jul 2022 14:00
+
+# gnap
+
+## Summary
+
+The gnap session provided a comprehensive status update on the core and resource server drafts, highlighting significant progress on issue resolution. Key discussions included the introduction of a formal grant life cycle, a detailed proposal for key rotation, and the exploration of different token models beyond JOSE. The session also touched on client instance management and a critical discussion regarding human rights and platform oligopolies in the context of authorization delegation.
+
+## Key Discussion Points
+
+*   **Administrative Items**:
+    *   The chairs reminded attendees about the IETF Note Well and Code of Conduct.
+    *   A minute taker was requested but no volunteers came forward.
+    *   Slides mechanics were sorted out.
+
+*   **Core Document Updates (Aaron Parecki & Justin Richer)**:
+    *   **Progress**: 40 open issues on the core document were closed since the last meeting, marking substantial progress. Minor changes were made to the resource server draft.
+    *   **Github Workflow**: All changes are meticulously documented on GitHub with pull requests and proper tagging.
+    *   **Editorial Changes**:
+        *   New SVG diagrams, generated from ASCII art, now included in RFCs.
+        *   Text consistency improvements across the specification.
+        *   Future-proofing for new JOSE signature methods to ensure extensibility.
+        *   Clarifications around API rights (string vs. object) and resource owner policies.
+    *   **Security Analysis**: Florian's 125-page thesis on gnap security was acknowledged. While many identified issues have mitigations in the spec, further analysis is needed if gnap is used as an identity protocol.
+    *   **Functional Changes**:
+        *   Issue 415: Consideration for session attacks was added.
+        *   Syntax changes: Simplification of verbose object structures, e.g., `user_code` now a string, supporting `user_code_url` and `user_code` as separate modes. (Breaking change)
+        *   **Feature Dropped**: The "split token" feature was removed due to lack of interest and significant complexity. It may be revisited as an extension in the future.
+        *   **Key Proofs**: Expanded structure for key proofs in HTTP signatures to describe exact algorithms (e.g., hash algorithms from IANA registry). (Breaking change)
+    *   **Grant Life Cycle (New Section)**:
+        *   An explicit state diagram was introduced to describe the life cycle of a grant request from the Authorization Server (AS) perspective.
+        *   **States**:
+            *   `processing`: Transitive state, AS evaluates request context, decides next step. No tokens issued.
+            *   `pending`: AS needs more information (e.g., user interaction, resource owner approval). No modifications allowed from client. Interactions can time out, leading to `finalized`.
+            *   `approved`: AS has all necessary information, can issue tokens/subject info. Client can request new tokens or modify the grant (which returns to `processing`). AS can revoke to `finalized`.
+            *   `finalized`: Terminal state, grant is done, no more tokens or modifications. Equivalent to an expired OAuth refresh token.
+
+*   **Related Work**:
+    *   **HTTP Message Signatures**: The HTTP working group is expected to ask for working group last call soon. This draft provides an option for signing in gnap.
+    *   **Security Events / Subject Identifiers**: Progressing after its own last call, this work defines how identifiers for end-users are handled in gnap.
+
+*   **Future Work / Open Issues**:
+    *   **Key Rotation (Justin Richer)**:
+        *   Goal: Allow clients to rotate keys for specific tokens.
+        *   Challenge: Proving possession of both the old and new key simultaneously.
+        *   Proposal: A general pattern where the new key signs the message, and the old key signs the new key's value.
+        *   HTTP Signatures: Multiple signatures on a single message can fulfill this.
+        *   JOSE: Embedding JWS objects (new key signed by old key as a JWS payload) could work, but presumes a JOSE-flavored key format.
+        *   MTLS: Rotation is largely out of scope due to reliance on external PKI/certificate management. Noted ACME work on client certificate attestation.
+        *   **Decision**: Keep proofing method fixed during rotation (e.g., JOSE to JOSE, not JOSE to HTTP Sig) to avoid combinatorial complexity. Each proofing method (including extensions) must define its key rotation mechanism or explicitly state it's not supported. Feedback requested on the mailing list.
+    *   **Separate Keys for AS vs. RS**: The use case of clients using different keys when talking to the AS vs. RS was discussed. This is related to key rotation and needs to be formally addressed in the spec.
+    *   **Client Instance Management**: A proposal to allow clients to manage their own properties and keys (similar to OAuth DCRM) using a gnap-style continuation and a special access token/URI was presented. Question: Core or extension?
+    *   **Token Models (Fabien Cazenave)**:
+        *   Issue 15 on the Resource Server draft: Discussing a generic, non-normative "token model" for implementation guidance, rather than mandating a specific format.
+        *   **Format vs. Model**: Format (JOT, Macaroons, Biscuits, Z-CAPs) refers to the technical serialization; Model refers to the shared information content.
+        *   Motivation: Accommodate various formats for productivity (e.g., JSON proofs, post-quantum in JOSE), and different use cases (e.g., attenuation capabilities of Macaroons/Biscuits).
+        *   Where to describe: Potential locations include Appendix C of the Core spec or within the RS draft itself.
+        *   Access Token Value: Emphasized that the client treats the access token as opaque; the AS response contains necessary metadata.
+        *   Token Introspection: Section 3.3 of RS draft defines introspection parameters.
+        *   Relevant documents: Schema Management for Identity, JOT Profile for OAuth Access Tokens, BCP on JOT Confusion (mitigations like issuer, subject, audience, `kid` validation, explicit typing).
+        *   `gnap` specific claims: `client_id` becomes `client`, `scope` becomes `access`. Discussion on common (issuer, subject, audience, gti, client) vs. optional/reference claims (access, typed `sub`, flags, keybound, expiry, resource owner).
+        *   **Next Steps**: Fabien will submit a PR to further the discussion on token models.
+
+*   **Overall Timeline and Implementation**:
+    *   **Goal**: Produce two standards-track RFCs.
+    *   **Current Phase**: Focus on removing esoteric features and significant editorial cleanup (e.g., state machine).
+    *   **Next IETF Meeting Goal**: Aims for a "feature-complete" core draft, especially after addressing key rotation and AS/RS key splitting.
+    *   **Subsequent Steps**: Finalize IANA registrations and extension instructions.
+    *   **IETF Process**: Proposed standards do not require implementations for publication. Interoperability often happens post-publication, leading to later revisions.
+    *   **Implementation Status**: While some siloed implementations exist (e.g., Verified.me, fintech), there isn't yet broad interop testing. A strong desire for an OpenID Foundation-like testing harness was expressed, but requires resources. `gnap` aims to address complexities from OAuth2 extensions (RAR, PAR).
+    *   **Human Rights Considerations (Adrian Hope-Bailie)**:
+        *   **Concern**: `gnap` as a delegation protocol could lead to platform oligopolies, similar to OAuth, potentially impacting human rights (privacy, choice, market power).
+        *   **Proposed Mitigation**: Allow the resource owner to choose their authorization delegate/request processing agent.
+        *   **Discussion**: While the market often dictates relying parties' trust in specific AS/IdPs (as seen with OpenID 1.0), the unique regulatory climate and a growing interest in decentralization might warrant addressing this. `gnap`'s flexibility in accepting external information for policy evaluation was highlighted as a positive.
+        *   **Outcome**: The privacy considerations section of the draft will be expanded to address these human rights implications, with Adrian offering to draft initial text for a PR.
+
+## Decisions and Action Items
+
+*   **Decision**: The "split token" feature is dropped from the core document due to lack of demand and complexity. It could be re-introduced as an extension if interest emerges.
+*   **Decision**: Key proofing methods for tokens will remain fixed during key rotation (e.g., JOSE-bound tokens will rotate JOSE keys, not switch to HTTP Signatures). All core and extended proofing methods must define their key rotation mechanism or explicitly state non-support.
+*   **Decision**: The Privacy Considerations section of the core document will be expanded to address potential human rights issues related to platform oligopolies and the ability for resource owners to choose authorization delegates.
+*   **Action Item**: Editors (Justin Richer, Aaron Parecki) to provide a more detailed write-up on the key rotation proposal and bring it to the mailing list for feedback.
+*   **Action Item**: Fabien Cazenave to submit a Pull Request (PR) for the Token Model discussion (related to GitHub Issue 15 on the RS draft) in the coming weeks.
+*   **Action Item**: The chairs (Lars Eggert) and editors (Justin Richer, Aaron Parecki) will encourage organizations with existing or early `gnap` implementations to present their experiences and insights to the working group to foster interoperability discussions.
+*   **Action Item**: Adrian Hope-Bailie will draft text for a PR to the Privacy Considerations section to address human rights implications, specifically regarding resource owner agency and the choice of authorization delegate.
+
+## Next Steps
+
+*   The working group will focus on refining the core document, particularly addressing the key rotation mechanisms and the interaction of AS-facing versus RS-facing keys.
+*   Fabien Cazenave's PR on token models will initiate broader discussion and refinement of token representation.
+*   The Privacy Considerations section will be updated to reflect the human rights discussion.
+*   The goal is to have a "feature-complete" draft by the next IETF meeting, followed by work on IANA registrations and guidelines for extensions to prepare for working group last call and eventual publication as standards-track RFCs.
+*   The chairs and editors will actively seek opportunities to facilitate interoperability testing and experience sharing within the working group.

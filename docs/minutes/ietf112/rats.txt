@@ -1,0 +1,147 @@
+**Session Date/Time:** 08 Nov 2021 12:00
+
+# rats
+
+## Summary
+
+The rats working group meeting covered several key documents, including an update on the RATS Architecture, the recently adopted Attestation Event Stream Subscription, and the CBOR Tag for Unprotected CWT Claim Sets (UCCS). A significant portion of the session was dedicated to the EAT (Entity Attestation Token) draft, discussing its R11 changes, open issues, and readiness for Working Group Last Call (WGLC). There was considerable debate regarding the handling of IPR claims affecting the RATS Architecture, and the inclusion of both JSON and CBOR representations (along with nesting) within the EAT document. Updates were also provided on Attestation Results for Secure Interactions and Trusted Path Routing, with a request for working group adoption of the former. Finally, a new draft on Scalable Remote Attestation for System Containers and Applications was presented.
+
+## Key Discussion Points
+
+*   **RATS Architecture Overview**
+    *   The document has not changed since April, awaiting shepherd write-up and ISG reviews.
+    *   A new IPR claim from Intel has been received, causing a hold-up. Ned and Kathleen Moriarty clarified that a request to delay until December for IPR disclosures was made earlier, and Intel's patent application is not yet public but expected in December.
+    *   Roman reiterated that the working group needs to affirmatively confirm its intent to proceed with the document given the IPR claims, rather than debating the nature of the claims.
+    *   Hank suggested the working group should agree to move forward, irrespective of the IPR content, but Ned noted a final conclusion might not be possible until the patent application is publicly available in December.
+    *   Dave Thaler argued that as an architecture document, which supports multiple implementation approaches, a patent on a specific component should not block the entire document.
+    *   Hannes expressed concern that patent claims deter open-source developers and criticized the timing of the co-chair's IPR contribution, suggesting it delays work and harms the industry. He even questioned whether the document should be published at all.
+*   **Attestation Event Stream Subscription**
+    *   The draft (`ietf-draft-00`) was adopted by the working group since the last IETF meeting.
+    *   It depends on the CHARA draft (currently in AD review with comments mostly addressed) and the BARD draft (also in AD review).
+    *   The core idea involves subscribers using RPC to obtain PCR quotes periodically or upon changes, with a focus on mechanisms to maintain freshness of subsequent quotes.
+    *   Future plans include responding to minor Yang model tweaks, awaiting CHARA's review progression, conducting Yang doctor reviews, and adding further necessary content.
+*   **CBOR Tag for Unprotected CWT Claim Sets (UCCS)**
+    *   Carsten Bormann presented the motivation for defining a CBOR tag for UCCS, which is a COSE CWT claim set without the COSE envelope, relying on external protection mechanisms (e.g., a secure channel).
+    *   The document aims to distinguish UCCS from CWT and clarify its role as a predicate, not a full assertion, and outlines security considerations specific to RATS.
+    *   Proposed enhancements include adding a CDDL specification for the CWT claim set (as RFC 8392 predates the CDDL RFC) to simplify its general use. The idea of a "grand unification" with JWT was deemed out of scope for this document.
+    *   The draft is undergoing editorial review, and a new version is planned for submission, potentially leading to a Working Group Last Call.
+*   **EAT (Entity Attestation Token) R11 Changes**
+    *   Lawrence Lundblade detailed significant changes in the `-11` version of the EAT draft.
+    *   **Key updates include:** alignment of terminology with RATS architecture, CWT, and JWT; removal of operating model procedures (relying on RATS architecture, CWT, JWT); and numerous examples.
+    *   New claims introduced: `software name` and `software version` (as alternatives to CoSWID for simplicity and JSON compatibility), DLOA, `software results`, and an improved `oem id` claim.
+    *   CDDL specifications for claim sets were added, along with a definition for UJCS (JSON equivalent of UCCS), which sparked discussion.
+    *   **Detached EAT Bundles** were introduced, allowing parts of the claim set to be hashed and externalized, useful for smaller attestation hardware blocks.
+    *   **JSON/CBOR Interoperability and Nesting:** Lawrence argued for EAT to support both CBOR (as CWT) and JSON (as JWT), and for nesting of different encoding types (e.g., CWTs inside JWTs and vice versa) to support composite devices with mixed vendor components.
+    *   The draft proposes using CBOR tags for nested tokens and a `[type-string, actual-token]` array for JSON.
+    *   Carsten Bormann and Hank noted that the semantic implications of such nesting and mixed encodings are complex, require significant analysis, and might extend beyond the scope of this document, potentially delaying it significantly. Hank suggested splitting the JSON/CBOR unification work into a separate, follow-up document.
+*   **EAT Open Issues and Last Call Readiness**
+    *   Gary C. Head reviewed open GitHub issues, identifying only one (Issue 15: `should/must` consistency) as potentially blocking WGLC, though it is too broad. He views WGLC as the *beginning* of the process, not the end.
+    *   **TEEP Requirements:** Dave Thaler highlighted outstanding TEEP requirements (`device identifier`, `vendor identifier`, `class identifier`, `component identifier`) that he believes should be addressed for WGLC. He suggested three paths: a separate document, handling it during WGLC (potentially multiple rounds), or adding non-controversial TEEP claims to a `-12` draft for the first WGLC.
+    *   Hank reiterated his preference for getting the CBOR-based EAT out sooner, even if the JSON/CBOR unification is deferred.
+    *   Gary offered to prepare a `-12` draft addressing the TEEP-related claims by Friday, assuming they are straightforward.
+*   **Attestation Results for Secure Interactions**
+    *   Eric Voit presented version 2, which has been split into two parts: information elements for attestation results, and end-to-end implementation options.
+    *   The draft defines a simplified, minimum set of 8 general claims (e.g., `executables`, `hardware`) about identity, integrity, and confidentiality.
+    *   Claims use an unsigned signed integer to indicate `affirmation`, `warning`, or `contradiction`, offering flexibility for relying parties.
+    *   The document clarifies that claim values must be considered in the context of the attestation environment (e.g., SGX vs. TPM).
+    *   The authors are **seeking working group adoption** for this draft.
+    *   Gary raised a concern about interoperability, as the criteria verifiers use to determine claim values are not defined, leading to potential inconsistencies in trustworthiness appraisals. Eric responded that verifiers may not expose these rules for security reasons.
+*   **Trusted Path Routing**
+    *   Eric Voit briefly introduced this draft as an instance of the Attestation Results document. It uses attestation results to build a topology that bypasses untrustworthy routers. No adoption request at this time, pending decisions on the Attestation Results draft.
+*   **Scalable Remote Attestation for System Containers and Applications**
+    *   Kathleen Moriarty presented this draft, which aims to scale posture assessment by grouping local attestations into "sets" and sending them remotely.
+    *   It leverages trusted boot processes (NIST SP 800-193, TCG RIMs) and uses EAT.
+    *   The goal is to reduce the volume of data sent across the wire and shift the burden of defining expected states and remediation capabilities to vendors, thereby supporting organizations lacking deep security expertise.
+
+## Decisions and Action Items
+
+*   **RATS Architecture IPR:** The working group needs to discuss on the mailing list and provide positive confirmation on whether to proceed with the architecture document given the new IPR claims.
+*   **Attestation Event Stream Subscription:** The draft was adopted by the working group.
+*   **EAT Last Call Readiness:**
+    *   Lawrence Lundblade and Gary Head will evaluate the TEEP-related claims highlighted by Dave Thaler and aim to produce a `-12` version of the EAT draft by Friday, incorporating these if straightforward.
+    *   Participants are encouraged to file any issues or concerns blocking WGLC on the GitHub repository.
+
+## Next Steps
+
+*   **RATS Architecture:** Further discussion on the IPR claims and the working group's intent to proceed will continue, potentially at the next session.
+*   **Attestation Event Stream Subscription:** Continue working through dependencies (CHARA, BARD) and progress with Yang model and Yang doctor reviews.
+*   **UCCS:** Incorporate editorial suggestions and decide on including the CDDL specification before submitting a new version for WGLC.
+*   **EAT:**
+    *   Lawrence and Gary to update the EAT draft to version -12, addressing TEEP-related claims.
+    *   Following the `-12` release, the chairs will solicit feedback on the mailing list to determine readiness for Working Group Last Call, potentially continuing the discussion at the Friday session.
+    *   The debate on the scope of EAT (CBOR-only vs. CBOR/JSON unification, nesting complexity) will continue, possibly leading to a decision to separate the JSON/nesting aspects into a follow-up document.
+*   **Attestation Results for Secure Interactions:** The authors will seek working group adoption of this draft. Further discussion on the interoperability of trustworthiness claims is expected.
+*   **Trusted Path Routing:** No immediate adoption planned, pending the decision on Attestation Results.
+*   **Scalable Remote Attestation for System Containers and Applications:** The authors encourage participants to read the draft. Discussion will likely continue at a future session.
+*   **General:** The next rats session is scheduled for Friday.
+
+---
+
+**Session Date/Time:** 12 Nov 2021 14:30
+
+# rats
+
+## Summary
+
+The `rats` session covered critical discussions on the relationships and potential overlaps between existing drafts: EAT, Attestation Results, and Attestation Sets. The working group also discussed the adoption of the Direct Anonymous Attestation (DAA) draft and received a presentation on the Concise Reference Integrity Manifest (CoRIM). Key decisions included proceeding with Working Group Last Call for the EAT draft, adopting the DAA draft, and initiating a mailing list discussion for the IPR status of the Architecture draft before submitting it to IESG.
+
+## Key Discussion Points
+
+*   **Overlap between EAT, Attestation Results, and Attestation Sets**
+    *   Authors of `draft-ietf-rats-eat`, `draft-ietf-rats-attestation-results`, and `draft-ietf-rats-attestation-sets` (Moriarty draft) discussed overlaps.
+    *   **EAT & Attestation Sets**: Consensus that EAT defines claims, and Attestation Sets can reuse these definitions. Attestation Sets might define new claims that could be added to EAT over time. The primary distinction is that Attestation Sets defines what a "set" of attestations looks like, which is not covered by EAT.
+    *   **Attestation Sets & Attestation Results**: No obvious overlap was identified. Attestation Sets define types and sets of evidence, while Attestation Results deals with trustworthiness claims generated by a verifier.
+    *   **EAT & Attestation Results**: There are identity claims in EAT and categories of identity types in Attestation Results. It was noted that new claims from Attestation Results could be incorporated into EAT, and EAT's identity types could be used in embodiments of Attestation Results.
+    *   **Overall Overlap Assessment**: No major normative conflicts were identified between the existing drafts.
+    *   **"Software Result" Claim**: A question was raised regarding a pull request for "software result" in EAT and its relation to Attestation Results. It was clarified that Attestation Results evaluates the overall trustworthiness of a device, distinct from supplementary verifier approval of specific claims, indicating no conflict.
+    *   **Documenting Relationships**: The need for a working group document to permanently record the relationships and justifications between these drafts (schema dependencies, information models) was discussed, recognizing it as a "very hard problem."
+    *   **Nature of Attestation Results**: Lawrence challenged the idea of a single "Attestation Results" draft, proposing that there are many forms (simple boolean, vectors, large claim sets, certification info, etc.). He suggested Eric's draft could be implemented using EAT, Yang, SNMP, or XML, and requested it not be named to imply it's the sole solution.
+
+*   **Direct Anonymous Attestation (DAA) Draft Adoption (`draft-ietf-rats-daa`)**
+    *   A call for adoption was discussed, following earlier mailing list comments and a formal adoption poll initiated during the session.
+    *   **Need for further work**: Lawrence noted that more work is needed to support the broad class of DAA algorithms, specifically Intel's EPID. Hank agreed this should be addressed as a working group item.
+    *   **Conflict with TCG**: Gary asked about potential conflicts with TCG definitions. Hank explained that this draft's purpose is to map DAA to the RATS architecture, defining roles and extending messages, which isn't covered by TCG alone. It also aims to support non-TCG use cases.
+    *   **Mailing List vs. Live Poll**: Roman observed that the mailing list call for adoption had limited non-author support, but the live poll showed stronger support (15 in favor). No objections were raised during the meeting.
+    *   **Volunteer Interest**: A poll indicated a fair number of attendees were willing to work on the DAA draft.
+
+*   **Concise Reference Integrity Manifest (CoRIM) Presentation (`draft-ietf-rats-corim`)**
+    *   Hank presented the CoRIM draft, aimed at informing and verifying attester characteristics.
+    *   **Content**: Includes initial reference values, verification key material, and endorsed values (e.g., FIPS compliance, isolation qualities).
+    *   **Extensibility**: Key for adding new claims and future EAT claims.
+    *   **Applicability**: Adopted by TCG (information model), supports layered attestation, and has a profile being created for ARM PSA token ID/endorsements. Running code and proof-of-concept implementations exist (e.g., Open-source RATS components).
+    *   **Components**: CoRIM acts as an umbrella manifest. CoMID (Concise Module Identifier) covers hardware hierarchy and firmware. CoSWID (Concise Software ID) covers file systems.
+    *   **Charter Fit**: Authors believe CoRIM aligns well with the RATS charter, addressing deliverables 2, 3, and 4, by standardizing formats for assertions about system components, associating with evidence, and being consumed by verifiers. Supply chain stakeholders are involved.
+    *   **Readiness**: The document is considered stable by multiple vendors and is in public review (expected next week). The authors are comfortable with a call for adoption.
+
+*   **EAT Draft Readiness for Working Group Last Call (WGLC)**
+    *   **Teep Requirements**: Discussion focused on Teep's request for a "class identifier" claim. Teep recommended that EAT define the claim, but profiles and vendors define its values and semantics. The values should be opaque/unstructured.
+    *   **Consensus on Class Claim**: Lawrence noted ongoing discussion on GitHub (Thomas, Jeremy) and felt there wasn't full consensus on this specific claim yet.
+    *   **Other WGLC Issues**: Lawrence also highlighted other potential WGLC issues, such as CDDL for GWT/CWT and JSON/CBOR support.
+    *   **WGLC Poll**: A poll was conducted to assess if `draft-ietf-rats-eat-11` was ready for Working Group Last Call. The poll showed consensus for a *first* WGLC, with the understanding that further issues might lead to a second WGLC.
+
+*   **Architecture Draft Status (`draft-ietf-rats-architecture`)**
+    *   The Architecture draft had completed working group technical reviews, including multiple WGLCs.
+    *   **IPR Issues**: During the shepherding process, two IPR claims were posted. Chairs initiated a mailing list discussion to gather working group consensus on proceeding despite the IPR claims.
+    *   **Next Steps**: Roman clarified that the technical work is complete, and the remaining hurdle is to confirm working group harmony regarding the IPR disclosures before advancing to IESG for publication. A 2-week call on the mailing list for IPR feedback is planned.
+
+## Decisions and Action Items
+
+*   **DAA Draft Adoption**: The working group decided to **adopt** `draft-ietf-rats-daa` as a working group document.
+    *   **Action**: Authors (Hank et al.) to convert the draft to an IETF format.
+    *   **Action**: Volunteers who expressed interest are encouraged to collaborate with the authors to improve the draft.
+*   **EAT Draft Working Group Last Call**: The working group reached **consensus to proceed with a first Working Group Last Call** for `draft-ietf-rats-eat-11`.
+    *   **Action**: Chairs to initiate the first WGLC for `draft-ietf-rats-eat-11`.
+    *   **Action**: Discussion regarding the "class identifier" claim and other minor issues (CDDL, JSON/CBOR) should continue on the mailing list, potentially leading to a subsequent WGLC if significant changes are needed.
+*   **Architecture Draft Publication**: The working group will conduct a **2-week call for feedback on IPR statements** on the mailing list to confirm consensus for submitting `draft-ietf-rats-architecture` to the IESG for publication.
+    *   **Action**: Chairs (Nancy, Kathleen) and Shepherd (Roman) to initiate and manage the IPR feedback call.
+*   **CoRIM Draft Adoption**: The chairs will initiate a **call for adoption** for `draft-ietf-rats-corim` on the mailing list.
+    *   **Action**: Chairs to initiate the call for adoption on the mailing list.
+
+## Next Steps
+
+*   The chairs will initiate the Working Group Last Call for the EAT draft.
+*   The chairs will initiate a 2-week mailing list call for IPR feedback on the Architecture draft.
+*   The chairs will initiate a call for adoption for the CoRIM draft on the mailing list.
+*   DAA draft authors will prepare the IETF draft version and engage with volunteers.
+*   Discussions on the EAT "class identifier" claim and other minor technical points will continue on the mailing list.
+*   Further discussions regarding Attestation Results and Attestation Sets can be continued on the mailing list.

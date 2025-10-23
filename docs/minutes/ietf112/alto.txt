@@ -1,0 +1,108 @@
+**Session Date/Time:** 10 Nov 2021 16:00
+
+# alto
+
+## Summary
+The ALTO working group session at IETF 112 reviewed the status of several documents, including two drafts with open issues from IESG last calls. Discussions covered proposed solutions to these issues and the path forward. New charter items, ALTO YANG models for OAM and new transport protocols (HTTP/2, HTTP/3), were presented with initial design considerations and proposed work plans. Additionally, three non-charter items provided updates on ALTO deployment experiences (G2, Flow Director) and explored potential new use cases for ALTO, such as an IETF Network Exposure Function, Compute-Aware Networking, and Bandwidth Estimation as a service.
+
+## Key Discussion Points
+
+### Working Group Status and Charter Review
+*   The ALTO working group's charter includes deliverables for ALTO OAM and new transport protocols, alongside deployment updates, use cases, and protocol maintenance.
+*   Four working group drafts are prepared for an IESG telechat on December 2nd.
+*   Emphasis was placed on using the mailing list for reaching consensus and starting new discussions.
+
+### ALTO Path Vector Extension Update
+*   **Draft:** "ALTO Path Vector Extension"
+*   **Reviews:** Addressed minor issues from Gen Art and Art Art, and significant concerns from Ops Dir.
+*   **Gen Art/Art Art Resolution:** Revised the format for `content-id` to be compatible with existing RFCs (RFC2003, RFC387, RFC532) and added IPv6 examples.
+*   **Ops Dir Resolution:**
+    *   Introduced more detailed use cases and examples, extracted from existing systems.
+    *   Clarified "abstract network element" (ANE) with examples of how network components are considered ANEs.
+    *   Revised ambiguous terminology for clarity.
+    *   Provided examples for practical Path Vector usage, emphasizing ALTO's role in information exposure and application's role in traffic steering.
+*   **Current Status:** All changes are incorporated into draft version 19.
+
+### ALTO Performance Metric Extension Update
+*   **Draft:** "ALTO Performance Metric Extension"
+*   **Reviews:** Incorporated feedback from Gen Art (Alvin Davies) and Art Art (Christian Amsüss).
+*   **Main Changes:**
+    *   Clarified the definition of "cost metric string" using an English description instead of a formal grammar, adopting a column (:) separator for statistical operators (e.g., `delay-one-way:mean`).
+    *   Refined IANA considerations, requiring new cost metrics/properties to include identifier, intended semantics, and security considerations.
+*   **Open Issue: `cost-context-parameters`:** Ongoing discussion regarding the level of machine-readability for this field (JSON value).
+    *   Considered use cases for machine readability (e.g., specifying algorithms, detailed measurement parameters).
+    *   The current approach favors a generic link parameter, with the understanding that a dedicated registry or updates to deployment considerations might be needed later for more formalized machine readability.
+
+### ALTO YANG Design Model for OAM
+*   **Draft:** "YANG Design Model for ALTO OAM"
+*   **Goal:** Define a YANG model for ALTO server/client operation and management, a currently missing component in ALTO standards.
+*   **Scope:** Focuses on ALTO server/client OAM, capability configuration, and performance monitoring. Explicitly excludes specific implementation details, algorithms, or data structures.
+*   **Objectives:** Support server setup configuration, provide configurable data models for managing ALTO information resources, allow for new ALTO extensions, and include statistics for performance monitoring and security policy.
+*   **Initial Proposal:** Operators can define ALTO information resources (ID, type, dependencies) and specify creation algorithms (e.g., Layer 3 unicast cost) by importing data from various sources (BGP, PCE, network management) via reactive or proactive polling.
+*   **Missing Parts (Future Work):** Server discovery, enhanced data source recruitment, partial communication support, integrated policies, and lifecycle management.
+*   **Mailing List Feedback:** Discussed separating data source differentiation (now allowing augmentation for specific sources) and clarified that the information resource creation interface is reactive. The ALTO client YANG model is considered for specific use cases like network application integration.
+
+### ALTO Transport over HTTP/2 and HTTP/3
+*   **Draft:** "ALTO Transport"
+*   **Goal:** Provide ALTO transport over new protocols, focusing on systematic analysis and real-world deployment.
+*   **Four Focus Areas:**
+    1.  Analyze ALTO service workload and requirements.
+    2.  Evaluate current ALTO transport (HTTP 1.1, RFC 8895 ALTO SSE) through benchmarking.
+    3.  Design and evaluate benefits of integrating HTTP/2 and HTTP/3.
+    4.  Compare with generic network information transport to applications.
+*   **Workload Analysis:** Detailed analysis of major ALTO services, including their design (GET/POST), input/output, encoding, data structures (e.g., 3-level key-value store), scaling properties (e.g., Network Map size based on CIDRs), and stability expectations.
+*   **Benchmarking Plan:** Binocs and the Great Big Network will provide infrastructure for evaluation. Five benchmarking services (Cost Map, Endpoint, Unified Property Map, CDN Node, Path Vector) will be deployed.
+*   **Initial HTTP/2 Design:** Aims to move control channels into HTTP/2, supporting standard ALTO resource operations and incremental updates.
+*   **Key Challenge: Incremental Updates:** Explored options like using a single HTTP stream with a content indication layer (e.g., ALTO SSE) or opening a new HTTP/2 stream per update (which might conflict with HTTP/2 push semantics).
+*   **AD Feedback:** Emphasized focusing on new APIs/mechanisms provided by HTTP/2 and HTTP/3 (e.g., priorities, push) rather than re-specifying basic ALTO requests over multi-streaming.
+
+### ALTO Deployment Experience: G2 (Bottleneck Service)
+*   **Presentation:** Discussed integration of the G2 system's "bottleneck service" with ALTO.
+*   **Bottleneck Service:** Provides critical information for applications to predict network performance and optimize traffic, particularly in networks using dynamic resource allocation (e.g., max-min fairness).
+*   **Use Cases:** Demonstrated for throughput prediction (e.g., predicting flow rate before connection establishment) and traffic optimization (e.g., rate-limiting specific flows to boost another based on flow gradients).
+*   **G2 Framework:** An academic/industry initiative moving towards deployment in supercomputing and data center networks, showing promising results in TCP throughput prediction and network planning.
+*   **ALTO Integration:** Existing ALTO base protocols and extensions can provide site-level throughput prediction. More advanced scenarios might require minor ALTO additions (e.g., flow-level filters).
+
+### ALTO Deployment Experience: Flow Director
+*   **Presentation:** Shared experiences from Flow Director, a system deployed in production that collects ISP internal state, computes path mappings, and communicates this to hypergiants (CDNs) using ALTO.
+*   **Benefits:** Showed significant reduction in long-haul traffic for ISPs and decreased latency (server-client distance) by ~40% for hypergiants, demonstrating the value of network-application integration.
+*   **ALTO Implementation:** Implemented base ALTO protocol features (IRD, Netmap, Filter, Cost Map, Endpoint, Path Vector services).
+*   **Differences from RFCs:** PIDs are identified as IP subnets rather than single IP addresses. Incremental updates were partially implemented.
+*   **Operational Data:** ALTO server updates network maps and cost maps every 5 minutes. Network maps average 6MB for ~250K prefixes across 1700 PIDs; cost maps average 47MB for >1.3M PID pairs.
+*   **Challenges:**
+    *   Long calculation times for maps (network map available before cost map).
+    *   Limitation in `endpointprop` services where the RFC specifies IP addresses, but Flow Director needs to request costs for regions or client prefixes.
+*   **Proposed Solutions:** Publish all maps together, support prefixes in `endpointprop` services, and add metadata fields (TTL, timestamps) to ALTO responses.
+
+### Non-Charter Item: ALTO as IETF Network Exposure Function (NEF)
+*   **Concept:** Position ALTO as the IETF's network exposure function, similar to 3GPP's NEF, to inform applications about network status and capabilities.
+*   **Capabilities:** ALTO can expose topology, performance metrics, segmented views (Path Vector), and potentially dynamic IP addressing and underlying views for overlays. Discussions also include multipath support.
+*   **Interaction Model:** ALTO would act as an NEF for both external clients (CDNs, cloud orchestration, 3GPP AFs) and internal clients (SDN controllers, internal CDN logic).
+*   **Next Steps:** Gather feedback and prepare a detailed expression on ALTO's role as an IETF NEF.
+
+### Non-Charter Item: Compute-Aware Networking (CAN) Use Cases
+*   **Concept:** Integrate compute and networking infrastructure to optimize user experience in edge computing environments, addressing challenges like scattered sites and dynamic loads.
+*   **Relationship with ALTO:** ALTO could realize awareness, control, and scheduling functions by providing interfaces for managing compute and network resources, supporting both service deployment (static information) and dynamic scheduling (real-time mobility, service requirements).
+*   **Challenges:** The "real-time" nature of information needed for CAN may exceed current ALTO capabilities.
+*   **Discussion Points:** Whether to use multi-protocol or single-protocol for information collection (single-protocol preferred due to synchronization issues), decoupling ALTO from specific CAN architectures, and addressing real-time information refreshment.
+
+### Non-Charter Item: Bandwidth Estimation (BWE) on OpenNetLab
+*   **Context:** Poor Call Rate (PCR) in real-time communication (RTC) is heavily influenced by bandwidth estimation (BWE). Traditional BWE is proprietary and difficult to innovate.
+*   **Proposal:** Make BWE an open, standard service using the ALTO concept, enabling community contribution and customization.
+*   **OpenNetLab Challenge:** An MMSys challenge demonstrated significant BWE improvements (Nanjing University team outperformed Google's congestion control).
+*   **ALTO Integration:** A model where an ALTO server (independent or co-located with clients) provides estimated bandwidth to RTC clients via a standard ALTO interface.
+*   **Technical Consideration:** The frequency of BWE data exchange in RTC (~200ms) is feasible for ALTO to support.
+
+## Decisions and Action Items
+*   The **ALTO Path Vector Extension** document (draft version 19) is ready to proceed to the IESG ballot. The working group will not block progression due to unresponsive last call reviewers.
+*   The **ALTO Performance Metric Extension** document will proceed without immediate changes to the `cost-context-parameters` field. Further discussion on machine readability and potential registry creation is deferred to future work (e.g., `rfc7971bis` or deployment considerations).
+*   **Action Item (Flow Director):** Danny is encouraged to take the identified problems and limitations from the Flow Director implementation and deployment experience to the mailing list for further discussion, as they can provide valuable input to ALTO deployment experience updates.
+*   **Action Item (ALTO OAM, CAN use cases):** Presenters (Jason, Luopang) are encouraged to continue discussions on the mailing list for their respective topics to further refine scope and technical details.
+
+## Next Steps
+*   For the **ALTO Path Vector Extension**, the IESG process will move forward to the ballot phase.
+*   For the **ALTO Performance Metric Extension**, the team will continue to engage with Alvin Davies for feedback on the open `cost-context-parameters` issue, but it will not block the current draft.
+*   The **ALTO Transport** team will proceed with systematic workload analysis, benchmarking current ALTO transport, and designing/evaluating HTTP/2 and HTTP/3 integration, with a focus on new mechanisms (e.g., priorities, incremental updates) offered by these protocols.
+*   The working group will consider the interest in standardizing the **G2 bottleneck service** as part of the ALTO framework.
+*   The **ALTO as IETF NEF** draft will collect feedback from the working group and refine its proposal to position ALTO in this role.
+*   Discussions on **Compute-Aware Networking** use cases and **Bandwidth Estimation as an ALTO service** will continue on the mailing list to explore their potential for ALTO.

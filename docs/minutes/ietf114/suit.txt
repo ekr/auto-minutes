@@ -1,0 +1,78 @@
+**Session Date/Time:** 28 Jul 2022 20:00
+
+# suit
+
+## Summary
+
+The SUIT working group meeting at IETF 114 covered updates on several core documents, including the SUIT Manifest, Multiple Trust Domains, Update Management, Firmware Encryption, SUIT Reports, MUD Extension, and Mandatory to Implement (MTI) Algorithms. Key discussions included refining how SUIT manifests are referenced within EAT/TEE, handling firmware encryption for partial updates, and defining a set of MTI algorithms, which proved to be a particularly challenging topic due to diverse implementation constraints and a rapidly evolving cryptographic landscape. Decisions were made to address hackathon issues and advance several documents.
+
+## Key Discussion Points
+
+*   **Hackathon Report & TEE Integration:**
+    *   **Manifest Reference in TEE:** Implementers of TEE encountered issues using human-readable `software-name` and `software-version` claims for machine-readable attestation. A proposal emerged to allow the `manifest-claim` in TEE to reference a SUIT manifest via a URI and sequence number, rather than requiring a full SUIT envelope. This would require a new CoAP content format value. Brendan suggested that the existing SUIT report already provides an unambiguous manifest reference and that the issue arises from taking system property claims out of the SUIT report.
+    *   **Manifest Sequence Number Parameter:** A need was identified for a SUIT parameter for `manifest-sequence-number` within SUIT system property claims (used in TEE query responses), to simplify policy authoring and lookup compared to manifest digests. It was proposed to add this to an extensions document (e.g., Update Management).
+*   **SUIT Manifest Document (draft-ietf-suit-manifest-18):**
+    *   Mostly editorial changes.
+    *   **Structural Change:** Added a reference to the algorithm profile (MTI) document.
+    *   **Technical (Breaking) Change:** Reordered keys in the SUIT manifest for canonical CBOR encoding, prioritizing recipient-necessary and unseverable parameters. The `canonical-uri` was moved to the front. Feedback from implementers on this breaking change was requested.
+*   **Multiple Trust Domains Document:**
+    *   **Uninstall Command:** After discussions in the TEE WG, it was determined that an `uninstall` command sequence is necessary and must be added to the unseverable manifest members.
+    *   **Reference Count Issue:** A concern was raised about double-decrementing reference counts if two generations of the same manifest attempt to unlink a component.
+*   **Update Management Document:**
+    *   The list of update management actions is acknowledged as incomplete, expecting growth via IANA registry.
+    *   The two technical issues from the hackathon report (manifest reference, sequence number parameter) were noted as potential additions to this document if changes were to be made.
+*   **Firmware Encryption Document:**
+    *   **AAD vs. Streaming Updates:** The primary issue is supporting partial flash image updates (e.g., MCUboot) which precludes the direct use of AAD (Authenticated Encryption with Associated Data) and requires recovery from power loss.
+    *   **Proposed Solution:** Use AES Counter Mode or CBC with external integrity verification (e.g., signature). This conflicts with COSE wording that algorithm identifiers are for AAD.
+    *   **Path Forward:** Propose a document explaining this specific SUIT context, register code points for AES Counter Mode/CBC, and seek COSE WG adoption.
+    *   **Open Issues:** Explore COSE counter-signatures for the encryption wrapper to save bytes; refine wording on KEK verification to prevent reuse of KEK with all zeros for subsequent encryption; re-evaluate the position of `suit-encryption-info` within SUIT directives.
+    *   **Dependency:** Synchronization with the HBKE document in the COSE WG is ongoing.
+    *   **AES CTR Registration:** Discussion on registering AES CTR as a deprecated algorithm, acknowledging the COSE WG chair's recommendation.
+*   **SUIT Reports Document:**
+    *   **Attestation Evidence:** A significant addition is a section explaining how a SUIT report can function as attestation evidence, allowing a verifier to reconstruct device state from the full set of SUIT records. This benefits constrained nodes by enabling an append-only log.
+    *   **Merged Logs Proposal:** Brendan proposed merging the two existing logs (debug and evidence, which includes TEE's system property claims) into a single log for simplified implementation on embedded devices. This requires feedback, especially from TEE implementers.
+    *   **Security Considerations:** The security considerations section is currently minimal. It needs to be expanded to address how to encrypt SUIT reports containing sensitive information, covering secure transport, signing, and potential encryption mechanisms, possibly including a threat model.
+*   **SUIT MUD Extension Document:**
+    *   A simple extension to carry MUD files, URIs, or signer public keys, leveraging the SUIT update pipeline.
+    *   It replaces conventional MUD delivery by allowing network infrastructure to receive MUD information via the manifest *before* the device connects.
+    *   It is a severable element and relies on device fingerprinting or attestation in the network.
+    *   No open issues were identified, and it is intended to be referenced by the IoT.NETs document.
+*   **Mandatory to Implement (MTI) Algorithms Document:**
+    *   **Challenge:** Defining MTI algorithms is complex due to the asymmetric nature of SUIT (capable system to constrained device), the desire for interoperability, and the moving target of cryptographic standards (e.g., PQC). Implementers may not comply if unwanted algorithms are mandated.
+    *   **Strawman Proposal:**
+        *   Symmetric Aead: AES-GCM-128, AES-GCM-256 (with expectation of AES-CTR/CBC later for streaming).
+        *   Symmetric Authentication: AES-MAC-128, AES-MAC-256.
+        *   Classical Asymmetric Authentication: ES256.
+        *   Key Exchange: HPKE (to be clarified as a COSE-structured mechanism, not a direct HPKE library).
+        *   PQC: Hybrid (HSS-LMS for authentication, classical HPKE for key exchange).
+    *   **Alignment with TEE:** The TEE protocol document currently requires ES256 or EDDSA for constrained nodes, with the unconstrained side supporting both. A strong desire was expressed to align SUIT's MTI with TEE's for common constrained device implementations.
+    *   **Profiles vs. Core MTI:** Discussion whether MTI should be defined directly in SUIT (as a profile for firmware updates) or left to specific use-case profiles (like EAT does). The separation of this document from the main manifest allows for easier future updates or obsolescence of MTI definitions.
+
+## Decisions and Action Items
+
+*   **SUIT Manifest Document:**
+    *   Brendan to update the CDDL with fixes and reorder keys early next week.
+    *   The document is expected to proceed to working group last call quickly once these changes are made and existing comments addressed, assuming no new significant issues are introduced.
+*   **Multiple Trust Domains Document:**
+    *   **Decision:** An `uninstall` command sequence is required and will be added as an unseverable manifest member.
+*   **Firmware Encryption Document:**
+    *   The document will propose using AES Counter Mode/CBC for streaming updates, requiring external integrity verification (e.g., signature).
+    *   Action: A new document will be written to justify this approach within COSE, and code points for AES Counter Mode/CBC will be sought.
+*   **SUIT Reports Document:**
+    *   Action: The security considerations section will be significantly expanded in the next version, addressing encryption of sensitive data and potentially including a threat model.
+    *   The proposal to merge debug and evidence logs (removing system property claims) will be taken to the list for feedback, especially from TEE implementers.
+*   **SUIT MTI Document:**
+    *   **Decision:** The question of adopting the MTI document into the working group will be taken to the mailing list for further discussion and resolution. There were no objections in the room or virtually to adopting it in its current strawman state for continued work.
+*   **Hackathon Issues (TEE Integration):**
+    *   **Manifest Reference:** No objection to placing the mechanism for referencing a SUIT manifest (using URI and sequence number, potentially as an "or" with digest) into the **SUIT Report** document, where it can aggregate information into a "SUIT reference."
+    *   **Manifest Sequence Number Parameter:** This issue will be taken to the mailing list for further discussion.
+
+## Next Steps
+
+*   Brendan to post updated SUIT Manifest draft with CDDL fixes and reordered keys early next week.
+*   The SUIT Reports document will have its security considerations section expanded in the next draft.
+*   The SUIT MTI document adoption will be discussed and decided on the mailing list.
+*   The proposal to merge SUIT Report logs will be discussed on the mailing list.
+*   The second hackathon issue regarding the manifest sequence number parameter will be discussed on the mailing list.
+*   Further discussions on the Firmware Encryption document's strategy for streaming AAD alternatives will continue, including the development of a supporting document for COSE.
+*   Working group members are encouraged to provide feedback on the breaking changes in the SUIT Manifest and the strawman MTI proposal.

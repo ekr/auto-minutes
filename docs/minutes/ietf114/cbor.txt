@@ -1,0 +1,79 @@
+**Session Date/Time:** 28 Jul 2022 21:30
+
+# cbor
+
+## Summary
+
+The CBOR working group meeting at IETF 114 covered the status of existing documents, including newly published RFCs and those in the RFC Editor queue. Significant technical discussions revolved around the "Time Tag" document, specifically incorporating Sedate WG considerations and the potential for "floating time" support. The "CBOR Packed" draft was discussed, focusing on the concept of "tag equivalence" to address issues with generic tag validity. The recently published RFC 9254 (YANG/CBOR) was highlighted for its implications on defining CBOR data using YANG, emphasizing future alignment between CBOR's CDDL and YANG. Finally, a detailed roadmap for CDDL 2.0 was presented, prioritizing "composition" for modular specifications and "annotation" for richer schema validation feedback, along with a proposed timeline and feedback from implementers.
+
+## Key Discussion Points
+
+### Document Status
+*   **RFC 9164 (CBOR Tags for IPv4 and IPv6 Addresses and Prefixes)**: Published.
+*   **RFC 9165 (Additional Control Operators for CDDL)**: Published (essentially CDDL 1.1).
+*   **File Magic**: In RFC Editor queue (finished IESG processing).
+
+### Time Tag (draft-ietf-cbor-time-tag-01)
+*   **Purpose**: To extend existing CBOR time tags (0, 1) to carry additional information. Tag 1001 is already registered and in use, designed for extensibility.
+*   **Sedate WG Integration**: Sedate is converging on a standard for text-form Internet timestamps (RFC 3339 based) with added "hints" (time zone hints, Unicode calendar extensions). The Time Tag document proposes adding new keys (-10, -11, +10, +11) to incorporate Sedate's timezone hints and general extension suffixes.
+*   **CBOR-Specific Extensions**: While Sedate is limited to RFC 3339 capabilities (UTC, time zones), the Time Tag is not. It already supports different time scales like TAI or Leap-Smeared UTC.
+*   **Floating Time**: Discussion around adding support for "floating time" (local time without UTC relation), similar to the existing zoneless date tag (100). This could be inspired by NTPv5's use of a "time scale" field for local time.
+*   **Publication Strategy**: Proposed synchronized publication with Sedate, but *without* waiting for NTPv5's completion due to its distant timeline (per Ira W. suggestion).
+*   **Alternative**: Consider if "floating time" should be a separate tag rather than part of tag 1001.
+
+### CBOR Packed (draft-ietf-cbor-packed)
+*   **Current State**: Simpler design with a "function tag" concept and an extension point. Ongoing implementation work, likely requiring a second Working Group Last Call.
+*   **Tag Validity Issue (Tag Equivalence)**:
+    *   RFC 8949 defines tag validity top-down (a tag defines its content structure), but not upwards (how an outer tag perceives an inner tag).
+    *   This can cause issues for "legacy generic decoders" which may break if they encounter an unexpected inner tag (e.g., a reference tag inside a structure where it's not explicitly allowed).
+    *   Examples: RFC 8746 (Typed Arrays) enumerates valid content tags, preventing future additions. CBOR Packed's reference tags could face similar validation failures.
+    *   Brendan pointed out that a validator *should* know if it's inside a CBOR Packed structure, but Carsten noted that 8949 allows generic decoders to pass unknown tags to the application, potentially leading to validation failure at that stage.
+*   **Proposed Solution (Tag Equivalence)**: Define a concept where a tag can declare what it *looks like* to an enclosing tag for validity purposes (e.g., a data compression tag stands in for a byte string).
+*   **Limitations**: This concept doesn't apply across fundamentally different data domains (e.g., `tag 4` vs `tag 264` for floating points).
+*   **Standardization Questions**:
+    *   Should "tag equivalence" be part of the CBOR Packed specification or a separate document?
+    *   Should it formally "update" RFC 8949? (Barry L. indicated that a Proposed Standard can update an Internet Standard, with the new feature being at the proposed standard level).
+*   **CDDL Implications**: CDDL currently lacks syntax to express tag equivalence; this would require a separate future effort.
+
+### RFC 9254 (YANG/CBOR)
+*   **Context**: A standard from the Core WG to encode YANG-defined data in CBOR for constrained devices.
+*   **Benefits**: Allows defining CBOR data using YANG, with efficient encoding of YANG names as integers.
+*   **Impact**: Introduces a new tool for the CBOR ecosystem. Emphasizes the need for future alignment between CDDL and YANG, as they both define data structures.
+*   **Example of Alignment**: CDDL's regular expression syntax has already been aligned with YANG's.
+
+### CDDL 2.0 Roadmap
+*   **CDDL 1.1 (RFC 9165)**: Showed that significant additions can be made using existing extension points (control operators).
+*   **Future Work (Not 2.0)**: JSON grammar for CDDL (for tool interchange).
+*   **CDDL 2.0 Priorities**:
+    *   **Composition**:
+        *   Building CDDL specifications from multiple files, enabling libraries (export/import interfaces, naming/namespaces).
+        *   Supporting "alternatives" (specifications that generate different structures based on parameters).
+        *   Automation: Making libraries available from RFCs, Internet-Drafts, registries, and non-IETF sources (e.g., 3GPP).
+        *   Compatibility Goal: CDDL1-compatible syntax (a CDDL1 file is a CDDL2 file, and a CDDL2 file can be useful to a CDDL1 processor). This might involve using comments, control operators, or unused rules, potentially via a preprocessor-like mechanism.
+        *   Brian T. (implementer) affirmed composition is "very helpful" due to current limits of copying/pasting. He expressed concern about using comments for new syntax and suggested new syntax elements with clear rules for converting back to CDDL1.
+    *   **Annotation**:
+        *   Going beyond simple "valid/invalid" validation feedback.
+        *   Providing richer information (e.g., semantic meaning of rules) from spec writers to annotators.
+        *   Defining a "Post-Schema Validation Instance" (PSVI) data model for augmented instances, usable across JSON, CBOR diag, YAML, and CBOR.
+        *   Brendan wondered how much of this belongs in CDDL versus external annotation.
+    *   **Embedding**: Lawrence provided feedback on limitations of `.feature` for embedding CBOR in JSON (and vice-versa).
+*   **Proposed Timeline**:
+    *   **IETF 115**: Prototype composition engine (preprocessor), first elements of annotation semantics (PSVI definition). Decide on functionality to pursue.
+    *   **IETF 116**: Technically complete specification, alignment with implementations, decide publication strategy.
+    *   **Longer Term**: Increased IANA integration for automation-friendly registries, improved integration with YANG.
+*   **Call to Implementers**: What toolkit elements are desired to best participate in development?
+
+## Decisions and Action Items
+
+*   **Time Tag Floating Time**: The discussion regarding the addition of "floating time" to the Time Tag document will be continued on the mailing list.
+*   **CBOR Packed Tag Equivalence**: The document needs to make explicit text regarding the assumptions of legacy decoders and the concept of tag equivalence. A second Working Group Last Call is likely.
+*   **CDDL 2.0 Discussions**: Further discussions on composition, annotation, and the challenges of embedding (as raised by Lawrence) will be pursued on the mailing list.
+*   **Next Interim Call**: The next interim call is scheduled for August 24th. The Tag Registry item and other remaining agenda points from this meeting will be added to its agenda.
+
+## Next Steps
+
+*   Working group members are encouraged to engage on the mailing list regarding:
+    *   Specific use cases and arguments for or against adding "floating time" to the CBOR Time Tag.
+    *   Details of Lawrence's experience with embedding CBOR/JSON and limitations of `.feature` in CDDL.
+    *   Feedback on the proposed CDDL 2.0 composition and annotation mechanisms, particularly the syntax approach (comments vs. new syntax elements).
+*   The chairs will prepare for the next interim call on August 24th, including the Tag Registry item and any remaining open issues.

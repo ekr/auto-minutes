@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="6man.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-6MAN-20220322-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 22 Mar 2022 09:00</p>
+<h1>6man Meeting Minutes</h1>
+<h2>Summary</h2>
+<p>The 6man working group session included updates on existing working group documents and initial presentations for several new drafts. Key discussions revolved around the <em>IPv6 Hop-by-Hop Options Processing Procedures</em> draft, focusing on clarifying &quot;fast path&quot; vs. &quot;slow path&quot; terminology and the incentives for wider HBH header support. The <em>VTN ID</em> draft discussed terminology alignment with TEAS and packet processing procedures for unmatched VTNs. The <em>URI Zone ID</em> draft highlighted the challenges of browser community adoption and the need for user pressure. A new draft on <em>SRv6 Segment Identifiers</em> proposed a new IANA prefix allocation and clarified compliance with addressing architecture. Additionally, the session introduced several new topics including <em>Path MTU Detection in Multipath</em>, <em>Neighbor Discovery for Prefix Instability</em>, <em>Multicast Routing Header</em>, <em>APN in IPv6 Extension Header</em>, and <em>Native IPv6 Multicast</em>, for which further discussion was directed to the mailing list.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Introduction and Agenda</strong></p>
+<ul>
+<li>Tom Herbert's presentation on extension header limits was skipped due to family obligations; feedback on his draft is encouraged on the mailing list.</li>
+<li>Xu Ping and Pascal Thubert volunteered for minutes.</li>
+</ul>
+</li>
+<li>
+<p><strong>Document Status Updates</strong></p>
+<ul>
+<li><strong>Published RFC</strong>: RFC 9131 (Gratuitous Neighbor Discovery).</li>
+<li><strong>At IESG</strong>:
+<ul>
+<li><strong>SRv6 OAM</strong>: One DISCUSS from Ben has been addressed in revision 11/13. AD is following up.</li>
+<li><strong>Alternate Marking Method</strong>: Waiting for IPPM work to be revved to Proposed Standard (normative dependency). Martin Duke is AD sponsoring.</li>
+<li><strong>Minimum Path MTU Hop-by-Hop Option</strong>: Ballot issued, telechat requested for April.</li>
+</ul>
+</li>
+<li><strong>New Working Group Documents</strong>:
+<ul>
+<li>Zone Identifiers (adoption call passed).</li>
+<li>Limits on Sending and Processing IPv6 Extension Headers (Tom Herbert's draft).</li>
+<li>VTN Identifier in IPv6.</li>
+<li>Hop-by-Hop Options Processing Procedures.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>IPv6 Hop-by-Hop Options Processing Procedures (draft-ietf-6man-hbh-processing)</strong> (Gorry Fairhurst &amp; Bob Hinden)</p>
+<ul>
+<li><strong>Current State</strong>: HBH options are generally not working in the Internet; routers commonly drop them. The document aims to define what happens next.</li>
+<li><strong>Changes from Individual Draft</strong>: Incorporated WG feedback. The &quot;elephant in the room&quot; is the terminology for accelerated packet processing (e.g., &quot;fast path&quot;).</li>
+<li><strong>Issue Tracker</strong>: An issue tracker has been enabled to capture and discuss comments and questions.</li>
+<li><strong>Specific Issues Discussed</strong>:
+<ul>
+<li><strong>Basic Extension Header Experience</strong>: Reference RFC 7827.</li>
+<li><strong>Size of Extension Headers</strong>: Discussed whether different sizes are acceptable; not necessarily a saving to enforce one size.</li>
+<li><strong>Encoding HBH in Destination Address</strong>: Proposal to encode HBH processing in the destination address was rejected as it changes the IPv6 architecture.</li>
+<li><strong>Why Ignore HBH?</strong>: Fundamental question: What benefits do leading-edge line-speed routers gain if they <em>don't</em> ignore HBH headers? This needs to be clearly articulated.</li>
+<li><strong>SHOULD/MUST Semantics</strong>: Requires careful definition in context.</li>
+<li><strong>Payload Processing</strong>: RFC 9098 and Tom Herbert's work may be relevant regarding forwarding nodes looking into transport headers.</li>
+<li><strong>Terminology for Forwarding</strong>:
+<ul>
+<li>&quot;Full Forwarding Rate&quot; was proposed to replace &quot;Fast Path/Slow Path&quot;.</li>
+<li><strong>Torlas</strong>: Suggested a questionnaire to gather experience. Proposed &quot;must be able to ignore&quot; as a core requirement, and &quot;should be able to process&quot; as secondary.</li>
+<li><strong>Kurtis</strong>: &quot;Full forwarding rate&quot; is not always achievable. &quot;Fast path/slow path&quot; might be better; &quot;slow path&quot; implies CPU processing.</li>
+<li><strong>Ben Maddison</strong>: Emphasized &quot;determinism of performance&quot; and how policers are configured, rather than just raw forwarding rate.</li>
+<li><strong>Torlas</strong>: Noted performance variations on edge routers (e.g., layer 4 inspection causing performance degradation) even within &quot;fast path&quot; and that simple &quot;slow/fast&quot; may not capture complexity. The exact performance characteristic should be part of the discussion for specific HBH functionality.</li>
+<li><strong>Chairs' Conclusion</strong>: &quot;Fast path&quot; and &quot;slow path&quot; are useful terms but need careful definition, which will be addressed in the issue tracker.</li>
+</ul>
+</li>
+<li><strong>RFC 8200 Clarification</strong>: RFC 8200 was about progressing to full standard, not changing the spec. This new work is about new design.</li>
+<li><strong>Malformed Extension Headers</strong>: Questioned if this is a significant issue now, or if initial IPv6 design was not careful enough.</li>
+<li><strong>Deprecate Router Alert</strong>: Waiting on Ron Bonica's work before making decisions.</li>
+<li><strong>Router Views</strong>: Acknowledged varying router capabilities (from large to pocket-sized) affect HBH processing.</li>
+<li><strong>Incentives for Wider Support</strong>: The document needs to explain what HBH processing is useful for to motivate broader adoption.</li>
+<li><strong>Recommendations vs. Requirements</strong>: WG needs to decide if the document will make recommendations or strong requirements (Standard Track). The AD confirmed he expects &quot;big R&quot; recommendations.</li>
+<li><strong>Unrelated Devices</strong>: Agreed that specific HBH options will only be processed by nodes wanting to do so.</li>
+<li><strong>New Options</strong>: Discussion point on whether new options <em>must not</em> require slow path processing.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Carrying VTN ID in IPv6 Extension Header (draft-ietf-6man-vtn-id)</strong> (Jaidong Li)</p>
+<ul>
+<li><strong>Status</strong>: Document adopted earlier this month.</li>
+<li><strong>Purpose</strong>: Introduces a new HBH extension header to carry VTN information for steering packets to allocated network resources.</li>
+<li><strong>Key Comments/Discussions</strong>:
+<ul>
+<li><strong>Terminology</strong>: Alignment with TEAS WG definitions for &quot;VTN Resource ID&quot; vs. &quot;NRP ID&quot;. WG needs to decide whether to generalize the semantics.</li>
+<li><strong>Processing Procedures</strong>:
+<ul>
+<li>If a node skips the HBH header, it cannot apply VTN policies. Recommendation: ensure all nodes involved in a VTN can process the HBH option, either via management or control plane advertisement.</li>
+<li>If a node processes the option but has no matching VTN resources: use a flag to determine behavior (drop packet if flag set, or fall back to best-effort if flag not set).</li>
+</ul>
+</li>
+<li><strong>Semantics and Format</strong>:
+<ul>
+<li>Suggestion to make the tag generic and flexible for other use cases (e.g., network slicing).</li>
+<li>Consider aligning with the HBH processing draft for straightforward processing.</li>
+<li>The option data length field allows variable length. May introduce a flag field for behavior and a reserved field for future extensions.</li>
+<li><strong>Pascal Thubert</strong>: Highlighted a common requirement for signaling logical topology with associated state (e.g., Ripple, DetNet instance IDs). Questioned if a general mechanism is preferred over multiple specific options (one per WG).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Collect further feedback and update the document accordingly.</li>
+</ul>
+</li>
+<li>
+<p><strong>Representing IPv6 Zone Identifiers in URIs (draft-ietf-6man-uri-zone-id)</strong> (Brian Carpenter, presented via video)</p>
+<ul>
+<li><strong>Motivation</strong>: Need to use IPv6 link-local addresses in URIs for operational/diagnostic purposes (e.g., reconfiguring broken devices, Cups printing).</li>
+<li><strong>RFC 6874 Failure</strong>: Previous RFC 6874 was not supported by browsers/WHATWG due to:
+<ul>
+<li>Modifying URI ABNF with <code>%25</code> separator (prevents cut-and-paste).</li>
+<li>Requiring hosts to delete zone IDs from outgoing URIs (violates HTTP, breaks Cups).</li>
+<li>Heuristic acceptance of <code>%</code> vs. <code>%25</code>.</li>
+<li>Forgetting to update IRI syntax.</li>
+</ul>
+</li>
+<li><strong>Proposed Solution</strong>: Simplify to a literal address with a simple percent sign (<code>%</code>) followed by the interface name. Drop other special requirements. Parsers should pass the zone ID to the socket API without validation.</li>
+<li><strong>Feedback</strong>: Browser community will not implement without strong user pressure. IETF should document the behavior and wait for demand.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Mike Ackerman (Enterprise User)</strong>: Supports the work; IPv6 adoption in his enterprise is hindered by this. Asked how users can apply pressure (answer: express interest to vendors).</li>
+<li><strong>Michael Richardson</strong>: Skeptical about user groundswell due to chicken-and-egg, but supports documenting. Believes it will eventually be needed for IPv6-only networks (e.g., home automation).</li>
+<li><strong>Ben Maddison</strong>: Raised potential security concern regarding reconnaissance/data gathering if a browser is tricked into following such a URL, suggesting consideration of &quot;degrees of trust&quot; for these URIs.</li>
+<li><strong>Lorenzo Colitti</strong>: Sees value in documenting the correct format, mainly for manual user input or debugging. Doubts HTTP servers will generate such URLs.</li>
+<li><strong>Michael Richardson</strong>: Clarified that IoT devices often use mDNS for discovery, leading to local, relative links, mitigating some concerns.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>SRv6 Segment Identifiers (draft-ietf-6man-srv6-sids-characteristics)</strong> (Suresh Krishnan)</p>
+<ul>
+<li><strong>Goal</strong>: Document characteristics of SRv6 SIDs and their relationship to IPv6 addressing architecture.</li>
+<li><strong>RFC 8986 (SRv6 Network Programming)</strong>: Defines SRv6 SIDs (locator, function, arguments) which do <em>not</em> comply with RFC 4291 (IPv6 Addressing Architecture).</li>
+<li><strong>Recommendation</strong>: Document this deviation and state that SRv6 SIDs are <em>not</em> acceptable for assignment to host interfaces.</li>
+<li><strong>Precedent</strong>: Similar deviations exist for RFC 6052 (IPv4-in-IPv6 translators) and RFC 7343 (ORCHIDv2).</li>
+<li><strong>Non-SRv6-Aware Nodes</strong>: These nodes should treat SIDs as regular routing addresses, applying RFC 7608 (variable length prefixes).</li>
+<li><strong>Key Recommendations</strong>:
+<ul>
+<li>Request a dedicated prefix allocation from IANA from the global unicast space, but <em>outside</em> the currently defined 2000::/3 block, to allow filtering at SR domain edges.</li>
+<li>Address issues in the SRv6 Compression/Extraction draft (error handling, OAM, <code>Segments Left</code> field).</li>
+<li>Emphasize that generic IPv6 tunneling security considerations apply.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Jen Linka</strong>: Requested clarification that the IANA allocation is truly outside 2000::/3 and that routing expectations (e.g., globally routable) are explicitly clear.</li>
+<li><strong>Ron Bonica</strong>: Asked about the draft's scope regarding SRH with zero segments (for destination options, flags, TLVs), suggesting it might need to be addressed. Suresh indicated this is currently deferred to the SR compression draft but open to discussion.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Source Address Selection Policy for Foreign ULAs (draft-ietf-6man-foreign-ula)</strong> (Ted Lemon)</p>
+<ul>
+<li><strong>Problem Statement</strong>: Illustrated a scenario where a home network (GUA from CE router) has an internal router (ULA network). Adding a stub router that advertises <em>another</em> ULA on the home network link causes communication to break.</li>
+<li><strong>Cause</strong>: Source Address Selection (SAS) rules, specifically the shortest match, pick the foreign ULA for communication, but the CE router is unaware of this foreign ULA and drops/forwards packets incorrectly.</li>
+<li><strong>Proposed Solutions</strong>: Either routers should listen to RAs (unlikely/problematic) or SAS rules should be modified to not treat ULAs with foreign Global Identifiers as &quot;close.&quot;</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Michael Richardson</strong>: Questioned if it ever worked correctly, suggesting the CE router should always advertise a ULA (per RFCs), and if so, the problem might always exist. Advocated for a crisper problem statement.</li>
+<li><strong>Martin Duke</strong>: Believed it's a configuration issue; the CE router should have a ULA, and the internal network's ULA should be part of a larger ULA prefix.</li>
+<li><strong>Lorenzo Colitti</strong>: Called ULAs a &quot;terrible idea.&quot; Argued that changing SAS rules to scope ULAs to a /48 is impossible (breaks legitimate use cases). Concluded that routers need to listen to RAs, despite implementation challenges.</li>
+<li><strong>Melanie (Enterprise)</strong>: Stated this is a real problem in enterprise/SOHO networks. Emphasized the importance of ULAs to users and the need for clarity on their limited domain. Suggested this might be a v6ops problem.</li>
+<li><strong>Jen Linka</strong>: Agreed it needs a solution but disagreed with changing SAS rules. Suggested the problem stems from trying to use RAs as a routing protocol, and that it might not be ULA-specific.</li>
+<li><strong>Eric Klein</strong>: Suggested the ULA router might advertise its ULA inside a Provisioning Domain (PVD) ID, if PVD implementations were available.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Path MTU Detection in Multipath Scenarios (draft-chengwan-6man-multihop-pmtud-ext)</strong> (Godfrey Chen)</p>
+<ul>
+<li><strong>Problem</strong>: In multipath networks, traditional PMTUD fails because hash-based load balancing can send PMTUD probe packets and service packets down different paths, leading to packet loss if one path has a smaller MTU.</li>
+<li><strong>Proposal</strong>: Use a hop-by-hop extension header to allow duplication of PMTUD probe packets at the ingress router (R1) across multiple downstream links. Responses from the egress node (R4) allow R1 to calculate the minimum PMTU across all paths.</li>
+<li><strong>Mechanism</strong>: Uses HBH for request (m-tag, d-tag), Destination Options for response, sequence numbers for alignment.</li>
+<li><strong>Trigger</strong>: Can be triggered by ICMPv6 Packet Too Big messages.</li>
+<li><em>No time for discussion. Comments to the list.</em></li>
+</ul>
+</li>
+<li>
+<p><strong>Neighbor Discovery for Prefix Instability (draft-bonica-6man-nd-prefix-instability)</strong> (Paulo Salvador)</p>
+<ul>
+<li><strong>Problem</strong>: Addresses issues caused by IPv6 prefix instability using Neighbor Discovery (RFC 4861/4862).</li>
+<li><strong>Existing Options</strong>: Adjusting timers (valid/preferred lifetime) as per RFC 8978.</li>
+<li><strong>Proposal</strong>: Modify ND protocol behavior. Introduced a &quot;synchronization flag&quot; in Router Advertisements (RAs) to indicate to hosts that the RA is complete and all configuration information has been signaled. This aims to improve state synchronization during misconfiguration, outages, or abrupt reloads.</li>
+<li><em>No time for discussion. Comments to the list.</em></li>
+</ul>
+</li>
+<li>
+<p><strong>Multicast using Multicast Routing Header (draft-chen-6man-mcast-routing-hdr)</strong> (Chen Ping)</p>
+<ul>
+<li><strong>Problem</strong>: Existing SR-based multicast solutions have weaknesses, particularly scalability.</li>
+<li><strong>Proposal</strong>: Introduces a new Multicast Routing Header (MRH) as an alternative. It's a new routing type containing a &quot;subtree from next hop&quot; structure, with fields for <code>Segments Left</code> (SL), <code>Number of Branches</code> (MB), and <code>Branch Indicator</code> (B).</li>
+<li><strong>Operation</strong>: Ingress nodes encapsulate packets with MRH, send copies to next hops. Each copy's MRH fields are updated for its specific link. Egress nodes decapsulate.</li>
+<li><strong>Comparison to SRv6</strong>: Aims for a compressed header from the start, similar segment-by-segment forwarding, but with recursive bit string structure for multiple addresses (replication).</li>
+<li><strong>Work Split</strong>: Discussion on how to split extensibility work between 6man and PIM WGs proactively.</li>
+<li><em>No time for discussion. Details and comments to PIM WG and 6man list.</em></li>
+</ul>
+</li>
+<li>
+<p><strong>APN in IPv6 Extension Header (draft-li-6man-apn-ipv6-extension-header)</strong> (Xu Ping)</p>
+<ul>
+<li><strong>Proposal</strong>: Encapsulate Application-aware Networking (APN) information in an outer tunnel header, removed at the tunnel end. Used for fine-granularity traffic steering or performance measurement.</li>
+<li><strong>Request</strong>: Early IANA allocation for code points.</li>
+<li><em>No time for discussion. Chairs/ADs to discuss early allocation request and bring to the list.</em></li>
+</ul>
+</li>
+<li>
+<p><strong>Native IPv6 Multicast (draft-thaler-6man-native-ipv6-mcast-srv6-sr-ext)</strong> (Torlas Eir)</p>
+<ul>
+<li><strong>Proposal</strong>: A native IPv6 solution for stateless Point-to-Multipoint multicast services, extending existing SRv6 architecture and terminology.</li>
+<li><strong>Mechanism</strong>: Uses a new Hop-by-Hop Extension Header. Aims to start with a compressed header, similar segment-by-segment forwarding as SRH, but using a recursive bit string structure for replication.</li>
+<li><strong>Egress</strong>: Aims to keep similar TLVs as SRH.</li>
+<li><strong>Rewrite Options</strong>: Discussed different options for rewriting the destination address: extract/rewrite, single segment offset, or offset+length.</li>
+<li><strong>Work Split</strong>: Discussion on splitting extensibility between 6man and PIM to bake in extensibility upfront.</li>
+<li><em>No time for discussion. Comments to the list, attend PIM WG for more details.</em></li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>IPv6 Hop-by-Hop Options Processing Procedures</strong>:
+<ul>
+<li><strong>Decision</strong>: The chairs will continue with the draft, focusing on defining &quot;fast path&quot; and &quot;slow path&quot; carefully and addressing the issues in the issue tracker.</li>
+</ul>
+</li>
+<li><strong>Carrying VTN ID in IPv6 Extension Header</strong>:
+<ul>
+<li><strong>Action Item</strong>: The working group needs to discuss and decide whether to generalize the VTN ID option or keep it specific.</li>
+</ul>
+</li>
+<li><strong>Representing IPv6 Zone Identifiers in URIs</strong>:
+<ul>
+<li><strong>Decision</strong>: The IETF will advance this draft to precisely document the required browser behavior, recognizing that adoption will likely await strong user pressure.</li>
+</ul>
+</li>
+<li><strong>SRv6 Segment Identifiers</strong>:
+<ul>
+<li><strong>Decision</strong>: Request a new prefix allocation from IANA that is outside the currently defined 2000::/3 global unicast block.</li>
+<li><strong>Action Item</strong>: Chairs to start an adoption call for this draft.</li>
+</ul>
+</li>
+<li><strong>APN in IPv6 Extension Header</strong>:
+<ul>
+<li><strong>Action Item</strong>: Chairs and ADs will discuss the request for early IANA allocation and take it to the mailing list.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>IPv6 Hop-by-Hop Options Processing Procedures</strong>: The document editors will continue to refine the terminology for fast/slow path processing, address other issues on the issue tracker, and clarify the incentives for wider HBH support.</li>
+<li><strong>Carrying VTN ID in IPv6 Extension Header</strong>: Authors will collect further feedback from the working group on terminology, processing procedures, and format, updating the document accordingly.</li>
+<li><strong>Representing IPv6 Zone Identifiers in URIs</strong>: The IETF will proceed with documenting the behavior and wait for user demand from enterprises and other users to drive browser implementation.</li>
+<li><strong>SRv6 Segment Identifiers</strong>: Authors to address comments from Jen Linka and Ron Bonica, potentially through offline discussions, ahead of the adoption call.</li>
+<li><strong>Path MTU Detection in Multipath Scenarios, Neighbor Discovery for Prefix Instability, Multicast using Multicast Routing Header, APN in IPv6 Extension Header, Native IPv6 Multicast</strong>: Authors and interested parties are requested to bring comments and discussions to the mailing list due to limited discussion time during the session.</li>
+<li><strong>Hybrid Meeting Feedback</strong>: Attendees (both in-room and remote) are encouraged to provide feedback on the hybrid meeting setup.</li>
+<li><strong>Future Meetings</strong>: Chairs and ADs will discuss the participation model for the next IETF meeting in Philadelphia.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

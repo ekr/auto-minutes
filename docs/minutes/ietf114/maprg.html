@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="maprg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-MAPRG-20220729-1630">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 29 Jul 2022 16:30</p>
+<h1>maprg</h1>
+<h2>Summary</h2>
+<p>The maprg session featured a diverse set of research presentations focusing on internet measurements, including the impact of the Ukraine conflict on internet performance, the adoption and performance characteristics of HTTP/3 (QUIC), dynamic network stack tuning for CDNs, TLS server fingerprinting for security applications, and the accessibility and performance of encrypted DNS resolvers amidst internet censorship efforts. Key discussions revolved around observed trends, methodologies, and the implications of new protocols and configurations on performance and security.</p>
+<h2>Key Discussion Points</h2>
+<h3>1. Preliminary Observations of Internet Performance during the Conflict in Ukraine (Tal Rahmani)</h3>
+<ul>
+<li><strong>Observations in Ukraine</strong>: A significant degradation in internet performance (Speedtest download/upload speeds) and web search rates was observed. This degradation was strongly correlated with the ongoing refugee crisis, with increased Google Maps usage and a shift towards mobile device usage.</li>
+<li><strong>Observations in Russia</strong>: Paradoxically, internet performance improved in Russia. This was linked to an increase in global news consumption (as observed by Cloudflare) and a decrease in streaming traffic (e.g., YouTube after social media blocks, Netflix disconnection), likely freeing up bandwidth.</li>
+<li><strong>Proposed Methodology</strong>: The presentation suggested using publicly available internet measurement data (e.g., visits to Ukrainian websites from various countries) to estimate refugee distribution, offering a complement to traditional UN data.</li>
+<li><strong>Q&amp;A</strong>: Discussion included the unanalyzed impact of Starlink on Ukrainian connectivity and the focus solely on search rates rather than content.</li>
+</ul>
+<h3>2. The Incidence of QUIC (Geoff Huston)</h3>
+<ul>
+<li><strong>Methodology</strong>: Large-scale measurements of HTTP/3 (QUIC) adoption were conducted using an online ad campaign, reaching approximately 20 million unique users daily. The server was configured with nginx beta, DNS HTTPS records, ALPN, and an Alt-Service directive. A modified ad script triggered a second fetch to test Alt-Service activation.</li>
+<li><strong>Adoption Rates</strong>: Approximately 1% of users utilized HTTP/3 on the first fetch (via DNS HTTPS query), while 3.5% used it on the second fetch (via Alt-Service).</li>
+<li><strong>Platform Specificity</strong>: Initial HTTP/3 adoption (first fetch) was almost exclusively from iOS/macOS (Safari). For the second fetch, Android (Chrome) users significantly contributed.</li>
+<li><strong>Performance &amp; Reliability</strong>: Most QUIC packets were between 1200-1350 bytes, indicating adherence to standard padding. A remarkably low connection failure rate (0.24%) was observed for the second QUIC packet. Browsers reported faster performance using QUIC for two-thirds of users.</li>
+<li><strong>Challenges</strong>: The observed adoption rates were lower than expected from other reports, possibly due to the 2-second timer for the second fetch being too short for Chrome's Alt-Service stickiness. Safari's query rate for HTTPS records was higher than the actual fetch rate, suggesting an internal race condition where speed is prioritized over waiting for HTTPS hints.</li>
+<li><strong>Action Items (from Q&amp;A)</strong>:
+<ul>
+<li>Experiment with <code>Connection: close</code> header or closing HTTP/2 connections server-side to force clients to initiate new HTTP/3 sockets.</li>
+<li>Set the target name in the HTTPS record to <code>.</code> for IP hints to be more relevant for iOS/macOS clients.</li>
+</ul>
+</li>
+</ul>
+<h3>3. Confignator: Dynamically Reconfiguring the Network Stack (Samarth Kumar)</h3>
+<ul>
+<li><strong>Problem Statement</strong>: Traditional &quot;one-size-fits-all&quot; CDN configurations are suboptimal for diverse user populations (varying regions, last-mile connections, devices) because protocol performance is sensitive to these factors.</li>
+<li><strong>Measurements</strong>: Simulations using production CDN traces showed that static configurations (default, hand-picked) provide limited Page Load Time (PLT) improvement (up to 20%). An oracle capable of cross-layer tuning (TCP and HTTP) achieved over 70% PLT improvement at the tail, highlighting the potential of dynamic tuning. Existing auto-tuning algorithms like Bayesian optimization were found to be poorly suited due to network dynamics and noise.</li>
+<li><strong>Confignator System</strong>: A split-plane architecture was proposed, with a central &quot;Config Manager&quot; (control plane) building performance models from edge server data, and &quot;Config Agents&quot; (data plane) on edge servers using a kernel module to apply real-time, cached configuration decisions.</li>
+<li><strong>Evaluation</strong>: An online learning version of Confignator achieved ~50% PLT improvement at the tail compared to default, with minimal negative impact during the learning phase.</li>
+<li><strong>Q&amp;A</strong>: Discussed the temporary negative impact during initial configuration search and the need for algorithms to minimize this. The presentation also touched upon future work exploring game-theoretic aspects of multiple CDNs optimizing concurrently.</li>
+</ul>
+<h3>4. TLS Fingerprinting for Server Deployments (Marcus Ruge)</h3>
+<ul>
+<li><strong>Concept</strong>: TLS handshake metadata (version, cipher suites, extensions, TLS alerts) can be collected and used to create unique &quot;fingerprints&quot; of TLS server stacks.</li>
+<li><strong>Applications</strong>:
+<ul>
+<li><strong>Intrusion Detection</strong>: Identify malicious servers by matching fingerprints against known threats.</li>
+<li><strong>Cyber Threat Intelligence</strong>: Actively hunt for new threats.</li>
+<li><strong>Server Monitoring</strong>: Detect unauthorized changes or malware infections on servers.</li>
+</ul>
+</li>
+<li><strong>Methodology</strong>: To overcome the server's limited information disclosure in default client hellos, &quot;unusual&quot; and complementary client hellos were used to elicit more detailed responses. An empirical methodology was developed to select optimal client hello combinations to maximize distinct fingerprints.</li>
+<li><strong>Use Cases</strong>:
+<ul>
+<li><strong>CDN Server Detection</strong>: High precision (&gt;99% for Cloudflare/Fastly) and recall were achieved in identifying CDN servers, demonstrating their unique TLS configurations.</li>
+<li><strong>Command &amp; Control (CNC) Server Detection</strong>: Combining TLS fingerprints with HTTP server headers significantly improved detection rates, identifying almost half of new blocklist additions with over 99% precision.</li>
+</ul>
+</li>
+<li><strong>Conclusion</strong>: The proposed TLS fingerprinting mechanism, combined with a methodology for effective client hello generation, demonstrated significant potential for various security and monitoring applications, outperforming existing tools.</li>
+<li><strong>Q&amp;A</strong>: The ground truth for CDN detection was established using AS information or certificates, while multi-CDN scenarios were not investigated.</li>
+</ul>
+<h3>5. Influence of Resource Prioritization on HTTP/3 Performance (Constantine Bueschel)</h3>
+<ul>
+<li><strong>Motivation</strong>: HTTP/2's single TCP connection suffers from Head-of-Line (HOL) blocking. HTTP/3 (QUIC) uses independent streams to mitigate this, but resource prioritization strategies still influence how streams are scheduled. Prior research on HTTP/2 and early QUIC implementations didn't adequately address loss scenarios.</li>
+<li><strong>Research</strong>: Investigated the impact of HTTP/3 prioritization on performance under various loss, RTT, and bandwidth conditions using 35 websites in a testbed.</li>
+<li><strong>Findings</strong>:
+<ul>
+<li><strong>HOL Blocking</strong>: Parallel prioritization strategies (e.g., round robin) reduced HOL blocking, particularly at low bandwidths and higher loss rates. This benefit vanished at higher bandwidths.</li>
+<li><strong>Speed Index</strong>: Some speed index improvements were seen with parallel strategies at lower bandwidths, but benefits diminished at higher bandwidths.</li>
+<li><strong>Website Size</strong>: Smaller websites showed limited or even negative performance with parallel prioritization due to slight HOL reduction. Larger websites (e.g., New York Times) saw stronger positive correlations due to more significant HOL reduction.</li>
+<li><strong>Network Dependence</strong>: Loss patterns (bursts worsen round robin) and higher RTT (increasing retransmission penalty) significantly influenced the effects.</li>
+</ul>
+</li>
+<li><strong>Conclusion</strong>: While QUIC enables reduced HOL blocking, multiple parallel active streams are required. HTTP/3 prioritization is crucial and now identified as <strong>both website-dependent and network-dependent</strong>, requiring careful consideration for optimal performance.</li>
+</ul>
+<h3>6. Measuring Accessibility of Domain Name Encryptions and its Impact on Internet Censorship (Phong Tran)</h3>
+<ul>
+<li><strong>Problem</strong>: Plaintext domain names in DNS queries and SNI enable widespread internet censorship. DoT, DoH, and ESNI (now ECH) encrypt this information.</li>
+<li><strong>Methodology</strong>: The &quot;DNI&quot; system used distributed VPN vantage points in 85 countries to measure the accessibility of 71 DoT/DoH resolvers and ESNI against known censored domains, capturing packet data.</li>
+<li><strong>Censorship of Encrypted DNS</strong>:
+<ul>
+<li><strong>DoT (port 853)</strong>: China trivially blocks DoT by blocking port 853.</li>
+<li><strong>DoH (port 443)</strong>: China blocks DoH by dropping traffic to known resolver IPs on port 443. Saudi Arabia blocks Cloudflare DoH resolvers by injecting RST packets during the TLS handshake, indicating SNI detection.</li>
+<li><strong>ESNI</strong>: Russia employs decentralized blocking efforts based on ESNI &quot;biosignatures&quot; during the TLS handshake.</li>
+</ul>
+</li>
+<li><strong>Circumventing Censorship</strong>: Using a custom DoH server on a non-standard port allowed bypassing DNS censorship in Russia, Indonesia, and India. However, in China and Iran, full bypass failed for many websites due to lack of ESNI support, meaning SNI exposure during the TLS handshake still allowed filtering.</li>
+<li><strong>Takeaways</strong>: Domain encryption partially mitigates plaintext DNS censorship, but prominent censors actively block these new technologies. Future protocols need to be designed to make blocking difficult without significant collateral damage. Universal deployment of Encrypted Client Hello (ECH) is crucial to deter blanket blocking.</li>
+<li><strong>Q&amp;A</strong>: The study primarily focused on politically motivated censorship. The speaker agreed that encrypted DNS, even if blocked, preserves confidentiality, a significant step forward.</li>
+</ul>
+<h3>7. Measuring Encrypted DNS Resolver Availability and Performance (Nick Feamster)</h3>
+<ul>
+<li><strong>Objective</strong>: To measure the availability and response times of public encrypted DNS (DoH/DoT) resolvers, including both mainstream (browser defaults) and less common &quot;non-mainstream&quot; options.</li>
+<li><strong>Methodology</strong>: Measurements were conducted from North America, Europe, and Asia vantage points using an open-source tool, querying google.com and netflix.com against a list of 80-100+ resolvers.</li>
+<li><strong>Availability</strong>: Non-mainstream resolvers exhibited a higher failure rate, with only about 78% successfully responding to queries, often due to connection, HTTP, or SSL/TLS errors.</li>
+<li><strong>Performance</strong>: Mainstream resolvers generally showed lower median response times and appeared to be highly geo-replicated. However, some local non-mainstream resolvers (e.g., Hurricane Electric's &quot;or-dns&quot; in North America, or-dns in Europe/Greece) demonstrated comparable performance to mainstream options.</li>
+<li><strong>Conclusion</strong>: While mainstream resolvers generally perform better due to replication, there are opportunities for further investment in diverse, performant DoH resolvers to foster a healthier ecosystem and address concerns about consolidation.</li>
+<li><strong>Future Work</strong>: Plans to expand measurements to more vantage points and include web page load times in addition to DoH response times.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>For APNIC (Geoff Huston)</strong>:
+<ul>
+<li>Implement <code>Connection: close</code> header or explicitly close HTTP/2 connections on the server side to encourage clients to initiate new HTTP/3 sockets when testing Alt-Service.</li>
+<li>Set the target name in the HTTPS record to <code>.</code> to improve the relevance of IP hints for Safari clients.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>APNIC</strong>: Geoff Huston and colleagues will implement the suggested changes to their measurement methodology and continue monitoring HTTP/3 adoption.</li>
+<li><strong>Brown University (Confignator)</strong>: Further research will explore the game-theoretic aspects of multiple CDNs dynamically tuning their network stacks.</li>
+<li><strong>General IRTF MapRG</strong>: The chairs encouraged researchers to continue submitting their measurement-related work to the group, emphasizing the importance of contributions for future sessions.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

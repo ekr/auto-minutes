@@ -1,0 +1,77 @@
+**Session Date/Time:** 21 Jul 2025 07:30
+
+# DNS Delegation (deleg) Working Group Meeting Minutes
+
+## Summary
+
+The IETF deleg working group met to discuss the current status of the DNS delegation protocol draft and several key technical issues. The session covered updates to the base protocol specification, discussions on nameless delegations, authoritative delegation type records, and the choice of record types for include mode operations. Key topics included protocol design decisions, compatibility considerations, and future extensibility mechanisms.
+
+## Key Discussion Points
+
+### Base Protocol Updates (Tahl Presenter)
+- **Recent Changes**: Published draft with substantial modifications including:
+  - New restriction: DELEG records must not fallback to NS records for downgrade protection
+  - New authoritative delegations type flag in DNSKEY record
+  - Extended DNS error code for "new delegation only" scenarios
+  - Updates to RFCs 6672 and 6840
+- **Planned Updates**:
+  - Service parameter naming changes (glue4/glue6 → ip4/ip6)
+  - Need to define DELEG awareness in transfer protocols
+  - Security considerations section required
+  - Proofreading and editorial improvements needed
+
+### Nameless Delegations Discussion (Paul Hoffman)
+- **Proposal**: Add option for direct IP addresses without names in DELEG records
+- **Arguments For**:
+  - If not added now, cannot be added later due to protocol assumptions
+  - Resolvers ultimately only need addresses for functionality
+  - Avoids potential errors from fake name generation
+- **Arguments Against**:
+  - Easy to generate synthetic names when needed
+  - Adds complexity during transition period
+  - May create operational inconsistencies
+
+### Technical Considerations
+- **Response Codes**: Debate over appropriate response (NXDOMAIN vs SERVFAIL vs REFUSED) when legacy resolvers query DELEG-only delegations
+- **Caching Issues**: NXDOMAIN responses require SOA records for proper caching behavior
+- **Operational Impact**: Concerns about deployment complexity and troubleshooting difficulties
+
+### Authoritative Delegation Type Records (Roy Arends)
+- **Proposal**: Reserve a range of RR types for future delegation extensions rather than single type allocation
+- **Benefits**:
+  - Avoid costly retrofitting for future delegation types
+  - Enable unknown RR handling for secondary servers
+  - Simplify future protocol extensions
+- **Implementation**: Would require NSEC/NSEC3 records in all delegation responses for the reserved range
+
+### Include Mode Record Types (Paul Hoffman)
+- **Current Approach**: Use SVCB records as targets for include mode
+- **Alternative**: Define new RR type specifically for delegation information
+- **Key Issues**:
+  - Semantic differences between DELEG and SVCB requirements
+  - Transport parameter compatibility
+  - Priority handling preferences within working group
+
+## Decisions and Action Items
+
+### Decisions Made
+- Working group showed mixed consensus on nameless delegations with valid arguments on both sides
+- No final decision on response codes for legacy resolver compatibility
+- Interest expressed in exploring RR type range allocation, though venue (deleg WG vs dnsop) remains unclear
+
+### Action Items
+- **Chairs**: Start mailing list discussions on:
+  - RR type range allocation proposal and appropriate venue
+  - Semantic requirements definition before format decisions
+- **Authors**: Address editorial issues and complete security considerations section
+- **Working Group**: Continue discussion on include mode record type selection based on semantic requirements
+
+## Next Steps
+
+1. **Mailing List Discussions**: Targeted threads on specific technical decisions rather than broad format debates
+2. **Semantic Definition**: Focus on defining what the protocol should do before determining wire format
+3. **Implementation Guidance**: Develop clearer specifications for resolver behavior in mixed delegation scenarios
+4. **Charter Considerations**: Determine if RR type range work belongs in deleg WG or should move to dnsop
+5. **Base Specification Refinement**: Complete remaining editorial work and add required security considerations
+
+The meeting concluded with emphasis on resolving semantic questions first, then determining appropriate wire formats and record type structures to support those semantics.

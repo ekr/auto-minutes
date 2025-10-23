@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="alto.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-ALTO-20220726-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 26 Jul 2022 14:00</p>
+<h1>alto</h1>
+<h2>Summary</h2>
+<p>The ALTO Working Group session provided updates on existing charter items, discussed pending technical issues, and explored new areas of work. Key discussions focused on ALTO O&amp;M support, the ALTO over New Transport draft, and a comprehensive update on ALTO deployments and codebases. Additionally, non-charter items proposing ALTO as a Network Exposure Function and an architecture for computing power optical networks were presented. The session saw significant technical debate, especially regarding the new transport mechanisms and the scope of ALTO's O&amp;M.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Status:</strong> Three new RFCs published, two existing drafts awaiting editor action. ALTO O&amp;M and ALTO over New Transport adopted as working group drafts. Early reviews for ALTO over New Transport received from HTTP experts.</li>
+<li><strong>ALTO O&amp;M Support (Draft):</strong>
+<ul>
+<li><strong>Data Type Deployment (IANA Registries):</strong> Discussed two models: enumerations (guaranteed consistency, hard to extend) vs. identities (easy to extend, less consistency control). Seeking working group consensus.</li>
+<li><strong>Server-Level Management:</strong> Questioned whether to include lower-level HTTP configurations (e.g., cache-control, retry-after) in the Yang module.</li>
+<li><strong>Logging and Fault Management:</strong> Proposed adding success/failure records for configuration updates, configuration type support, and data source connection status. Additional useful metrics are sought.</li>
+<li><strong>Client-Side O&amp;M:</strong> Identified a need for client-side configuration (accessing services, query parameters, transport control). Proposed adding a new top-level container for ALTO client or treating ALTO client as an ALTO data source listener.</li>
+<li><strong>Server-to-Server Communication (Multi-domain):</strong> Explored ALTO server acting as a data source for another ALTO server. Two options: extend ALTO for direct data collection or use other southbound protocols (currently no standards). Also highlighted the challenge of cross-domain path discovery.</li>
+<li><strong>Unifying Data Sources (Yang Model):</strong> Discussed the complexity of unifying data models for source-bound protocol parameters, query expressions, and data collection mechanisms (polling, pub-sub, on-demand query). Strong feedback suggested this is a very complex issue, potentially outside ALTO's core scope of exposing (not collecting) data.</li>
+</ul>
+</li>
+<li><strong>ALTO over New Transport (HTTP/2, /3) (Draft):</strong>
+<ul>
+<li><strong>Design Rationale:</strong> Aims to replace Server-Sent Events (SSE) functions (incremental updates, stop/start signaling) using HTTP/2 or /3 while adhering to RFC 7285 and RESTful API principles.</li>
+<li><strong>Client Long Pull:</strong> Proposed allowing clients to request the <code>next_sequence_number</code> to implement a long-poll mechanism, a minor change to the current pull model.</li>
+<li><strong>Server Put for Server Push:</strong> Proposed replacing HTTP/2's Push Promise (considered an anti-pattern by some) with a standard HTTP PUT method from server to client. This makes the client conceptually a stateful machine.</li>
+<li><strong>Dependency Ordering of Resources:</strong> Discussed how ALTO servers should submit interdependent resources to the HTTP layer (e.g., Network Map -&gt; Cost Map). The current draft recommends submitting resources in a Directed Acyclic Graph (DAG) order to prevent performance degradation from out-of-order delivery by the HTTP transport.</li>
+<li><strong>Concurrency Control Specification:</strong> Debated whether ALTO should specify HTTP/2/3 specific concurrency control or leave it to operational configuration, or specify generic requirements.</li>
+<li><strong>Example Formats:</strong> Sought guidance on whether examples should be in HTTP/1.1 or HTTP/2 format, with a preference for HTTP/1.1 with pseudo-annotations for clarity.</li>
+<li><strong>Media Type Finalization:</strong> Proposed finalizing the <code>format=input</code> media type.</li>
+<li><strong>Architectural Scope Discussion:</strong> Martin Duke questioned whether a separate HTTP/2/3 document is needed, or if the &quot;naive&quot; approach of simply putting existing ALTO requests into HTTP/2 streams is sufficient. He suggested considering if the draft is effectively redesigning SSE in a version-agnostic way, and to benchmark proposed solutions against simpler approaches.</li>
+</ul>
+</li>
+<li><strong>ALTO Codebases and Deployment:</strong>
+<ul>
+<li><strong>CERN Deployment:</strong> Implemented ALTO to provide bandwidth usage control on physical links for the File Transfer Service (FTS). The network optimizer acts as an ALTO client, querying ALTO for link usage and optimizing data transfers. A demo was given at the hackathon, and a paper will be presented at Sigcomm Night.</li>
+<li><strong>Telefonica Deployment:</strong> Integrating ALTO to expose network capabilities to their CDN. ALTO provides topological information (e.g., hop counts) and will include performance metrics. The deployment is moving from lab to pre-production to production, facing challenges with multi-vendor environments, complex IGPs, and security. No issues found with core ALTO specification, but passing protocol information to ALTO was complex.</li>
+<li><strong>Pacific Research Platform (PRP) Deployment:</strong> ALTO is being deployed in science networks (e.g., ESnet, PRP) to provide network visibility for Edge Cloud and 5G applications (Holodeck, vehicle networks, metaverse).</li>
+<li><strong>MPTCP/MPQUIC Optimization:</strong> Demonstrated ALTO's role in helping SDN controllers allocate MPQUIC/MPTCP packets to suitable paths, resulting in higher throughput, especially in lossy networks.</li>
+</ul>
+</li>
+<li><strong>Non-Charter Items (Future Work):</strong>
+<ul>
+<li><strong>ALTO as Network Exposure Function (NEF):</strong> Proposed using ALTO as an NEF to expose network capabilities to applications, aligning with industry trends (3GPP NEF, MEC APIs). This includes existing ALTO capabilities (topology, cost) and new proposals like &quot;service edge&quot; (compute capabilities) and &quot;service functions&quot; (characterizing paths to service function instances/chains). This is intended for future chartering.</li>
+<li><strong>Architecture of Computing Power Optical Network:</strong> A draft outlining an architecture that combines computing resources with optical networks to manage and optimize data storage, computing, and transmission for cloud/AI applications.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>ALTO O&amp;M (Question 6 - Unifying Data Sources):</strong> Decided to <em>defer</em> standardization of how to unify data sources in the Yang model, focusing instead on implementation details initially, given its complexity and potential scope creep beyond ALTO's data exposure role.</li>
+<li><strong>ALTO O&amp;M (Questions 1-3):</strong> Authors to make decisions and submit a new version of the O&amp;M document as soon as possible.</li>
+<li><strong>ALTO over New Transport (Discuss 3 - Concurrency Control):</strong> Martin Duke recommended specifying generic requirements for concurrency control (e.g., &quot;send enough pushes,&quot; &quot;enough streams&quot;) rather than deferring entirely to operational configuration. Richard agreed this should be a requirement.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>ALTO O&amp;M Support:</strong>
+<ul>
+<li>Authors will continue to collect feedback for questions 4-6.</li>
+<li>Test the Yang model in real implementations.</li>
+<li>Reach agreements on questions 1-6 and completely revise the document before the next IETF meeting.</li>
+<li>Push for ALTO O&amp;M Yang model deployment in Open Alto GitHub by March 2023.</li>
+</ul>
+</li>
+<li><strong>ALTO over New Transport:</strong>
+<ul>
+<li>Richard to consider Martin Duke's advice: &quot;free ourselves of what we're <em>to do</em> for a minute,&quot; think about the problem being solved (HTTP versions vs. replacing/supplementing RFC 8895), and experiment with existing code for server push vs. simpler HTTP/2 approaches.</li>
+<li>Huddle offline with HTTP experts for further discussion.</li>
+<li>Finalize media type <code>format=input</code>.</li>
+</ul>
+</li>
+<li><strong>ALTO Codebases and Deployment:</strong>
+<ul>
+<li><strong>CERN:</strong> Continue work towards production data. New demo planned for next hackathon.</li>
+<li><strong>Telefonica:</strong> Continue working towards summer production deployment, collect scalability data for IETF 115. Focus on integrating performance metrics and automating client-side processes.</li>
+<li><strong>PRP:</strong> Demo planned for next hackathon and SC22 (November).</li>
+</ul>
+</li>
+<li><strong>Non-Charter Items:</strong>
+<ul>
+<li><strong>ALTO as NEF &amp; Service Edge/Function Drafts:</strong> Continue developing these drafts for future ALTO chartering and to complement work in other IETF working groups. Prepare updated versions for IETF 115.</li>
+</ul>
+</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

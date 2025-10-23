@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="cose.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-COSE-20220726-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 26 Jul 2022 17:30</p>
+<h1>cose</h1>
+<h2>Summary</h2>
+<p>The COSE working group discussed the status of several documents, including the Auth48 cluster, the COSE HPKE document, C509, BLS key representations, and CWT claims in COSE headers. Key technical discussions revolved around the ephemeral public key encoding format in COSE HPKE, the need for non-AEAD algorithms in <code>COSE_Encrypt</code> for specific use cases like firmware updates, and the ongoing work to represent post-quantum cryptographic algorithms within COSE structures. Decisions were made regarding the COSE HPKE key format and initiating a call for adoption for the post-quantum draft.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Document Status Update (Auth48 Cluster, Countersign, X509, Hash Algorithms)</strong></p>
+<ul>
+<li>The cluster of four documents (Hash Algorithms, Auth48, X509, Countersign) is facing significant publication delays.</li>
+<li>The AD (Paul Wouters) expressed urgency, setting a two-week deadline for authors to finalize changes before pushing to the RFC Editor, citing long-standing external dependencies.</li>
+<li>Ben Cadeck reported Auth48 is largely complete, with minor cosmetic tweaks and pending confirmation of AEAD usage values. AD approval is needed for potential content changes made during Auth48.</li>
+<li>Marco raised a concern about an incorrect reference in section 3 of the Countersign document, which Roman will verify.</li>
+</ul>
+</li>
+<li>
+<p><strong>COSE HPKE Document - Ephemeral Public Key Encoding</strong></p>
+<ul>
+<li>Discussion centered on the format for encoding the ephemeral public key.</li>
+<li>Two proposals: Hannes's approach uses the existing <code>ec2</code> key type with <code>x</code> and <code>y</code> coordinates, aligned with the COSE RFC. Alari's proposal uses an <code>OKP</code> key type with a new HPKE-specific value and raw data dump from the HPKE algorithm output.</li>
+<li>Consensus in the room strongly favored using the existing <code>ec2</code> key type, as it leverages an already standardized COSE key format. The <code>OKP</code> approach was seen as potentially overloading the key type and conflating application-level algorithms with key representations.</li>
+<li>The current draft already uses the <code>ec2</code> format.</li>
+</ul>
+</li>
+<li>
+<p><strong>Non-AEAD Algorithms in <code>COSE_Encrypt</code></strong></p>
+<ul>
+<li><strong>Problem:</strong> <code>COSE_Encrypt</code> currently mandates Authenticated Encryption with Associated Data (AEAD). However, specific use cases, such as firmware updates in the SUIT working group for IoT devices, require non-AEAD modes (e.g., counter mode, CBC) for memory efficiency and to reduce flash wear cycles. Integrity is provided by separate signatures.</li>
+<li><strong>Proposal:</strong> Register non-AEAD algorithms in the COSE registry with strong warnings, indicating they should only be used if integrity is guaranteed by another mechanism.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>Cedric suggested ensuring signature verification occurs <em>before</em> decryption for structural security.</li>
+<li>Brendan Moran clarified that requiring pre-decryption integrity verification is often impractical in firmware update scenarios due to resource constraints (flash cycles, energy).</li>
+<li>Ben Cadeck noted that RFC 8152 doesn't explicitly forbid non-AEAD encryption, only discusses AEAD modes. He suggested a &quot;how-to&quot; section for non-authenticated modes.</li>
+<li>John Bradley recalled an explicit JOSE decision <em>against</em> non-AEAD to prevent misuse, balancing specific use cases against general security posture.</li>
+</ul>
+</li>
+<li><strong>Decision:</strong> Hannes and Russ will write a draft to propose registering these non-AEAD algorithms, making the case to the working group for adoption, potentially marking them as deprecated from the outset (similar to RSA/SHA-1).</li>
+</ul>
+</li>
+<li>
+<p><strong>C509 Document (CBOR Encoded X.509 Certificates)</strong></p>
+<ul>
+<li>A new version has been submitted.</li>
+<li>Ongoing work includes a master's thesis on OCSP encoding in C509.</li>
+<li>Implementations are being developed (e.g., Armando Garcia from Fraunhofer).</li>
+<li>Feedback from Kerry Bonnell suggested changes to the general subtree and improvements to document structure (aligning with RFC 5280).</li>
+<li>More reviews are actively sought from the working group.</li>
+</ul>
+</li>
+<li>
+<p><strong>BLS Key Representations (draft-ietf-cose-bls-key-representations)</strong></p>
+<ul>
+<li>This draft was recently adopted by the working group.</li>
+<li>It registers parameters for BLS (Boneh-Lynn-Shacham) curves (12-381 and 4-48-581) for both JWK and COSE key representations.</li>
+<li>BLS curves are pairing-friendly, enabling novel algorithms like aggregate signatures (used in blockchain applications, e.g., Ethereum, Filecoin) and BBS signatures (supporting selective disclosure, proof of possession).</li>
+<li>The key parameters are defined in the draft.</li>
+<li><strong>Next Steps:</strong> Produce informational samples for both COSE_Key and JWK.</li>
+</ul>
+</li>
+<li>
+<p><strong>CWT Claims in COSE Headers (draft-ietf-cose-cwt-claims-in-cose-headers)</strong></p>
+<ul>
+<li><strong>Rationale:</strong> To provide a mechanism equivalent to JWT (allowing claims in the protected header) for CWT, which was not explicitly defined.</li>
+<li><strong>Use Cases:</strong>
+<ul>
+<li><strong>Encrypted CWTS:</strong> Placing claims (e.g., <code>iss</code>, token validity) in an unencrypted header can aid key identification for decryption or pre-validation.</li>
+<li><strong>COSE Sign with Detached Payloads:</strong> Allows describing the signer and validity information for non-CWT payloads.</li>
+</ul>
+</li>
+<li><strong>Design:</strong> A new COSE header parameter whose value is a map containing CWT claims. This handles the distinct numeric allocations of COSE header parameters and CWT claims.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>Michael expressed strong support, noting its usefulness for binary representations in high-volume cyber-physical supply chains.</li>
+<li>Carsten questioned the clear semantics of CWT claims (e.g., <code>not_before</code>) when applied to arbitrary COSE structures that are not themselves CWTS (e.g., a signed firmware upgrade). He advocated for explicit definitions of what such claims mean in various contexts and inclusion of CDDL samples.</li>
+<li>Mike Jones agreed that the document needs to provide a deeper treatment of these questions.</li>
+</ul>
+</li>
+<li><strong>Decision:</strong> Tobias and co-authors will add CDDL samples and clarify the meaning and usage context of CWT claims when embedded in various COSE header scenarios.</li>
+</ul>
+</li>
+<li>
+<p><strong>Post-Quantum Cryptography in COSE (draft-ietf-cose-post-quantum-signatures)</strong></p>
+<ul>
+<li><strong>Motivation:</strong> To support an upgrade path for COSE and JOSE to use post-quantum resistant algorithms for key and signature representations, focusing on envelope formats.</li>
+<li><strong>Focus:</strong> Key representations and signature representations (not key encapsulation/exchange at this stage).</li>
+<li><strong>Algorithms:</strong> Current focus is on NIST candidates: lattice-based (Dilithium, Falcon) and hash-based (SPHINCS+).</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>John Erickson suggested waiting for NIST's final standardization before publication.</li>
+<li>Mike Perrock argued for developing drafts in parallel to address US federal executive orders for crypto agility and interoperability, but agreed final publication should await NIST's choices.</li>
+<li>Paul Wouters (AD) recommended parallel work with NIST and CFRG, and encouraged joining the dedicated PQC mailing list.</li>
+<li>John Erickson asked about hybrid systems (combining PQC with traditional crypto). Ori Steele clarified the current draft focuses on pure PQC representations as a foundational step, but hybrid approaches can be explored in parallel.</li>
+</ul>
+</li>
+<li><strong>Goals:</strong> Provide an intuitive upgrade path, ensure cryptographic agility, clarify <code>kty</code> and <code>alg</code> definitions, and reserve necessary IANA parameters.</li>
+<li><strong>Status:</strong> Draft v-01 has been submitted, and feedback is welcome.</li>
+<li><strong>Next Steps:</strong> Clarify <code>kty</code>/<code>alg</code> definitions, add detailed examples for Falcon and SPHINCS+, and generate test vectors.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>COSE HPKE Ephemeral Public Key Encoding:</strong> Consensus was reached to use the existing <code>ec2</code> key type for the ephemeral public key encoding in the COSE HPKE document. The chairs will send a note to the mailing list to confirm this consensus and invite further discussion.</li>
+<li><strong>Non-AEAD Algorithms:</strong> Hannes and Russ will write an Internet Draft proposing the registration of non-AEAD algorithms within the COSE registry, including appropriate warnings and a rationale for their use in specific contexts (e.g., firmware updates).</li>
+<li><strong>CWT Claims in COSE Headers:</strong> Tobias and co-authors will add CDDL samples to the draft and clarify the meaning and contextual usage of CWT claims when included in COSE headers for various scenarios, including detached payloads.</li>
+<li><strong>Post-Quantum Cryptography:</strong> The chairs will initiate a call for adoption on the mailing list for the <code>draft-ietf-cose-post-quantum-signatures</code> document.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Auth48 Cluster:</strong> Authors (Ben Cadeck, Karsten, Evo) to finalize outstanding changes, especially for Auth48, within two weeks, and ensure AD approval for any content changes. Roman to double-check the Countersign reference.</li>
+<li><strong>COSE HPKE:</strong> Chairs to confirm consensus on <code>ec2</code> key type on the mailing list.</li>
+<li><strong>Non-AEAD Algorithms:</strong> Hannes and Russ to draft the document for non-AEAD algorithm registration.</li>
+<li><strong>C509:</strong> The working group is encouraged to provide more reviews of the <code>draft-ietf-cose-c509</code> document.</li>
+<li><strong>BLS Key Representations:</strong> Authors to produce informational samples for both COSE_Key and JWK formats.</li>
+<li><strong>CWT Claims in COSE Headers:</strong> Authors to incorporate CDDL samples and clarify claim semantics in the draft.</li>
+<li><strong>Post-Quantum Cryptography:</strong>
+<ul>
+<li>Chairs to send a call for adoption to the mailing list.</li>
+<li>Authors to clarify <code>kty</code>/<code>alg</code> definitions, add detailed examples for Falcon and SPHINCS+, and produce test vectors.</li>
+<li>Working group members are encouraged to join the PQC mailing list for broader cross-WG coordination.</li>
+</ul>
+</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

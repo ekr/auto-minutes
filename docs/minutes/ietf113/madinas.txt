@@ -1,0 +1,69 @@
+**Session Date/Time:** 24 Mar 2022 12:00
+
+# madinas
+
+## Summary
+
+The madinas working group meeting at IETF 113 focused on the progress of two adopted drafts: "Use Cases and Problem Statement for Randomized and Changing MAC Addresses" and "MAC Address Randomization Current State of Affairs." Discussions covered the need to identify protocols dependent on MAC addresses, the challenges posed by MAC randomization for specific use cases (like drone remote identification), and how to maintain up-to-date information on operating system randomization practices. Updates were also provided from the Wireless Broadband Alliance (WBA) on their white paper concerning MAC address randomization and from IEEE 802.11 on their short-term (802.11bh) and long-term (802.11bi) efforts related to RCM and privacy. The session concluded with a clear path forward to integrate these inputs, identify gaps, and propose solutions or further work.
+
+## Key Discussion Points
+
+### Use Cases and Problem Statement for Randomized and Changing MAC Addresses (`draft-ietf-madinas-use-cases`)
+*   **Document Context:** The draft, adopted by the WG, aims to organize thoughts on Randomized and Changing MAC addresses (RCM) and their effects. It defines device types (personal vs. shared), actors (network entities vs. human entities), and trust levels (public Wi-Fi, enterprise networks).
+*   **Entities Needing MAC Addresses:** MAC addresses are used by functional network entities for communication and by human entities for troubleshooting, tracking, and legal purposes.
+*   **Document Assumptions:** Network elements should not rely on a unique, permanent MAC address.
+*   **Future Work for the Draft:**
+    *   Survey existing standards (IETF, IEEE, other SDOs) to identify protocols that use the MAC address as a device identifier. Examples include DHCP, EAP, and RADIUS.
+    *   Propose recommendations to working groups to remove non-conformant dependencies on static MAC addresses.
+    *   Identify scenarios where MAC address rotation is desired for privacy and examine affected protocols.
+    *   Identify scenarios where a stable identifier, other than the MAC address, is needed for user experience or service continuity. Potential mechanisms like 802.11 ANQP (Access Network Query Protocol) Table 966 for venue information were mentioned.
+*   **Call for Contributions:** The chairs issued a call to the community to help identify RFCs, protocols, and standards (both within IETF and other SDOs like IEEE 802.1 and WBA) that rely on MAC addresses for device identification.
+*   **Discussion on Protocol Identification:**
+    *   **Carlos:** Asked for a structured approach to identify all relevant protocols, suggesting liaisons with other WGs/SDOs and a combination of top-down and bottom-up efforts.
+    *   **Bob Maskovich (DRIP WG):** Highlighted the critical use case of Broadcast Remote ID for unmanned aircraft, which uses MAC addresses (e.g., in Bluetooth 4/5, Wi-Fi Nan) to link streaming messages from drones to ground observers. Apple's MAC randomization currently breaks this application, which is crucial for safety and regulation in drone operations.
+    *   **Tim Hey:** Suggested using tooling to de-reference MAC address mentions in specifications and recommended using "managed/unmanaged" terminology instead of "MDM/BYOD" for clarity in the draft.
+    *   **Michael Richardson:** Questioned the ultimate goal of listing all MAC address uses. He suggested the WG should focus on identifying compromises: where RCM is beneficial for privacy, where lack of stable identification creates privacy/safety issues (e.g., drones), and where it's a moot point (e.g., fixed devices). The aim is to define where MAC addresses are privacy-violating, where correlation is needed, and where identification is critical. Jerome clarified the goal is to capture, categorize, and determine if MAC is the right identifier, leading to solutions or new work.
+
+### MAC Address Randomization Current State of Affairs (`draft-ietf-madinas-mac-address-randomization`)
+*   **Document Purpose:** This draft documents current practices in mobile/fixed operating systems and across various standardization communities regarding MAC address randomization policies.
+*   **Current OS Practices (Section 7):** The draft details how major OSes (Android from v10/v12+, iOS from v14, Windows 10, Linux) implement MAC address randomization, including persistence, rotation frequency, and network-specificity.
+*   **Management of Section 7:** A key discussion point was how to keep the "Current OS Practices" section up-to-date, given the rapid evolution of OS behaviors. Three options were presented:
+    1.  Keep the section as is (static snapshot).
+    2.  Move the section to an annex and refer to an external wiki/repository (snapshot + dynamic reference).
+    3.  Convert the section into an external reference only (fully dynamic).
+*   **Discussion on Section 7 Management:**
+    *   There was a strong preference to move away from Option 1 due to the dynamic nature of the information.
+    *   **Carlos:** Asked for community feedback on the best hosting solution for external dynamic content (e.g., an IETF GitHub repository for long-term maintenance).
+    *   **Matthew:** Pointed out that for Android and Linux, MAC address randomization behavior can vary significantly based on underlying components (e.g., wpa_supplicant), vendor customizations, and user configurations, rather than just the OS version. Suggested the document should refer to underlying software components and highlight the range of behaviors.
+    *   **Kai:** Recommended mentioning GMS certification for Android devices, as it implies adherence to certain criteria that might affect MAC randomization behavior.
+
+### Updates from Wireless Broadband Alliance (WBA)
+*   **WBA White Paper:** Luther presented an update on the WBA's efforts, which culminated in a white paper on MAC address randomization.
+*   **Paper Scope:** The paper defines use cases, identifies MAC usage (required vs. desired), explores replacement methods, analyzes current solutions, provides recommendations, and identifies gaps.
+*   **Timeline:** The WBA started this work over a year ago, has finalized the paper, and is now in the process of liaising it to the madinas WG. Public publication is expected in about three months.
+*   **Key Findings:**
+    *   Device/user identification is needed at higher layers for some services, but user privacy is paramount.
+    *   MAC addresses have been "misused" over the years for various functions (access control, troubleshooting, law enforcement).
+    *   Current RCM implementations are typically session-based or time-based, often resetting the MAC for new sessions or forgotten networks. Some even reset during an active session, negatively impacting user experience (e.g., captive portals).
+    *   RCM is crucial for privacy, preventing tracking, snooping, and rogue device emulation.
+    *   No single solution addresses all RCM challenges; a set of solutions is required, some of which may conflict.
+*   **Relevance to madinas:** The WBA white paper is a highly relevant and useful reference for `draft-ietf-madinas-use-cases`. The WG plans to integrate its findings, avoid re-inventing the wheel, and focus on identifying any remaining technical gaps within the IETF's scope.
+
+### Updates from IEEE 802.11bh and .11bi
+*   **802.11bh (Short-Term):** This group addresses the effects of RCM on 802.11 services. While 802.11 does not permit MAC changes *during* a session, changes *between* sessions break operational aspects like troubleshooting. They have identified nine potential solutions focusing on passing an identifier between the station and the access point to maintain identity across MAC changes (AP-provided, station-expressed, or combined algorithmic). The group is still discussing these solutions, with a target completion by the end of next year.
+*   **802.11bi (Longer-Term):** This group aims to augment device privacy within 802.11 by identifying and protecting identifiers beyond the MAC address that could uniquely expose a device (e.g., key re-use, various header options). They are currently combing standards and defining requirements, focusing on PHY and MAC layers. This work could provide inspiration for madinas' broader scope of station-to-service communication.
+
+## Decisions and Action Items
+
+*   **Decision:** Option 1 (keeping Section 7 "Current OS Practices" as is) for `draft-ietf-madinas-mac-address-randomization` is discarded. Further discussion on options 2 and 3 and the optimal hosting for dynamic content will continue.
+*   **Action Item:** Bob Maskovich (DRIP WG) will post references to the Broadcast Remote ID standard and relevant documents to the madinas mailing list.
+*   **Action Item:** Carlos Bernardos (co-author of `draft-ietf-madinas-mac-address-randomization`) will consider the feedback from Matthew and Kai regarding the nuanced behavior of MAC randomization in Android and Linux, including component-level details and vendor customizations.
+*   **Action Item:** The chairs will work with WBA to ensure proper and timely distribution of their white paper to the madinas working group.
+
+## Next Steps
+
+*   **Integrate WBA Findings:** The madinas working group will integrate the findings from the WBA white paper into `draft-ietf-madinas-use-cases` to ensure comprehensive coverage and avoid duplication of effort.
+*   **Continue Protocol Survey:** The WG will continue surveying IETF RFCs and other SDO standards to identify protocols that rely on MAC addresses as device identifiers.
+*   **Finalize Section 7 Management:** The working group will decide on the final strategy for managing the "Current OS Practices" section in `draft-ietf-madinas-mac-address-randomization`, leaning towards a dynamic external reference.
+*   **Identify Gaps:** Based on the consolidated use cases and current solutions from IETF, IEEE, and WBA, the group will identify technical gaps and determine if new work items are required within the IETF's scope.
+*   **Community Engagement:** All participants are encouraged to contribute to the ongoing discussions on the mailing list, especially concerning identifying MAC-dependent protocols and providing feedback on the drafts.

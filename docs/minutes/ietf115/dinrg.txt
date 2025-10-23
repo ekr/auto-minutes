@@ -1,0 +1,120 @@
+**Session Date/Time:** 07 Nov 2022 15:30
+
+# dinrg
+
+## Summary
+
+The dinrg (Decentralized Internet Infrastructure Research Group) meeting focused on understanding and addressing the growing centralization of the internet. Discussions included a review of the group's foundational workshop findings, proposals for categorizing different forms of centralization, and presentations on specific technical approaches to enable more decentralized systems. A significant portion of the meeting was dedicated to reviewing and proposing updates to the dinrg charter to better align with the group's evolving understanding of the problem space and potential contributions.
+
+## Key Discussion Points
+
+*   **Introduction and Logistics**
+    *   The meeting adhered to IETF/IRTF Intellectual Property Rights, privacy policies, and code of conduct.
+    *   The IRTF focuses on longer-term research and publishes informational/experimental RFCs, not standards.
+    *   Chairs: Lexia Zhang and Dirk Kutscher. Note-taker: Raymond (volunteer).
+*   **Review of IETF Philadelphia Workshop Findings**
+    *   Two major factors were identified as driving internet centralization:
+        1.  **Economy of Scale**: Cloud services benefiting from massive scale.
+        2.  **Lacking Effective Security Solutions**: Driving users to centralized cloud services for robust security.
+    *   dinrg was confirmed as a forum and focal point to collect inputs and organize discussions on internet decentralization, moving away from scattered individual internet drafts.
+*   **Presentation 1: "Taxonomy of Centralization" (Mark Nottingham)**
+    *   **Context**: The term "centralization" is interpreted differently by various individuals, hindering focused discussion. A taxonomy aims to provide a common framework.
+    *   **Proposed Categories of Centralization**:
+        1.  **Economic Consolidation**: Market forces leading to a small number of companies dominating market share and capital flow.
+        2.  **Traffic and Infrastructure Consolidation**: Significant majority of public internet traffic delivered from very large services, flattening traditional internet topology, reduced reliance on traditional ISPs.
+        3.  **Architectural Consolidation**: Emergence of intermediary services (e.g., CDNs) and movement of transport-related code to the application layer (e.g., DNS over HTTP, application-specific transport).
+        4.  **Service and Application Consolidation**: A small number of companies operating popular services that act as multi-sided markets and platforms for other companies.
+    *   **Goal**: Guide future dinrg discussions, potentially leading to "centralization considerations" akin to security considerations in RFCs, informing IETF protocol design.
+    *   **Discussion**:
+        *   General agreement that the taxonomy is a good reflection of past discussions.
+        *   Suggestions for additional considerations: "splinternet" (Andrew Campling), overall resilience, trust in consolidated actors, geopolitical factors (Arnold Nipper), and identifying what does *not* drive centralization (Colin Perkins).
+        *   Debate on whether CDNs represent an architectural change or an overlay solution addressing protocol deficiencies (Lexia Zhang).
+        *   The challenge of technical solutions mitigating fundamental economic problems was raised.
+*   **Presentation 2: "Internet Centralization and Decentralization" (Dominique Lazanski)**
+    *   **Context**: Building on the taxonomy, this draft examines the current state, potential outcomes, and risks of centralization.
+    *   **Key Themes**:
+        *   Varied definitions of "consolidation" vs. "centralization."
+        *   Economic aspects: positive (economies of scale, investment) vs. negative (lack of market competition).
+        *   Security: End-to-end encryption pushing data to endpoints.
+        *   Changing internet architecture: From end-to-end to edge-to-edge.
+        *   Protocol development choices influencing consolidation.
+    *   **Risks**: Decreased stability, fragility, redundancy issues, reduced threat visibility and diversity.
+    *   **Proposed Options**: More measurement, formal "consolidation considerations" in RFCs, human rights review.
+    *   **Discussion**:
+        *   Need to consolidate work on the "end-to-end principle" (Mallory Nuttall), aligning with other ongoing drafts.
+        *   "End-to-end" is a fuzzy term, its definition depends on the layer (Roland Bless).
+        *   The rise of "middleboxes" as a response to perceived deficiencies in the core internet architecture (Lexia Zhang).
+*   **Presentation 3: "Web Centralization" (Jensen Koehser)**
+    *   **Thesis**: The HTTP client-server paradigm inherently contributes to web centralization.
+    *   **Arguments**:
+        *   HTTP pre-assigns client-server roles, limiting resiliency and routing around failures.
+        *   Authentication is centralized within services, giving endpoints control over data access.
+        *   Restful API practices (mapping CRUD to HTTP methods) entangle code and data control on the server side, limiting generic client capabilities.
+    *   **Potential Solutions**:
+        *   Public key cryptography for decentralized authentication/authorization.
+        *   Making data presentation an end-to-end/client-to-client problem, potentially via Information-Centric Networking (ICN).
+    *   **Discussion**:
+        *   The role of the `user@host` pattern in URIs leading to centralized client identity (Rick van der Velden).
+        *   Clients-server model does not inherently oppose *distributed* servers (Colin Perkins).
+        *   The importance of user experience: users often prefer intermediaries for managing complex tasks like private keys (Jean-Philippe Vasseur).
+        *   Historical context: The web wasn't initially centralized, suggesting factors beyond protocol design (e.g., economic incentives, Lexia Zhang).
+        *   Distinction between technological and economical centralization (Wolfgang).
+        *   The need for a "design" methodology that considers anthropology, legislative, and ethical implications beyond just protocols (Arnold Nipper).
+*   **Presentation 4: "Digital Power of Attorneys" (Ulo and Sri Lakshmi)**
+    *   **Concept**: Applying the legal "Power of Attorney" to digital contexts, enabling a principal to delegate privileges to a trusted agent (e.g., autonomous device) to act on their behalf.
+    *   **Essential Properties**:
+        *   **Self-contained and Decentralized**: POA carries full authorization, optionally supported by a signatory registry.
+        *   **Separation in Time**: POA can be signed today, executed later, and expires at a specified time, without requiring the principal to be online.
+        *   **Multi-level Sub-granting**: A general POA can be further restricted and delegated.
+        *   **Detailed Credentials**: Can include hardware/software hashes for integrity.
+    *   **Use Case**: Onboarding devices to a network by a subcontractor acting as an agent.
+    *   **Implementation**: JSON Web Tokens (JWT).
+    *   **Discussion**:
+        *   Identification for principals and agents (currently public keys, but the initial trust establishment/bootstrapping chain remains a challenge, Lexia Zhang).
+        *   Revocation of POAs: While time-limited, explicit revocation is a known challenge, similar to public key revocation (Jensen Koehser, Roland Bless).
+        *   Contribution to decentralization: Enables decentralized execution of tasks without central oversight.
+*   **Presentation 5: "Realm Crossover Authentication" (Rick van der Velden)**
+    *   **Motivation**: Provide an alternative to large, centralized silos by empowering hosting providers to offer decentralized services.
+    *   **Model**: Distinguishes between Identity Provider (IDP) and Service Provider (SP) roles, which can be run by the same or different entities.
+    *   **Technical Approach (Realm Crossover)**: Enabling trust and authentication between clients and services residing in different domains/realms.
+    *   **Key Technologies**:
+        1.  **SASL (Simple Authentication and Security Layer)**: Proposed `sxo+` mechanism provides an end-to-end encrypted wrapper for cross-realm authentication, using existing protocols (e.g., SMTP, XMPP, HTTP).
+        2.  **Kerberos**: Leveraging existing Kerberos realm crossover capabilities, with extensions for KDC-to-KDC key exchange using DNSSEC for trust.
+        3.  **Certificates**: Using LDAP and DNSSEC/DANE to store and retrieve x.509 certificates or PGP keys under individual domain control.
+    *   **Goal**: Enable secure, decentralized authentication for various protocols with minimal changes to existing standards, aligning with GDPR and privacy concerns.
+    *   **Discussion**: Further clarification needed on how the cross-realm trust relationship is initially established (deferred to mailing list).
+*   **dinrg Charter Update Discussion (Dirk Kutscher and Lexia Zhang)**
+    *   **Rationale**: The current dinrg charter is several years old and does not fully reflect the group's evolving understanding of internet centralization/decentralization challenges and potential contributions.
+    *   **Proposed Objectives**:
+        *   Position dinrg as the primary forum within the IETF/IRTF for discussing internet centralization and related problems/threats.
+        *   Continue analyzing internet centralization, pointing out problems, and identifying useful insights/recommendations.
+        *   Explore technical solutions and technology components to facilitate decentralized system development.
+        *   **Target Audience**: IETF/IRTF community (e.g., informing IAB workshops, IETF protocol design) and external bodies (e.g., providing information/alternatives to regulators).
+    *   **Proposed Work Strands**:
+        1.  **Analytical Work**: Characterizing, assessing, and measuring centralization and its consequences.
+        2.  **Exploration of Decentralized Systems/Application Design**: Focusing on decentralizing control power rather than just technical distribution, including experimental solutions and specifications.
+    *   **Feedback/Suggestions**:
+        *   The audience for dinrg's work is broad, including IETF, IAB, and policy/regulatory bodies (Mark Nottingham, Lexia Zhang).
+        *   Clarify the scope of "measurement" work to avoid overlap with maprg; dinrg should focus on *what* to measure to demonstrate centralization (Lexia Zhang, Mark Nottingham).
+        *   dinrg should produce foundational documentation (e.g., Mark's taxonomy) to articulate and clarify the problem space qualitatively and quantitatively (Lexia Zhang).
+        *   The charter update is a major shift; need to explicitly connect efforts beyond distributed ledger technology to broader consolidation/centralization challenges (Mallory Nuttall).
+        *   Incorporate a "design methodology" that considers societal, ethical, and legislative influences beyond purely technical protocols (Arnold Nipper, Colin Perkins).
+        *   The current draft of objectives/strands leans heavily on "internet measurement protocol people's" perspective; broaden to include economic and societal aspects (Colin Perkins).
+
+## Decisions and Action Items
+
+*   **Decision**: dinrg will continue to serve as a focal point for discussions and drafts related to internet centralization and decentralization.
+*   **Decision**: The dinrg charter will be revised to better reflect the group's evolving understanding of the problem space and potential contributions.
+*   **Action Item (Chairs)**: Draft charter updates based on feedback from this meeting and circulate for further discussion.
+*   **Action Item (Mark Nottingham)**: Revise the "Taxonomy of Centralization" draft based on feedback received and post it to the mailing list.
+*   **Action Item (All Presenters)**: Review questions and comments from the meeting chat and follow up on the mailing list.
+*   **Action Item (Dominique Lazanski)**: Connect with Mallory Nuttall to discuss ongoing work regarding the "end-to-end principle" and related drafts.
+*   **Action Item (Chairs)**: Schedule a side meeting on Wednesday to continue the charter discussion.
+
+## Next Steps
+
+*   Continue the charter revision discussions on the dinrg mailing list and during the scheduled Wednesday side meeting.
+*   Further refine the definition of "decentralized control power" within the context of the charter.
+*   Clarify the scope of measurement activities for dinrg to complement, rather than duplicate, the work of other research groups like maprg.
+*   Encourage proposals and discussions that explore methodologies connecting technical design with broader societal, economic, and ethical implications of internet centralization/decentralization.
+*   The chairs will continue inviting relevant research presentations to broaden horizons and identify future work.

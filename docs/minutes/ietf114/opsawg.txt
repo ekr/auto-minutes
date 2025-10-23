@@ -1,0 +1,100 @@
+**Session Date/Time:** 29 Jul 2022 14:00
+
+# opsawg
+
+## Summary
+The opsawg session covered updates on several drafts, including MUD TLS profiles for IoT, SRv6 dimensions in IPFIX, and exporting on-path telemetry delay metrics via IPFIX. A significant discussion revolved around a proposed "Data Manifest" for contextualized data, highlighting the need for metadata to properly interpret telemetry. The session also addressed the emerging topic of "Green Networking," exploring challenges and opportunities for energy efficiency, and reviewed past IETF contributions in this area. Finally, the AUTO (Application-Layer Transport Optimization) working group provided an overview of its past and ongoing work. Chairs reiterated the need for more working group chairs and document shepherds, and ADs encouraged community involvement in upcoming leadership roles.
+
+## Key Discussion Points
+
+### MUD TLS Profiles for IoT D-TLS Trap
+- **Updates:** The draft has been updated to address middlebox behavior as a TLS 1.3 proxy, ensuring compliance and addressing privacy concerns. It recommends against proxying for sensitive data or known services, or bypassing payload inspection, and suggests IoT devices could be configured to bypass proxies for trusted services.
+- **Dependencies:** Key requirement is for IoT devices to use network-signaled encrypted resolvers (DoH/DoT) for middleboxes to enforce MUD policies, pointing to AD working group efforts for resolver discovery.
+- **Encrypted Client Hello (ECH):** The draft now details how middleboxes could deal with ECH, either by snooping/decrypting inner client hello for sensitive domain names or stripping ECH records. Acknowledged ECH's privacy benefits versus the public key encryption overhead for IoT devices.
+- **Feedback:** A comment suggested citing DNR (Designated Resolver) specifications, which the author agreed to.
+
+### Enabling insights in SRv6 forwarding plane by adding SR dimensions in IPFIX
+- **Goal:** Expose SRv6 Segment Routing Header (SRH) information into IPFIX, including dimensions from the control plane. This aims to provide much-needed visibility into the SRv6 data plane.
+- **Updates:** Addressed previous comments, updated IANA considerations, incorporated feedback on compressed SIDs, aligned IPFIX entity naming (RFC 1712), and completed example sections. Added `srhSegmentLocatorLength` and `srhSegmentEndpointBehavior` for better forwarding expression and compressed SID decomposition.
+- **Validation:** Two vendors are implementing, and a running open-source code in VPP will be shown at IETF 115 Hackathon.
+- **Urgency:** Authors requested quick progress to prevent the use of private enterprise code points in SRv6 deployments.
+
+### Exporting On-Path Telemetry Delay Metrics with IPFIX
+- **Problem:** Existing IPFIX provides flow aggregation, packet/byte counts, and context but lacks the ability to export delay metrics. Conversely, on-path telemetry (IOM, Pulse Tracing, IFIT) measures delay but lacks flow aggregation, limiting scalability.
+- **Solution:** The draft proposes extending IPFIX to export delay metrics measured by on-path telemetry while preserving IPFIX's aggregation capabilities. This allows operators to understand where and how delay accumulates at scale.
+- **Terminology Discussion:** A participant questioned the term "in-band telemetry" and suggested "on-path telemetry" as more accurate, noting that some forms of on-path telemetry already support aggregation. The author agreed to update the terminology.
+- **Proposed Metrics:** The draft defines new performance registry entries and IPFIX entries for one-way delay (min, max, sum, mean) with micro/nanosecond granularity.
+- **Validation:** Two vendors are interested, and a VPP implementation is expected at IETF 115 Hackathon.
+
+### Data Manifest for Contextualized Data Metric Data
+- **Problem:** Data scientists analyzing network telemetry (e.g., time series data) often lack crucial context about how the data was metered (e.g., collection cadence, `on-change` settings, suppression). This makes it difficult to correctly interpret data, identify anomalies, or derive closed-loop actions.
+- **Proposal:** Introduce a "Data Manifest" composed of a Platform Manifest (vendor, software version, YANG deviations, etc.) and a Data Collection Manifest (subscriber ID, requested vs. actual period, `on-change` status). This manifest should follow the data through the entire pipeline (router to analytics).
+- **Discussion:** Participants discussed whether the manifest should be streamed continuously with telemetry (potentially adding bulk) or referenced via a pointer/hash. The consensus leaned towards a pointer mechanism for efficiency. The usefulness of the manifest for IoT controllers with changing device roles was highlighted.
+- **Encoding:** A comment suggested that encoding information (e.g., for telemetry) should reside in the transport or notification header, not the data manifest itself, to avoid making the manifest a generic capability document.
+- **Open Questions:** The draft seeks to clarify how to handle data source identification, integrity, virtual devices, and potential integration with other telemetry mechanisms (IPFIX, SNMP).
+- **Interest:** A strong show of hands (15-17 online participants) indicated interest in reviewing the draft, suggesting a good path to adoption.
+
+### Management and Operations for Green Networking
+- **Problem:** Reducing the carbon footprint of networking infrastructure is a significant challenge. While many aspects are outside IETF scope, network management and operational factors can contribute to energy efficiency.
+- **Approach:** Two drafts were presented. The first frames the overall opportunity space (device, protocol, network, architecture levels). The second (focus for opsawg) proposes a starter set of network energy metrics.
+- **Key Metrics:** Proposed metrics include power consumption (idle, load), current consumption, and efficiency metrics at the equipment, flow, path, and overall network levels (e.g., MWh per petabyte of production traffic).
+- **Discussion:**
+    - **Scope and Complexity:** Participants emphasized the vastness and complexity of the problem, pointing out that not all energy sources are equivalent, and operators' energy infrastructure is highly varied.
+    - **Prioritization:** A call was made to define specific requirements and use cases, rather than trying to solve the entire "green" problem at once. Visibility into energy usage was seen as a fundamental starting point.
+    - **Trade-offs:** The need to consider trade-offs (e.g., energy reduction vs. heat generation, reliability, redundancy) was highlighted.
+    - **Collaboration:** Need to connect with the energy sector and other IETF areas (e.g., IAB workshop on energy in 2023) to ensure metrics and solutions are relevant and effective.
+
+### What the IETF has done for Energy
+- **Goal:** To provide a historical overview of IETF's contributions to energy efficiency, both explicit and implicit, through an individual submission draft.
+- **Key Areas:**
+    - **Implicit Contributions:** Energy saving through scale (TCP/IP consolidating networks), efficiency gains from merging voice/video/data (DiffServ, InServ).
+    - **Explicit Contributions:** Work in low-power wireless networks (LLN, 6LoWPAN, CoRE), specific technologies (IP multicast, sleepy nodes), benchmarking, energy management MIBs (EMWG), and early work on power awareness in routing protocols.
+- **Challenges:** Differentiating "energy saving" from "sustainability" (more complex metrics), and issues like crypto mining as energy consumers.
+- **Call to Action:** Sought feedback and collaborators, suggesting reviving the "recipe" mailing list for discussions.
+
+### MIEA - Malware Internetwork Exposure Analyzer Utility for IoT
+- **Problem:** Home IoT devices face numerous small attacks, with slow community response times (e.g., Mirai botnet).
+- **Solution:** MIEA proposes a third-party supported system to quickly identify and block potential attack paths in home IoT networks while preserving end-user privacy.
+- **Mechanism:** MIEA uses signatures of known malware, cross-references with MUD (RFC 8520) information to identify exposures, assess threat levels, and block malicious traffic. A security team provides updated malicious traffic descriptions.
+- **Data Model:** A new data model, similar to MUD, uses ACLs to describe malicious traffic (incoming/outgoing, infection, C&C). It includes contextual information in "critical ACLs" and assigns risk levels to ACL entries.
+- **Process:** MIEA builds a communication graph from MUD data, compares it against malware signatures to find exposures, assesses the cumulative risk, and then blocks identified malicious activity.
+- **Discussion:**
+    - **Deployment:** The author plans a Raspberry Pi prototype to assess compute power on home gateways.
+    - **Communication:** Communication with the central server for updates could use HTTPS, but Broadband Forum TR-069 was suggested as a push mechanism for CPE management.
+    - **Overlap:** Potential overlap with DOTS (DDoS Open Threat Signaling) working group was noted, and further communication with DOTS was encouraged.
+    - **Feasibility:** One participant from Cisco indicated that similar network security capabilities are already being deployed on millions of next-generation home routers.
+
+### AUTO (Application-Layer Transport Optimization) Introduction
+- **Overview:** AUTO is an IETF working group in the Transport Area, active since 2008, focused on optimizing application-layer transport by providing network awareness.
+- **Problem Addressed:** Applications often make sub-optimal routing decisions without knowledge of network status, leading to poor performance. AUTO aims to expose abstract network information to clients.
+- **Key Components:**
+    - **Network Abstraction:** Defines entities (endpoints, AS IDs, abstract network elements like data centers, links, nodes) and paths (source-destination pairs with properties like hop count, routing cost, delay metrics, path variance).
+    - **Transport Framework:** Specifies how clients discover AUTO servers (bootstrapping) and how servers advertise available information resources (e.g., network maps, cost maps).
+- **IETF Integration:** AUTO leverages work from other WGs (e.g., BGP-LS for topology, JOSE for information carriage, PING for path-aware networking).
+- **New Use Cases:** Beyond its original P2P/CDN focus, AUTO is being explored for edge computing, NFV, and Service Function Chaining.
+- **Current Work:** Development of an AUTO-OM (YANG data model) and a new transport mechanism (moving from HTTP 1.1 to HTTP 2).
+- **Deployment:** Comcast and Ben Logs have deployed AUTO in CDN scenarios, and Telefonica is integrating AUTO for "overlay and only" CDN deployments.
+
+## Decisions and Action Items
+
+*   **MUD TLS Profiles for IoT D-TLS Trap:**
+    *   **Decision:** Proceed towards Working Group Last Call.
+    *   **Action Item:** Presenter to update the draft to refer to DNR and Radio specifications.
+    *   **Action Item:** Chairs to initiate directorate reviews (Security AD, IoT, Ops) for the draft.
+*   **Enabling insights in SRv6 forwarding plane by adding SR dimensions in IPFIX:**
+    *   **Decision:** OpsAWG will attempt working group adoption for this draft after the IETF 114 grace period.
+    *   **Action Item:** Presenter (Thomas Graf) and collaborators encouraged to cross-review other IPFIX YANG work sponsored by AD Rob Wilton.
+*   **Data Manifest for Contextualized Data Metric Data:**
+    *   **Decision:** Based on significant community interest (15-17 online reviews promised), the chairs will consider adoption for this work.
+*   **General Working Group Management:**
+    *   **Action Item:** Chairs reiterated the call for volunteers to serve as Working Group Chairs and Document Shepherds.
+
+## Next Steps
+
+*   **MUD TLS Profiles for IoT D-TLS Trap:** Draft updates and directorate reviews to be completed prior to WG Last Call.
+*   **Exporting On-Path Telemetry Delay Metrics with IPFIX:** Discussions regarding terminology and aggregation capabilities will continue on the mailing list. Further reviews are encouraged, and potential adoption will be considered after the IETF 115 Hackathon (where running code will be shown) or earlier if list interest is strong.
+*   **Management and Operations for Green Networking:** Discussions on defining a clearer scope, specific requirements, and appropriate IETF contributions for green networking will continue on the mailing list. Coordination with the IAB's planned workshop and AD-led discussions on this broad topic will occur.
+*   **What the IETF has done for Energy:** Community engagement is sought for feedback and co-authors. The potential revival of the "recipe" mailing list for discussions will be explored via the opsawg list.
+*   **MIEA - Malware Internetwork Exposure Analyzer Utility for IoT:** The author will continue with real-world testing and prototype development. Communication with the DOTS working group is encouraged to explore overlaps and gain further feedback. Discussion will continue on the mailing list.
+*   **AUTO (Application-Layer Transport Optimization) Introduction:** The AUTO WG is seeking YANG doctor reviews for its AUTO-OM YANG data model.
+*   **IETF Leadership Roles:** Community members interested in becoming Working Group Chairs, Document Shepherds, or Area Directors are encouraged to reach out to current chairs and ADs for more information.

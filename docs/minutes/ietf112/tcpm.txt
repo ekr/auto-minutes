@@ -1,0 +1,117 @@
+**Session Date/Time:** 11 Nov 2021 12:00
+
+# tcpm
+
+## Summary
+The tcpm working group meeting included status updates on several existing working group documents, presentations on updates to CUBIC and TCP AO-related drafts, and discussions on new proposals for revising RFC 5681, TCP Appropriate Byte Counting (ABC), and an implementation feature called TCP Silent Close. Key themes included the challenges of standardizing widely deployed but non-RFC-compliant TCP behaviors, the need for increased implementation and interoperability feedback, and the impact of new features on middleboxes and network infrastructure. Michael Scharf also announced his intention to step down as co-chair after wrapping up some current work.
+
+## Key Discussion Points
+
+*   **RFC 793bis (TCP Specification):**
+    *   ISG last call complete; many comments received.
+    *   Editor (Wes) is working through comments, some requiring more research (e.g., source route options, consistency with IP options, real stack behavior).
+    *   Wes will reach out to the mailing list for help on complex questions.
+
+*   **Proportional Rate Reduction (PRR):**
+    *   Authors are busy but plan a new version by the next IETF.
+    *   Changes include two bug fixes and clarifications on interactions between PRR and REC (Rate-aware ECN).
+    *   Implementation status: The document aims to reflect the latest Linux TCP PRR; Richard has provided feedback based on FreeBSD implementation.
+
+*   **CUBIC Bis:**
+    *   Significant updates based on Marco's extensive review and GitHub discussions.
+    *   **Key Changes/Issues:**
+        *   CUBIC's aggressive nature (beta 0.7 vs. Reno's 0.5) and higher window after slow start overshoot (70% vs. Reno's 50%). Recommendation: Implement `highstart++`.
+        *   Clarification on using PRR for packet loss events, not ECN.
+        *   Performance in wireless networks (due to transient congestion loss, not random packet loss).
+        *   Lower congestion window limit: For ECN, window should reduce below 2, backing off exponentially via retransmit timer (as per RFC 3168). Current implementations (e.g., Linux) might not do this.
+        *   Use of `flight size` vs. `congestion window` in reduction equation: RFCs use `flight size`, but `flight size` can be low for rate-limited apps. Recommendation: Implement RFC 7661 (which allows setting ss_thresh between flight size and cwnd). Linux uses cwnd.
+        *   Spurious events (RTOS, retransmits): CUBIC's proposed undo logic potentially modifies RFC 4015 (which sets cwnd to `flight size + min(bytes_acked, initial_window)`). CUBIC recommends restoring cwnd to its previous state. Concern raised about restoring state during path changes/reduced bottleneck capacity.
+    *   Concern about new recommendations lacking implementation experience.
+    *   Discussion on "dogmatic view" of RFCs vs. documenting widely deployed practice.
+    *   `highstart++` is a normative "should" reference, tying CUBIC to its progress.
+
+*   **TCP AO Yang Model:**
+    *   Two recent updates (`-03`, `-04`) to address open issues and review comments from Tom Petch.
+    *   **Key Changes:** Narrow scope emphasized, expanded semantics on writable TCP connection table, security considerations fixed.
+    *   **Open Issues (`-05` planned):** Missing/improved references, minor Yang semantics, more prominent MD5 warning signs, example improvements.
+    *   **Bigger Questions:**
+        *   Overlap with L3VPN Network Model (L3NM) which also models TCP AO parameters, particularly in keychain. L3NM assumes keychain modeling (not in RFC 8177). TCPM Yang explicitly models `send_id` and `receive_id`. Suggestion: Explain this difference and add L3NM reference.
+        *   Comprehensive comparison with TCP MIB (RFC 4022). Previous feedback was that MIB comparison wasn't critical.
+    *   The model targets routers, where Yang is more relevant, not host operating systems.
+
+*   **TCP AO Test Vectors:**
+    *   Aims to help implement TCP AO correctly and ensure interoperability.
+    *   Tests with IPv6 successful.
+    *   Updated based on comments from Michael Scharf (clarifications on NAT traversal, decimal/hex/binary for DCS fields).
+    *   Informational document.
+
+*   **TCP AO Interop Test (BGP use case):**
+    *   Conducted remotely using VMs over the internet (multi-hop BGP, IPv4/v6) with SHA-96 and AES-CMAC-96.
+    *   **Lessons Learned:**
+        *   **Send/Receive IDs:** Must be configured from the router's perspective (opposite ends of connection). Feedback provided to Yang model.
+        *   **Algorithm Mismatch:** Configuration must use the same cryptographic algorithm.
+        *   **Firewall Modification:** A firewall modifying the MSS option caused TCP AO calculation failure, preventing BGP session establishment (demonstrating TCP AO working correctly).
+    *   **Implementations:** Several commercial, but no open-source. Wireshark supports TCP AO, but not tcpdump.
+    *   **Future Work:** RIPE NCC funded development of a reference implementation for BSD kernel (by Philip Paeps) and port to Linux kernel, plus netcat utility. Aiming for early 2022 release. Seeking sponsors for routing implementations (OpenBGPD, BIRD, FRR).
+    *   Community unaware of Leonard Prestes' ongoing Linux TCP AO implementation patches.
+
+*   **TCP EDO (Extended Data Options) and EOS (Extended Options Space):**
+    *   **TCP EDO (WG Document):** Described as stable, ready for Working Group Last Call. Lack of eagerness/urgency in implementation, but no known issues. Martin expressed discomfort with standards track without deployment experience; suggested experimental.
+    *   **TCP EOS (Individual Document):** Wes sees it as near ready for Working Group Last Call. Yoshi opposed individual submission for this, advocating for WG adoption if published.
+    *   Discussion on middlebox/hardware optimization interaction for EDO.
+    *   There was early implementation work on EDO by Joe's grad student, but not deployed in major kernels.
+
+*   **Revising RFC 5681 (TCP Congestion Control):**
+    *   Proposed by Lars to move 5681 to Internet Standard.
+    *   Obsoleted 2581 (proposed) which obsoleted 2001 (proposed).
+    *   Minimum goal: Roll in existing errata.
+    *   **Main driver:** Address widely deployed behaviors that conflict with 5681 (e.g., CUBIC's `ss_thresh` update based on `cwnd` not `flight size`, benefits app-limited scenarios). Quick's congestion control also defines `ss_thresh` based on `cwnd`.
+    *   Concern raised about making it an Internet Standard if congestion control is still evolving, potentially blocking future experimentation. Suggestion to reframe language to be more permissive.
+    *   The 793bis document's congestion control section also implies editorial changes to 5681.
+
+*   **Appropriate Byte Counting (ABC) (RFC 3465 Bis Proposal):**
+    *   **Problem:** RFC 3465's limit `L` (cap of 2 packets) for increasing congestion window is too slow with modern stretch ACKs. Other stacks (e.g., Linux since 2013) do not implement `L` (relying on spacing for bursting). Windows uses `L=8`.
+    *   **Proposal:** Remove limit `L`. Separate congestion window increase from bursting. Use "delivered data" (RFC 6937) to increase cwnd. Control bursting with pacing.
+    *   **"Delivered data" definition:** Amount of data that has left the network, adjusted for SACK blocks and duplicate ACKs.
+    *   Discussion: Should these changes be folded into 5681bis? Mark Allman (original author) has concerns.
+    *   Need for pacing if `L` is removed (Quick RFC 9002 does this). Without pacing, `L` might still be needed. Debate on specific values for `L` (8, 10).
+
+*   **TCP Silent Close (Implementation Feature):**
+    *   **Motivating Scenario:** Server kernel bursting millions of FINs to dormant cell phones when a server application crashes/exits, causing heavy network/energy usage and potential cellular network overload.
+    *   **Goal:** Upon application crash/exit, connections go silent (like a kernel crash/machine power off). Later incoming traffic triggers a RST.
+    *   **Mechanism:** A per-socket boolean `TCP_SILENT_CLOSE` option. When enabled, closing/shutting down sends no FIN/RST, kernel frees state immediately. For normal healthy close, application disables `TCP_SILENT_CLOSE` then closes for traditional FIN/ACK handshake.
+    *   **Usage Considerations:** Potential for increased memory usage in client side and middleboxes (NATs, firewalls) due to lack of explicit connection termination. This could lead to more aggressive NAT scavenging and increased keep-alive traffic.
+    *   **Related Work:** Similar to "silent tcp connection closure" paper (heavyweight, new option), SO_LINGER (different API semantics), Linux TCP repair mode (not suitable).
+    *   Used in production for years by the presenter's team, plans to upstream to Linux.
+
+## Decisions and Action Items
+
+*   **RFC 793bis:**
+    *   **ACTION:** Wes George to continue working through ISG review comments, seeking help from the mailing list for complex issues.
+*   **Proportional Rate Reduction (PRR):**
+    *   **ACTION:** Authors to provide a new version by the next IETF, addressing bug fixes and clarifications, and incorporating Richard's FreeBSD feedback.
+*   **CUBIC Bis:**
+    *   **ACTION:** Authors to continue fixing open issues, especially those related to spurious event handling and `flight size` vs. `cwnd`.
+    *   **ACTION:** Chairs to request a working group last call conclusion once issues are resolved, acknowledging the post-WGLC changes and seeking working group consensus.
+*   **TCP AO Yang Model:**
+    *   **ACTION:** Michael Scharf to produce a new version (`-05`) addressing Tom Petch's comments, including explaining the overlap/differences with the L3NM and potentially adding a TCP MIB comparison in an appendix.
+    *   **ACTION:** Working group to provide feedback on the updated document to prepare for Working Group Last Call.
+*   **TCP AO Test Vectors:**
+    *   **ACTION:** Working group to review the document and provide feedback soon if there are any concerns, otherwise the chairs intend to proceed with the draft.
+    *   **ACTION:** Greg Hankins to provide Michael Scharf with details on Leonard Prestes' Linux TCP AO implementation patches.
+*   **TCP EDO and EOS:**
+    *   **ACTION:** Yoshi to send his comments regarding middlebox interaction and hardware optimization for EDO to the mailing list.
+*   **Revising RFC 5681:**
+    *   **ACTION:** Lars to initiate discussion on the mailing list regarding the scope and specific changes desired for a 5681 revision.
+*   **Appropriate Byte Counting (ABC):**
+    *   **ACTION:** Vinnie to continue the discussion on the mailing list regarding the removal of `L` and the role of pacing, potentially folding into 5681bis.
+*   **TCP Silent Close:**
+    *   **ACTION:** Neil to continue the discussion on the mailing list, addressing concerns about impacts on middleboxes and client state.
+
+## Next Steps
+
+*   Continued development and review of all active working group documents (RFC 793bis, PRR, CUBIC Bis, TCP AO Yang, TCP AO Test Vectors, TCP EDO).
+*   Further discussion and consensus building on the proposed revision of RFC 5681.
+*   Detailed technical discussion on the ABC proposal, including its integration with 5681bis and the interplay between `L` and pacing.
+*   Community feedback on the TCP Silent Close feature, particularly regarding its network-wide implications for NATs/firewalls and client behavior.
+*   Michael Scharf will step down as co-chair after wrapping up some current work, particularly RFC 793bis.

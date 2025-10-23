@@ -1,0 +1,121 @@
+**Session Date/Time:** 24 Mar 2022 13:30
+
+# pim
+
+## Summary
+
+The PIM working group session covered several drafts, including two proposals for PIM DR improvements, an OAM mechanism for Point-to-Multipoint (PTP) policy PING, the PIM Light specification, the IGMP/MLD Snooping YANG model for L2VPN, and a PIM MoFR solution based on TRFA. Additionally, two new individual drafts proposing SRv6-based multicast traffic engineering solutions were presented. Key discussions revolved around comparing different technical approaches, resolving open issues, and determining next steps for adoption and further development.
+
+## Key Discussion Points
+
+### PIM DR Improvements (Backup DR and Sticky DR)
+
+*   **Mankamana's Draft (`draft-manakamana-pim-dr-improvements`)**:
+    *   **Problem Statement**: Current PIM DR election (RFC 7761) can lead to significant downtime during DR failure or churn upon new router addition/recovery.
+    *   **Backup DR**: Proposes simple mechanism where routers run the same DR election algorithm and the second-best router becomes a Backup DR. The Backup DR builds the multicast tree and receives traffic but only forwards to access upon primary DR failure, enabling fast failover.
+    *   **Sticky DR**: Once a DR is elected, it announces a special `PIM_DR_MAX` priority (a reserved, non-configurable max value). This prevents DR re-election due to new routers with higher configured priorities or temporary DR failures, minimizing network churn. If the Sticky DR fails, a new DR is elected (potentially a Backup DR) which then adopts the `PIM_DR_MAX` priority.
+    *   **Signaling**: Proposes implicit signaling using the `PIM_DR_MAX` priority, arguing that explicit Hello options might not be necessary if non-supporting routers honor the max priority.
+    *   **Status**: Draft will be updated to reflect the presented solution.
+*   **Sandy's Draft (`draft-sandy-pim-dr-bdr-election`)**:
+    *   **Problem Statement**: Same as above – need for stable DR and fast failover.
+    *   **Solution**: Introduces two new options in PIM Hello messages: a DR option and a BDR option.
+    *   **Mechanism**: Routers initially send Hellos with options set to zero. The highest priority router becomes DR, second highest becomes BDR. If an existing DR is present, new routers with higher priority won't become DR (sticky behavior) but can become BDR. The BDR joins the multicast tree but only forwards upon DR failure (monitored by BFD or other means).
+    *   **Signaling**: Uses explicit signaling via new Hello options.
+*   **Discussion**: The two drafts propose different approaches for Sticky DR (implicit `PIM_DR_MAX` vs. explicit Hello options) and Backup DR. Both authors agree on the need for the functionality.
+*   **Decision**: Authors to update their respective drafts to ensure a clear comparison of the solutions. A technical discussion on the mailing list is needed to evaluate the pros and cons of explicit vs. implicit signaling and decide on a single approach or potential merger. Stig to initiate an email thread.
+
+### PTP Multicast Policy PING (OAM for SRv6 P2MP)
+
+*   **Status Update**: Related drafts (replication segment, policy, YANG, MVPN, PCE, IDR) are progressing. YANG side needs more review. PCE adopted. IDR SR P2MP policy requested adoption call.
+*   **Purpose**: Define an OAM mechanism for Point-to-Multipoint (PTP) Segment Routing (SR) policies, especially for SRv6. It's crucial for understanding failures in traffic-engineered multicast trees, as there's no network signaling.
+*   **Mechanism**: Capable of testing each candidate path and path instance within a P2MP policy tree. Reuses MPLS OAM RFCs (4379, 6425) for packet construction, specifically for MPLS encapsulation. SRv6 OAM would require a separate draft.
+*   **Identified Elements**: A `point-to-multi-point policy target FEC` and a specific Tlv to identify the OAM packet.
+*   **Open Question**: For the root address field in the OAM Tlv (IPv4 or IPv6), should there be one Tlv with a variable length address field identified by an address family, or two distinct Tlvs (one for IPv4, one for IPv6)?
+*   **Action**: Heman to re-send the question to the MPLS and PIM mailing lists for feedback.
+
+### PIM Light
+
+*   **Motivation**: Provide a "lightweight" PIM interface capable of sending only Join/Prune/Assert messages between PIM routers (e.g., in Beer networks) without establishing a full PIM adjacency (i.e., no PIM Hellos).
+*   **Discussion Points**:
+    *   **Name**: "PIM Light" or "Light Transit" etc. – needs consensus.
+    *   **Hellos**: Can Hellos from other protocols (e.g., IGP) be used for a heartbeat to detect neighbor liveness?
+    *   **Asserts**: Are Asserts necessary if there's no shared medium (e.g., Beer) where duplicate traffic would typically occur? Stig noted Asserts are primarily for shared media, so PIM Light might not need them if restricted to certain link types.
+    *   **Multicast State**: Need to identify which multicast states (SG, *G) are signaled.
+    *   **Interface Configuration**: Should the PIM Light interface be explicitly configured for security, and how does this apply to mediums like Beer where a traditional interface cannot be created?
+*   **Decision**: The author will update the draft to clarify its applicability, address the need (or lack thereof) for Asserts in non-shared media, and provide more implementation details. An adoption call will be initiated on the mailing list.
+
+### IGMP/MLD Snooping YANG Model for L2VPN
+
+*   **Motivation**: To re-introduce the L2VPN portion of the IGMP/MLD Snooping YANG model, which was previously removed from RFC 9166 due to a blocking non-tail reference to an expired `ietf-l2vpn-vpls-yang` draft.
+*   **Content**: Defines L2VPN-specific elements for IGMP/MLD Snooping, including:
+    *   `m-router` interface types (AC, PW) – manually configurable or dynamically learned (read-only).
+    *   Outgoing interface types for snooping instances.
+    *   Augmentation of the L2VPN instance with `igmp-snooping-instance` and `mld-snooping-instance` references.
+*   **Decision**: The working group agreed to adopt this individual draft. There were 15 individuals supporting adoption and none against. Stig to send an adoption call email.
+
+### PIM MoFR based on TRFA (Topology-aware Reverse-path Forwarding Algorithm)
+
+*   **Motivation**: Extend PIM Multicast Fast Reroute (MoFR, RFC 7431) to cover a wider range of network topologies by leveraging the Topology-aware Reverse-path Forwarding Algorithm (TRFA) commonly used in unicast FR.
+*   **Mechanism**: The draft proposes using TRFA for PIM MoFR without additional PIM protocol extensions. It uses existing PIM features like the RPF Vector Attribute.
+    *   Type 0 RPF Vector Attribute: Looks up unicast routing to a P-node (e.g., R4).
+    *   Type 4 RPF Vector Attribute (Explicit RPF Vector Attribute): Specifies an explicit upstream neighbor (e.g., R3) without unicast routing lookup.
+    *   This allows establishing a backup multicast tree following an SR repair list.
+*   **Clarification**: Multicast traffic itself does *not* flow over SR tunnels; only the Join/Prune signaling uses the SR repair list as a reference to determine the path.
+*   **Status**: Presented as an informational draft.
+*   **Decision**: There was significant interest (15 in favor, 1 against). An adoption call will be initiated on the mailing list to gather further discussion and address concerns. Stig to initiate the email.
+
+### SRv6 Multicast Traffic Engineering Solutions
+
+Two new individual drafts were presented proposing SRv6-based multicast TE solutions, both aiming for stateless forwarding in intermediate nodes. These are alternatives to existing stateful replication segment solutions. Bob Hinden (6man chair) noted that header format and processing could be discussed in 6man, while the higher-level multicast routing concept fits better in PIM.
+
+#### 1. Multicast using Multicast Routing Header (SRv6-MRH)
+
+*   **Author**: Weimo
+*   **Motivation**: Provide a scalable, stateless IPv6 SRv6 multicast TE solution, addressing weaknesses in existing SRv6 P2MP proposals.
+*   **Mechanism**:
+    *   **MRH**: Introduces a new `Multicast Routing Header` (MRH) in IPv6, similar to the SRH but for multicast.
+    *   **Tree Encoding**: Encodes the multicast tree using "link numbers" and a "recursive bitstring structure" within the MRH. Each link on the tree is encoded with a link number, number of branches, and a pointer to subtrees.
+    *   **Forwarding**: Ingress encapsulates the multicast packet with MRH. Transient nodes use link numbers in MRH to find next-hop addresses from a local table and replicate copies, rewriting the MRH for each branch. Egress nodes decapsulate.
+    *   **Compression**: Uses bitstrings and flags to reduce header overhead, especially for leaf nodes and subtrees, aiming for efficient encoding (e.g., 16 bytes for 14 nodes, or 4 bytes for a subtree with bitstrings).
+*   **Discussion**: Initial presentation of a new approach. Need time for working group members to read and understand the draft. Stig suggested follow-up on the mailing list. Robin asked for comparison with other SRv6 P2MP drafts and consideration of incremental deployment.
+*   **Status**: Individual draft, requesting adoption. 10 people indicated they had read the draft, 11 had not.
+*   **Decision**: Continue technical discussion on the mailing list to evaluate its merits and compare with other proposals.
+
+#### 2. Multicast Source Routing over IPv6 TE (SRv6-MSR)
+
+*   **Author**: Huajin
+*   **Motivation**: Propose an optional solution for multicast P2MP path indication for TE scenarios over SRv6, aiming for statelessness in intermediate nodes.
+*   **Mechanism**:
+    *   **Solution 1: Structured Segment List**: Defines a new function type (`End.Replication.SL`) for seeds. Each seed contains parameters: a `replication number` (how many packets to replicate) and a `pointer` (to the segment list value of the first child node). This allows for group-based forwarding logic beyond simple `SL--` decrement.
+    *   **Solution 2: Compression with Local Bitstream**: Further reduces header size by defining a local bitstream in each seed, where bits represent local outgoing ports. This allows saving seeds for leaf nodes.
+    *   **MRH**: Mentions a new type of IPv6 routing header for multicast (MRH) is needed to accommodate various P2MP encoding forms.
+*   **Comparison**: Briefly compares with Weimo's draft, noting differences in segment popping vs. keeping all segments, and how `segment-left` is used.
+*   **Discussion**: Robin commented on the need for a new MRH, suggesting coordination with 6man for defining such headers and considering how many types of MRH might be needed. Torsten noted that IPv6 routing header space has multiple values, suggesting multiple types could be accommodated. Mike emphasized the need for an architecture document and potential work split between PIM, Spring, and 6man.
+*   **Status**: Individual draft, welcoming comments and feedback, and hoping for adoption.
+*   **Decision**: Continue technical discussion on the mailing list to evaluate the approach and compare with other proposals.
+
+## Decisions and Action Items
+
+*   **PIM DR Solutions**:
+    *   **Action**: Mankamana to update `draft-manakamana-pim-dr-improvements` to clearly reflect the presented solution.
+    *   **Action**: Stig to initiate an email thread on the PIM mailing list for a technical discussion to compare `draft-manakamana-pim-dr-improvements` and `draft-sandy-pim-dr-bdr-election` and work towards a unified solution or selection.
+*   **PTP Multicast Policy PING (OAM)**:
+    *   **Action**: Heman to re-send the query about the IPv4/IPv6 root address Tlv format (single variable Tlv vs. two distinct Tlvs) to both the MPLS and PIM mailing lists for feedback.
+*   **PIM Light**:
+    *   **Action**: Author(s) to update `draft-ietf-pim-light` to clarify its applicability, address the need for Asserts in different link types, and provide more detailed text.
+    *   **Action**: Sandy to initiate an adoption call for `draft-ietf-pim-light` on the PIM mailing list.
+*   **IGMP/MLD Snooping YANG Model for L2VPN**:
+    *   **Decision**: `draft-hongji-pim-igmp-mld-snooping-yang-l2vpn` is adopted as a working group draft.
+    *   **Action**: Stig to send an official adoption call email to the PIM mailing list.
+*   **PIM MoFR based on TRFA**:
+    *   **Action**: Stig to initiate an adoption call for `draft-isung-pim-mofr-sr-t-rfa` on the PIM mailing list to gather further discussion and resolve any concerns.
+*   **SRv6 Multicast Traffic Engineering Solutions (MRH and MSR)**:
+    *   **Action**: Authors and interested parties to continue technical discussion on the PIM mailing list to evaluate the different SRv6 P2MP proposals, understand their pros and cons, and determine future direction.
+
+## Next Steps
+
+*   Ongoing technical discussions for PIM DR solutions, PTP Multicast Policy PING OAM Tlv, PIM Light, and the SRv6 Multicast TE drafts will continue on the PIM mailing list.
+*   Authors of PIM DR and PIM Light drafts are tasked with updating their documents based on the session's feedback.
+*   The PIM working group will formally adopt the IGMP/MLD Snooping YANG for L2VPN draft.
+*   An adoption call will be held for PIM MoFR based on TRFA.
+*   The working group will need to consider how to coordinate with other IETF working groups (e.g., 6man, Spring) for aspects of the SRv6 Multicast TE drafts, particularly regarding header formats and architectural considerations.

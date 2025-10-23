@@ -1,0 +1,58 @@
+**Session Date/Time:** 07 Nov 2022 15:30
+
+# emu
+
+## Summary
+
+The emu session at IETF 115 covered several key topics related to EAP and security. A significant portion of the discussion focused on the ongoing challenges of certificate management, provisioning, and best practices for EAP deployments, highlighting the need for clearer guidance. The working group also reviewed progress on a forward secrecy draft, discussed a new proposal for de-provisioning expired EAP configurations from devices, and examined an alternative to EAP-Noob. Finally, an update was provided on the Bootstrap TLS draft, which aims to simplify the onboarding of wired 802.1X devices.
+
+## Key Discussion Points
+
+*   **EAP Certificate Management and Best Practices:**
+    *   A primary concern is the lack of robust mechanisms for provisioning, managing, and validating certificates in EAP, particularly the common practice of users bypassing server certificate validation.
+    *   Eduroam highlighted the use of onboarding tools to push complete EAP configurations (including trusted CAs) and the Wi-Fi Alliance's move to forbid "Do Not validate server certificate" options.
+    *   CableLabs presented their need for active credential management in EAP for IoT and home networks to combat security threats like botnets, referencing their `epcrads` approach.
+    *   Challenges in providing client certificates to end-users not under Mobile Device Management (MDM) were noted, along with security risks of web-based profile distribution.
+    *   Discussion ensued on the trade-offs between offline onboarding tools and online configuration, and the administrative difficulties of Alan DeKok's `at eep.arpa` proposal (unauthenticated EAP-TLS to a quarantine network for configuration download).
+    *   Concerns were raised regarding the use of web-server-oriented Public CAs (e.g., Cab Forum) for EAP/RADIUS, as their rulesets and OID restrictions may not align with EAP requirements.
+    *   The need for supplicants to provide better feedback on authentication failures (e.g., "which certificate was invalid?") was emphasized.
+    *   The problem of devices not knowing which server name to trust for a given EAP realm (e.g., `radius.wlan.uni-bremen.de` for `uni-bremen.de`) and the lack of Wi-Fi Alliance adoption for standardized EAP configuration profiles were also noted.
+*   **EAP Forward Secrecy (`emu-forward-secrecy`):**
+    *   The `emu-forward-secrecy-08` draft has resolved previous issues and aligned algorithms (e.g., p256, x25519 for 3GPP Subkey protection).
+    *   New rules for defining future KDF attributes were added, along with security considerations for quantum computing attacks and potential metadata leakage in EAP-AKA exchanges.
+    *   A question was raised about interoperability with Broadband Forum's MZ privacy extensors.
+*   **EAP De-provisioning of Identity (EAP-Dye):**
+    *   A new proposal by Josh offered a mechanism to de-provision expired EAP configurations from BYODs, addressing the problem of stale network profiles causing wasteful authentication attempts and distorted operator statistics.
+    *   The strawman proposal leverages EAP Notification Requests (RFC 3748) to send an expiration date to the supplicant after successful authentication, with the message protected by an EAP-derived key.
+    *   Discussion points included the underutilization and potential undefined behavior of the EAP Notification state machine, the proposal's reliance on successful prior authentication, and its architectural fit compared to MDM solutions.
+    *   The need for client-side functionality to disable (rather than delete) profiles and provide clearer error messages was highlighted.
+*   **EAP-Noob (`ibnoop`) and Alternatives:**
+    *   Observations on the `ibnoop` specification highlighted issues with its JSON payload (not ideal for IoT, long messages, canonicalization for HMAC), message overhead (high round-trip count), and lack of explicit versioning.
+    *   A new draft, `utter-users`, was presented as an alternative, using CBOR encoding and MAC calculation over the entire message to address `ibnoop`'s limitations while retaining its design principles.
+    *   The current lack of known large-scale `ibnoop` deployments was discussed, questioning the utility of further work in this area for emu.
+*   **Bootstrap TLS (`bootstrap-tls`):**
+    *   An update on `bootstrap-tls-01`, which reuses DPP bootstrapping techniques and key formats to authenticate wired 802.1X devices.
+    *   The mechanism involves deriving a PSK from a DPP bootstrapping key, injecting it into a TLS 1.3 handshake (RFC 9258), and then using raw public key authentication (RFC 8773) for the client.
+    *   This provides a way for unprovisioned wired devices with limited UIs to establish a trusted connection and then provision certificates via TEAP.
+    *   The draft is based on standard TLS extensions and aims for eventual implementation with OpenSSL features.
+
+## Decisions and Action Items
+
+*   **Certificate Issues and Best Practices:**
+    *   **Decision:** The working group acknowledges the importance and existing gaps in EAP certificate management.
+    *   **Action Item (Chairs/Alan DeKok):** Solicit further detailed requirements and discussion on the mailing list to determine if the work should lead to best practice recommendations or formal specifications.
+*   **EAP Forward Secrecy (`emu-forward-secrecy`):**
+    *   **Decision:** The draft is deemed ready for wider review.
+    *   **Action Item (Chairs):** Initiate a Working Group Last Call for `emu-forward-secrecy`.
+    *   **Action Item (Yari):** Investigate potential interoperability with Broadband Forum's MZ privacy extensors in parallel with the WGLC.
+*   **EAP-Dye (De-provisioning):**
+    *   **Action Item (Josh/Chairs):** Continue discussion on the mailing list to gather more feedback, refine the proposal, and address the raised technical and architectural concerns.
+*   **EAP-Noob (`ibnoop`/`utter-users`):**
+    *   **Action Item (Jochen Friedrich/Chairs):** Post a message to the mailing list to gather information on existing `ibnoop` deployments or planned use cases, and gauge interest in the `utter-users` alternative.
+*   **Bootstrap TLS (`bootstrap-tls`):**
+    *   **Action Item (Chairs):** Encourage working group members to review the `bootstrap-tls` draft and provide feedback on the mailing list to facilitate its progress.
+
+## Next Steps
+
+*   **Mailing List Engagement:** Active discussion on the emu mailing list is requested for EAP certificate issues, EAP-Dye, and EAP-Noob/utter-users.
+*   **Draft Review:** Working group members are encouraged to review `emu-forward-secrecy` (for WGLC) and `bootstrap-tls`.

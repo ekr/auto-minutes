@@ -1,0 +1,46 @@
+**Session Date/Time:** 09 Nov 2021 16:00
+
+# grow
+
+## Summary
+
+The grow session included two technical presentations. Paolo Lucente provided an update on the draft to add TLV support to BMP Route Monitoring and Peer Down messages, proposing a specific mechanism for indexed TLVs. Edward R. P. B. M. L. K. M. L. E. presented research on using eBPF for on-host load balancing of telemetry data, focusing on ensuring correlated streams from a single device are directed to the same processing daemon.
+
+## Key Discussion Points
+
+*   **TLVs for BMP Route Monitoring and Peer Down Messages (Paolo Lucente)**
+    *   **Problem:** Existing BMP messages, specifically Route Monitoring and Peer Down, lack support for TLVs.
+    *   **Proposed Solution:** Introduce TLV support to these messages, requiring a bump in the BMP version to v4.
+    *   **TLV Types:** The draft defines both generic and indexed TLVs.
+    *   **Indexed TLVs:** These are crucial for Route Monitoring messages to specify whether a TLV applies to the entire BGP message or a specific Network Layer Reachability Information (NLRI).
+    *   **Revision 6 Update:** The key change in revision 6 clarifies the use of the index field:
+        *   An index value of `0` indicates the TLV applies to the entire BGP message.
+        *   A positive index value indicates the TLV applies to a specific NLRI within the message.
+    *   **Status:** This change is considered the final outstanding piece of work for the draft.
+
+*   **On-Host Load Balancing for Telemetry using eBPF (Edward R. P. B. M. L. K. M. L. E.)**
+    *   **Context:** The need to combine diverse network telemetry streams (e.g., BGP, IPFIX, Yang Push) from a single network device on a target host for correlation and analysis.
+    *   **Challenge:** Ensuring that all telemetry data streams originating from the same device, potentially using different transport protocols and ports, are consistently directed to the *same* processing daemon on the collection host.
+    *   **Baseline (Proxy) Approach:** Using traditional proxies (e.g., HAProxy for TCP, nfd for UDP) in front of telemetry daemons to route traffic.
+        *   **Drawbacks:** Introduces additional components, overhead, latency, reliability issues (e.g., update cycles, configuration complexity), and administrative burden due to disparate configuration syntaxes.
+    *   **eBPF-based Solution:** Leverage the `SO_REUSEPORT` socket option in conjunction with a custom eBPF program.
+        *   `SO_REUSEPORT` provides stateless load balancing but defaults to hashing the entire flow, potentially splitting streams from a single device if they use different protocols.
+        *   **eBPF Enhancement:** An eBPF program is attached to the `SO_REUSEPORT` group to customize the hash function. It specifically hashes *only the IP source address*, ensuring all traffic from a given device (assuming a single source IP) is directed to the same daemon.
+        *   **Daemon Management:** Collectors register their intent (e.g., "I am 1 of N collectors"). The eBPF program balances across the *intended* number of daemons. If a daemon is temporarily down (e.g., during a rolling update), the eBPF program will respond with a TCP reset or drop UDP datagrams, preventing cascading failures and ensuring stability.
+    *   **Benefits of eBPF Approach:**
+        *   Stateless load balancing with minimal configuration (only the intended number of daemons).
+        *   Ensures correlation by device identity (source IP).
+        *   Improved stability across restarts and during updates; prevents cascading failures.
+        *   Eliminates the need for additional proxy daemons, reducing system complexity, vulnerabilities, and configuration overhead.
+        *   Portable due to eBPF's "compile once, run everywhere" capability.
+        *   Demonstrated performance improvements, including approximately 20% CPU time savings and better ramp-up performance compared to proxy-based solutions.
+
+## Decisions and Action Items
+
+*   **Decision:** The draft "BMP TLVs for Route Monitoring and Peer Down Messages" appears to be complete with the proposed changes in revision 6.
+*   **Action Item:** Paolo Lucente will initiate a Work Group Last Call for the "BMP TLVs for Route Monitoring and Peer Down Messages" draft on the mailing list.
+
+## Next Steps
+
+*   The grow working group will review and provide feedback on the Work Group Last Call for Paolo Lucente's BMP TLVs draft.
+*   No immediate next steps were identified for the eBPF telemetry load balancing research, as it was presented as academic work and a master's thesis.

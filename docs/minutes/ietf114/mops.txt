@@ -1,0 +1,92 @@
+**Session Date/Time:** 29 Jul 2022 14:00
+
+# mops
+## Summary
+The mops working group session included updates on two active documents and reports on related IETF activities. The "Ops Cons" document is nearing completion, having addressed numerous review comments and an ISG discuss ballot, with minor editorial work remaining before submission to the RFC editor. The "XR Media Delivery" document received significant feedback, particularly on technical approaches to XR content, network traffic characteristics, and the importance of using real-world data and industry trends. Reports were given on the Multicast QUICK hackathon efforts and the Media Over QUICK (MOQ) BoF, which is progressing towards working group formation and committed to a liaison with mops. Finally, Telefonica presented a real-world deployment of ALTO for making their CDN network-aware, outlining challenges and future plans.
+
+## Key Discussion Points
+
+### Ops Cons Document Update (draft-ietf-mops-ops-cons)
+*   **Progress:** Draft-11 was submitted, addressing 21 GitHub issues from area review and 9 from ISG discuss ballots. Two minor issues remain for draft-12.
+*   **Key Changes in Draft-11:**
+    *   Synchronized abstract and introduction.
+    *   Added definitions and scoping text for clarity.
+    *   Refined notes on video bitrates and "baseline" for monitoring.
+    *   Reduced detailed text on unpredictable usage profiles.
+    *   Included background on adaptive bitrate streaming.
+    *   Added text on competing goals for personalized ad insertion, in response to ISG feedback.
+    *   Rewrote Section 6, introducing the concept of "media transport protocols."
+    *   Provided clarifications on media encryption, tunneling, and VPNs.
+*   **ISG Feedback:** The changes were largely editorial clarifications and not substantial technical modifications that would necessitate another IETF last call.
+
+### XR Media Delivery Document Update (draft-krishnan-mops-xr-media-delivery-ops)
+*   **Updates:** Abstract, Introduction, and Section 5 were updated to clarify expected XR application behavior (workload, service requirements like response times, throughput, reliability, availability), emphasizing heavy-tailed traffic and unique QoE factors (e.g., motion sickness). Section 5 aims to elaborate on traffic workload and XR-specific service requirements.
+*   **Discussion on XR Technical Approaches (Colin Jennings - Cisco):**
+    *   Described three major ways XR images/data are transmitted: Texture-mapped polygons, Point Clouds, and Light Fields (used by Cisco's WebEx Hologram).
+    *   Provided specific bandwidth numbers for Light Field streaming: ~30 Mbps upstream and ~6 Mbps downstream.
+    *   Emphasized the critical nature of motion sickness latency (under 12 ms) but noted that other latencies can be overlapped.
+    *   Advised to scan draft for potentially dated 3GPP numbers/references.
+    *   Recommended the document explicitly describe these different XR media delivery techniques.
+*   **Discussion on Use Cases and Trends (Mo Zanati):**
+    *   Argued that the current use case in the draft might not be representative.
+    *   Suggested looking at how popular game developers render things, as this better reflects future XR application architectures.
+    *   Highlighted industry trends like increased frame rates (120 Hz, 8 ms refresh), which dictate network requirements and latency constraints for edge processing.
+*   **Suggestions for Authors:**
+    *   Incorporate an initial set of numbers (even if illustrative) to facilitate further contributions.
+    *   Consider the model of characterizing bitrates and traffic from the "Ops Cons" draft.
+
+### Hackathon Report - Multicast QUICK
+*   **Status:** Implementation of a multicast QUICK draft is ongoing at the hackathon, making progress and informing draft updates.
+*   **Approach:** Exploring use of Warp server for server-initiated data.
+*   **Collaboration:** Work is also being conducted within the W3C multicast community group.
+
+### Media Over QUICK (MOQ) BoF Report
+*   **Outcome:** The second MOQ BoF focused on chartering, with strong community agreement to form a working group. The charter now explicitly includes a liaison with mops.
+*   **Industry Engagement:** Discussion emphasized the importance of industry engagement, particularly from professional media delivery and creation, beyond those already involved from the networking side. It was suggested that mops could amplify MOQ's use cases to a broader audience.
+*   **Operational Experience:** Existing participants, including large content providers (WebEx, Meta, Twitch), bring significant operational experience.
+*   **Future Meeting:** A hybrid interim meeting is likely before IETF 115 to discuss technical aspects.
+
+### CTA/SVA/WEAVE Report (Common Media Server Data, Common Access Token, Stream Media Tracing)
+*   **Common Media Server Data (CMSD):** Nearing completion, this draft enables CDNs to receive data from origins for intelligent operational decisions, complementing CMCD. It uses static and dynamic agglutinative headers.
+*   **Common Access Token (CAT):** A CWT-based token for streaming media, aiming for industry-wide adoption for access control. It supports core, general, composite (Boolean logic, encrypted), and action claims.
+*   **Stream Media Tracing (SMT):** A new effort with three scopes: Push (camera to origin tracing), Export (sending logs, leveraging OpenTelemetry), and Pull (in-band HTTP tracing). Emphasizes using existing standards and agglutinative headers for data collection.
+*   **IP Address Locking in CAT (Discussion):** A significant operational challenge is the industry requirement for IP address locking in tokens, despite the problems it causes (IPv6 transition, privacy proxies). The CAT draft compromises by allowing IP addresses more specific than /24 or /56 only within encrypted claims, with extensive text explaining why this is a bad practice.
+
+### Real World Deployment of ALTO for CDN (Telefonica)
+*   **Motivation:** Telefonica aims to make its in-house CDN (tCDN) "network-aware" to optimize content delivery, replacing manual network topology updates with an automated system.
+*   **Solution:** Leveraging ALTO to expose timely network information.
+*   **Mechanism:**
+    *   ALTO builds a network map by associating customer prefixes (grouped by central offices) with PIDs and generating PIDs for streamers.
+    *   BGP sessions with route reflectors provide end-user prefix information (BNG locations).
+    *   BGP-LS provides network topology (nodes and links).
+    *   A "cost map" (streamer-to-customer reachability) is generated, initially using hop count, with plans for richer metrics.
+*   **Deployment Phases:** Started with feasibility in a lab (OpenDaylight, monovendor), moved to a pre-production lab (exabgp, multi-vendor, physical routers, dedicated ALTO server, complex MPLS network), and is now moving to production in Telefonica Spain.
+*   **Challenges:** Engineering issues with BGP-LS parsing, multi-vendor environments, private autonomous systems, and adapting to production procedures (security, hardening).
+*   **Next Steps:** Expand to other countries (e.g., Brazil), refine tCDN logic for ALTO consumption, characterize ALTO performance/scalability with thousands of routers, and enrich cost maps with congestion/latency/access network information.
+*   **Community Feedback:** Telefonica seeks feedback from mops on the usefulness and direction of this work.
+
+## Decisions and Action Items
+
+*   **Ops Cons Document:**
+    *   **Action Item:** Working group members are encouraged to review draft-ietf-mops-ops-cons-11, paying special attention to the highlighted changes, and provide any objections or comments on the mailing list.
+    *   **Action Item:** Editors (Spencer Dawkins, Jake Holland, Ali C. Begen) to address the remaining two GitHub issues and prepare draft-12 for submission.
+    *   **Action Item:** Editors to follow up with Roman and Eric Wink for final approvals before forwarding to the RFC editor.
+*   **XR Media Delivery Document:**
+    *   **Action Item:** Renan Krishna and co-authors to review the detailed feedback from Colin Jennings (especially regarding different XR media delivery approaches and specific bandwidth numbers) and Mo Zanati (on industry trends and gaming architectures).
+    *   **Action Item:** Renan Krishna and co-authors to re-check 3GPP references and numbers in the draft for accuracy and timeliness.
+    *   **Action Item:** Renan Krishna and co-authors to consider incorporating an initial set of illustrative numbers into the draft to stimulate further community input.
+    *   **Action Item:** Renan Krishna and co-authors to follow up on Sanjay Mishra's recent comments on the mailing list.
+*   **Media Over QUICK (MOQ) BoF:**
+    *   **Decision:** The MOQ WG charter includes a liaison with mops.
+    *   **Action Item:** Mops working group members are encouraged to engage with the MOQ efforts, particularly on use cases and requirements, to help amplify messages to a broader industry audience.
+    *   **Action Item:** Ted Hardy (MOQ Chair) to keep mops chairs (Allen and Leslie) informed about potential MOQ interim meetings, including logistics and relevant industry events.
+*   **Telefonica ALTO Deployment:**
+    *   **Action Item:** Mops working group members are invited to provide feedback to Luis Contreras and the Telefonica team on the usefulness and direction of their ALTO deployment work, either directly or via the ALTO working group mailing list.
+
+## Next Steps
+
+*   **Ops Cons:** Finalize draft-12 and proceed to RFC editor once all AD comments are addressed.
+*   **XR Media Delivery:** Authors to integrate community feedback, refine technical descriptions, and possibly add initial performance numbers to the draft.
+*   **Multicast QUICK:** Continue implementation and development, aiming for a demo.
+*   **Media Over QUICK:** Formalize working group formation; hold an interim meeting to advance technical discussions.
+*   **Telefonica ALTO Deployment:** Continue rollout in Telefonica Spain, expand to other countries (e.g., Brazil), fully integrate tCDN logic with ALTO, and characterize ALTO's performance and scalability in the production network. Telefonica aims to report back to mops on these efforts by the end of the year or next mops session.

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="maprg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-MAPRG-20220323-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 23 Mar 2022 09:00</p>
+<h1>maprg</h1>
+<h2>Summary</h2>
+<p>The maprg session featured a diverse set of research presentations on Internet measurement and analysis. Discussions covered novel IPv6 scanning techniques, the ongoing effort to define and measure DNSSEC deployment metrics, the current state of DNS over TCP support and its related challenges, performance issues of QUIC over geostationary satellite links, and the observed use of QUIC for DDoS resource exhaustion attacks. Key takeaways included the emergence of effective IPv6 scanning methods, the need for comprehensive DNSSEC measurement, significant gaps in DNS over TCP support, and calls for implementers to address specific performance and security vulnerabilities in QUIC.</p>
+<h2>Key Discussion Points</h2>
+<h3>1. Glowing in the Dark: Characterizing IPv6 Scanning in the Wild (Hamas Bentanvir)</h3>
+<ul>
+<li><strong>Problem</strong>: The vast IPv6 address space (2^128) makes brute-force scanning infeasible, unlike IPv4. Scanners must find active address regions.</li>
+<li><strong>Scanning Techniques</strong>:
+<ul>
+<li><strong>IP Scanning</strong>: Learning patterns from public sources (DNS zone files, Tor relay data, NTP servers) to generate target addresses. Results are probabilistic.</li>
+<li><strong>NXDOMAIN Scanning</strong>: Exploiting RFC 8020 semantics (NXDOMAIN for a domain means no child domains exist). This allows a scanner to prune large portions of the reverse DNS tree efficiently. For a /64 subnet, it can reduce probes from 2^64 to as few as 64. For this to work, the IP addresses must have reverse DNS delegations.</li>
+</ul>
+</li>
+<li><strong>Experimental Setup</strong>: Services were deployed in an active /58 IPv6 address space to attract scanners, mimicking a real network. DNS, reverse DNS, and incoming traffic logs were collected. Address assignments included &quot;lower byte&quot; (easy to remember) and random types.</li>
+<li><strong>Key Observations</strong>:
+<ul>
+<li>Scanning activity significantly increased after services were deployed, indicating the need for active signals to attract scanners in IPv6.</li>
+<li>NXDOMAIN scanners effectively targeted only the active /58 subnet, sending single requests to eliminate other subnets.</li>
+<li>IP scanners searched more broadly across the entire 256 subnets, exhibiting mixed behavior.</li>
+<li>NXDOMAIN scanners targeted a broader range of services, while IP scanners focused on DNS, NTP, and DNS zone files.</li>
+</ul>
+</li>
+<li><strong>Takeaways</strong>:
+<ul>
+<li>Analyzing darknet traffic alone is insufficient for studying IPv6 scanning behavior; active addresses provide necessary signals.</li>
+<li>NXDOMAIN scanning is currently underutilized but is a powerful technique for attackers.</li>
+<li>RFC 8020's efficiency for DNS caching might be a trade-off against a new scanning side channel.</li>
+<li>Address discovery relies heavily on open DNS resolvers, not just curated public lists.</li>
+<li>Neighboring /64 subnets should anticipate increased scanning activity if services are active nearby.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>The fraction of IPv6 addresses with reverse DNS delegations is unknown, but prior work has shown many can be discovered this way.</li>
+<li><strong>Mitigation</strong>: Peter K. and Rashad suggested that zone file configuration, specifically defining wildcards in the reverse tree, can prevent the NXDOMAIN side channel. This allows returning a &quot;no error&quot; response (e.g., with a TXT record indicating no host) instead of NXDOMAIN, without violating RFC 8020. This is a configuration issue, not a flaw in RFC 8020 itself.</li>
+</ul>
+</li>
+</ul>
+<h3>2. DNSSEC Deployment Metrics Research (Marco Muta)</h3>
+<ul>
+<li><strong>Goal</strong>: Identify metrics and techniques to measure DNSSEC deployment now and in the future, and recommend a comprehensive set to ICANN.</li>
+<li><strong>Challenges</strong>:
+<ul>
+<li><strong>Breadth of DNSSEC</strong>: Metrics span signing (domains, algorithms, key rollovers, NSEC/NSEC3, automation) and validation (resolvers, algorithms, trust anchors, signaling protocols).</li>
+<li><strong>Related Protocols</strong>: DANE and other DNSSEC extensions (CDS, CDNSKEY) also need consideration.</li>
+<li><strong>Measurement Techniques</strong>: Different approaches (active like RIPE Atlas, passive from authoritative logs, client-side) have pros and cons, affecting data type (raw vs. aggregated) and control.</li>
+</ul>
+</li>
+<li><strong>Approach</strong>: Conduct a broad literature review (academic and industry), perform a gap analysis, and develop an assessment framework (considering coverage, representability, and feasibility).</li>
+<li><strong>Discussion</strong>: Alex suggested that a key &quot;end-to-end&quot; metric would be the &quot;percentage of DNSSEC protected transactions on the public internet,&quot; combining domain popularity, DNSSEC population, and validation population.</li>
+</ul>
+<h3>3. Measuring the Support for DNS over TCP in the Internet (Jierome Mao)</h3>
+<ul>
+<li><strong>Focus</strong>: DNS over TCP support on recursive resolvers and authoritative DNS servers.</li>
+<li><strong>Recursive Resolvers</strong>:
+<ul>
+<li><strong>Method</strong>: Forced resolvers to use TCP by sending truncated UDP responses. Developed an algorithm to identify TCP fallback relationships in complex resolution scenarios.</li>
+<li><strong>Results</strong>: 95-97% of ~160,000 studied resolvers are TCP fallback capable, handling 96-99% of CDN traffic. However, a small but non-negligible number of incapable resolvers are still active, risking large DNS message delivery.</li>
+</ul>
+</li>
+<li><strong>Authoritative DNS Servers</strong>:
+<ul>
+<li><strong>Method</strong>: Sent TCP queries to ADNS for various domain sets (CDN-handled, popular websites, CDN-accelerated).</li>
+<li><strong>Results</strong>: Over 5% of domains and over 3% of popular websites fail TCP resolution through some ADNS. 11 out of 47 CDNs have ADNS that do not support DNS over TCP.</li>
+</ul>
+</li>
+<li><strong>Race Condition</strong>: Many ADNS (approx. 33% for popular websites/CDNs) immediately close TCP connections after responding, leading to a race condition where subsequent queries from reusing clients may go unanswered.</li>
+<li><strong>Proposed Optional Updates (for discussion)</strong>:
+<ul>
+<li>Resolvers should not reuse TCP connections until EDNS TCP Keepalive negotiation is explicitly completed.</li>
+<li>Resolvers should be loyal to the negotiated keepalive duration.</li>
+<li>ADNS should retain TCP connections for 2x Maximum Segment Lifetime beyond the negotiated keepalive.</li>
+<li>Potentially negotiate EDNS TCP Keepalive in UDP for signaling.</li>
+<li>These updates could also benefit DNS over TLS.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>The presenter confirmed they have reached out to CDN providers regarding identified bugs.</li>
+<li>Questions arose regarding how many domains would truly fail to resolve if only <em>some</em> of their authoritative name servers lacked TCP support.</li>
+<li>The potential for middleboxes in corporate environments to block DNS over TCP was raised as an important area for further study.</li>
+</ul>
+</li>
+</ul>
+<h3>4. Performance Measurements of QUIC Implementations over Geostationary Satellite Links (Uwe Deutschmann)</h3>
+<ul>
+<li><strong>Problem</strong>: Traditional TCP proxies (PEPs) are incompatible with encrypted transport like QUIC. Prior work showed poor QUIC performance over geostationary satellite links (high latency, packet loss).</li>
+<li><strong>Methodology</strong>: Utilized a modified QUIC Interop Runner (dockerized clients/servers, NS3 emulation) to test 12 client and 13 server implementations. Scenarios included emulated terrestrial, satellite, and satellite-with-loss links, as well as real satellite links (Astra, Eutelsat). A 10MB file download was used for performance measurement.</li>
+<li><strong>Key Results</strong>:
+<ul>
+<li>QUIC performance over geostationary satellite links is consistently very poor, significantly lower than terrestrial links.</li>
+<li>Performance further degrades with added packet loss.</li>
+<li>Results vary widely across client/server implementation combinations, suggesting a lack of optimization for high-latency environments.</li>
+<li><strong>Congestion Control</strong>: Implementations using Reno/NewReno performed poorly. Cubic showed mixed results. BBR performed relatively better across satellite scenarios.</li>
+<li>Analysis of time-offset diagrams showed issues like long slow starts and bursty sending behavior. PicoQUIC, which explicitly tunes for high latency, showed better performance with quick ramp-up and speculative retransmissions.</li>
+</ul>
+</li>
+<li><strong>Takeaways</strong>: QUIC's full potential is not being realized over geostationary satellite links due to implementation-specific issues and lack of optimization for high-latency, lossy environments.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>LEO satellite systems (like Starlink) generally perform better for QUIC due to lower latency, but handoffs between satellites introduce a new set of challenges.</li>
+<li>Implementers are encouraged to add satellite-specific test cases to their benchmarks and consider more aggressive congestion control mechanisms for high-latency links.</li>
+</ul>
+</li>
+</ul>
+<h3>5. QUIC and DDoS Scanning (Matthias Wählisch)</h3>
+<ul>
+<li><strong>Question</strong>: Is QUIC being used for DDoS attacks? <strong>Answer</strong>: Yes.</li>
+<li><strong>QUIC Vulnerabilities</strong>:
+<ul>
+<li><strong>Reflective Amplification</strong>: While possible, QUIC's design limits amplification to a factor of 3, making it less attractive than other UDP protocols (e.g., DNS, NTP).</li>
+<li><strong>Resource Exhaustion (Initial Flood)</strong>: This is the primary concern. An attacker sends spoofed initial messages, causing the QUIC server to allocate state and computational resources (for TLS handshakes) even if the source IP is unreachable. This can deplete server resources, leading to denial of service.</li>
+</ul>
+</li>
+<li><strong>Methodology</strong>: Analyzed traffic from the UCSD/CAIDA network telescope (a /8 IPv4 darknet prefix) for one month in April 2021. Filtered UDP port 443 traffic, used deep packet inspection to confirm QUIC, and differentiated benign research scans from malicious patterns.</li>
+<li><strong>Key Findings</strong>:
+<ul>
+<li>Observed erratic patterns in QUIC response packets (backscatter to spoofed IPs), indicative of DDoS activity.</li>
+<li>The majority of attacked servers (victims) were located in major content provider networks (e.g., Google, Facebook).</li>
+<li>Using established thresholds for DDoS detection, over 2,900 attacks were identified. Even with 10x stricter thresholds, a significant number of attacks were still found.</li>
+<li><strong>Attack Correlation</strong>: About half of identified QUIC attacks occurred concurrently with other attack types (e.g., TCP SYN floods, ICMP floods), and 40% were sequential (following other attacks). Only 9% were QUIC-only, indicating attackers leverage all available protocols.</li>
+</ul>
+</li>
+<li><strong>Mitigation</strong>: The QUIC Retry mechanism, which requires the client to reply with a server-provided cookie before state is established, effectively prevents resource exhaustion.</li>
+<li><strong>Deployment Status</strong>: Testbed evaluation showed QUIC services without retries could be exhausted at low packet rates (e.g., 100pps). Enabling retries protected the server but added one additional Round-Trip Time (RTT) delay.
+<ul>
+<li>Crucially, observed data from 2021 indicated none of the attacked servers were using the retry option, likely due to the RTT overhead.</li>
+<li>Recent data from 2022 shows that initial floods have doubled. While Google and Facebook are still major targets, Cloudflare is also seeing attacks. A very small minority of servers are now using retry packets.</li>
+</ul>
+</li>
+<li><strong>Conclusion</strong>: QUIC is vulnerable to initial floods for resource exhaustion, and these attacks are observed in the wild with an increasing trend. Enabling the retry mechanism is an effective mitigation, despite its RTT cost.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>The telescope's /8 prefix means observed attack volumes are ~2% of actual, suggesting real attacks are 50x larger.</li>
+<li>While current observed rates (e.g., 100pps) might not bring down major services, the increasing trend and multi-protocol nature of attacks suggest growing malicious interest.</li>
+<li>The study encourages vigilance and the adoption of retry mechanisms before attacks scale further.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>No formal decisions were made during the session.</li>
+<li><strong>Discussion for Future Action</strong>:
+<ul>
+<li>Authors of &quot;Glowing in the Dark&quot; plan to incorporate mitigation suggestions (e.g., wildcard reverse DNS entries) into future studies and recommendations.</li>
+<li>QUIC implementers are encouraged to consider adding satellite-specific test cases to their benchmarks to improve performance over high-latency links.</li>
+<li>Further study is needed on the prevalence of DNS over TCP blocking in corporate environments.</li>
+<li>The proposed optional updates for DNS over TCP, particularly regarding EDNS TCP Keepalive negotiation, warrant further discussion within the community (e.g., on mailing lists).</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussion on the respective research topics (DNSSEC metrics, DNS over TCP, QUIC performance, QUIC security) on the maprg mailing list.</li>
+<li>The QUIC over Satellite research team plans more detailed analysis, including flow control influence, additional test scenarios, and long-term measurements.</li>
+<li>The QUIC DDoS research team will continue to monitor attack trends and advocate for broader adoption of QUIC retry mechanisms.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="rtgwg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-RTGWG-20220321-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2022 13:30</p>
+<h1>rtgwg Meeting Minutes</h1>
+<h2>Summary</h2>
+<p>The rtgwg session covered a range of topics, including updates on drafts nearing Working Group Last Call, proposals for new work, and discussions on the future evolution of Internet routing. Key updates included the QoS Yang model approaching WG Last Call, the VRRP <code>biz</code> draft addressing inclusive language, and significant updates from the APN group. New research topics explored satellite routing challenges, SRv6 egress protection, high-precision congestion control (HPCC++) leveraging in-band telemetry, the impact of Distributed Ledger Technologies (DLTs) on networks, and the broader evolution of Internet routing beyond basic reachability. A significant discussion revolved around the appropriate venue within the IETF/IRTF for several of these emerging and foundational topics.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>QoS Yang Model (Asim Chaudhary)</strong></p>
+<ul>
+<li><strong>Updates</strong>: Version 7 published. Added configuration for Random Detect (RED) and Weighted Random Detect (WRED), including minimum/maximum thresholds (in bytes, milliseconds, or percentage), weight (decay factor), and max probability. Explicit Congestion Notification (ECN) can be enabled to mark packets instead of dropping them. WRED supports multiple profiles per queue (e.g., for different DSCP values).</li>
+<li><strong>Status</strong>: Nearing Working Group Last Call.</li>
+<li><strong>Next Steps</strong>: Address remaining comments, simplify the draft by removing unnecessary features, and merge the separate statistics module back into the main QoS model draft.</li>
+</ul>
+</li>
+<li>
+<p><strong>VRRP <code>biz</code> Draft (Ac Linden)</strong></p>
+<ul>
+<li><strong>Purpose</strong>: Update RFC 5798 (VRRPv3) to replace non-inclusive terminology. Specifically, &quot;master&quot; will be replaced with &quot;active&quot;, while &quot;backup&quot; will be retained.</li>
+<li><strong>Scope</strong>: Also includes fixing errata. Potentially seeking to elevate the RFC to Internet Standard status as a byproduct.</li>
+<li><strong>Related Work</strong>: Authors plan to update RFC 6527 (VRRPv3 MIB) and RFC 8347 (VRRP Yang Model) to align with the new terminology, which will involve deprecating old tables/nodes and introducing new ones. RFC 9079/910 (informational) will also be updated.</li>
+<li><strong>Community Feedback</strong>: Positive feedback and support from the community, including Arcos and Greg Mirsky.</li>
+<li><strong>Request</strong>: Working Group adoption requested.</li>
+</ul>
+</li>
+<li>
+<p><strong>APN (Application-aware Networking) Updates (Shooping and Gian Mishra)</strong></p>
+<ul>
+<li><strong>History</strong>: Acknowledged a three-year history with multiple presentations, two side meetings, and four BoF applications.</li>
+<li><strong>Progress</strong>: Addressed 38 open issues raised during the last BoF, with detailed documentation on GitHub.</li>
+<li><strong>Clarifications</strong>: APN is applied to edge-to-edge tunnel encapsulation within a limited trust domain. The APN header is removed at the egress PE. Attributes are acquired from existing packet information (e.g., 5-tuple, incoming physical/virtual port, customer VLAN) if not encrypted.</li>
+<li><strong>Request</strong>: Working Group adoption for the framework documents.</li>
+<li><strong>Discussion</strong>: Concerns were raised regarding the need for new encapsulations, potential privacy implications (granular application/user identity), and whether the framework is the right starting point for application-network collaboration. Yari pointed to the IAB path signals collaboration document for guidelines.</li>
+</ul>
+</li>
+<li>
+<p><strong>Satellite Routing Updates (Lynn)</strong></p>
+<ul>
+<li><strong>Objective</strong>: Develop open Layer 3 solutions for large-scale LEO satellite constellations, focusing on 3GPP integration and regenerative mode.</li>
+<li><strong>Problem Statement</strong>: Updated to include 3GPP Next-Gen Radio Access Network (RAN) requirements for satellite networks.</li>
+<li><strong>Semantic Address</strong>: Proposed a 32-bit semantic address with three indexes, usable independently or within IPv6.</li>
+<li><strong>Interactive Instructive Routing (New Draft)</strong>:
+<ul>
+<li><strong>Motivation</strong>: Traditional IGPs/BGP face significant challenges in dynamic satellite environments (link flapping, constantly changing metrics, polar area interruptions leading to high protocol message flooding and reduced service time).</li>
+<li><strong>Characteristics</strong>: Satellite networks have ordered, multi-layer grid topologies, limited inter-satellite links (4-6), and predictable satellite positions/link metrics.</li>
+<li><strong>Solution Principles</strong>: Maximize computation to reduce routing message overhead, use IGPs (e.g., OSPF) for local state detection, leverage semantic addressing, and minimize routing overhead in packets.</li>
+<li><strong>Mechanism</strong>: A form of source routing where the source calculates the path, converts it to segments, then to simple instructions (functions + arguments) embedded in the packet (tunnel-less).</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>: Questions arose about the necessity of standardization for what might be proprietary networks and the large scope of the proposed work.</li>
+</ul>
+</li>
+<li>
+<p><strong>SRv6 Egress Protection (Inston Leo)</strong></p>
+<ul>
+<li><strong>Protection Schemes</strong>: Discussed protecting SRv6 networks using SRv6 Best-Effort (BE) and Traffic Engineering (TE) paths.</li>
+<li><strong>Path Protection</strong>: Local protection via Topology Independent Fast Reroute (TFA), with compressed SID encoding recommended. End-to-end protection using candidate TE paths or BE paths. BFD is recommended for liveness checks (interface/neighbor for local, policy for TE).</li>
+<li><strong>Service Protection</strong>: Local repair via SRv6 Egress Protection draft (mirror SID). End-to-end protection involves ingress node switchover to a backup egress PE. BFD is recommended for liveness checks (locator, P address, service SID).</li>
+<li><strong>Coexistence Strategies</strong>: Presented two strategies for combining service and path protection: &quot;Egress Node First&quot; and &quot;TE First,&quot; designed to meet different operator requirements.</li>
+<li><strong>Deployment Status</strong>: China Mobile has completed lab interoperability tests and trials in three provincial branch networks.</li>
+<li><strong>Discussion</strong>: Questions about BFD return path provisioning (BFD Directed draft), handling CE-PE link failures, and the specific advantages of SRv6 over SR MPLS for these protection mechanisms.</li>
+</ul>
+</li>
+<li>
+<p><strong>HPCC++: High Precision Congestion Control (Barak Gafni)</strong></p>
+<ul>
+<li><strong>Motivation</strong>: Address the demands of high-performance storage/compute, distributed deep learning, and memory disaggregation in cloud environments, requiring consistent sub-10 microsecond latency and high bandwidth.</li>
+<li><strong>Context</strong>: Hyperspeed networks increasingly offload transport into hardware (e.g., RDMA), demanding real-time congestion control.</li>
+<li><strong>Challenges</strong>: Fast convergence upon congestion, managing multiple applications over converged networks, and reducing complex parameter tuning due to limited network visibility.</li>
+<li><strong>Opportunity</strong>: Leverage in-band telemetry (INT) capabilities in modern networking ASICs (IETF IOM, p4.org) to provide precise, real-time feedback to senders.</li>
+<li><strong>Benefits</strong>: Enables fast convergence, near-zero queues, and simplified configuration.</li>
+<li><strong>Nature of Work</strong>: HPCC++ is presented as a service that can be used by various networking entities (transport, routing engine), being transport and routing protocol agnostic.</li>
+<li><strong>Discussion</strong>: Lars noted that the willingness of switches/routers to provide this telemetry is key. Dean raised concerns about the freshness of telemetry data at very high speeds and suggested considering pull mechanisms for routing information. The suitable venue for this work (rtgwg vs. transport area) is still under discussion with ADs.</li>
+</ul>
+</li>
+<li>
+<p><strong>DLT Impact on Networks (Dirk Kutscher)</strong></p>
+<ul>
+<li><strong>Purpose</strong>: An observational draft analyzing the impact of Distributed Ledger Technologies (DLTs) like Ethereum on network infrastructure.</li>
+<li><strong>Communication Patterns</strong>: DLTs inherently involve multi-point communication (clients, miners/peers). Peers maintain a dynamic &quot;pool of peers&quot; via node discovery, involving IP addresses, ports, and capability exchanges.</li>
+<li><strong>Challenges Identified</strong>: Exposure of IP addresses raises privacy/security concerns. Inefficient unicast replication. Outdated peer addresses and mobility challenges.</li>
+<li><strong>Experimental Insights</strong>: Initial findings indicate significant network waste, with only about 16% of contacted DLT nodes being useful and 42% of DLT-related traffic being wasted due to connection attempts, capability mismatches, or useless data.</li>
+<li><strong>Network Innovations</strong>: Opportunities for using IP multicast and semantic routing are being explored.</li>
+<li><strong>Next Steps</strong>: Extend analysis to other DLT types (proof-of-stake), explore mitigation strategies, and seek collaborators. A side meeting is planned.</li>
+<li><strong>Discussion</strong>: Nicola inquired about security implications like routing hijacks or DoS attacks, which authors acknowledged as important but not yet the primary focus.</li>
+</ul>
+</li>
+<li>
+<p><strong>Continuing Internet Routing Beyond Mere Reachability (Dirk Kutscher)</strong></p>
+<ul>
+<li><strong>Purpose</strong>: An observational draft documenting the evolution of Internet routing beyond its original purpose of simple destination-based reachability. Intends to seed discussion on future architectural approaches.</li>
+<li><strong>Evolution</strong>: The draft surveys numerous extensions (58 references, 12 purposes, 26 approaches) that have broadened routing capabilities beyond mere reachability.</li>
+<li><strong>Issues</strong>: Current approaches often fit new semantics into the limitations of existing IP address-based realizations, leading to complexity, inefficiency, security fragility, and operability challenges.</li>
+<li><strong>Call to Action</strong>: Suggested the rtgwg recognize this evolution and take a wider architectural approach. Proposed actions: establish efforts within rtgwg, support a standalone working group (e.g., &quot;Future of Internet Routing&quot;), or support IRTF efforts with regular updates.</li>
+<li><strong>Discussion</strong>: The chair suggested the IRTF Routing Research Group as a potential venue if there is sufficient interest. Robin questioned the definition of &quot;Internet Routing&quot; in this context. Jeffrey suggested adding &quot;incremental maintenance&quot; as a key challenge.</li>
+</ul>
+</li>
+<li>
+<p><strong>Challenges and Research Questions for Routing (Adrian Farrel)</strong></p>
+<ul>
+<li><strong>Purpose</strong>: A draft providing a framework for researchers proposing new routing approaches, highlighting aspects often neglected.</li>
+<li><strong>Key Aspects</strong>: Focuses on stability, scalability, security, privacy, manageability, and interactions with other network parts.</li>
+<li><strong>Research Principles</strong>: Emphasizes using realistic networks and traffic flows and the ability to independently reproduce research.</li>
+<li><strong>Semantic Routing Context</strong>: This work originated from surveying semantic routing efforts (Layer 3 hop-by-hop forwarding based on additional packet information), many of which had limited success.</li>
+<li><strong>Value</strong>: Seeks community input on identified challenges, missed aspects, and the overall usefulness of this work.</li>
+<li><strong>Discussion</strong>: Robin suggested distinguishing between internet-wide vs. limited domain scenarios. Jeffrey deemed the work useful and suggested adding &quot;incremental maintenance.&quot; Tarek noted resemblances to TEAS working group efforts. Colin (CoinRG Chair) clarified that while CoinRG's scope overlaps with programmable networks and in-network computation, much of this work seems more aligned with IETF engineering.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>VRRP <code>biz</code> Draft</strong>: The rtgwg expressed agreement to adopt the work to update RFC 5798 for VRRPv3 to replace non-inclusive terminology. Authors should proceed with the draft within the rtgwg.</li>
+<li><strong>APN Framework Documents</strong>: The AD recommended against adopting the APN framework documents in the rtgwg, citing concerns about scope (framework vs. solutions). The discussion on the appropriate venue (e.g., new working group or independent submission) will continue on the routing mailing list, with the AD guiding next steps.</li>
+<li><strong>HPCC++</strong>: The ADs of the Routing and Transport areas will continue discussions to determine the most suitable working group for this work.</li>
+<li><strong>DLT Impact, Beyond Reachability, and Challenges/Research Questions for Routing Drafts</strong>: Authors are encouraged to send emails to the routing mailing list to gauge interest for potential interim meetings or further discussion, possibly within an IRTF research group.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>QoS Yang Model</strong>: Authors to finalize addressing comments, simplify the draft, and merge the statistics module. Prepare for Working Group Last Call.</li>
+<li><strong>VRRP <code>biz</code> Draft</strong>: Authors to continue developing the draft in rtgwg.</li>
+<li><strong>APN</strong>: The community and AD will engage in further discussion on the mailing list to determine the appropriate next steps for the APN framework, potentially leading to a new working group or independent submission path.</li>
+<li><strong>Satellite Routing</strong>: Authors to continue seeking feedback and clarify the expectations and suitable venue for this broad topic.</li>
+<li><strong>SRv6 Egress Protection</strong>: Authors to address the questions raised during the session on the mailing list.</li>
+<li><strong>HPCC++</strong>: Authors to address comments on the mailing list. Await AD guidance on the appropriate venue.</li>
+<li><strong>DLT Impact on Networks / Continuing Internet Routing Beyond Mere Reachability / Challenges and Research Questions for Routing</strong>: Authors to solicit further feedback and interest on the routing mailing list for potential dedicated interim meetings or a move to an IRTF research group. The rtgwg chair expressed willingness to consider an interim meeting if sufficient interest is demonstrated.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

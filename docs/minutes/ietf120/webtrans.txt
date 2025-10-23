@@ -1,0 +1,38 @@
+**Session Date/Time:** 25 Jul 2024 22:00
+
+```markdown
+# webtrans
+
+## Summary
+The webtrans IETF meeting covered updates on the W3C Web Transport Working Group, web transport over HTTP/2, and web transport over HTTP/3. Key discussion points included data received state, sub-protocol naming, congestion control statistics, key exporters in HTTP/2, drain web transport session and flow control. Several action items were identified to progress the drafts towards implementation and interoperability testing.
+
+## Key Discussion Points
+
+*   **W3C Web Transport Update:** Yanivar Buri provided an update on the W3C Web Transport Working Group, noting the charter extension, progress towards candidate recommendation, and updates on retransmissions, relative URLs, and priority.
+*   **Datagram Priority:** Alan Frindell raised a concern about the compatibility of WebTransport's datagram priority with the MOQ priority design.
+*   **Congestion Control Statistics:** The discussion centered on the usefulness and accuracy of adding statistics like "sending data limited," "sending server limited," and "sending slow start" to the WebTransport API for congestion control. Concerns were raised about the generality of these metrics across different congestion control algorithms and potential misleading information. Alternative suggestions included frame counters for blocked frames.
+*   **Sub-protocol Naming:** A debate ensued regarding the appropriate name for the constructor argument for specifying application-level protocols. Options discussed included "sub-protocols," "protocols," and "application-level protocols." A poll was conducted favoring "protocols," which will now be filed as an issue and discussed on the mailing list.
+*   **Key Exporters in HTTP/2:** Eric Kinnear discussed the inclusion of key exporters for HTTP/2 WebTransport. Concerns were raised about TLS 1.2 support and potential proxy interference. It was decided to add requirements to the W3C API layer to check for minimum TLS requirements to avoid a potential failure.
+*   **WebTransport Session Settings for H2:** Eric Kinnear outlined the server-only settings MaxSession for H2 to align better with H3, clarifying the ordering benefits due to the ordered stream of H2. Settings EnableConnectProtocol will be needed for both sides.
+*   **Data Received/Committed State:** A discussion was held about the meaning of the "data received" state in the context of WebTransport, with a proposal to rename it to "data committed" to better reflect that all data has been enqueued rather than acknowledged.
+*   **Capabilities Tracking:** A tracking issue was mentioned to review W3C spec for common transport capabilities.
+*   **Authentication for WebTransport:** The meeting discussed whether HTTP-based authentication should be prohibited in WebTransport, with a leaning towards removing the prohibition.
+*   **Drain WebTransportSession:** The utility and enforcement of `drainWebTransportSession` were debated, including whether the API can open new streams after sending a request to drain. There was a question if wrap-up capsules should be used. The importance of being functionally complete at the protocol layer was mentioned.
+*   **Flow Control:** The meeting discussed the flow control capsules from H2 that are relevant for H3.
+
+## Decisions and Action Items
+
+*   **Sub-protocol Naming:** An issue will be filed to rename the constructor argument from "sub-protocols" to "protocols" after a poll showed support for this name.
+*   **Congestion Control Statistics:** Consider moving this conversation over to TSVWG or ICCRG list, and solicit input from congestion control experts.
+*   **Key Exporters:** Yaroslav Rosomakho will file an issue on GitHub to note that proxies may be performing TLS decryption, that might impact how Key Exporters work.
+*   **Data Received/Committed:** Take feedback from meeting and update the definition of what Data Committed means.
+*   **Authentication:** Review why authentication was prohibited on webtransport and determine if we should lift that prohibition.
+*   **Drain WebTransportSession and Wrap-up:** Review wrap-up capsule and WebTransport to see if the features can be merged. Check in with HTTP chairs to see if they are using wrap-up.
+
+## Next Steps
+
+*   Write and review PRs for HTTP/2 and HTTP/3 drafts.
+*   Cut an implementation draft of HTTP/2 and HTTP/3.
+*   Implementations to interoperate and provide feedback on the drafts.
+*   Target interrupt target before Dublin for the hackathon.
+*   Issue a working group last call after successful interoperability testing.

@@ -1,0 +1,106 @@
+**Session Date/Time:** 08 Nov 2021 14:30
+
+# mpls
+
+## Summary
+
+The mpls working group session included administrative updates, a review of working group document statuses, and reports on the MPLS Open Design Team (ODT) activities. Several drafts were presented, focusing on STAMP encapsulation for pseudo-wires, a YANG data model for MPLS Maximum Segment Depth (MSD), and considerations for deterministic QoS in the MPLS data plane. Key discussions revolved around the architectural implications of new functionalities on the MPLS label stack, the appropriateness of various encapsulation methods, and the need for extensible QoS solutions. Several drafts requested working group adoption or last call.
+
+## Key Discussion Points
+
+### Administrative Updates
+
+*   **Chairs**: Tarek, Loa, Nick.
+*   **Secretary**: Mak Chen (unable to attend, Nick volunteered for minutes).
+*   **Note Well**: Standard IETF Note Well and BCP pointers were presented.
+*   **GitHub Repo**: The mpls working group now has a GitHub repository for drafts, encouraging participants to submit work-in-progress for review and comments.
+*   **Agenda**: The agenda included administrative items, working group status, ODT report, and three presentations.
+*   **Document Status Reports**: Authors were encouraged to reach out to chairs for slots and include reports on open issues and next steps for working group documents. No new errata since IETF 111.
+
+### Working Group Document Status
+
+*   **New RFC**: RFC 1941 was published.
+*   **RFC Editor Queue**:
+    *   One document is almost at RFC publication.
+    *   Another is in MISSREF state, waiting on action from the shepherd/authors.
+*   **IESG Queue**: One document is awaiting authors' response to AD questions; authors confirmed they would respond.
+*   **Newly Adopted Document**: Early code point allocation has been triggered.
+*   **Updated WG Documents**: Authors of updated documents were encouraged to send status reports to the mailing list.
+*   **RAR CPFR**: This document was returned from IESG to the working group. Authors believe all requested edits have been made and that it can progress again.
+*   **RFC 6374 SR draft**: Authors believe the document is ready for Working Group Last Call.
+*   **SFC Control**: The document needs feedback (informal or formal via WG Last Call). Shepherd to follow up.
+*   **SREP OAM draft**: Authors requested WG Last Call, believing no further updates are needed. The draft's expiration was refreshed.
+*   **New Individual Drafts**: Two drafts are on the joint MPLS/PALS/DetNet session (Nibble and MIAD requirements). One individual draft is on the MPLS session agenda.
+*   **In-band PM Encapsulation**: Version 1 reviewed by the MPLS team, comments addressed in Version 2. An open issue relates to MPLS indicators and ancillary data (MIAD) being discussed in the MPLS ODT. Authors were encouraged to participate in the ODT discussions.
+*   **LR Draft**: Query about working group adoption status. Authors to check if an update regarding integration with the MPLS ODT was promised.
+
+### MPLS Open Design Team (ODT) Report (Loa)
+
+*   **Background**: Multiple drafts were attempting to use the same "first byte" space in the MPLS label stack as the ACH, necessitating a careful architectural approach.
+*   **Scope**: Activities are focused on "MPLS Indicators and Ancillary Data" (MIAD project).
+*   **MIAD Project Goals**:
+    *   Produce "spine indicators" within the MPLS label stack to indicate desired actions not clear from the label itself.
+    *   Define "ancillary data" carried with the packet to support these actions.
+    *   Ancillary data forms: in-stack data, post-data, or no data.
+*   **Agreements**:
+    *   Anything specified previously must continue to work.
+    *   Only one set of ancillary data can exist after the Bottom-of-Stack (BoS) label.
+    *   Ancillary data might be complex and structured.
+    *   New applications must resolve how to carry indicators and ancillary data without interfering with existing specifications.
+*   **Output**: Use cases, requirements, a framework, and solution drafts (status as WG or individual drafts is an open question).
+*   **Backward Compatibility**: Acknowledged that existing "broken heuristics" (e.g., first nibble for IPv4) will continue to work as well as they can, but the ODT will not fix inherent flaws in old specifications.
+
+### STAMP Encapsulation for Pseudo-Wires (Rakesh Gandhi)
+
+*   **Scope**: Encapsulation of simple two-way active measurement protocol (STAMP) test packets for MPLS pseudo-wires, covering cases with and without an IP/UDP header.
+*   **Motivation (without IP/UDP header)**: To allow in-band STAMP packets to precisely match the headers and ECMP paths of data traffic that does not carry an IP header (e.g., TDM pseudo-wires), for accurate latency and packet loss measurements.
+*   **Discussion (Greg, Stewart)**: Concerns raised about the complexity of the "without IP/UDP header" case. Greg and Stewart argued that OAM typically uses IP/UDP headers and that the pseudo-wire operation should encapsulate everything, making the presence of an IP/UDP header irrelevant for path selection if an entropy label is used. They suggested this topic warrants further discussion offline (mailing list or side meeting).
+*   **Procedures**:
+    *   Uses existing ACH values (21 for IPv4, 57 for IPv6) for cases with IP/UDP.
+    *   Proposes new ACH values for cases without IP/UDP headers, with the Channel Type field distinguishing sender and reflector packets.
+*   **Working Group Adoption**: Authors requested working group adoption. Stewart suggested the document belongs in the PALS working group, where companion documents were developed.
+
+### YANG Data Model for MPLS MSD (Jin)
+
+*   **Context**: The draft defines a YANG data model for MPLS Maximum Segment Depth (MSD), augmenting the MPLS base model (RFC 8960). It was originally part of RFC 9201 and split out during IESG review.
+*   **Updates**:
+    *   Interface MSD status now augments the MPLS interface, making it more specific to MPLS-enabled interfaces.
+    *   Removed the `max-sd-depths` grouping.
+    *   Editorial changes and updated security considerations.
+*   **Discussion**:
+    *   **Jeff**: Asked about how the model handles cases where a node understands MSD but cannot determine its value. Jin stated it's a read-only parameter reporting what the hardware/lower level provides. Jeff will take this to the list.
+    *   **Tarek**: Questioned the utility and IGP alignment of reporting MSD per-interface, noting that IGP capabilities often focus on per-node. Jin clarified that corresponding IGP models (for ISIS and OSPF) also include per-link MSDs.
+*   **Next Steps**: Authors believe the draft is ready for working group adoption and requested an adoption call.
+
+### Deterministic QoS for MPLS Data Plane (Torsten)
+
+*   **Problem Statement**: Current MPLS forwarding (per-hop per-flow bounded latency) relies on shapers/interleaved regulators, leading to:
+    *   High complexity and scalability issues (tens of thousands of shapers in large networks).
+    *   Maximum jitter, which is undesirable for industrial applications.
+    *   Desire for per-hop per-flow stateless behavior with source routing and low jitter.
+*   **Solution Options**:
+    *   **Option 1 (No MPLS Packet Header Changes)**: Proposes Traffic Class Queueing and Forwarding (TCQF). This solution is per-flow stateless, offers very low jitter (independent of path properties), and uses 3-5 Traffic Class (TC) values in the MPLS label. It has been validated in a 2000 km WAN.
+    *   **Option 2 (MPLS Packet Header Extensions)**: Acknowledges the need for more extensible QoS solutions for DetNet and beyond. Discussed areas like pre-off, alternatives to TCQF (potentially requiring timestamps, priority fields), DSCP/ECN alignment (e.g., for L4S), and bandwidth management. Emphasizes the danger of standardizing non-extensible solutions now, suggesting a broader design team effort across MPLS and IPv6.
+*   **TCQF Mechanism**: Based on Time-Sensitive Networking (TSN) cyclic queueing and forwarding. Packets are forwarded bucket-by-bucket in cycles, with latency being one cycle. A cycle number is put into the packet (using TC bits) to manage latency and jitter across links.
+*   **Extensible QoS Header**: Torsten highlighted a range of unsolved QoS problems that could benefit from an extensible header, including pre-off, alternative bounded latency mechanisms, DSCP/ECN unification, and bandwidth management. He posed questions about extensibility mechanisms (e.g., tLVs vs. new extension headers).
+*   **Call to Action**: Torsten requested support for the TCQF draft (in the DetNet WG) as a workable, short-term bounded latency solution for MPLS. He also encouraged a longer-term, broader QoS effort in conjunction with the MPLS design team, involving the Transport Area.
+*   **Discussion (AC)**: Raised concerns about the feasibility of getting 3-5 TC values, given only 3 TC bits and ongoing debates in L4S. Suggested a deeper discussion in DetNet or a design team due to the complexity of comparing CQF and ATS.
+
+## Decisions and Action Items
+
+*   **RAR CPFR**: Authors to send an email to the MPLS mailing list confirming all outstanding comments have been addressed to allow the document to progress again.
+*   **RFC 6374 SR draft**: Chairs to initiate a Working Group Last Call for this document.
+*   **SFC Control**: Loa (shepherd) to encourage informal feedback/review from the working group or initiate a formal Working Group Last Call.
+*   **SREP OAM draft**: Chairs to verify the Working Group Last Call request.
+*   **In-band PM Encapsulation**: Authors are encouraged to participate in the MPLS Open Design Team (ODT) to discuss how the draft's functionality aligns with MIAD indicators and ancillary data.
+*   **STAMP Encapsulation for Pseudo-Wires**: The discussion regarding the necessity and complexity of the "without IP/UDP header" encapsulation case will be moved to the mailing list or a dedicated side meeting for further technical exploration. The working group ownership (MPLS vs. PALS) will also need clarification.
+*   **YANG Data Model for MPLS MSD**: Chairs to initiate a Working Group adoption call for this draft.
+*   **Deterministic QoS for MPLS**: Torsten encourages MPLS working group members to engage in the DetNet working group regarding the TCQF draft and to consider a longer-term, more comprehensive QoS effort within the MPLS design team, potentially collaborating with DetNet and the Transport Area.
+
+## Next Steps
+
+*   MPLS Working Group chairs will follow up on the status and progression of documents requiring Working Group Last Call or adoption calls.
+*   Authors of various drafts are expected to follow up on action items, including sending emails to the list or engaging in related design team discussions.
+*   The MPLS Open Design Team will continue its work on MIAD, focusing on deciding the format and scope of indicators and ancillary data, and ensuring compatibility.
+*   Further technical discussion on STAMP encapsulation for pseudo-wires (especially the "without IP/UDP header" case) will occur on the mailing list or in a dedicated side meeting.
+*   MPLS working group members are encouraged to participate in DetNet discussions related to deterministic QoS solutions and to consider a joint effort with the MPLS ODT on extensible QoS mechanisms.

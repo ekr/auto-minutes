@@ -1,0 +1,91 @@
+**Session Date/Time:** 24 Mar 2022 13:30
+
+# opsawg
+
+## Summary
+
+The opsawg session covered a range of operational and management aspects of Internet technologies, including updates on Yang models for service attachment points, VPN performance monitoring, and service-aware network elements (SANE). Discussions also featured the need for IPFIX extensions for SRv6, a data model for life cycle management (MLMO), and updates to SNMPv3 over TLS. New proposals included a data manifest for streaming telemetry, an in-band flow learning framework, and adaptive traffic data collection. An open mic session with the ADs highlighted concerns from an operator regarding policy statements in drafts and the tension between working group decisions and operational realities.
+
+## Key Discussion Points
+
+*   **Service Attachment Points (SAP)**
+    *   **Problem:** Previous model lacked sufficient filtering for specific services and a clear association between service attachment topology and physical topology.
+    *   **Revisions:** Model now structured by service to allow for multiple services under the same node, with multiplexing via attachment interfaces (e.g., sub-interfaces). Examples (VPN-focused) and mapping between service and attachment topology were added.
+    *   **Discussion:** The classification as an "inventory model" was debated, and the need to consider ongoing C-CAMP work on network inventory was raised.
+    *   **Status:** Ready for Working Group Last Call (WGLC), with an outstanding review on mapping details.
+*   **VPN Service Performance Monitoring (VPN PM)**
+    *   **Status:** Draft recently closed WGLC, with helpful comments received.
+    *   **Key Change:** Added "inter-site performance monitoring type" to address the limitation of only tunnel-based monitoring. This was implemented using a `choice` definition in the Yang model, allowing for either inter-VPN access interface PM or tunnel PM.
+    *   **Chair's Comment:** The addition of the `choice` could be a substantive change that might benefit from further review before IESG publication.
+*   **SANE (Service Aware Network Element)**
+    *   **Updates:** Addressed circular dependencies and improved the health score reporting by using a Yang `union` type (either "missing" or "calculated") to prevent misinterpreting zero as a valid health score when it's still being determined.
+    *   **Implementations:** Day-X agent (Delft University), Cisco, and Huawei prototypes were reported.
+    *   **Status:** Close to WGLC, with minor Yang module updates pending.
+*   **Export of SRv6 Information in IPFIX**
+    *   **Problem Statement:** Current IPFIX extensions (RFC9160) cover MPLS Segment Routing, but data plane visibility for SRv6 is missing, especially crucial for providers migrating to SRv6.
+    *   **Proposed Solution:** Extensions to IPFIX to expose the Segment Routing Header (SRH) and its components (`segments-left`, `tag`, `flex`, `segment-type`, `srh-section`, `srh-segment-list-section`, `srh-segment-basic-list`).
+    *   **Operational Considerations:** Discussed handling of compressed SID containers (CC containers) and the need for clear guidelines in the draft.
+    *   **Status:** Received feedback from Spring, opsawg, and IPFIX doctors. Document specifies `Internet-Standard`.
+    *   **Call for Adoption:** The authors requested working group adoption to accelerate progress and prevent the use of private enterprise code points for SRv6 deployments.
+*   **MLMO (Data Model for Life Cycle Management and Operations)**
+    *   **Goal:** Define a flexible and consistent Yang data model for managing assets (hardware, software, virtual entities), features, incidents, and licenses, including organizational and user structures.
+    *   **Revisions:** Introduced "instances" for modules, improved referencing with one-to-many and parent-child hierarchies, and added `organization` and `lmo-users` modules.
+    *   **Challenges:** Licensing is recognized as a complex issue, requiring further evaluation. Discussions around using `identities` over `enums` for greater flexibility and focusing on a common core subset for wider applicability were noted.
+    *   **Status:** A poll showed significant interest (14/20 participants supported), but a formal call for adoption was not made, with chairs suggesting further discussion on the mailing list to address outstanding questions.
+*   **SNMPv3 over TLS Transport Model Updates**
+    *   **Context:** Updating the TLS transport model for SNMPv3, adopted as a work item.
+    *   **Key Challenge:** The existing fingerprint algorithm referenced a TLS 1.2 hashing table which is no longer maintained by the TLS working group with TLS 1.3.
+    *   **Solution:** The proposed solution is to duplicate the existing TLS 1.2 hashing table into a new, SNMP-specific table that can be extended, without requiring a major MIB overhaul or implying TLS 1.3 algorithms are compatible with TLS 1.2. MIB experts confirmed this approach.
+    *   **Future Edits:** Minor edits (e.g., name revision, BCP14 conformance), and a question about renaming the new duplicated table to be more general for potential reuse across IETF.
+    *   **Discussion:** Potential overlap with IETF Cozy group's hashing algorithm indexing was mentioned. Concern was raised about ensuring new TLS 1.3 algorithm additions are reflected in the SNMP registry automatically.
+*   **Data Manifest for Contextualized Streaming Telemetry**
+    *   **Problem:** Raw streaming telemetry data lacks context (e.g., device state, collection parameters), making anomaly detection and closed-loop automation difficult, especially when devices are inaccessible or configurations change.
+    *   **Proposal:** Introduce "data manifest" as contextual information, comprising:
+        1.  **Platform Manifest:** Describes the data-producing platform (e.g., vendor, OS).
+        2.  **Data Collection Manifest:** Details how and when telemetry was metered (e.g., subscription ID, actual period, "unchanged" flag).
+    *   **Principles:** Contextual information must accompany the data.
+    *   **Open Questions:** Threat model analysis for data integrity and self-assertiveness, applicability to other protocols (SNMP, IPFIX), virtual devices, missed collections, and Yang packages.
+    *   **Discussion:** The problem was recognized as interesting and hard. Balancing metadata granularity (per subscription vs. per leaf) and pragmatic data needs was highlighted.
+*   **In-band Flow Learning Framework**
+    *   **Motivation:** Address the challenge of network visibility and live traffic monitoring (delay, loss) in large-scale networks, particularly 5G backhaul.
+    *   **Framework Components:**
+        1.  **Service Discovery:** Acquiring flow characteristics (IP, ports, VRF) via configuration or device-triggered sampling.
+        2.  **Telemetry Deployment:** Determining telemetry type (end-to-end vs. hop-by-hop), policy (which flows to monitor), and deployment mechanism (controller or device).
+        3.  **Telemetry Adjustments:** Handling route convergence (new instance) and aging (recycling resources for stale instances).
+    *   **Chair's Comment:** The presentation was too high-level, requiring more technical detail on specific triggers and functions for interoperability.
+    *   **Discussion:** Overlap with the IPPM working group was noted, with a suggestion to present there for feedback and scope clarification.
+*   **Adaptive Traffic Data Collection**
+    *   **Problem:** Traditional network traffic collection (e.g., 5-minute intervals) masks characteristics, leading to an inability to reflect real-time network state or detect transient issues like congestion. Continuous millisecond-interval sampling, however, consumes excessive resources.
+    *   **Objective:** Develop adaptive traffic data collection mechanisms to capture real-time network state with minimal resource consumption.
+    *   **Chair's Comment:** Suggested exploring the existing `Event MIB` for threshold-based reporting and reviewing research on A/B comparisons for monitoring methodologies.
+*   **Yang Model for Data Export over IPFIX**
+    *   **Motivation:** Address the need for bulk data export via IPFIX, especially in broadband access nodes, and update an outdated existing Yang model (RFC6728).
+    *   **Revisions:** The draft was significantly shortened and refocused to *only* cover the IPFIX exporting process and bulk data export parameters, removing psamp and collector processes. It no longer aims to obsolete RFC6728 and now solely specifies TCP as the transport.
+    *   **Status:** A call for adoption on the mailing list received no feedback. BBF has an open liaison request for this draft.
+    *   **Discussion:** Chairs and ADs encouraged working group members to review the revised, shorter draft and consider adoption, emphasizing the importance of supporting the BBF's needs.
+
+## Decisions and Action Items
+
+*   **VPN Service Performance Monitoring:** The chairs indicated that due to the substantive change (addition of `choice` for inter-site performance monitoring), the draft might benefit from more review time, potentially another week, before IESG publication.
+*   **Export of SRv6 Information in IPFIX:** The authors requested a call for adoption at opsawg. Chairs will likely initiate this after some review.
+*   **MLMO (Data Model for Life Cycle Management and Operations):** While a poll showed significant support, no formal call for adoption was made. Chairs indicated this discussion should continue on the mailing list to resolve open questions.
+*   **Yang Model for Data Export over IPFIX:** The chairs indicated they would initiate another call for adoption after the recent restructuring and to garner renewed interest and review.
+
+## Next Steps
+
+*   **Service Attachment Points:** Proceed towards Working Group Last Call.
+*   **VPN Service Performance Monitoring:** Authors to continue engaging with the working group for further review on the substantive change before requesting IESG publication.
+*   **SANE:** A new version of the draft will be posted shortly, incorporating `counter64` for version and an implementation suggestion, then move towards WGLC.
+*   **Export of SRv6 Information in IPFIX:** Chairs to facilitate a call for adoption. Authors to continue implementation efforts (aiming for vpp by IETF 115).
+*   **MLMO:** Further discussions on the mailing list to refine the model, especially regarding licensing complexity and attribute definitions. Side meetings will shift to monthly.
+*   **SNMPv3 over TLS Transport Model Updates:** Authors to make final edits, distribute for final review, and then start the last call process. They will also distribute to TLS reflectors. Further consideration for the naming of the new hashing table and the process for reflecting new TLS 1.3 algorithms is needed.
+*   **Data Manifest for Contextualized Streaming Telemetry:** Authors to analyze the threat model and address security concerns.
+*   **In-band Flow Learning Framework:** Authors to update the draft with more technical details on triggers, functions, and interoperability. Consideration to be given to presenting in the IPPM working group to clarify scope and seek feedback.
+*   **Adaptive Traffic Data Collection:** Authors to solicit comments and refine the draft. Explore `Event MIB` and research on A/B comparisons for monitoring methodologies.
+*   **Yang Model for Data Export over IPFIX:** Chairs to initiate a new call for adoption to ensure broader review and feedback from the working group, especially given the BBF's interest.
+
+---
+**AD Open Mic Discussion:**
+
+*   **Operator Concerns on Policy in Drafts:** An operator raised concerns about a draft (Quick manageability) stating a recommendation *not* to use version numbers for network admission control. The operator argued that RFCs should not dictate policy for network operators, who need flexibility for admission control and active traffic management, contrary to what some working groups imply (e.g., passive monitoring only).
+*   **AD Response:** The ADs acknowledged the tension between working group views and operator needs. They encouraged operators to clearly articulate their concerns in reviews and on the mailing list. If consensus cannot be reached, the ADs may place a "discuss" notice on the document to highlight valid operator concerns. They also emphasized the importance of early engagement with ADs when such issues arise and suggested that operators propose alternative text that focuses on potential problems rather than policy enforcement. The ADs reiterated that IETF documents require IETF-wide rough consensus, not just working group consensus, and that operator reviews are crucial for this process.

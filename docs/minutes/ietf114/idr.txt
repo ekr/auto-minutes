@@ -1,0 +1,156 @@
+**Session Date/Time:** 27 Jul 2022 19:00
+
+# idr Session Meeting Minutes
+
+## Summary
+
+The idr session covered updates on various BGP-related drafts, including iFIT capabilities, YANG models, and IPv4-over-IPv6 tunneling (4PE). The most significant discussion revolved around the BGP Color-Aware Routing (Car) and Color-Typed (CT) drafts. The chairs announced a decision to advance both Car and CT drafts to the experimental track, with a focus on developing an interoperability document and requiring two implementations for each. The session also discussed updates on VPN Prefix ORF, BGP Entropy Label Capability, BGP-LS extensions for SR Network Resource Partitions and DetNet, BGP Redundancy Policy, BGP SR Policy for DetNet, and a new BGP Extended Community for Target Node Identification.
+
+## Key Discussion Points
+
+*   **BGP Auto Configuration (Orphaned Drafts)**
+    *   The chairs noted that drafts related to BGP Auto Configuration had too little participation to proceed with adoption.
+    *   The working group decided not to attempt adoption again. Authors were encouraged to consider the independent stream editor if they wished to publish.
+
+*   **idr Interim Session**
+    *   A tentative interim session was proposed for August 29th for those who couldn't get a time slot at IETF 114. Attendees were asked to inform chairs if interested.
+
+*   **BGP Extension for Advertising iFIT Capabilities** (Giuseppe Piro)
+    *   The draft defines BGP extensions to advertise iFIT capabilities (in-situ OAM, Alternate Marking) supported by end nodes.
+    *   Utilizes the non-transitive BGP Next-Hop Capability attribute, encoding capabilities as a 16-bit bitmap. This attribute is updated/deleted when the next hop changes, ensuring domain-limited application.
+    *   Clarified that only the Next-Hop Capability attribute is in scope; extended communities are out of scope for now.
+    *   Feedback from IPPM WG regarding the use of "iFIT" terminology and relationship with iOM conf-state (ICMPv6-based) will be addressed in the next version.
+    *   The draft has been recently adopted by the working group.
+
+*   **BGP YANG Model** (Mahesh Jethanandani)
+    *   Version -14 of the draft includes cleanup, moving stats to a dedicated container, and consistent counter usage.
+    *   Major changes relate to securing BGP sessions: relies on proposed changes to the TCP YANG model (ISC discussion) which augments the keychain model. Removed redundant MD5 auth password.
+    *   BGP Types module moved to an IANA module for easier updates.
+    *   Added support for new/experimental extended communities using a "raw" pattern type string.
+    *   Next steps: Address policy configuration as the last major issue, then editorial cleanup for hoped publication by IETF 115.
+
+*   **Connecting IPv4 Islands over an IPv6 Core for PE (4PE)** (Gian Mishra)
+    *   Motivation: An IETF standard exists for IPv6 islands over IPv4 core (RFC 4798), but not for IPv4 islands over IPv6 core. This draft specifies 4PE for IPv4 packet tunneling over an IPv6 core.
+    *   Architecture: 4PE routers exchange IPv4 reachability transparently tunneled over IPv6 core using MP-BGP. IPv6 address in BGP Next-Hop field allows dynamic IPv6 signaled LSP.
+    *   Uses RFC 8950 next-hop encoding, BGP-LU for label binding, and supports explicit null signaling.
+    *   Supports RFC 4364 NRA options A, B, C.
+    *   Supports three data planes: MPLS, SR-MPLS, and SRv6 (using BGP SRv6 services prefix SID attribute and L3 service TLV).
+    *   Solicited feedback and comments from the IDR WG.
+
+*   **BGP Car and CT Adoption Call Outcome** (Sue Hares, Jeff Tantsura)
+    *   **Decision**: After extensive input, the chairs decided to advance both BGP Car and BGP CT drafts to the experimental track.
+    *   **Rationale**: Customer feedback indicated a strong need for the technology in the field, and interoperability seemed less critical than deployment.
+    *   **Working Group Effort**: The WG will need to do substantial work to bring drafts to RFC quality, focusing on error handling and precise specification.
+    *   **Use Cases**: Authors were asked to describe deployment use cases.
+    *   **Transition to Proposed Standard**: After revision and critical customer feedback from field deployments, drafts could be revised for Proposed Standard.
+    *   **Interoperability Document**: The working group will develop an interoperability document between Car and CT.
+    *   **Implementations**: Two implementations will be requested for each draft.
+    *   **Car Customer Examples** (DJ)
+        *   Establishing multiple intent-aware paths to a PE loopback (BGP next-hop for L3VPN, EVPN, global table services).
+        *   Multi-domain environments with N:M mapping of colors/intents, leveraging color extended community for steering.
+        *   Anycast service scenarios where traffic needs to be sent across a set of nodes.
+    *   **CT Customer Examples** (Kaliraj Vairavakkalai)
+        *   Heterogeneous intra-domain transport protocols (RSVP, SR-TE) with end-to-end SLA requirements.
+        *   Flow-based forwarding using BGP Flowspec with specific SLAs, resolving over color-aware tunnels.
+        *   Customer input highlights heterogeneous and non-agreeing color domains as a reality. CT handles this via custom resolution schemes to available transport colors.
+    *   **Issues and Next Steps for Car** (DJ)
+        *   Requested wider review and feedback.
+        *   Intends to update srv6-related flows/considerations and filtering mechanisms.
+        *   Requested additional input on use case scenarios.
+    *   **Issues and Next Steps for CT** (Kaliraj Vairavakkalai)
+        *   Clarify text for disallowing SRv6 transposition for SoF-SRv6.
+        *   Clarify text for Section 8 on RD usage (single vs. unique RD, label allocation modes).
+        *   Add text for control plane and data plane procedures for expressing/processing customer intent on CPE links (analogous to VPN Car, using attributes instead of new SAFI).
+        *   More detailed backup slides on use cases are available.
+    *   **Interoperability Document Focus** (Sue Hares, Jeff Tantsura)
+        *   Defining "color" in NRI, impact of packing/translation.
+        *   Strong error handling in presence of many attributes and non-key NRI fields.
+        *   Tying down filtering and aggregation policies.
+        *   Expression of transport intent as inter-VPN (Type A, B, C).
+        *   Guidance needed for SRv6 color drafts to consolidate work.
+        *   Functionally equivalent but operationally different.
+    *   **Discussion on Interoperability** (Greg Mirsky, Wim Henderickx)
+        *   Questioned the emphasis on interoperability over deployment experience; concerns that parallel deployment might hinder convergence to a single standard.
+        *   Chairs acknowledged fears but stated the goal is still one single solution, learning from early customer deployments.
+        *   Jeff Tantsura noted IETF often has multiple technologies for the same space; interoperability in the short term focuses on how technologies interact within the same network.
+
+*   **VPN Prefix ORF Solution Updates** (Gian Mishra)
+    *   Summarized updates based on work group feedback and previous adoption calls.
+    *   Permit-all mechanism defined as a set sequence to ORFs.
+    *   `set rd to zero` trigger for VPN prefix ORF mechanism clarified.
+    *   Operational process for ORF receiver now uses a three-tuple (RD, Source PE, RT of VPN route) for filtering.
+    *   Source PE identification: next-hop community for option C (inter-domain), source PE extended community for option B.
+    *   Route Target TLV defined to identify RT of offending VPN route.
+    *   Requested any outstanding feedback, aims for another adoption call.
+
+*   **BGP Entropy Label Capability Attribute** (John Scudder)
+    *   Background: RFC 6790 defines entropy label signaling, including via BGP, using a dataless optional transitive attribute.
+    *   Problem: The attribute should not leak outside the domain, but being optional transitive allows it to. Previous implementation "reused" attribute 28.
+    *   Proposed Solution: Use a new IANA code point. Make the attribute carry the BGP next-hop as data. Receivers validate the next-hop in the attribute against the actual BGP next-hop; if they don't match, the attribute is discarded, doing "no harm" if leaked.
+    *   Next Steps: Publish version 1 (incorporating trailing data for future extensions, security considerations for leaking next-hop), seek working group adoption, and move to WG Last Call.
+
+*   **BGP-LS Extensions for SR Network Resource Partition States** (Ran Chen)
+    *   Context: IETF Network Slices and Network Resource Partitions (NRPs) for realizing network slices in IP/SR networks.
+    *   Proposes BGP-LS extensions to advertise NRP state information.
+    *   Defines `NRP ID TLV` for nodes, `NRP ID List Sub-TLV` for links, and `NRP ID for Auto-Bundle Members Sub-TLV`.
+    *   Defines `NRP Prefix State TLV` for SRv6 locators and SIDs, and `NRP SRv6 NXT` and `NRP SRv6 EXIT` state TLVs.
+    *   A question was raised about why this requires a separate BGP-LS draft and cannot be included in the underlying LSR working group draft. The authors believed a separate draft was better.
+
+*   **BGP-LS Advertisement for Enhanced DetNet** (Shu-Sung Chang)
+    *   Proposes BGP-LS extensions to support DetNet resource allocation and explicit routing for bounded latency, jitter, zero packet loss.
+    *   Introduces new link attributes: Maximum DetNet Reservable Bandwidth, DetNet Available Bandwidth, and Time Resources (QID for queue-based scheduling, time slot for time-scheduling).
+    *   Introduces a new node attribute: DetNet Processing Delay.
+    *   Similar to IGP traffic engineering extensions but separated for DetNet flows.
+    *   Seeks comments from both IDR and LSR WGs.
+
+*   **Advertising Redundancy Policy in BGP** (Fan Yang)
+    *   Redundancy protection is a generalized protection mechanism for SR, replicating service packets at a redundancy node and sending copies over multiple disjoint paths.
+    *   Redundancy policy is defined as a variant of SR policy, inheriting its structure and attributes.
+    *   Introduces a new optional `redundancy flag` at the candidate path level to indicate redundancy forwarding.
+    *   If the redundancy flag is set, all segment lists carry entire copies, weights are not applicable.
+    *   When associated with a bounding segment (redundancy segment), bounding SID and endpoint behavior information are distributed.
+    *   Next steps: More mailing list discussion, align with Spring WG progress on redundancy policy.
+
+*   **BGP SR Policy Extension for Enhanced DetNet** (Song Rui)
+    *   Defines SR policy extensions to carry bounded latency information (BI) within candidate paths for DetNet.
+    *   BI is used to indicate requirements and resource allocation for nodes in the path.
+    *   Describes procedures for originating nodes (encapsulating BI in BGP Tunnel Encapsulation Attribute) and receiving nodes (encapsulating BI into packet header).
+    *   Next steps: Seek discussion on the mailing list, align with DetNet WG progress.
+
+*   **New BGP Extended Community to Identify Target Node** (Suo Yuan)
+    *   Motivation: Route Target (RT) limitations when used to identify target nodes, especially when multiple VRFs share RTs. RTs primarily control export/import, not unique node identification.
+    *   Proposes a new BGP Extended Community to carry target node information, distinct from RT.
+    *   A subtype value for the extended community has been assigned.
+    *   All comments addressed. Requested working group adoption.
+
+*   **BGP SR Policy Extensions for NRP** (Zhenbin Li)
+    *   Extends BGP SR policy to indicate the NRP with which an SR policy is associated.
+    *   Defines a new `NRP Sub-TLV` within the BGP Tunnel Encapsulation Attribute (when tunnel type is SR Policy).
+    *   The NRP ID is a four-octet domain-specific identifier.
+    *   Originating node includes NRP Sub-TLV. Ingress node encapsulates NRP ID into packet header when steering to SR policy.
+    *   Operational consideration: In normal scenarios, all candidate paths of the same SR policy should be associated with the same NRP.
+    *   Next steps: Request community review, seek working group adoption as the draft is stable.
+
+## Decisions and Action Items
+
+*   **Car/CT Drafts**:
+    *   Both BGP Car and BGP CT drafts are formally adopted and moved to the **experimental track**.
+    *   The working group will generate an **interoperability document** between the two.
+    *   **Two implementations** will be requested for each draft.
+    *   Authors are requested to provide **deployment use cases** in their drafts.
+*   **idr Interim Session**: Chairs will determine if an interim session for August 29th is needed based on feedback.
+*   **BGP iFIT Capabilities**: The draft has been adopted by the working group.
+*   **BGP Entropy Label Capability**: Authors will publish version 1, including security considerations and trailing data, and then seek working group adoption.
+*   **VPN Prefix ORF**: Authors will prepare for another adoption call.
+*   **New BGP Extended Community for Target Node**: Authors requested working group adoption.
+*   **BGP SR Policy Extensions for NRP**: Authors requested working group adoption.
+
+## Next Steps
+
+*   **Car/CT**: Authors to refine drafts based on feedback, focusing on error handling and use cases. The working group will commence work on the interoperability document.
+*   **BGP YANG Model**: Address policy configuration issues, then proceed to editorial cleanup for planned publication by IETF 115.
+*   **4PE**: Continue to solicit feedback from the IDR working group.
+*   **BGP-LS Extensions (NRP, DetNet)**: Seek comments from IDR and LSR working groups, and align with their respective progress.
+*   **BGP Redundancy Policy**: Engage in more discussion on the mailing list and align with Spring WG progress.
+*   **BGP SR Policy for DetNet**: Seek discussion on the mailing list and align with DetNet WG progress.
+*   **All Drafts**: Participants are encouraged to provide technical feedback on the mailing list, maintaining a respectful tone.

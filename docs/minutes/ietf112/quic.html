@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="quic.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-QUIC-20211110-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 10 Nov 2021 12:00</p>
+<h1>QUIC Working Group Session Minutes</h1>
+<h2>Summary</h2>
+<p>The QUIC working group session addressed updates on existing drafts and discussed several new work proposals. Key outcomes included the working group's strong consensus to adopt the unified Multipath Extension draft and the chairs' intent to issue an adoption call for the minimalist QUIC vNext draft. Discussions for <code>ack_frequency</code>, Qlog, Version Negotiation, and QUIC LB focused on resolving outstanding design issues, gathering implementation feedback, and refining scope. The session emphasized the importance of real-world implementation experience to guide protocol design decisions.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Chair Updates:</strong></p>
+<ul>
+<li>HTTP/3 and QPACK drafts remain in the RFC Editor queue, pending HTTP core drafts. HTTP/3 ALPN deployment is ongoing with good interoperability.</li>
+<li>Minor issues in HTTP/3 and QPACK drafts are undergoing a consensus call for normative text changes.</li>
+<li>Ops Strats (Applicability &amp; Manageability) and Datagram drafts are in AD review.</li>
+<li>The GREASE Bit draft completed Working Group Last Call (WGLC) and awaits minor changes before AD review.</li>
+<li>Related work across the IETF includes DNS over QUIC, MASQUE, WebTransport, Media over QUIC (side meeting), and OpenSSL/QUIC support (side meeting).</li>
+<li>A reminder of the working group charter stated its focus on QUIC maintenance/evolution, deployability, and extensions, explicitly noting congestion control is out of scope.</li>
+<li>Context for Multipath QUIC: An interim meeting a year prior led to a unified proposal after initial de-scoping.</li>
+</ul>
+</li>
+<li>
+<p><strong>Ack Frequency:</strong></p>
+<ul>
+<li>The draft's current state includes fields for sequence number, ack-eliciting threshold, max ack delay, <code>ignore_ce</code>, and <code>ignore_order</code>.</li>
+<li>A significant design issue highlighted was potential latency in packet loss detection, which could be worse than QUIC v1, especially in data centers.</li>
+<li><strong>Proposed Solution:</strong> Communicate a reordering threshold (instead of <code>ignore_order</code>) to the receiver. The receiver would then send immediate ACKs if packets are missing within this threshold, aiming to reduce ACKs while improving loss detection latency.</li>
+<li><strong>Discussion:</strong> Concerns included the applicability of packet-count-based reordering in multiplexed networks, the need for clearer algorithmic explanation, and robust guidance/safety considerations for setting thresholds. The interaction of <code>ignore_ce</code> with L4S was also questioned. Implementation and interoperability feedback are needed.</li>
+</ul>
+</li>
+<li>
+<p><strong>Qlog:</strong></p>
+<ul>
+<li>The streaming serialization format officially moved from newline-delimited JSON (NDJSON) to <strong>RFC 7464 (JSON Text Sequences)</strong>. This decision was based on RFC 7464 being a standard, allowing newlines within JSON objects, and its compatibility with existing tooling. Dual support for file-based JSON and streaming JSON Text Sequences is maintained.</li>
+<li><strong>Next Steps:</strong> By IETF 113, the goal is to adopt <strong>Concise Data Definition Language (CDDL)</strong> for event definitions, enabling automated schema validation. Post-IETF 113 plans include fleshing out TLS and QPACK event definitions and adding generalized information.</li>
+<li>The working group agreed to limit Qlog's primary scope to QUIC and HTTP/3, recognizing the challenge of a &quot;global design guideline&quot; for all protocols. Future considerations will involve versioning, protocol indication, and mechanisms for extending existing events.</li>
+</ul>
+</li>
+<li>
+<p><strong>Version Negotiation:</strong></p>
+<ul>
+<li>The draft, simplified by Martin Thomson, is seen as a necessary component.</li>
+<li><strong>Status:</strong> Minor editorial issues exist, but progress has been slow due to a lack of editor prioritization. An initial implementation of the version downgrade mechanism was reported as straightforward.</li>
+<li><strong>Working Group Feedback:</strong> Strong desire for implementations and interoperability experience before publication. The progression of this draft is seen as linked to the development and testing of a new QUIC version.</li>
+<li><strong>Chairs' Decision:</strong> Publication of the draft is deferred for now, pending further discussion and progress on QUIC vNext.</li>
+</ul>
+</li>
+<li>
+<p><strong>QUIC Load Balancer (QUIC LB):</strong></p>
+<ul>
+<li><strong>Recent Progress:</strong> The &quot;stream cipher&quot; algorithm was improved for security, nomenclature was clarified, and dynamic server ID allocation was removed due to complexity.</li>
+<li><strong>Key Proposal:</strong> Martin Thomson proposed splitting the draft into two distinct parts: a load balancer component (mostly version-invariant) and a retry service component (more version-dependent). This aims to simplify the document and accelerate adoption of individual parts.</li>
+<li><strong>Discussion:</strong> There was general support for the proposed split, with Google indicating plans to implement the stream cipher protocol in H1 2022. CFRG review of the stream cipher algorithm is underway.</li>
+<li><strong>Chairs' Note:</strong> Server-side implementations and interop testing are critical for advancing this work.</li>
+</ul>
+</li>
+<li>
+<p><strong>New Work: Multipath Extension:</strong></p>
+<ul>
+<li>A new, unified draft combining previous multipath proposals was presented by Maria. The draft focuses on core components: negotiation, minimal path management (initiation, removal), and packet transmission/retransmission. More advanced features are deferred to future extensions.</li>
+<li><strong>Design Principles:</strong> Emphasizes minimal changes to RFC 9000, reusing existing path validation and per-path congestion control mechanisms. A path is defined as a bi-directional 4-tuple.</li>
+<li><strong>Open Design Issue:</strong> Whether to use a single packet number space (PNS) across all paths or multiple PNS (one per path). The draft currently allows negotiation for experimentation, with the intent to defer a final decision until more implementation experience is gathered. Pros and cons for both were discussed (e.g., single PNS may be simpler but could complicate ACK sizes, while multiple PNS offers clearer loss/RTT detection but requires more specialized code).</li>
+<li><strong>Adoption Discussion:</strong> Strong consensus emerged that the unified draft is a suitable starting point. While the PNS issue is fundamental, the working group felt that adoption would facilitate public discussion and gather necessary implementation feedback.</li>
+<li><strong>Polls:</strong>
+<ul>
+<li><strong>Poll 1:</strong> 94.5% of respondents indicated the working group should work on a multipath extension for QUIC.</li>
+<li><strong>Poll 2:</strong> 95.8% of respondents supported adopting the presented unified Multipath Extension draft.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>As Time Permits: QUIC vNext (v2):</strong></p>
+<ul>
+<li>A minimalist draft for a future QUIC version (v2/vNext) was presented, primarily aimed at greasing the version number field and exercising the version negotiation framework. It proposes only changing the version number, salt, and HKDF labels from QUIC v1.</li>
+<li><strong>Discussion:</strong> There was debate on the value versus cost of deploying a &quot;version 2 for the sake of version 2.&quot; Concerns included potential breakage for middleboxes, increased testing overhead, and the risk of &quot;second system syndrome&quot; if functional changes were introduced. A strong sentiment favored a strict, minimalist approach with no &quot;nice-to-have&quot; technical changes, potentially with a tight WGLC timeline.</li>
+</ul>
+</li>
+<li>
+<p><strong>As Time Permits: Receive Timestamps:</strong></p>
+<ul>
+<li>A proposal for a QUIC extension to report fine-grain packet receive timestamp information from the receiver to the sender was presented.</li>
+<li><strong>Motivation:</strong> To provide richer signals for congestion control algorithms (e.g., WebRTC's goog-cc), leveraging existing work in g-QUIC. The method aims to improve network measurement precision without requiring clock synchronization.</li>
+<li><strong>Design:</strong> A new <code>ACK_TIMESTAMP</code> frame type, proposed to be embedded within the standard ACK frame, using an efficient variant-based encoding. Transport parameters would negotiate its use and precision.</li>
+<li><strong>Discussion:</strong> A key design question emerged regarding whether the timestamp information should be embedded in the ACK frame (as proposed) or defined as a separate, composable extension. The interaction with <code>ack_frequency</code> and the required reporting frequency for real-time applications were also raised.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Qlog:</strong> The working group decided to adopt RFC 7464 (JSON Text Sequences) as the streaming format and to move event definitions to CDDL.</li>
+<li><strong>Version Negotiation:</strong> Publication of the Version Negotiation draft is deferred, pending progress and discussion on a new QUIC version (vNext).</li>
+<li><strong>QUIC Load Balancer (QUIC LB):</strong> The chairs will initiate a CFRG review for the stream cipher algorithm and solicit feedback on the proposed split of the draft into load balancer and retry service components.</li>
+<li><strong>Multipath Extension:</strong> Based on strong working group consensus (polls), the chairs will issue a call for adoption for the unified Multipath Extension draft to the mailing list.</li>
+<li><strong>QUIC vNext (v2):</strong> Based on discussion feedback, the chairs will likely issue an adoption call for the minimalist QUIC vNext draft to the mailing list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>ACK Frequency:</strong> Continue technical discussions on issue #96 and provide feedback on implementation and interoperability.</li>
+<li><strong>Qlog:</strong> Proceed with editorial work and the transition to CDDL for event definitions.</li>
+<li><strong>QUIC LB:</strong> Continue CFRG review and discussion on the proposed split on the mailing list. Server-side implementations and interop testing are strongly encouraged.</li>
+<li><strong>Multipath Extension:</strong> Respond to the adoption call on the mailing list. Engage in further working group discussions on the packet number space decision, providing implementation experience. The working group may consider a dedicated multipath meeting.</li>
+<li><strong>QUIC vNext (v2):</strong> Respond to the adoption call on the mailing list. Discussion on ALPN and version numbering issues to continue.</li>
+<li><strong>Receive Timestamps:</strong> Continue discussion on the mailing list regarding design choices (embedded vs. separate frame) and congestion control implications.</li>
+<li><strong>Chairs:</strong> Will speak with ADs and make announcements on the mailing list regarding adoption calls and other working group activities.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

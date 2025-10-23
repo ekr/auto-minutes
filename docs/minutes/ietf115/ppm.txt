@@ -1,0 +1,88 @@
+**Session Date/Time:** 08 Nov 2022 16:30
+
+# ppm
+
+## Summary
+
+The ppm session at IETF 115 covered updates on the Distributed Aggregation Protocol (DAP), a proposed rework of its HTTP API, a discussion on integrating Differential Privacy, an extension for in-band task provisioning, and an update on the Star protocol. Key points included generalized query types and authentication in DAP, a resource-oriented API proposal, the challenge of incorporating differential privacy, a mechanism for dynamic task configuration via clients, and improvements to the Star protocol's robustness against attacks. Discussions highlighted the need for performance analysis for Star and clarification on crypto definitions.
+
+## Key Discussion Points
+
+*   **DAP Editor's Update**
+    *   **Query Types**: Introduced a new `query_type` parameter in task configuration. Aggregators partition reports into "buckets," and collectors query sequences of these. Two types: `time_interval` (preserving old semantics) and `fixed_size` (reports roughly same size, no time interval care). Encouraged feedback on accommodating new use cases.
+    *   **Task Exploration**: Added a `max_task_lifetime` parameter for operational capacity planning and asset management.
+    *   **HTTP Client Authentication**: DAPo2 moved from a Bearer token scheme to spelling out general requirements for establishing secure channels between aggregators (leader-helper) and collector-leader, allowing flexibility for implementations.
+    *   **Next Steps for DAPo3**: Address minor bugs (e.g., anti-replay requirements), fully spell out extension processing semantics, integrate the proposed API rework, and integrate Poplar. Also, focus on editorial clarity, experimentation, and security analysis.
+    *   **Implementation Status**: Cloudflare and ISRG have DAPo2 implementations and are collaborating. David Cook's draft on interoperability testing is being used.
+
+*   **DAP HTTP API Rework Proposal (Tim)**
+    *   **Problems with Current API (DAPo2)**:
+        *   Relative paths are variably nouns or verbs, creating awkwardness with HTTP methods.
+        *   Heavy reliance on `POST` requests, making operations non-idempotent and complicating fault recovery.
+        *   Servers sometimes need to partially parse messages to extract information (e.g., `task_id`) to determine the full message structure.
+    *   **Proposed Resource-Oriented API**:
+        *   Enumerates clear resources: HPK configurations, reports, aggregation jobs, aggregation shares, and collections.
+        *   HTTP methods (GET, PUT, POST) act as verbs on these resources.
+        *   New paths include more information like `task_id` and unique resource identifiers, making resources subordinate to tasks (except global HPK configs).
+        *   Better use of `PUT` for idempotency (e.g., creating aggregation jobs with unique IDs). `POST` for state-advancing operations with side effects (e.g., advancing an aggregation job).
+    *   **Migration**: Most DAPo2 endpoints have a one-to-one analog in the new API. Message types might simplify (no longer needing `task_id` in the body if it's in the URI). Handling of aggregate shares changes from a synchronous `POST` to an asynchronous model aligned with collector's `collect` resource.
+    *   **Open Design Questions**:
+        *   Whether to align aggregate share (helper) and collection (leader) resources further.
+        *   "Collection job" vs. "query" as a better noun for the collection resource.
+        *   Accommodating both `time_interval` and `fixed_size` query types in a single `collect` API, or if separate APIs are better.
+    *   **Discussion (Martin Thompson)**: Raised concerns about client-assigned IDs (e.g., `report_id`) potentially leading to collisions or reducing server control. Suggested using `POST` for resource creation with a `201 Created` response containing the server-assigned `Location` URI, then using `PUT` for updates.
+    *   **Response (Chris Wood)**: Acknowledged the risks but highlighted the "client speaks once" property of systems like Prio and the ability to retry idempotent `POST` requests.
+
+*   **Differential Privacy (Chris Wood)**
+    *   **Motivation**: DAP provides NPC (multi-party computation) security, preventing collectors from seeing individual measurements, but this isn't sufficient for all applications (e.g., overexposing a user from multiple measurements over time). Differential Privacy (DP) offers a formal framework for privacy.
+    *   **DP Concept**: A randomized query algorithm whose output distribution does not significantly depend on any one individual's measurement. Achieved by adding noise to aggregates.
+    *   **Complexity**: DP involves subtleties, notably managing the "privacy budget" which depends on the number and nature of queries.
+    *   **PPM + DP**: Composing PPM protocols (DAP, Star) with DP is beneficial but mechanism choice depends on the base protocol and application/data.
+    *   **Potential Scope for a Draft**: Guidelines for DP mechanisms, algorithms for sampling noise (e.g., mapping `DAP.Rand` to a Laplace distribution), enforcing privacy budgets, and spelling out concrete DP mechanisms.
+    *   **Discussion**:
+        *   **Ecker**: Advocated for sequencing – completing DAP first before adding DP. Suggested only making changes to DAP to *enable* DP if necessary, otherwise do nothing *for now*.
+        *   **Jonathan Holdens**: Asked if different query types make DP harder due to varied groupings of queries.
+        *   **Chris Wood**: Confirmed batches never overlap, which simplifies some aspects. Batch size is important for tuning DP parameters, especially if noise is added on the client. For central noise addition by aggregators, batch size affects relative error, not privacy.
+        *   **Jonathan Holdens**: Questioned the impact of a "mean of all things" query on subsequent queries, highlighting that batches must have an end point and not overlap.
+
+*   **In-band Task Provisioning (Sean)**
+    *   **Motivation**: DAP currently defers task provisioning to out-of-band mechanisms. This draft proposes an extension for in-band provisioning through existing flows (upload, aggregator share) without extra flows. Aims to simplify deployments.
+    *   **Architecture**: Introduces a "task author" (logically a leader or collector) that sends `task_config` to clients. Clients verify, then include `task_config` in the report's extension data. The leader receives it, verifies, and shares it with the helper via the `report_share` struct.
+    *   **Key Aspect**: No pre-provisioned task on aggregators; it's created upon the first report. Task ID is derived from a SHA256 hash of the serialized `task_config`.
+    *   **Aggregator Behavior**: If an aggregator doesn't support the extension, it ignores the `task_config` and processes the report as if the task were provisioned out-of-band.
+    *   **Client/Aggregator Checks**: Clients can verify configurations (e.g., task expiration). Aggregators verify received `task_config` against the generated `task_id`.
+    *   **Collector**: Mostly oblivious, receives `task_config` from the author, then uses the derived `task_id` for collection requests.
+    *   **Discussion**:
+        *   **Ecker**: Not persuaded by tunneling `task_config` through the client. Argued a separate, standardized protocol from Collector to Leader/Helper is more appropriate. Clients already need client-side code instrumentation for data collection, making true dynamic provisioning via just `task_config` insufficient.
+        *   **Sean**: Argued client tunneling ensures the client knows the exact configuration under which its report is aggregated, promoting transparency.
+        *   **Nick Sullivan**: Asked about benefits and the richness needed for client decisions.
+        *   **Ben Schwartz**: Highlighted a use case for dynamic reconfiguration of *existing* numeric metrics (e.g., switching from average to histogram) without code updates, which could be valuable.
+        *   **Chris Wood**: Emphasized that the extension isn't an architecture change but a behavior change for DAP, covering various aggregator behaviors like vdaf choice.
+
+*   **Star Protocol Update (Siobhan)**
+    *   **Goal**: K-anonymity for clients reporting to an untrusted server, aiming for cheap, fast, simple, and private operation.
+    *   **Mechanism**: Client deterministically generates a key from its measurement, encrypts the measurement with that key, and generates a secret share of the key. If the server receives K shares for the same value, it can recover the key and decrypt the message. Utilizes a proxy (e.g., Ohi/Tor) and a randomness server (using VOPRF) to prevent brute-force attacks on low-entropy measurements.
+    *   **Updates (Newest Version)**:
+        *   Addressed DOS attacks using corrupt reports (where a client sends a random share) by incorporating **Verifiable Secret Sharing (VSS)** and share commitments. VSS allows checking share validity before recovery.
+        *   Refactored the document for easier implementation, with clearer cryptographic API definitions.
+        *   Defined protocol message types for IANA.
+        *   Discussed "garbage reports" (client generates key for one message but encrypts another), suggesting solutions like majority vote or using blind signatures.
+    *   **"Superstar" Concept**: Offers flexibility in choosing secret sharing and signature schemes (e.g., VSS + regular PRF for trivial DOS, VSS + blind signatures for bad ciphertext attacks, with increasing complexity/cost).
+    *   **Implementation**: Currently shipping in Brave browser (Rust), with a newer Go implementation by Chris Wood.
+    *   **Discussion**:
+        *   **Martin Thompson & Ecker**: Expressed serious concerns about the computational cost of VSS, especially as K (threshold) increases. Believed it could be K-squared, which would make it potentially slower than Poplar, thus undermining Star's primary value proposition (performance). Called for detailed performance analysis comparing it to Poplar.
+        *   **Ecker**: Strongly advocated splitting the document to separate cryptographic definitions/primitives (e.g., VSS) to be handled by CFRG (Crypto Forum Research Group) and referenced from the ppm draft. This would ensure proper crypto review and expedite IETF/IESG processing. Pointed to existing CFRG drafts (e.g., Frost) that define VSS.
+        *   **IESG/PubRec Perspective**: Acknowledged that having crypto from CFRG simplifies review and speeds up adoption.
+
+## Decisions and Action Items
+
+*   No formal working group decisions were made in this session.
+*   **Action Item (Star Protocol)**: Authors are encouraged to conduct and publish performance analysis comparing Star (especially with VSS) to Poplar.
+*   **Action Item (Star Protocol)**: Authors are strongly encouraged to refactor the draft to separate cryptographic primitives and definitions, referencing existing or new CFRG documents for these components.
+
+## Next Steps
+
+*   Continue gathering feedback on the DAP API rework proposal.
+*   Consider the implications and potential scope of a future draft on Differential Privacy for PPM.
+*   Further discuss the utility and potential working group adoption of the in-band task provisioning extension.
+*   Star protocol authors to address performance concerns and refactor cryptographic components according to working group feedback.

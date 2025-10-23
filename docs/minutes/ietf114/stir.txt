@@ -1,0 +1,83 @@
+**Session Date/Time:** 26 Jul 2022 19:00
+
+# stir
+
+## Summary
+
+The STIR working group reviewed the status and discussed open issues for several drafts: Rich Call Data (RCD), Messaging, Error Handling, and OCSP for STIR Certificates. The RCD and Messaging drafts were deemed ready for advancement to the IESG and shepherd write-up, respectively, after addressing minor editorial and normative points. The Error Handling draft requires further revisions based on discussions regarding cause codes and `Reason` header handling. For the OCSP draft, the working group decided to proceed with defining terminating-side OCSP queries first, deferring the more complex stapling mechanism. A brief discussion on Connected Identity (RFC 4916 update) highlighted its current challenges.
+
+## Key Discussion Points
+
+### Rich Call Data (RCD)
+
+*   **Document Status**: Draft `stir-rich-call-data-04` (version 19) was released with mostly editorial changes between versions 17 and 19.
+*   **Normative Language Change**: A `MUST` was changed to `SHOULD` in the security considerations regarding the expectation for ecosystems to have vetting policies. This was debated, with some concern about making normative requirements on ecosystems but general agreement that `SHOULD` was acceptable.
+*   **Grammatical Review**: A specific sentence was identified as grammatically unclear.
+*   **Path Forward**: The working group agreed to send version 19 to the Area Director (AD) as soon as possible, prioritizing implementation over delaying for minor editorial corrections.
+
+### Messaging
+
+*   **Document Status**: Draft `stir-messaging-04` (released yesterday) proposes repurposing STIR certification systems for text and multimedia messaging, scoped to telephone numbers.
+*   **Motivation**: Address message spam, especially in encrypted messaging contexts where Bayesian analysis is difficult.
+*   **Working Group Last Call (WGLC) Feedback**: Comments from a shorter WGLC were discussed.
+*   **`msgi` Parameter Scope**: Discussion centered on whether the `msgi` (message integrity) hash parameter should be allowed in passport types other than `message` passports.
+    *   Concerns were raised about potential confusion and polymorphism if `msgi` appeared in `SHAKEN` or `RCD` passports, leading to potential misinterpretation by verifiers.
+    *   A suggestion to disallow `msgi` in non-message passports for Authentication Services (AS) and mandate verifiers (VS) to ignore it if encountered was broadly accepted.
+*   **"Out-of-Band" (OOB) Definition**: Clarification was sought regarding the broad applicability of OOB mechanisms (non-SIP, e.g., HTTP services adjacent to SMS/WhatsApp) for messaging. The working group found the broad scope acceptable.
+
+### Error Handling
+
+*   **Document Changes**:
+    *   `ppt` (passport type) changed to `ppi` (passport identifier).
+    *   Compact form recommended over full form due to security concerns regarding information leakage (originating/destination numbers) when full passports go upstream.
+*   **Announcing `Reason` Header Support**: The proposal to announce support for the `Reason` header specific to STIR was discussed. No precedent exists in SIP, and implicit signaling was considered unhelpful. Consensus was to not include this.
+*   **Dependency on `multiple-reasons` Draft**: Paul Wouters suggested waiting for the `multiple-reasons` draft to reach WGLC. The group disagreed, citing existing mechanisms for normative dependencies and the `multiple-reasons` draft's expected progress.
+*   **Privacy Implications of `Reason` Codes**: Discussion touched on privacy implications of verbose explanations in `Reason` codes. The group believed the recommendation for compact form mitigates the identified privacy issues.
+*   **Multiple Cause Codes**: The draft considered being more explicit about using multiple error cause codes or constraining to a single one per `ppi`. RFC 8224 primarily intended cause codes for repairable conditions. Given the complexity of cascading errors in orchestrated services, the group leaned towards restricting to a single cause code for simplicity.
+*   **Removing `Reason` Header vs. `ppi` Parameter**: For full-form passports, the question was whether to remove the entire `Reason` header or just the `ppi` parameter. Concerns were raised that if only `ppi` is removed, the remaining `Reason` header might be meaningless or misleading to upstream elements not aware of STIR. The group generally agreed that the entire `Reason` header should be removed in such cases.
+*   **STIR-Specific Cause Codes**: Discussion on whether to only allow STIR-specific cause codes (e.g., from RFC 8224 and future STIR-related specs) or other SIP/Q.850 codes. Consensus was to focus on STIR-specific codes, with future STIR specifications explicitly stating if their codes fall into this category. It was also suggested to clarify that these `Reason` headers are for consumption by and presumed repairable by the Authentication Service.
+
+### OCSP for STIR Certificates
+
+*   **Background**: RFC 8226 STIR certificates contain `tnAuthList` (service provider codes or telephone numbers). Telephone number ownership is dynamic, making long-lived certificates problematic if numbers are baked in directly. OCSP provides a real-time check for TN validity within a cert's scope.
+*   **Revisiting OCSP**: A previous OCSP draft, initially a child of 8226, had languished. It's being revisited due to growing enterprise delegation use cases where large, dynamic number ranges are managed.
+*   **Major Open Issue: Stapling vs. Terminating Side Query**:
+    *   **Stapling**: Originating side (AS) pre-fetches OCSP responses and sends them with the passport. Offers privacy benefits (VS doesn't query CA directly) and potential performance gains.
+    *   **Terminating Side Query**: Verification Service (VS) directly queries the OCSP responder/CA.
+    *   **Proposal**: Start by defining the terminating side query (standard OCSP) and defer stapling.
+    *   **Arguments for deferral**: Easier to implement, less heavy lift for AS, similar benefits might be achieved with short-lived certificates (ACME).
+    *   **Arguments against deferral**: Jack voiced concern that without stapling, OCSP might offer few benefits over existing caching, as the VS would still incur an RTT for every verification. Jonathan Peterson raised a privacy concern that terminating-side queries could leak calling numbers to CAs/OCSP responders.
+    *   **Consensus**: A show of hands indicated broad support (8:2) for initially specifying OCSP without stapling. The group acknowledged the complexity of stapling and its similarity to short-lived certs, which are being explored separately.
+*   **Non-Critical Extensions in RFC 8226**: Jack asked why `tnAuthList` and other STIR-specific extensions in RFC 8226 are non-critical. The original assumption was that entities interacting with STIR certs would inherently be part of the curated ecosystem and understand these extensions. An update would require a focused revision, for which no volunteers stepped forward.
+
+### Any Other Business (AOB)
+
+*   **Connected Identity (RFC 4916 Update)**: This draft, aiming to provide identity in SIP responses, was acknowledged as important but "clunky." Challenges include SIP's restriction of passports to requests, necessitating complex mechanisms like PRACK and early media. The group noted the need for a more practical approach or reconsideration of the SIP model for this.
+*   The discussion on Connected Identity was eventually moved to offline channels due to its complexity and time constraints.
+
+## Decisions and Action Items
+
+*   **RCD**:
+    *   **Decision**: Send draft `stir-rich-call-data-04` (version 19) to the IESG for AD review.
+    *   **Action**: Authors to send IPR statement to the chairs.
+*   **Messaging**:
+    *   **Decision**: `msgi` parameter must be scoped only to `message` passport types. Authentication Services (AS) are disallowed from including `msgi` in non-message passports. Verification Services (VS) *must ignore* `msgi` if found in non-message passports.
+    *   **Decision**: Draft `stir-messaging-04` is ready for shepherd write-up.
+    *   **Action**: Billy to incorporate the `msgi` scoping language into the draft.
+    *   **Action**: John Peterson to shepherd the `stir-messaging` draft.
+*   **Error Handling**:
+    *   **Decision**: Restrict to a single cause code for each `ppi` for simplicity and alignment with RFC 8224.
+    *   **Decision**: When full form `ppi` is present and needs protection, the entire `Reason` header should be removed, not just the `ppi` parameter.
+    *   **Decision**: Clarify that `Reason` headers are intended for consumption by the Authentication Service and are presumably repairable by it.
+    *   **Action**: Chris to make the agreed changes to the error handling draft.
+*   **OCSP**:
+    *   **Decision**: Initially specify OCSP for STIR certificates focusing on the terminating-side query mechanism, deferring stapling for later consideration.
+    *   **Action**: Chairs to identify reviewers for the `stir-ocsp-certs` draft.
+
+## Next Steps
+
+*   **RCD**: Await Area Director review.
+*   **Messaging**: John Peterson to complete the shepherd write-up for `stir-messaging-04`.
+*   **Error Handling**: After Chris implements the agreed changes, the revised draft will undergo another round of list discussion/review before proceeding to Working Group Last Call.
+*   **OCSP**: Reviewers are requested to examine the `stir-ocsp-certs` draft. Following review and resolution of comments, the draft will proceed to Working Group Last Call.
+*   **Connected Identity**: Continue discussions offline to explore alternative approaches given the complexities of the current SIP-based mechanism.

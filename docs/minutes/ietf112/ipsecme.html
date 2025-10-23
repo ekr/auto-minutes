@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ipsecme.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-IPSECME-20211108-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 12:00</p>
+<h1>ipsecme</h1>
+<h2>Summary</h2>
+<p>The ipsecme working group session at IETF 112 covered the status of various documents, with significant discussion on the <code>iptfs</code> aggregation/fragmentation protocol. Key technical points were debated regarding packet reordering and delay, leading to specific document modifications. Discussions also included the current efforts in quantum-resistant key exchanges, particularly concerning the <code>ikev2-beyond-64k</code> draft and the trade-offs between security, complexity, and performance. Updates were provided on Group Key Management for IKEv2 (<code>g-ikev2</code>) and a proposal for announcing supported authentication methods in IKEv2. Several drafts were identified for upcoming Working Group Last Call or Adoption Calls.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Document Status Update:</strong></p>
+<ul>
+<li><code>draft-ietf-ipsecme-ikev2-intermediate</code>: Currently in &quot;Publication Requested&quot; state.</li>
+<li><code>iptfs</code> document set (<code>main</code>, <code>yang</code>, <code>bignum</code>): <code>main</code> is expected to be ready for &quot;Publication Requested&quot; soon after this IETF. <code>yang</code> and <code>bignum</code> need further write-ups.</li>
+<li><code>rfc8229bis</code> (YANG for IKEv2): Ready for Working Group Last Call (WGLC).</li>
+<li><code>draft-ietf-ipsecme-g-ikev2</code>: Needs more reviews.</li>
+<li><code>draft-ietf-ipsecme-ikev2-auth-announce</code>: Ready for Working Group (WG) adoption call.</li>
+<li><code>draft-btw-ipsecme-additional-ikev2-auth-methods</code>: Also ready for WG adoption call.</li>
+<li>Other non-WG drafts (e.g., compression) received no updates; authors encouraged to engage the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>IPTFS Discussion (<code>draft-ietf-ipsecme-iptfs-main</code>)</strong>:</p>
+<ul>
+<li><strong>2021 Recap:</strong> Post-WGLC comments led to language changes (e.g., &quot;ag-frag&quot; instead of &quot;IPTFS&quot;) and clarifications on replay/reorder windows. A key change was the <em>recommendation for using a drop timer</em> for detecting lost packets, rather than relying solely on the reorder window.</li>
+<li><strong>Core Debate: &quot;Should&quot; vs. &quot;May&quot; for Immediate Inner Packet Transmission:</strong>
+<ul>
+<li><strong>Christian's Position:</strong> The document currently uses &quot;may&quot; (optimization for receiver to transmit fully formed inner packets prior to reordering outer packets). With a drop timer, the reorder window is for minor reordering, not packet loss detection. This approach is flexible and allows operational experience to dictate optimal settings.</li>
+<li><strong>Tero's Position:</strong> Concerned about the implications of sending inner packets out of order, particularly the <em>amplification of out-of-order delivery</em> to transport protocols (e.g., TCP), increased memory usage, and difficulty in defining a suitable &quot;drop timer&quot; for non-constant bit rate scenarios. Argues that IPsec should not try to fix general network reordering. Proposed &quot;should&quot; for in-order processing of outer packets to prevent amplification.</li>
+<li><strong>Lou's Concern:</strong> Amplifying reordering is risky for transport protocols; TCP connections can reset if packets are too far out of order. Prioritizes safety and existing protocol behavior. Advocates for &quot;may&quot; and letting operational experience guide deployment.</li>
+<li><strong>Valerie's Comment:</strong> Sending aggregated packets in a &quot;bunch&quot; due to immediate processing can cause congestion and burstiness.</li>
+</ul>
+</li>
+<li><strong>Lost Packet Timer:</strong> Agreement to rename &quot;drop timer&quot; to &quot;lost packet timer&quot; to better reflect its function (assuming a packet is lost after a timeout, but not necessarily discarding it from buffers).</li>
+</ul>
+</li>
+<li>
+<p><strong>Quantum Resistant Dust Protection / Big Keys (<code>draft-ietf-ipsecme-ikev2-beyond-64k</code>)</strong>:</p>
+<ul>
+<li><strong>Proposal:</strong> Introduce a &quot;cost-efficient&quot; quantum-resistant (QR) first barrier in <code>IKE_SA_INIT</code> using a single, efficient QR KEM. This is seen as an interim solution for high-security environments (e.g., governmental/military) to gain immediate QR protection without the full complexity of hybrid or multiple key exchanges initially.</li>
+<li><strong>Performance:</strong> Measurements with UDP transport showed handshake durations of ~10 seconds for 100 Mbps/100ms latency networks with up to 10% packet loss, deemed acceptable for specific site-to-site use cases. Performance was significantly worse (50+ seconds) at 1 Mbps, suggesting it's not suitable for unreliable/low-throughput environments.</li>
+<li><strong>DoS Concern:</strong> Sending large QR public keys from unauthenticated peers can lead to denial-of-service (DoS) or memory exhaustion attacks on gateways.
+<ul>
+<li><strong>Recommendation:</strong> Larger key exchanges (like those requiring <code>beyond-64k</code>) should be performed <em>after authentication</em> (e.g., via rekeying or follow-up exchanges) to mitigate DoS risks.</li>
+</ul>
+</li>
+<li><strong>Valerie's Feedback:</strong>
+<ul>
+<li>Advocated for mixed transport (TCP for handshake, UDP for payload) for <code>beyond-64k</code> to improve reliability.</li>
+<li>The <code>multiple-key-exchanges</code> draft offers greater flexibility than fixed combined schemes. Similar results can be achieved using classical <code>IKE_SA_INIT</code> followed by an intermediate exchange with a small QR key.</li>
+<li><code>RFC 8764</code> (using Preshared Keys for QR) is an existing short-term solution.</li>
+<li>Suggested that defining combined key exchange methods could be a separate draft, and cautioned against fixed hash functions for key combination, recommending concatenation for better agility.</li>
+</ul>
+</li>
+<li><strong>Scalability Concern:</strong> 10-20 second delays are generally unacceptable for gateways handling hundreds or thousands of concurrent client connections. This solution is targeted at specific, secure, low-client-count scenarios.</li>
+</ul>
+</li>
+<li>
+<p><strong>Group Key Management Using IKEv2 (<code>draft-ietf-ipsecme-g-ikev2</code>)</strong>:</p>
+<ul>
+<li><strong>Status:</strong> The draft for securing IP multicast, used in IEEE 802.15.9, is considered mature by authors but <em>urgently needs reviews</em> from the WG.</li>
+<li><strong>Key Features:</strong> Redesigned policy representation (IKEv2-style transforms), encrypted group key distribution (supporting logical key hierarchy), and new IKEv2 payloads (GSA, KDP, IDG) and notifications.</li>
+<li><strong>PPK Challenges:</strong> Using Preshared Key (PPK) with G-IKEv2 is complex due to the need for <code>IKE_SA_INIT</code> to be secure from the beginning. An alternative draft (<code>draft-vallee-ipsecme-alternate-pqc-with-psk-for-ikev2</code>) was mentioned as a potential solution to simplify this.</li>
+</ul>
+</li>
+<li>
+<p><strong>Announcing Supported Authentication Methods in IKEv2 (<code>draft-ietf-ipsecme-ikev2-auth-announce</code>)</strong>:</p>
+<ul>
+<li><strong>Problem:</strong> IKEv2 lacks negotiation of authentication methods. Initiators might choose a method (e.g., RSA PSS) not supported by the responder, leading to authentication failure without clear diagnostic information.</li>
+<li><strong>Proposed Solution:</strong> A new optional <code>Supported Auth Method</code> status notification allowing peers to announce the authentication methods they <em>support</em> (implemented/allowed). This is an <em>announcement</em>, not a negotiation.</li>
+<li><strong>Details:</strong> Supports linking to <code>CertReq</code> payloads for certificate-based authentication. Can be sent in <code>IKE_SA_INIT</code> or <code>IKE_INTERMEDIATE</code> (to avoid fragmentation for large announcements).</li>
+<li><strong>Clarification:</strong> Discussion about the distinction between <em>supported</em> (implemented capabilities) and <em>configured</em> (allowed for a specific connection/peer). The responder's announcement would ideally reflect what's allowed for the <code>IDi</code> it expects, which is only known after receiving the <code>IDi</code> payload.</li>
+</ul>
+</li>
+<li>
+<p><strong>Other Drafts for Adoption:</strong></p>
+<ul>
+<li><code>draft-vallee-ipsecme-ikev2-cookie-processing</code></li>
+<li><code>draft-vallee-ipsecme-alternate-pqc-with-psk-for-ikev2</code></li>
+<li><code>draft-ietf-ipsecme-ikev2-beyond-64k</code></li>
+<li><code>draft-ietf-ipsecme-multiple-key-exchanges</code>: Author (Paul Wouters) reported updates (removal of QoS, simplification), encouraging reviews.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>
+<p><strong>IPTFS (<code>draft-ietf-ipsecme-iptfs-main</code>)</strong>:</p>
+<ul>
+<li><strong>Decision:</strong> The document text will be modified to change &quot;should&quot; to &quot;may&quot; regarding the immediate transmission of fully formed inner packets by the receiver. This allows for both in-order processing of outer packets and immediate transmission of inner packets.</li>
+<li><strong>Action Item:</strong> Christian to rename &quot;drop timer&quot; to &quot;lost packet timer&quot; in the text.</li>
+<li><strong>Action Item:</strong> Christian to add clarifying text discussing the potential for amplification of out-of-order inner packet delivery, burstiness, and extra delay associated with each approach.</li>
+<li><strong>Action Item:</strong> An informative statement will be added recommending that the lost packet timer should correspond proportionately to the expected tunnel rate.</li>
+<li><strong>Action Item:</strong> Christian to publish a new version of the draft incorporating these changes for immediate review by the working group.</li>
+</ul>
+</li>
+<li>
+<p><strong>G-IKEv2 (<code>draft-ietf-ipsecme-g-ikev2</code>)</strong>:</p>
+<ul>
+<li><strong>Decision:</strong> The Chairs will initiate a Working Group Last Call to solicit comprehensive reviews, which are critically needed for this draft.</li>
+</ul>
+</li>
+<li>
+<p><strong>Announcing Supported Authentication Methods in IKEv2 (<code>draft-ietf-ipsecme-ikev2-auth-announce</code>)</strong>:</p>
+<ul>
+<li><strong>Decision:</strong> The Chairs will initiate a Working Group Adoption Call for this document.</li>
+</ul>
+</li>
+<li>
+<p><strong>Other Drafts for Adoption</strong>:</p>
+<ul>
+<li><strong>Action Item:</strong> Authors of <code>draft-vallee-ipsecme-ikev2-cookie-processing</code>, <code>draft-vallee-ipsecme-alternate-pqc-with-psk-for-ikev2</code>, and <code>draft-ietf-ipsecme-ikev2-beyond-64k</code> are encouraged to send emails to the mailing list to gauge interest for WG adoption calls.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ol>
+<li>Publish the updated <code>iptfs</code> draft (<code>draft-ietf-ipsecme-iptfs-main</code>) with agreed-upon changes.</li>
+<li>Initiate a Working Group Last Call for <code>draft-ietf-ipsecme-g-ikev2</code>.</li>
+<li>Initiate a Working Group Adoption Call for <code>draft-ietf-ipsecme-ikev2-auth-announce</code> and <code>draft-btw-ipsecme-additional-ikev2-auth-methods</code>.</li>
+<li>Engage on the mailing list for other drafts seeking adoption.</li>
+</ol>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

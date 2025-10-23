@@ -1,0 +1,76 @@
+**Session Date/Time:** 12 Nov 2021 14:30
+
+# rtgarea
+
+## Summary
+The rtgarea session included an AD report highlighting the importance of document reviews and code of conduct. The Routing Area Directorate provided an update on review statistics and common issues found in drafts. Several working groups (Babel, MANET, IDR, BFD, ROLL, LSR) presented their current status, technical discussions, and upcoming work, covering topics such as routing protocol extensions, YANG model development, flow control mechanisms, segment routing, flooding optimizations, and cross-working group coordination challenges.
+
+## Key Discussion Points
+
+*   **Routing Area Directorate Report**:
+    *   The directorate consists of 43 experts and welcomes more contributors.
+    *   Purpose: Provide last call reviews for RTG area drafts and early reviews for working group documents.
+    *   **Statistics (IETF 112 period)**: 15 drafts reviewed (4 early, 11 last call). Top working group requests from BESS and IDR.
+    *   **Review Results**: Approximately one-third of reviewed drafts were "Ready," one-third "Needs," and one-third had "Issues" (Not Ready). Non-RTG area drafts showed a similar distribution.
+    *   **Improving Draft Quality**: Discussion focused on common, easily identifiable issues (e.g., incomplete references, inadequate security considerations, IANA allocation problems, non-specific registry names) that could be addressed earlier. It was noted that technical issues should ideally be caught within working group reviews before reaching the directorate.
+    *   **Checklists**: A discussion around the utility of author and shepherd checklists (e.g., ID guidelines, authors.ietf.org) to improve draft quality. The idea of authors performing a "write-up" early was mentioned as a way to ensure adherence to best practices and checklist items.
+*   **Babel Working Group Update**:
+    *   **Protocol Overview**: Babel is a distance vector routing protocol augmented with loop and starvation avoidance mechanisms, robust in networks with unstable link metrics.
+    *   **Standards Track Documents**: Core RFCs (RFC 8966), security, information model, and source-specific extensions have been published.
+    *   **Current Work**:
+        *   **YANG Data Model**: Currently in the RFC Editor's queue.
+        *   **IPv4 via IPv6 Routing**: Draft in AD evaluation. Addresses the challenge of IPv4 ICMP issuance from IPv6-only routers, suggesting the use of a dummy IPv4 address (192.0.0.8).
+        *   **Delay-Based Metric**: Work on a round-trip-time (RTT) based metric, currently in an expired draft, is expected to be reactivated. Expertise is sought to document why the damping techniques used are effective.
+        *   **Multicast**: No work has started due to the working group's policy of requiring implementations and deployments, which are currently lacking for Babel multicast.
+*   **MANET Working Group Update**:
+    *   **DLAP Extensions**: Group of drafts centered on dynamic link exchange protocol extensions for flow control, where the radio (modem) controls the router's sending rate (opposite of original design assumption). This aims for a more sophisticated, DiffServ-aware approach than RFC 8651, allowing for minimal flow even under congestion. These drafts are under Transport Area review, expected by early December. Discussion on Linux QDisc integration for implementation.
+    *   **Individual Drafts**: Focused on physical layer parameters (e.g., radio band, general utilization, radio quality), with discussions needed on their utility for routers.
+    *   **Charter Items Not Actively Worked**: Multicast MANET, MANET management in frequently splitting/merging networks (exploring asynchronous management architecture), OLSRv2 maintenance (addressing router reboot issues, configuration guidance, implementer guidance).
+*   **IDR Working Group Update**:
+    *   **BGP-LS Extensions**: Continued work, particularly popular for Segment Routing (SR) and traffic engineering.
+    *   **BGP Flowspec**: Clarified RFC 5575. Identified a limitation in extending match conditions due to the original type-value encoding, not type-length-value (TLV). This is seen as a general lesson for binary serialization.
+    *   **Flowspec v2**: Planned to address future encoding needs, with initial work kickstarted by Sue Harris and Donald Eastlake, aiming for rapid progress.
+    *   **Cross-Working Group/Area Coordination**: Significant interaction with BESS on multicast-related topics. The ADs and chairs are coordinating, acknowledging a lack of strong IETF process for such cross-WG efforts. A manifest of interacting documents will be created.
+    *   **BGP Auto-configuration**: Design team requirements are complete, and existing proposals are being reviewed. Expected an interim before end of year, nearing protocol selection.
+    *   **BGP YANG Model**: Progressing, with the core model adapting OpenConfig to broader IETF requirements for coverage and extensibility. Phases include content completion, restructuring, and clear IANA maintenance for items like extended communities. Aim for Working Group Last Call by Spring.
+*   **BFD Working Group Update**:
+    *   **Focus**: Primarily driving existing work to completion, with less new work following the spin-off of non-core BFD use cases.
+    *   **Documents Nearing Completion**:
+        *   One-sided BFD for BGP/static next-hops (to ISG publication soon).
+        *   BFD Echo procedures without BFD (derived from Broadband Forum work, to WGLC soon).
+        *   MTU probing with BFD (integrating echo mode support).
+    *   **Authentication**: Features for more usable, lightweight, faster, and secure authentication are pending assistance on lightweight hashes.
+    *   **Cross-WG Review**: Provides reviews for other WGs using BFD for specific purposes.
+    *   **YANG Module (RFC 9127)**: The recently published BFD YANG module has an issue with the `client-config-params` grouping. It implicitly assumes a "client-side" configuration model, which conflicts with "centralized" configuration models without requiring vendor deviations. The proposal is to update RFC 9127 to use YANG `if-feature` modality to cleanly support both models, avoiding the need for deviations from implementations.
+*   **ROLL Working Group Update**:
+    *   **Focus**: IPv6 routing for constrained devices and networks (e.g., 50KB memory, 100kbps data rates), for smart metering, cities, factory automation.
+    *   **RPL Protocol**: A distributed, proactive, distance vector protocol oriented towards dominant traffic flows (up to collection points, down to actuators). Employs minimal control traffic through mechanisms like the trickle algorithm for stability.
+    *   **Extensions**: Multicast, optimized point-to-point routing, and routing header compression (for IPv6 addresses in control packets) have been or are being developed.
+    *   **Ongoing Work**: Reactive point-to-point (AODV-like algorithm), projecting routes from central controllers (requiring new control messages and options for non-DAG topologies), and parent selection for redundancy and reliability (e.g., common grandparents for packet replication/elimination).
+*   **LSR Working Group Update**:
+    *   **Background**: Merger of OSPF and IS-IS groups. Covers OSPFv2 (IPv4), IS-IS (dual-stack), and OSPFv3 (dual-stack with extended LSA extensions).
+    *   **Segment Routing (SR)**: Extensive work for both MPLS and SRv6 data planes, covering signaling and route computation for various Segment IDs (SIDs). MPLS SR is largely complete. SRv6 work for IS-IS is almost done, with OSPFv3 facing implementation disagreements.
+    *   **Flex-Algorithm**: Allows dynamic definition of path constraints based on metrics, administrative groups, enabling multiple forwarding planes per prefix with a single forwarding infrastructure. Proposals for bandwidth and other constraints are emerging, supporting SR paths and native IP paths.
+    *   **Flooding Optimizations**: Addressing redundancy in IGP flooding. Includes work on sparse flooding trees (centralized/distributed calculation), area abstraction (OSPF Transparent Topology Zone (TTZ), IS-IS TTZ, Area Proxy), and a link-state equivalent to BGP route reflectors to limit adjacencies. Also, flooding speed optimizations to improve LSP/PDU bursts.
+    *   **Protocol Maintenance**: Evaluating new proposals for inclusion at node, link, and prefix layers, emphasizing the IGP's critical role as an underlay. Discussion on supporting multiple hierarchy levels beyond the current two in OSPF/IS-IS.
+    *   **YANG Models**: Progress is dependent on resolving the BFD YANG module issue (as discussed in BFD update). Augmentations for all new features are being developed for base OSPF and IS-IS YANG models.
+
+## Decisions and Action Items
+
+*   No explicit decisions were made during this session.
+*   **Action for Routing Area Directorate**: Consider creating or updating a checklist for authors/shepherds, potentially based on the AD guidelines and authors.ietf.org, to help improve draft quality before directorate review.
+*   **Action for Babel Working Group**: Reactivate the delay-based metric draft (RTT-based) and seek expertise in dynamic system stability to document the effectiveness of damping techniques.
+*   **Action for MANET Working Group**: MANET chairs to track progress of DLAP extensions through Transport Area review, and encourage broader review of individual drafts on physical layer parameters. Address OLSRv2 maintenance and implementer guidance needs.
+*   **Action for IDR Working Group**: Plan interims for Flowspec v2 development. Continue coordination with BESS and ADs on multicast documents, and create a manifest of interacting documents. Drive BGP Auto-configuration towards protocol selection. Aim for BGP YANG model WGLC by spring.
+*   **Action for BFD Working Group**: Resolve the BFD YANG RFC 9127 issue by implementing `if-feature` modality to support both centralized and client-side configurations without requiring vendor deviations. Seek help on lightweight hashes for authentication features.
+*   **Action for LSR Working Group**: Address the OSPFv3 SRv6 implementation disagreement. Continue work on Flex-Algorithm constraints and flooding optimizations. Finalize YANG models once the BFD YANG issue is resolved.
+
+## Next Steps
+
+*   **General**: Attendees are encouraged to provide feedback on AD performance to the Namcom by November 23rd. All working groups will continue to drive existing drafts towards Working Group Last Call and publication.
+*   **Babel**: Reactivate the delay-based metric draft and engage community for stability analysis.
+*   **MANET**: Monitor DLAP extensions' Transport Area review progress. Encourage reviews for individual drafts on physical layer parameters. Explore solutions for OLSRv2 maintenance challenges.
+*   **IDR**: Hold interims for Flowspec v2. Move BGP auto-configuration towards protocol selection. Finalize the BGP YANG model for WGLC by Spring.
+*   **BFD**: Implement the proposed `if-feature` change to RFC 9127 to address the YANG module configuration issue.
+*   **ROLL**: Continue developing reactive point-to-point routing, centralized route projection, and parent selection mechanisms.
+*   **LSR**: Resolve OSPFv3 SRv6 issues, continue developing Flex-Algorithm extensions and flooding optimizations. Finalize YANG models after the BFD issue is resolved.

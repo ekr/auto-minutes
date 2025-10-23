@@ -1,0 +1,95 @@
+**Session Date/Time:** 26 Jul 2022 14:00
+
+# pals
+
+## Summary
+This was a joint session of the pals, mpls, and detnet working groups, primarily focused on the ongoing work of the MPLS Network Action Indicators (MNAI) and Ancillary Data (MAD) Open Design Team. The session included a presentation on Private Line Emulation (PLE) for the pals working group, an Open Design Team (ODT) status report, and updates on several MNAI/MAD solution drafts. Key discussions revolved around the adoption status of MNAI framework and requirements documents, the outcomes of recent ODT polls regarding in-stack vs. post-stack data and Special Purpose Label (SPL) allocation, and the technical approaches of proposed in-stack and post-stack encoding solutions. A recurring theme in the discussions was the need to converge on a single, implementable solution for data plane mechanisms and to define clear metrics for comparing different proposals.
+
+## Key Discussion Points
+
+### Private Line Emulation and Signaling (Christian Schmutzer)
+*   **Motivation**: Packet switching and DWDM integration into routers are making TDM switching layers (e.g., OTN) less necessary. Need to support existing TDM-based private line services.
+*   **Data Plane (draft-schmutzer-pals-ple-data-plane)**:
+    *   Extends RFC 4553 (Structure-Agnostic Transport over Packet) to support higher speeds (10G, 100G, Fiber Channel, OTN, SONET/SDH).
+    *   Underlay can be MPLS or SRv6.
+    *   Defines three encapsulation types, optimized for ODUk frame alignment or 10/28-bit blocks for 200/400G Ethernet.
+    *   Retains RTP header (sequencing, timestamps) and control word (L, R bits) for compatibility.
+*   **Control Plane (draft-schmutzer-pals-ple-control-plane)**:
+    *   Proposes BGP extensions (similar to EVPN VPWS) to signal TDM/interface-specific attributes for these pseudowires.
+*   **Status**: Presented at IETF 108. Significant interest from operators (Verizon, Deutsche Telekom) and vendors (Ciena, Xilinx). Draft was renamed and confirmed to fit within the pals WG scope.
+*   **Request**: More feedback and consideration for adoption as a pals Working Group document.
+
+### MNA Open Design Team Report (Tariq Saad)
+*   **Structure**: ODT is a joint activity of MPLS, pals, and detnet, with weekly meetings and chair coordination.
+*   **Document Status Updates**:
+    *   `draft-ietf-mpls-mna-use-cases`: Adopted May 2022. ODT continues refining use cases.
+    *   `draft-ietf-mpls-mna-requirements`: Adopted May 2022. ODT continues refining requirements.
+    *   `draft-ietf-mpls-mna-framework`: Adopted July 13th, 2022. Authors to publish new revision with name change.
+*   **Poll Outcomes**:
+    *   **Poll 1 (Solution Independence)**: Consensus that the MNA framework should support conveying ancillary data in multiple locations (in-stack, post-stack) and signaling in the control plane. Solutions proposing in-stack data (ISD) must provide strong motivation over post-stack (PSD).
+    *   **Poll 2 (Special Purpose Label (SPL) Repurposing)**: Strong consensus to allocate a **new SPL for MNA**. Repurposing existing SPLs for non-MNA applications must follow the normal Working Group process.
+
+### MNA Requirements Draft (Matthew Bocci)
+*   **Document**: `draft-ietf-mpls-mna-requirements` (version 02).
+*   **Scope**: Defines requirements for MPLS Network Actions, MNA Indicators (MNA label/SPL), and ancillary data for protocol design.
+*   **Changes (version 02)**: Terminology aligned with framework draft, refocused on "network actions," clarified in-stack vs. post-stack requirements (per ODT poll), distinguished MNA Sub-stack Indicator from MNA Indicator. User-defined actions require IANA range reservation.
+*   **Status**: Draft is maturing towards Working Group Last Call.
+
+### MPLS MNA Header Draft (Jags)
+*   **Document**: `draft-balus-mpls-mna-header`.
+*   **Proposal**: Solution for in-stack and post-stack MNA encoding.
+    *   Uses a new B-SPL for top-level Network Action Sub-stack presence, without repurposing B-SPL TC/TTL fields for backward compatibility.
+    *   Next LSE contains granular flags: In-stack Network Action Presence Indicator (INI) and Post-stack Network Action Presence Indicator (PNI).
+    *   **In-stack Encoding**: Supports both flag-based (for actions without ancillary data) and opcode-based (for actions with ancillary data, like TLVs) formats. Includes length fields and extension indicators for flexibility and hardware-friendliness.
+    *   **Backward Compatibility**: Design minimizes impact on ECMP, ensures legacy nodes don't misinterpret MNA data, and supports coexistence with other architectures.
+*   **Advantages**: Flexible, extensible (opcode-based), hardware-friendly (length fields, TLV format), MSD efficient, backward compatible, ECMP friendly.
+*   **Request**: Working Group adoption.
+
+### MPLS Post-Stack Extension Header (Howie Liu)
+*   **Document**: `draft-liu-mpls-ps-extension-header` (version 07).
+*   **Proposal**: Defines how MNA data is encoded *after* the MPLS label stack.
+    *   Relies on an indicator in the label stack (out of scope for this draft).
+    *   Structure: "Header of Extension Header" (summary of following EHs, total length, upper layer protocol type, next header type) followed by "Standard Containers" (individual EHs for specific actions).
+    *   Similar to IPv6 Extension Headers, supporting up to 15 EHs, max 1KB total length.
+    *   Defines new Next Header Types (shared with IP protocol numbers).
+    *   Supports Hop-by-Hop (HBH) and End-to-End (E2E) EHs, with HBH EHs required before E2E EHs for optimization.
+*   **Companion Documents**: Being evolved or retired to integrate with broader MNA work.
+*   **Request**: Working Group adoption as a solution for post-stack Network Actions.
+
+### Special Purpose Label for Forwarding Actions (Kiriti Kompella)
+*   **Document**: `draft-kompella-mpls-nffrr` (No ForFRR) and `draft-kompella-mpls-spl-fai` (Forwarding Action Indicator).
+*   **FAI Draft (In-Stack Data)**:
+    *   **Major Change**: Replaced continuation bits with length fields for the FAI block, standard in-stack data, and user-defined in-stack data, based on hardware implementation feedback. This is expected to facilitate easier implementation.
+    *   **Status**: Deemed ready for Working Group adoption. Authors plan internal prototyping.
+    *   **Request**: Early allocation of a B-SPL for FAI for prototyping purposes.
+*   **NFFRR Draft (No ForFRR)**:
+    *   **Change**: Now proposes an "action bit" within the MNA framework, rather than a standalone B-SPL. This action requests a router not to perform FRR (Fast Reroute) for the path.
+    *   **Status**: Problem is acknowledged, no alternatives proposed. Ready for WG adoption and will be prototyped as part of the FAI document.
+*   **General Discussion on ISD/PSD Convergence**:
+    *   There are currently two competing in-stack data (ISD) solutions (`draft-balus-mpls-mna-header` and `draft-kompella-mpls-spl-fai`). The working group aims to converge on a single, optimal solution, especially for data plane mechanisms.
+    *   Authors of different proposals are encouraged to collaborate and compare solutions based on defined metrics (e.g., overhead, performance, hardware implementation complexity).
+    *   **Order of Operations**: Discussion on how the order of execution for multiple in-stack, post-stack, or mixed actions would be dictated. It was suggested that the solution documents must define a deterministic order, and a composite network action could be defined.
+
+## Decisions and Action Items
+
+*   **ODT Poll 1 Outcome (Solution Independence)**: The MNA framework should support conveying ancillary data in multiple locations (in-stack, post-stack) and signaling in the control plane. Solution drafts choosing in-stack data (ISD) must provide strong motivation for this choice over post-stack (PSD). This is a guiding principle for MNA solutions.
+*   **ODT Poll 2 Outcome (Special Purpose Label Allocation)**: Strong consensus to allocate a **new SPL for MNA**. Repurposing existing SPLs for non-MNA applications must follow the normal Working Group process. This is a clear decision against repurposing existing SPLs for MNA.
+*   **MPLS MNA Requirements Draft**: The draft is maturing towards Working Group Last Call. Authors will remove the appendix containing adoption comments in the next revision.
+*   **MPLS MNA Framework Draft**: The working group has adopted `draft-ietf-mpls-mna-framework`. Authors are expected to publish a new revision that includes the name change.
+
+## Next Steps
+
+*   **pals Working Group (Private Line Emulation)**: Christian Schmutzer requests more feedback on `draft-schmutzer-pals-ple-data-plane` and `draft-schmutzer-pals-ple-control-plane`, and consideration for Working Group adoption.
+*   **MNA Open Design Team**:
+    *   Continue weekly meetings.
+    *   Redirect efforts towards solution definition.
+    *   Authors of similar solution drafts are encouraged to collaborate and align their proposals.
+    *   A report from solution authors is expected post-IETF 114 to update on alignment progress.
+    *   Continue refining existing use cases and requirements documents.
+*   **MNA Requirements Draft**: Further review and comments are requested from the Working Group to prepare for Last Call.
+*   **MNA Solution Documents (General)**:
+    *   The Working Group will need to define metrics for comparing different in-stack data solutions to converge on a single, optimal approach.
+    *   Authors (e.g., Kiriti Kompella) plan internal prototyping of their solutions to gather implementation feedback, which will be shared with the Working Group.
+    *   Discussions on the order of operations for multiple in-stack and post-stack actions need to continue, with solutions clearly defining deterministic processing orders.
+*   **MPLS Post-Stack Extension Header Draft**: Howie Liu requests Working Group adoption and will work on a coherent extension header indicator scheme aligned with in-stack indicators.
+*   **NFFRR (No ForFRR)**: The draft is requested for Working Group adoption and will be prototyped as part of the Forwarding Action Indicator (FAI) document. Discussions on control plane alternatives for some use cases will continue on the mailing list.

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="v6ops.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-V6OPS-20220321-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2022 09:00</p>
+<h1>v6ops</h1>
+<h2>Summary</h2>
+<p>The v6ops session covered several key drafts related to IPv6 deployment, transition technologies, and operational considerations. Discussions included the status of IPv6 deployment, a proposed method for NAT64/DNS64 detection, guidelines for IPv6 Neighbor Discovery (ND) deployment, requirements for multi-domain IPv6-only networks, and measurements of IPv6 extension header behavior on the internet. The working group also reviewed and discussed its procedures for draft adoption and publication. A significant point of discussion arose regarding the need for incorporating more operator and user input into the working group's agenda.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>IPv6 Deployment Status (draft-ietf-v6ops-ipv6-deployment-status)</strong></p>
+<ul>
+<li>The draft has been a Working Group document since April 2021, undergoing a major review for IETF 111. Subsequent versions (v04, v05) primarily updated deployment numbers, clarified terminology (e.g., &quot;transition&quot; instead of &quot;migration&quot;), and expanded explanations (e.g., &quot;happy eyeballs&quot;).</li>
+<li>The table of content has been stable since v02. Changes included updates to IPv6 adoption numbers and refined text regarding &quot;IPv6 introduction&quot; and &quot;IPv6-only&quot; phases in overlays.</li>
+<li>The author requested a Working Group Last Call.</li>
+</ul>
+</li>
+<li>
+<p><strong>Detection of NAT64/DNS64 through SRV Records (draft-martin-v6ops-srv-nat64)</strong></p>
+<ul>
+<li>The presenter highlighted issues with existing NAT64/DNS64 detection methods (RFC 7050, 7225, DHCPv6/RA options), citing implementation difficulties, security concerns, DNS provider limitations, and lack of adoption.</li>
+<li>A new method using SRV records with PTR records for local domain detection was proposed, aiming for no new protocols, use of widely supported protocols (DNS), global DNS tree compatibility, DNSSEC for authenticity, and user-space implementation.</li>
+<li>SRV records would specify NAT64 and DNS64 services for a host's FQDN or domain, pointing to A/AAAA records containing prefix information.</li>
+<li>Discussion points:
+<ul>
+<li>RFC 7225 is reportedly used by some ISPs, contradicting the &quot;largely ignored&quot; claim.</li>
+<li>Pre-configuration of well-known prefixes in CPEs/OSes (iOS/Android) for NAT64/464XLAT.</li>
+<li>DNS64 synthesis on the host is considered a good practice; the draft should clarify if its intent is to <em>allow</em> hosts without synthesis to work, not <em>recommend against</em> it.</li>
+<li>PTR record reliance for local domain detection is problematic as many operators (enterprise/residential) do not configure PTRs for hosts, even if dynamic PTR is technically possible.</li>
+<li>The need for more procedures to learn NAT64 was questioned, given prevalent use of well-known prefixes.</li>
+<li>Security claims require clearer justification; the mechanism, if bootstrapped insecurely, may not offer additional security beyond trusting the network.</li>
+<li>Clarification needed on the interaction between an &quot;application&quot; and &quot;node&quot; (OS) regarding RA options and DNS access.</li>
+<li>What to do if an IPv4 address is present.</li>
+<li>Suggestion to specify an abstract API for applications to discover 64 mapping information, decoupling the API from specific DNS encoding details.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>IPv6 Neighbor Discovery (ND) Deployment Considerations (draft-shu-v6ops-nd-deployment)</strong></p>
+<ul>
+<li>The draft summarizes existing ND issues (multicast, trust) and their solutions documented across 20+ RFCs.</li>
+<li>A key contribution is combining subnet isolation (RFC 8273 Unique Prefix Per Host) with L2 isolation to address corner cases, making host isolation more robust.</li>
+<li>This approach is seen as a good trade-off, simplifying host configuration and leveraging IPv6's abundant address space (e.g., /29 for 32 /64 prefixes), even if it makes routers stateful.</li>
+<li>Applicability: recommended for public access networks or low-power wireless environments where trust is low or multicast is inefficient. Not for trusted wired environments or when multicast DNS is required.</li>
+<li>Discussion points:
+<ul>
+<li>Impact on home networks (e.g., fiber-to-the-home ISPs) if a /64 per device is required, potentially breaking internal device communication (e.g., printer on different subnet). Author clarified the isolation is for CPEs, not internal home devices.</li>
+<li>Duplicate Address Detection (DAD) with L2 isolation: If hosts are on different L2 links, duplicate addresses (beyond link-local) are acceptable as they are isolated.</li>
+<li>Concerns about host attacking infrastructure by generating many IP addresses; author clarified the router only registers the prefix, not individual host IPs, hence state on the router is minimal for a /64.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Requirements for Multi-domain IPv6-Only Networks (draft-gong-v6ops-multi-domain-ipv6-only-req)</strong></p>
+<ul>
+<li>IPv6-only is presented as the ultimate stage for IPv6 development, emphasizing the need to support IPv4 services during transition.</li>
+<li>Current partial IPv6-only deployments (e.g., 464XLAT in mobile core, IPv4 over IPv6 in backbone) often lead to multiple IPv4/IPv6 conversion points, increasing complexity and sub-optimal routing.</li>
+<li>The draft proposes 9 requirements for multi-domain IPv6-only networks, including: wide IPv6 adoption benefits, no IPv4 service degradation, end-to-end IPv6 path (no IPv4 packets in the middle), simultaneous translation/encapsulation support, controller dependence, user-facing ingress points, high scalability (e.g., algorithm-based mapping), SRv6 applicability, and incremental deployment.</li>
+<li>The author expressed willingness to develop a framework based on community feedback.</li>
+</ul>
+</li>
+<li>
+<p><strong>Measurement of IPv6 Extension Headers (draft-link-v6ops-eh-measurements)</strong></p>
+<ul>
+<li>This work updates RFC 7872 by re-measuring IPv6 extension header behavior across the internet, using a full mesh of VMs worldwide.</li>
+<li><strong>Key findings:</strong>
+<ul>
+<li>Hop-by-Hop (HBH) options with the &quot;discard if unknown&quot; bit behaved as expected (100% discard).</li>
+<li>Destination Options (DO): Small DOs (8-16 bytes) traversed well. Larger DOs (32+ bytes, total header &gt; 64 bytes) showed significant packet drops (e.g., 93% for 32 bytes), suggesting a common router policy to drop packets with header length exceeding 64 bytes.</li>
+<li>Routing Header (RH0, obsoleted) saw 90% drops. Segment Routing (RH4) was sometimes dropped by internal network providers when coming from outside.</li>
+<li>CRHs (RH1,2,3,5,6) generally passed through without issues.</li>
+<li>Atomic fragments were heavily dropped (30%), but normal fragmentation passed through.</li>
+<li>Authentication Header (AH), No Next Header, and Ethernet Payload headers showed 100% transmission rates.</li>
+<li>Drops primarily occurred at access ISPs rather than Tier-1 networks.</li>
+</ul>
+</li>
+<li>Next steps include refining heuristics for attributing drops to specific ASNs, conducting an operator survey on EH policies, and expanding measurements to destinations like Alexa Top 1000.</li>
+</ul>
+</li>
+<li>
+<p><strong>v6ops Working Group Procedures (draft-ietf-v6ops-procedures)</strong></p>
+<ul>
+<li>The chairs presented formal procedures for draft publication: Internet-Draft submission, mailing list discussion, optional meeting presentation, mandatory Call for Adoption, and mandatory Working Group Last Call.</li>
+<li>Rules for agenda time allocation, requirements for calls for adoption and last calls were outlined.</li>
+<li>Consensus for adoption requires agreement on the problem, a reasonable approach, and addressing blocking issues, not perfection. Chairs must recuse for co-authored drafts.</li>
+<li>Discussion emphasized the need for v6ops, as an operational group, to solicit more input from operators and users on real-world challenges. Suggestions included dedicating a separate session or agenda slot in future IETFs or interim meetings, possibly in conjunction with NOGs or IEAPG.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong><code>draft-ietf-v6ops-ipv6-deployment-status</code></strong>: Will be queued for Working Group Last Call. Chairs will set up an issue tracker, and the WG Last Call is expected to start in 7-10 days.</li>
+<li><strong><code>draft-martin-v6ops-srv-nat64</code></strong>: Discussion to continue on the mailing list to address the numerous comments and clarify aspects of the proposal.</li>
+<li><strong><code>draft-gong-v6ops-multi-domain-ipv6-only-req</code></strong>: Will be queued for a week's discussion on the mailing list. The author is encouraged to consider the feedback and signal intent for a call for adoption.</li>
+<li><strong>General Working Group Procedure</strong>: Chairs will initiate discussions on the mailing list regarding logistics for incorporating operator and user input sessions (e.g., interim meetings, dedicated agenda slots, collaboration with other organizations like NOGs or IEAPG).</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Chairs</strong>: Set up an issue tracker for <code>draft-ietf-v6ops-ipv6-deployment-status</code> and initiate its Working Group Last Call.</li>
+<li><strong>Authors of <code>draft-martin-v6ops-srv-nat64</code></strong>: Review and address the extensive feedback received during the session on the mailing list.</li>
+<li><strong>Authors of <code>draft-shu-v6ops-nd-deployment</code></strong>: Review and address the feedback received during the session on the mailing list, particularly regarding host state on routers and home network scenarios.</li>
+<li><strong>Authors of <code>draft-gong-v6ops-multi-domain-ipv6-only-req</code></strong>: Engage in the mailing list discussion, refine the draft based on comments, and consider developing a framework for multi-domain IPv6-only deployment.</li>
+<li><strong>Authors of <code>draft-link-v6ops-eh-measurements</code></strong>: Continue research, refine AS drop attribution heuristics, conduct the operator survey, and explore sending traffic to Alexa Top 1000.</li>
+<li><strong>Working Group Community &amp; Chairs</strong>: Engage in mailing list discussions regarding future sessions dedicated to operational challenges and feedback from operators and users.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

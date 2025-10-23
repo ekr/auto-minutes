@@ -1,0 +1,77 @@
+**Session Date/Time:** 21 Mar 2022 13:30
+
+# NETCONF Session
+
+## Summary
+
+The NETCONF working group session covered several key drafts, including ongoing liaison work with IEEE 802.1 concerning the Keystore and Crypto Types drafts, a comprehensive update on the Client Service suite of drafts (highlighting TLS 1.3 support and discussions around a `generate-key` RPC), and updates to the UDP-based transport for configured subscriptions (`udp-native`) focusing on DTLS configuration. Significant progress was reported on the Transaction ID draft, with simulation results demonstrating efficiency gains. Finally, there was an in-depth discussion on Adaptive Subscriptions, including problem statements, use cases, and hackathon results, concluding with a poll that indicated a desire for further discussion before an adoption decision.
+
+## Key Discussion Points
+
+*   **IEEE 802.1 Liaison on Keystore and Crypto Types:**
+    *   IEEE 802.1 raised concerns regarding the Keystore draft's language on promoting/copying private keys from system to running datastores and the handling of clear text keys.
+    *   The Crypto Types draft needs to adequately define "hidden key."
+    *   Discussion on general conformance when standards span multiple SDOs.
+*   **Client Service Suite of Drafts Updates:**
+    *   **Crypto Types:** Accommodated reviewer comments and added the "hidden keys" feature.
+    *   **Trust Anchors:** Added prefixes to path statements, renamed "trustor supported" to "central trustor supported," and referenced `netmod-with-system` for built-in/system keys.
+    *   **Keystore:** Similar path prefixing and feature renaming, added asymmetric/symmetric key features, and referenced `netmod-with-system`.
+    *   **SSH/TLS Client Server:** Moved algorithm definitions from `ietf-ssh-common` and `ietf-tls-common` to IANA-maintained modules (converted registries into Yang modules). Added `config false` lists for server-supported algorithms.
+    *   **TLS Client Server:** Major update to support TLS 1.3, specifically addressing the differences in PSK usage between TLS 1.2 and TLS 1.3. This included splitting PSK definitions into `tls12-psk` and `tls13-epsk`, defining new types for `hash` and `key-derivation-function`, and introducing the concept of zero-round-trip-time (0-RTT).
+*   **`generate-key` RPC Proposal:**
+    *   Revisiting the idea of an RPC for generating private keys, previously abandoned due to difficulty in unifying algorithm identifiers across protocols.
+    *   Now considered feasible due to protocol-specific IANA-maintained algorithm identifiers (via Yang modules) for SSH and TLS.
+    *   Proposed `generate-public-key` RPC for SSH; however, a complication for TLS was identified where cipher suites combine multiple algorithms rather than specifying a single private key algorithm.
+    *   Discussion noted the RPC generates a key pair (public/private), suggesting alternative naming like `generate-key-pair`.
+*   **UDP-based Transport for Configured Subscriptions (`udp-native`):**
+    *   Updates included referencing IANA media types for JSON/CBOR encodings and adding a `feature encode-cbor` leaf.
+    *   DTLS encryption was integrated for security, leading to a discussion on configuring DTLS parameters directly from the Yang module.
+*   **Per-Node Capabilities for Optimal Data Collection:**
+    *   Discussion on using per-node capabilities to map identifiers like MIB OIDs, IPFIX flow keys, and 3GPP Distinguished Names to Yang for better correlation across different protocols and management systems.
+*   **Transaction ID Draft:**
+    *   Addressed problems with slow `get-config` for change detection, unnecessary YANG Push notifications for client's own changes, and clobbering without proper synchronization.
+    *   Proposed a tree-deep transaction ID/E-tag mechanism to track changes to specific sub-parts of the configuration and a lock-free `edit-config` for clobbering detection.
+    *   Simulation results showed a 33% reduction in round trips and significant traffic reduction for a real-world application, demonstrating substantial efficiency gains.
+*   **Adaptive Subscription to YANG Notification:**
+    *   Motivated by the need to balance resource consumption with data fidelity.
+    *   Proposed a server-driven adaptive subscription policy on top of YANG Push, allowing servers to dynamically adjust update intervals based on network conditions.
+    *   Hackathon results demonstrated the effectiveness of server-side adaptive streaming in capturing critical events (e.g., RSSI for roaming, bytes sent for congestion) while significantly reducing data volume compared to high-frequency periodic collection.
+    *   Clarifications were provided regarding RPC errors, XPath evaluation, and the benefits of server-driven over client-driven adaptive logic.
+    *   Use cases were presented for real-time interface traffic, microburst detection, congestion events, and latency/jitter/packet loss measurement.
+
+## Decisions and Action Items
+
+*   **IEEE 802.1 Liaison:**
+    *   **Action:** Rob Wilton to send a liaison response regarding general conformance for standards spanning multiple SDOs.
+    *   **Action:** Ken Watsen to amend the Keystore draft to adequately indicate key types and ensure built-in keys are not clear text.
+    *   **Action:** Ken Watsen to amend the Crypto Types draft to adequately define "hidden key."
+    *   **Action:** Mick Seaman (IEEE) to confirm draft updates address his concerns.
+    *   **Action:** Russ Housley (IETF IEEE liaison officer) should be included in the liaison process.
+*   **`generate-key` RPC (Client Service Suite):**
+    *   **Decision:** The working group generally supports pursuing protocol-specific RPCs for generating key pairs.
+    *   **Action:** Kent Watsen to consult with TLS chairs regarding the complication with TLS cipher suites and the proposed RPC.
+*   **`udp-native` Draft:**
+    *   **Decision:** DTLS parameters will be configurable from the Yang module within the `udp-native` draft.
+    *   **Action:** Authors to modify the Yang module to import `ietf-tls-client-server` (and potentially `ietf-tls-server`) and add configuration examples.
+    *   **Action:** Authors requested a working group Last Call for the `udp-native` draft.
+*   **Transaction ID Draft:**
+    *   **Decision:** The working group will continue working on the draft. An adoption call is expected shortly.
+*   **Adaptive Subscription Draft:**
+    *   **Poll Result:** A show of hands indicated a split opinion (roughly 50/50) on whether to adopt the draft as a Proposed Standard or an Experimental draft.
+    *   **Decision:** The working group will keep the possibility of a Proposed Standard open for now. Further discussion is required on the mailing list to address existing concerns and objections.
+
+## Next Steps
+
+*   **Client Service Suite:**
+    *   Validate the correctness of the TLS 1.3 updates, potentially with AD highlighting for extra attention during security review.
+    *   Finalize minor updates for the IEEE liaison.
+    *   Resolve the `generate-key` RPC action issue.
+    *   The aim is to publish the entire suite of drafts to the AD within a few weeks, concluding work started in 2014.
+*   **UDP-based Transport for Configured Subscriptions:**
+    *   Implement the agreed-upon DTLS Yang configuration changes and provide examples.
+    *   Proceed with requesting a working group Last Call.
+*   **Transaction ID Draft:**
+    *   Add text detailing YANG Push integration.
+    *   Conduct in-house prototype implementations to verify broader use cases.
+*   **Adaptive Subscription Draft:**
+    *   Engage in further discussion on the mailing list to address outstanding concerns and objections from the working group, particularly regarding its suitability as a Proposed Standard.

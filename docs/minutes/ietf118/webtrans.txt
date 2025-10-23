@@ -1,0 +1,50 @@
+**Session Date/Time:** 06 Nov 2023 14:30
+
+# webtrans
+
+## Summary
+
+The webtrans meeting covered updates from the W3C Web Transport working group, progress on H2 and H3 versions of WebTransport, and discussions on several open issues. Key topics included the "atomic write" API, bandwidth estimation enhancements, hinting at the number of concurrent streams, flow control mechanisms, and version negotiation. Decisions were made on draining web transport sessions in H2, and a new approach was discussed for the ALPN usage. Several issues require further discussion and will be addressed in a future interim meeting.
+
+## Key Discussion Points
+
+*   **W3C Web Transport Update:**
+    *   Progress towards recommendation in 2024, aligned with IETF release.
+    *   Changes to stats object: removal of stream counts and timestamp, addition of `getBytesLost`.
+    *   Introduction of `SendGroup` to improve fairness between flows.
+    *   Implementation status: Chrome is first, Firefox is following closely, and Safari is progressing.
+*   **"Atomic Write" API:**
+    *   Discussion on the semantics of the `atomicWrite` method, particularly regarding flow control and interleaving.
+    *   Concerns about potential misuse and the need for clear documentation of its guarantees.
+*   **Bandwidth Estimation Enhancements:**
+    *   Feedback on the utility of exposing additional attributes related to bandwidth estimation (e.g., slow start status, application limited status).
+    *   Concerns about exposing implementation details of congestion control algorithms.
+    *   Suggestion to provide an interface that allows applications to specify their needs (e.g., can I send X bytes in Y milliseconds).
+*   **Hinting at Number of Concurrent Streams:**
+    *   Discussion on allowing applications to hint at the desired number of concurrent streams to the user agent.
+    *   Questions about default values and reasonable ranges for these hints.
+*   **H2 Updates:**
+    *   Addition of `DRAIN_WEB_TRANSPORT_SESSION` capsule from H3 to H2.
+    *   Agreement on a transport-agnostic approach to WebTransport, with a focus on core concepts.
+    *   Discussion on flow control violations when lowering the `max_webtransport_sessions` setting.
+*   **H3 Updates:**
+    *   LPN negotiation using the `ALTN` header.
+    *   Proposal to add a new flow control mechanism for WebTransport in addition to existing quick flow control, aiming for fairness in stream allocation.
+    *   Negotiating web transport version using settings.
+
+## Decisions and Action Items
+
+*   **Decision:** Adopt the `DRAIN_WEB_TRANSPORT_SESSION` capsule in H2, mirroring the H3 implementation.
+*   **Decision:** Pursue a transport-agnostic design for WebTransport. Explicitly state what underlying transport protocols need to provide to support WebTransport.
+*   **Action Item:** Eric to double-check the current text regarding "draining" web transport sessions and whether they count against MAX_SESSION limits and report back on the issue.
+*   **Decision:** Modify the ALPN usage approach to avoid overloading the registry: Create a new identifier for the subprotocol.
+*   **Action Item:** Chairs to schedule an interim meeting to discuss WebTransport flow control mechanisms in more detail, possibly including presentations of different proposals.
+*   **Action Item:** Clarify in the document whether there is a requirement to register the protocol, while negotiating lpn
+
+## Next Steps
+
+*   Continue discussions on open issues (flow control, version negotiation) on the mailing list and in dedicated interim meetings.
+*   Editors to prepare PRs for agreed-upon changes.
+*   Address editorial issues in the documents.
+*   Aim for working group last call after resolving remaining issues and incorporating feedback.
+*   Encourage implementation and deployment to identify potential protocol bugs.

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="core.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-CORE-20220325-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Mar 2022 09:00</p>
+<h1>core</h1>
+<h2>Summary</h2>
+<p>The core working group meeting at IETF 113 featured updates on several working group documents, including <code>href</code>, <code>conditional-attributes</code>, <code>group-combis</code>, <code>group-oscore</code>, and <code>kudos</code>. The chairs also announced recent RFC publications and documents in the RFC queue or IESG processing. Three non-working group documents, <code>transport-indication</code>, <code>non-traditional-responses</code>, and <code>dns-over-coap</code>, were presented, with the former two receiving strong support for working group adoption. Discussions focused on naming registries, key update mechanisms, and optimizing DNS communication for constrained environments.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Document Status Update</strong>:</p>
+<ul>
+<li><strong>Published RFCs</strong>: RFC 9175 (Echo Request Tag) and RFC 9177 (New Block).</li>
+<li><strong>RFC Queue (AUTH48/final touches)</strong>: <code>senml-data-ct</code> and <code>resource-directory</code>.</li>
+<li><strong>IESG Processing</strong>: <code>yang-cibor</code> (one comment remaining) and <code>sid</code> (final discuss ballot, text addition needed).</li>
+<li><strong>Post WGLC</strong>: <code>core-oscore-cbor</code> documents awaiting related publications, <code>group-oscore</code> passed its second WGLC.</li>
+</ul>
+</li>
+<li>
+<p><strong>href (<code>draft-ietf-core-href</code>)</strong>:</p>
+<ul>
+<li><strong>Updates</strong>: Added percent-encoded text, moved complex details to an appendix, and incorporated <code>userinfo</code> structure support. Defined separate CDDL rules for CRIs and CI-References.</li>
+<li><strong>Status</strong>: Four implementations are in progress, expanding test vectors. Focus on exercising CRIs in CoAP and CBOR-packed contexts.</li>
+<li><strong>Open Issues</strong>: Five GitHub issues, one PR on text, two PRs on test vectors remain.</li>
+<li><strong>Next Steps</strong>: Expect one or two more revisions after implementation testing, potentially followed by an interim meeting.</li>
+</ul>
+</li>
+<li>
+<p><strong>Conditional Attributes (<code>draft-ietf-core-conditional-attributes</code>)</strong>:</p>
+<ul>
+<li><strong>Updates</strong>: Resolved all GitHub issues since the last interim. Clarified definitions of &quot;conditional attributes&quot; in the introduction, emphasizing their use with CoAP Observe and query parameters. Included proxy considerations and completed security considerations.</li>
+<li><strong>Registry Discussion</strong>: A significant discussion point was the need for a registry for conditional attribute names. A potential clash was identified (e.g., &quot;lt&quot; for &quot;less than&quot; in this draft vs. &quot;lifetime&quot; in Resource Directory).
+<ul>
+<li><strong>Arguments for Registry</strong>: Uniquely map names, avoid collision, provide a coordination point for extensions.</li>
+<li><strong>Arguments Against Registry/Caveats</strong>: Overlap could occur if resources (e.g., in RD) are observable. A generic registry might complicate matters or restrict usage. Using a namespace (e.g., <code>ca.</code>) was suggested to prevent future conflicts. Query options are critical and generally not ignored by applications.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Group Communication for CoAP (<code>draft-ietf-core-groupcomm-coap</code>)</strong>:</p>
+<ul>
+<li><strong>Updates</strong>: Added examples for encoding application group names and for discovering CoAP/application groups on CoAP services without a Resource Directory. A new appendix illustrates typical group communication flows (basic, observe, block-wise transfer). The <code>uri-host</code> option for encoding group names was removed due to complexity and confusion regarding parsing. All open issues are closed.</li>
+<li><strong>Readiness</strong>: The document is considered ready for Working Group Last Call.</li>
+</ul>
+</li>
+<li>
+<p><strong>Group OSCORE (<code>draft-ietf-core-group-oscore</code>)</strong>:</p>
+<ul>
+<li><strong>Status</strong>: Passed its second Working Group Last Call, with version 14 submitted incorporating feedback from reviews.</li>
+<li><strong>Key Changes</strong>: Enhanced distinction between authentication credentials and public keys; clarified trade-offs for storing authentication credentials; made group manager's group ID recycling feature optional; refined mandatory-to-implement support; re-ordered references; and moved the <code>yak</code> option for sequence number synchronization into the document body.</li>
+<li><strong>Readiness</strong>: The document is deemed complete for the working group and ready to proceed to the shepherd write-up.</li>
+</ul>
+</li>
+<li>
+<p><strong>Key Update for OSCORE (<code>draft-ietf-core-oscore-key-update</code>)</strong>:</p>
+<ul>
+<li><strong>Content</strong>: Defines AAD key usage limits for OSCORE and a procedure for key updates using nonces exchanged in an <code>id-detail</code> field within the OSCORE option.</li>
+<li><strong>New Additions</strong>:
+<ul>
+<li><strong>Stateless Key Update (No Forward Secrecy)</strong>: Introduced a <code>p</code> bit (0 for forward secrecy, 1 for no forward secrecy) to support constrained devices that cannot persist key material after reboot. This mode uses pre-provisioned &quot;bootstrap master secrets.&quot; A mechanism for downgrading to the least capable device's mode was proposed. Discussion points included the security implications of reusing bootstrap secrets and moving this feature to the main body of the draft.</li>
+<li><strong>Keeping Observations Across Key Updates</strong>: Addressed the issue of sequence number reuse after key updates causing potential cryptographic mismatches for existing observations. Proposed &quot;long jumping&quot; in the partial IV space and using an &quot;epoch counter&quot; to eventually delete stale observations. This aspect received some critical feedback about being &quot;over-engineered.&quot;</li>
+<li><strong>Renew Sender/Recipient IDs</strong>: A procedure to update OSCORE sender/recipient IDs for a pair, usable standalone or within a key update, was added as an appendix. The compelling use case was questioned.</li>
+<li><strong>Signaling Bit Placement</strong>: Proposed placing the <code>p</code> (no forward secrecy) and <code>b</code> (observations) bits within the <code>x</code> field (length of <code>id-detail</code>) of the OSCORE option, and using the <code>x</code> value in key derivation for integrity protection.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Transport Indication (<code>draft-ietf-core-transport-indication</code>)</strong>:</p>
+<ul>
+<li><strong>Problem</strong>: CoAP resources accessed over different transports (e.g., <code>coap://</code> vs. <code>coap+tcp://</code>) are distinct URIs. A mechanism is needed to indicate when a resource is available over multiple transports on the same device.</li>
+<li><strong>Proposal</strong>: Leverage CoAP's <code>Proxy-Scheme</code> option, allowing a device to act as a proxy to itself for a resource available over another transport. This avoids breaking URI aliasing rules. Advertising is done once per server via Web Links (<code>/.well-known/core</code>).</li>
+<li><strong>Security</strong>: Minimal downgrade risks when on the same device, especially with OSCORE/TLS. Traffic misdirection for off-device proxies requires application-level security (DNSSEC, routing).</li>
+<li><strong>Optimization</strong>: A specialization of the option for hosts not doing virtual hosting can allow clients to omit <code>Proxy-Scheme</code>.</li>
+<li><strong>WG Interest</strong>: A poll indicated strong interest in this work.</li>
+</ul>
+</li>
+<li>
+<p><strong>Non-Traditional Responses (<code>draft-ietf-core-non-traditional-responses</code>)</strong>:</p>
+<ul>
+<li><strong>Problem</strong>: CoAP responses can arrive in various non-standard ways (multicast, observe, SMS, changing endpoint IDs, block-wise transfers). A common terminology and framework are needed to unify these concepts.</li>
+<li><strong>Definition</strong>: A &quot;non-traditional response&quot; is one not from the single request/response on the same transport. A &quot;matching response&quot; works for the original request and has compatible options.</li>
+<li><strong>Document's Role</strong>: Provide standard terminology, guide implementations (e.g., stack hooks for handling multiple responses), define options for clients to request multiple responses, and describe pre-configured response scenarios.</li>
+<li><strong>Security</strong>: The impact on security models and potential DoS vectors must be addressed in security considerations.</li>
+<li><strong>WG Interest</strong>: A poll indicated strong interest in this work.</li>
+</ul>
+</li>
+<li>
+<p><strong>DNS over CoAP (<code>draft-ietf-core-dns-over-coap</code>)</strong>:</p>
+<ul>
+<li><strong>Motivation</strong>: Secure DNS for IoT, avoiding issues of existing DoH/DoT/DoQ/DoDTLS solutions in constrained environments.</li>
+<li><strong>Proposal</strong>: DNS over CoAP (DoC) using DTLS/OSCORE for security, block-wise transfer for MTU issues, and sharing CoAP resources.</li>
+<li><strong>Evaluation</strong>: Empirical data on IoT DNS traffic showed fragmentation is the dominant performance bottleneck, not transport or CoAP methods. Even small DNS responses often require fragmentation.</li>
+<li><strong>Discussion Points</strong>:
+<ul>
+<li><strong>New Content Format</strong>: Needed to reduce message size and avoid fragmentation. Ideas included omitting DNS sections, making fields optional, using self-eliminating numeric values, or a CBOR-based format.</li>
+<li><strong>Caching Options</strong>: How to reconcile CoAP's <code>Max-Age</code> with DNS TTLs (relative values). Two proposals: DOH-compatible (client calculates TTLs) or server-adapting TTLs (server adjusts TTLs, client re-adapts).</li>
+<li><strong>Observe/Server Push</strong>: Explore using CoAP Observe for DNS push scenarios (e.g., DNS-SD for service updates).</li>
+<li><strong>Abstraction Level</strong>: Discussed if the draft should specify a REST API for DNS retrieval or be more concrete on protocol details.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong><code>draft-ietf-core-groupcomm-coap</code></strong>: The chairs concluded the document appears ready for a new Working Group Last Call.</li>
+<li><strong><code>draft-ietf-core-group-oscore</code></strong>: The document is considered complete for the working group and is ready to proceed with the shepherd write-up. Christian Amsüss has volunteered as shepherd.</li>
+<li><strong><code>draft-ietf-core-transport-indication</code></strong>: Based on the strong show of hands, the working group expressed interest in adopting this draft. The chairs will confirm adoption on the mailing list.</li>
+<li><strong><code>draft-ietf-core-non-traditional-responses</code></strong>: Based on the strong show of hands, the working group expressed interest in adopting this draft. The chairs will confirm adoption on the mailing list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong><code>draft-ietf-core-href</code></strong>: Continue implementation testing for approximately six more weeks. The authors plan one or two more revisions, potentially followed by an interim discussion.</li>
+<li><strong><code>draft-ietf-core-conditional-attributes</code></strong>: The author will prepare version 03 by April 7th, incorporating discussion points (especially on the registry/naming issue), and continue the discussion on the mailing list, possibly at the next interim.</li>
+<li><strong><code>draft-ietf-core-oscore-key-update</code></strong>: Authors will address open GitHub issues, consider moving currently appendix-bound content into the main document body, and plan an implementation in the Java Californium library.</li>
+<li><strong><code>draft-ietf-core-transport-indication</code></strong>: Authors will incorporate feedback, particularly regarding further details on advertising proxy statements and security model guidance.</li>
+<li><strong><code>draft-ietf-core-non-traditional-responses</code></strong>: Authors will incorporate feedback, including DoS considerations, and continue development. Joran and Esko offered to review.</li>
+<li><strong><code>draft-ietf-core-dns-over-coap</code></strong>: Authors will further explore the proposed new content format, caching options, potential use of CoAP Observe for DNS push, and the appropriate abstraction level for the draft. Mailing list discussions on these tracks are encouraged. Thomas Ferschl and Joran van Wieringen expressed interest in reviewing.</li>
+<li><strong>General</strong>: The working group will resume interim meetings on April 27th, bi-weekly.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

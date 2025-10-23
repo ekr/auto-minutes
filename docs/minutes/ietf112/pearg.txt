@@ -1,0 +1,54 @@
+**Session Date/Time:** 11 Nov 2021 14:30
+
+# pearg
+
+## Summary
+
+The pearg session covered three main technical discussions: Antoine Frasenko presented an overview of privacy protection approaches, distinguishing between "over-the-top" (evolutionary) solutions relying on trusted parties and "built-in" (academic/future internet) solutions that rethink network protocols, advocating for source routing at the network layer. Gary M. Hamalian discussed the application of confidential computing (Trusted Execution Environments) to enhance DNS privacy by protecting user data even from the service operator. Finally, Matthew Finkel provided an update on the "IP Address Privacy Considerations" draft, outlining its shift towards a holistic view of IP address use cases, potential replacement signals, and upcoming group adoption.
+
+## Key Discussion Points
+
+### Privacy Protection Approaches (Antoine Frasenko)
+*   **Introduction**: Highlighted increasing global demand for privacy, limitations of current web solutions (e.g., pixel tracking), and the need to eliminate identity-linking identifiers at the network layer.
+*   **Network Privacy Definition**: Defined privacy from a network perspective as the inability for a third-party observer to link source and destination of a packet.
+*   **Protection Approaches**:
+    *   **Over-the-top (Evolutionary)**: Hides source addresses using increasingly complex means, often relying on trusted third parties. Examples include Google's IP Blinding in Chrome (Near Pass + willful IP blindness), Apple's Private Relay (two-proxy chain, Private Access Token), and Tor (three-relay circuits, known weaknesses against traffic analysis).
+    *   **Built-in (Academic/Future Internet)**: Rethinks network protocols to protect against powerful attackers, aiming to reduce reliance on third-party trust.
+*   **Academic Research Examples**:
+    *   **Fee (Lightweight Anonymizing Protocol)**: Uses a helper node to build low-stretch paths, avoiding observation of source/destination by on-path ASes. Employs a fixed-size path segment vector and public key encryption for destination revelation.
+    *   **Sphinx (Mixnet)**: A messaging-focused project using a chain of mixes to shuffle and reorder messages, providing strong anonymity but with high cryptographic overhead.
+*   **Call to Action**: Encouraged the community to investigate source routing concepts for network-layer privacy, reducing dependence on trusted parties, and adapting these academic ideas for the current internet.
+*   **Discussion on "Network Layer"**:
+    *   Compared to Tor, network-layer solutions were argued to need faster cryptography and offer stronger resistance to traffic analysis attacks (e.g., through pacing and padding).
+    *   Deploying AS-based source routing would require more computational effort from transit ASes, which could be a necessary cost for enhanced privacy.
+    *   A need for a more solid analytical framework to compare privacy solutions based on factors like overhead, security guarantees, and attacker models was identified.
+    *   The distinction between "network layer" and "overlay" was debated, with some arguing that many solutions, including Tor and Private Relay, already involve client-side source routing, and the choice of solution, number of hops, and trust model are more critical than the specific layer of implementation.
+
+### Confidential Computing for DNS Privacy (Gary M. Hamalian)
+*   **Problem Statement**: Even with current encryption (DoH/DoT), DNS resolvers can still see user browsing history, making them attractive targets. The goal is to protect user data *in use*, beyond just in-flight and at-rest.
+*   **Proposed Solution**: Run the DNS resolver process inside a Trusted Execution Environment (TEE), such as Intel SGX. This prevents user-specific query data from being accessible even to the DNS operator or the underlying cloud provider.
+*   **TEE Overview**: TEEs are secure enclaves where code runs with integrity and confidentiality guarantees. "Attestation" is used to remotely verify that a specific, untampered software is running in a TEE.
+*   **Experimental Setup**: Clients send encrypted DNS queries (DoH/DoT) to a resolver. The encryption is terminated *inside* the TEE. To mitigate external observation, caching is used, and timing obfuscation and random background traffic are implemented for upstream queries.
+*   **Upsides**: Hides all user-related information, provides technical evidence of compliance (trust-verify model), creates a marketing advantage for privacy-focused services, and allows for aggregate statistics (similar to DPF/P-DPI) and complex services (e.g., geolocation) to operate without leaking individual user data.
+*   **Downsides/Challenges**: Operational impacts on scaling, monitoring, debugging, and DDoS protection need careful consideration (can be addressed by TEE-internal aggregate reporting). Hardware dependency on specific CPUs and manufacturers for attestation. Significant effort for software verification. Performance impact can vary, from negligible to significant context-switching overhead.
+*   **Limitations**: TEEs are not a panacea; they introduce an additional hurdle but are susceptible to various known side-channel and software attacks (e.g., memory access patterns in SGX can reveal information, key extraction).
+*   **Conclusion**: Emphasized the importance of protecting data held by servers. While current TEE technology has known vulnerabilities, it presents a valuable additional layer of protection, and future hardware generations are expected to improve. This approach is complementary to other DNS privacy efforts.
+
+### IP Address Privacy Considerations Draft Update (Matthew Finkel)
+*   **Origin**: The draft stemmed from the IP privacy interim, addressing the contentious nature of IP addresses and their role in IP reputation systems.
+*   **Evolution**: Initially, the draft aimed to replace IP reputation, but it has since broadened its scope. It now takes a holistic view of IP address use cases and explores replacement signals.
+*   **Current Draft Status**: The updated draft categorizes various use cases (with a heavy focus on anti-abuse), outlines legislative restrictions worldwide, sketches potential replacement signals, and documents interaction categories. The explicit focus on a reputation *system* has been reduced.
+*   **Next Steps**: Continue stakeholder engagement to understand diverse IP address use cases (beyond Tor's perspective) and identify blockers for adopting private IP connections. The draft will be iterated upon, potentially refactored for clarity and conciseness due to its growing length, and contributions to other SDOs (IETF, W3C, e.g., Anti-Fraud Community Group) will continue.
+*   **Open Questions**: Scope of the draft for `pearg`, utility of various sections, the contentious issue of "mandatory signals" (balancing privacy with the need to identify malicious behavior), and other general GitHub issues.
+
+## Decisions and Action Items
+
+*   The `pearg` chairs announced their intention to **seek group adoption for the "IP Address Privacy Considerations" draft**.
+
+## Next Steps
+
+*   `pearg` participants are encouraged to read the "IP Address Privacy Considerations" draft and provide feedback.
+*   The `pearg` chairs will follow up on the mailing list to **start an adoption call** for the "IP Address Privacy Considerations" draft.
+*   The community is invited to explore and contribute to alternative network-layer privacy approaches using source routing, as proposed by Antoine Frasenko.
+*   Further research and development are needed on the operational impacts and optimal attestation models for confidential computing in privacy-sensitive services.
+*   Matthew Finkel and co-authors will continue to engage with diverse parties to gather feedback, iterate on replacement signals, and refine the "IP Address Privacy Considerations" draft, while also collaborating with other relevant standards development organizations.

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="qirg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-QIRG-20220322-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 22 Mar 2022 12:00</p>
+<h1>qirg</h1>
+<h2>Summary</h2>
+<p>The <code>qirg</code> session included updates on the group's active drafts, a research presentation on a low-level instruction set architecture for quantum networks (NetQASM) and an associated platform (Quantum Network Explorer), and an open discussion on key challenges and future directions for the quantum internet. Discussions covered the status of the &quot;principles&quot; and &quot;use cases&quot; drafts, the technical details of programming quantum network applications, and conceptual issues like appropriate terminology for quantum data movement and the potential need for a quantum transport layer.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrative and RG Status</strong></p>
+<ul>
+<li><strong><code>draft-ietf-qirg-principles</code></strong>: The draft, under review for two years, has had comments from Marie-Jose Montpetit addressed on the mailing list and is currently back for another read. It was not presented at this meeting. Authors and chairs believe all comments have been addressed.</li>
+<li><strong><code>draft-ietf-qirg-use-cases</code> (now v10)</strong>: This draft was presented by Kaushik.
+<ul>
+<li><strong>Updates</strong>: Mostly small changes since v7 (July last year). Version 10 was uploaded March 6th.</li>
+<li><strong>Key Addition</strong>: Section 3.2.2 now includes an application on quantum sensors: &quot;Interferometric Telescopes using Quantum Information.&quot; This technique uses quantum entanglement between distant telescopes to achieve higher resolution and overcome channel loss limitations via quantum repeaters.</li>
+<li><strong>Review Status</strong>: Rodney (as an individual reviewer) noted that comments from March 13th still needed to be fully addressed, suggesting the authors would produce a Version 11.</li>
+<li><strong>Wordsmithing</strong>: The responsibility for grammar and wordsmithing before final review rests with the authors; the RFC editor performs copy-editing at the end.</li>
+</ul>
+</li>
+<li><strong>Other Status</strong>: A seminar in February by Mark Kaplan (Very Cloud) is available on YouTube. The QRG was mentioned in a publication about standardization efforts, explicitly noting that QRG does <em>not</em> do standardization work.</li>
+</ul>
+</li>
+<li>
+<p><strong>NetQASM and Quantum Network Explorer (QNE) Presentation by Bart van der Veen (Q-Tech)</strong></p>
+<ul>
+<li><strong>NetQASM</strong>: A low-level instruction set architecture for hybrid quantum-classical programs in a quantum internet. It aims to enable application programming by defining how high-level applications are represented, programmed, and executed.</li>
+<li><strong>Execution Model</strong>: Nodes are programmable, consisting of a classical Application Layer (CPU) and a Quantum Processing Unit (QPU). The Application Layer handles classical processing and communication, delegating quantum operations to the QPU by sending &quot;NetQASM routines&quot; (blocks of NetQASM instructions). Qubits can persist across separate QPU routine executions.</li>
+<li><strong>NetQASM Language</strong>: An assembly-like language, similar to OpenQASM, but extended with instructions for remote entanglement generation (<code>create epr</code>, <code>receive epr</code>, <code>wait all</code>). These instructions interact with the node's network stack.</li>
+<li><strong>Python SDK</strong>: A higher-level Software Development Kit in Python allows writing applications with classical processing and communication. Quantum operations are automatically compiled to NetQASM routines.</li>
+<li><strong>Implementation &amp; Demonstration</strong>: The SDK can run programs on simulators (SquidASM, SimulaQron) and has been demonstrated on real hardware (two nodes based on NV centers in diamonds), showcasing the first full software and quantum network stack on hardware.</li>
+<li><strong>Quantum Network Explorer (QNE)</strong>: An online platform (quantum-network.com) for general information and an editor to run and visualize pre-programmed quantum network applications (e.g., QKD simulations). These programs are written using the Python SDK.</li>
+<li><strong>Future Plans for QNE</strong>: Connect to physical quantum internet hardware, allow users to upload their own NetQASM-based applications for simulation and execution on hardware.</li>
+<li><strong>Q&amp;A Highlights</strong>:
+<ul>
+<li><strong>Multi-node Entanglement</strong>: <code>create epr</code> specifies a target node ID for entanglement generation.</li>
+<li><strong>Fidelity</strong>: Application specifies minimum desired fidelity for EPR pairs; the network stack handles achieving this (e.g., via distillation).</li>
+<li><strong>Inter-node Coordination</strong>: Currently handled manually within the classical parts of the application code; no global synchronization entity.</li>
+<li><strong>NetQASM Routine Transmission</strong>: Routines are sent from the Application Layer to the QPU for each call, as their content can be runtime-dependent (e.g., based on classical communication).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Open Discussion</strong></p>
+<ul>
+<li><strong>Terminology for Quantum Data Movement</strong>: Rodney raised concern about the word &quot;transmit&quot; in the <code>use-cases</code> draft, as it implies encoding data on a photon. He advocated for a more neutral term that covers both direct transmission and quantum teleportation, as the network layer often provides end-to-end entanglement as a service, which can then be <em>used</em> for moving data. Suggestions like &quot;state synchronization&quot; were considered but deemed insufficient.</li>
+<li><strong>Distributed Quantum Computing (DQC)</strong>: Discussion confirmed active research in DQC. It's a non-trivial challenge to distribute quantum computation over multiple nodes to leverage network resources and potentially reduce per-node qubit requirements. It differs significantly from classical distributed computing and requires identifying optimal methods for resource distribution (e.g., parallelization vs. entanglement between all nodes). Simon Benjamin was mentioned as a relevant researcher.</li>
+<li><strong>Quantum Internet vs. Quantum Communications</strong>: A point was raised that many current &quot;use cases&quot; focus on point-to-point quantum communications rather than true &quot;quantum internet&quot; functionality, which implies uniform mechanisms for inter-island communication (analogous to IP for classical internet).</li>
+<li><strong>Need for a Quantum Transport Layer</strong>: Prompted by NetQASM's reliance on an underlying network stack to handle entanglement generation, the discussion explored the potential need for a &quot;quantum transport layer&quot; or &quot;quantum sockets.&quot; This layer would abstract away the mechanisms (teleportation, direct transmission, etc.) used to provide quantum services between applications, similar to TCP/UDP in classical networks. This is currently an undefined but recognized area of research.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong><code>draft-ietf-qirg-use-cases</code></strong>: The authors are to address the remaining comments from Rodney (as an individual reviewer) on the mailing list and aim to produce a Version 11 of the draft. This is required before the RG Last Call can proceed.</li>
+<li><strong>Draft Wordsmithing</strong>: Authors of all QRG drafts are responsible for ensuring high-quality grammar and language before submitting for final review; the RFC editor provides copy-editing services post-RG Last Call.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong><code>draft-ietf-qirg-use-cases</code></strong>: Continue revisions and discussion on the mailing list to reach convergence on open issues.</li>
+<li><strong>Quantum Network Explorer (QNE)</strong>: Q-Tech will continue development towards connecting QNE to real quantum internet hardware and enabling user-uploaded applications for execution.</li>
+<li><strong>Potential Future Work for QRG</strong>: The concept of a &quot;quantum transport layer&quot; or &quot;quantum sockets&quot; was identified as a significant area for future research and standardization-adjacent discussion within QRG. Participants are encouraged to consider leading or contributing to such an effort.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

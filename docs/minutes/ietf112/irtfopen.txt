@@ -1,0 +1,64 @@
+**Session Date/Time:** 09 Nov 2021 16:00
+
+# irtfopen
+
+## Summary
+
+The IRTF Open Meeting at IETF 112 provided an overview of the IRTF's mission, structure, and recent activities, including updates on Research Groups and a newly published RFC. A significant portion of the meeting was dedicated to a discussion of the proposed new model for the RFC Editor function, urging community feedback. The meeting also celebrated the achievements of IRTF Research Group Chair Vinsent G. and featured presentations by the 2021 Applied Networking Research Prize (ANRP) winners on topics ranging from BGP extensibility and internet resilience to censorship evasion techniques.
+
+## Key Discussion Points
+
+*   **IRTF Overview and Purpose**:
+    *   The IRTF focuses on longer-term research issues, promoting collaboration and development of research ideas related to Internet protocols, applications, architectures, and technologies. It is not a standards development organization.
+    *   Research Groups (RGs) aim to understand problems rather than produce standards, though informational or experimental RFCs can be published.
+    *   One RFC (9106, Argon2 memory-hard function) was published on the IRTF stream since the last meeting, stemming from CFRG.
+    *   An overview of active and recently met RGs was provided: CFRG, COIN, PANRG, PEAS, HRPC, MAPRG, NMRG, GAIA, CCIRG.
+*   **RFC Editor Future Model**:
+    *   The IAB's program to develop a new model for the RFC Editor function was discussed, proposing significant changes.
+    *   Key changes include transforming the RFC Editor role into an "RFC Series Consulting Editor" (expert guidance) and shifting oversight of the RFC series evolution from the IAB to a new "RFC Series Working Group" (community oversight). An "RFC Series Approval Board" would review proposals.
+    *   This is a significant administrative change with potential impact on how IRTF documents are published.
+    *   The community was strongly encouraged to review the draft "draft-iab-rfc-ed-future-rfc-ed-model" during its upcoming community-wide last call and provide feedback.
+*   **Special Recognition**:
+    *   Vinsent G. was honored with the "Chevalier de l'Ordre du Mérite scientifique" by the French government for his scientific work, notably his contributions to the IETF/IRTF and contact tracing systems.
+*   **Applied Networking Research Prizes (ANRP) 2021**:
+    *   Prizes recognize excellent recent research in applied networking relevant to the Internet community.
+    *   **Toma Verthé** presented "xBGPM: When you can't wait for the IETF".
+        *   **Problem**: Current BGP implementations lack flexibility, leading to long standardization/deployment delays (avg. 3.5 years for BGP features) and vendor lock-in for new functionalities.
+        *   **Solution**: xBGPM (eXtensible BGP) opens the BGP "black box" by exposing an API to its protocol memory and inserting "insertion points" (hooks) in the workflow. Network operators can write extensions (plugins) in bytecode, which are then run by xBGPM-compliant routers.
+        *   **Use Cases**: Monitoring AS path length, enabling non-standard ASNs in data centers, custom route selection, detecting BGP zombie routes.
+        *   **Security**: Employs software verification tools to check for termination properties, memory isolation, API restrictions, and BGP syntax correctness of plugins.
+        *   **Discussion**: Questions arose about the "transitive bit set to zero" assumption for prototyping, the inherent trade-off between flexibility and security in routing protocols, and the extent of core BGP logic that remains hard-coded versus extensible. Modularity in RFCs was suggested as a way to facilitate such extensibility.
+    *   **Akshaya Kashyap** presented "Analyzing Third-Party Service Dependencies in Modern Web Services".
+        *   **Motivation**: The 2016 Dyn DDoS attack exposed critical third-party dependencies. The study analyzes top 100,000 websites' dependencies on DNS, CDN, and Certificate Authorities.
+        *   **Findings**:
+            *   High Prevalence: 89% use third-party DNS, 32% third-party CDN, 76.8% third-party CA. 89% critically depend on at least one (single provider or no OCSP stapling).
+            *   High Concentration: Top 3 DNS providers serve ~40% of websites; top 3 CDNs serve ~60%; top 3 CAs serve ~60%. Cloudflare alone serves 23% of top 100k websites.
+            *   Indirect Dependencies: Service providers themselves rely on other third-party services (e.g., CA to DNS), amplifying concentration (Cloudflare's total impact rises to 37%).
+            *   Post-Dyn Changes (2016 vs. 2020): Critical DNS dependency increased; inter-service critical dependency slightly decreased; overall provider concentration *increased*, making single points of failure larger. No significant overall trend towards redundancy was observed.
+        *   **Recommendations**: Websites should adopt redundancy and understand indirect dependencies. Service providers should facilitate redundancy and be transparent about attacks.
+        *   **Discussion**: Further insights on concentration aligning with other research (IoT cloud dependencies). Mention of IETF's SANE (Service Architecture for the Networked Ecosystem) activity as a relevant area.
+    *   **Kevin Bock** presented "Server-Side Evasion".
+        *   **Problem**: Nation-state censorship often involves in-path or on-path sensors injecting spoofed TCP resets, requiring per-flow state tracking. Client-side evasion tools (Tor, VPNs) have deployment barriers.
+        *   **Hypothesis**: Server-side evasion, where the server subverts censorship without client software changes, should be impossible as the server has limited influence before the censored keyword is sent.
+        *   **Solution**: Modified Geneva (genetic algorithm for automated censorship evasion discovery) to run server-side. Tested HTTP, HTTPS, DNS, FTP, SMTP across China, Iran, Kazakhstan, India.
+        *   **Findings**: Discovered 11 server-side evasion strategies. Examples include:
+            *   **China**: Server sends two SYN packets (one with payload) to trigger TCP simultaneous open, desynchronizing the Great Firewall of China (GFW) due to an "off-by-one" bug in sequence number incrementing.
+            *   **Kazakhstan**: Server sends a packet with no TCP flags, causing the sensor to drop tracking.
+            *   **Kazakhstan**: Server sends two SYN-ACKs with uncensored HTTP GET payloads, confusing the sensor's perception of connection direction.
+        *   **Insights**:
+            *   GFW's "resynchronization state" dynamics are key to some evasions.
+            *   Protocol Variability: GFW appears to have different TCP stacks or multiple middleboxes running in parallel for different protocols, each performing protocol fingerprinting. These middleboxes are largely co-located.
+        *   **Recent Developments**: Geneva rapidly discovered evasions for Iran's "protocol filter" (Feb 2020) and China's encrypted SNI censorship (Summer 2020), demonstrating high responsiveness. Real-world deployment is ongoing with anti-censorship groups for bootstrapping and hardening existing evasion protocols.
+        *   **Discussion**: Ground truth determination for success (controlled client/server setup). Deployment at scale involves a "strategy oracle" model initially. The "cat and mouse" game dynamic: bug fixes from nation-states are hard to track. Acknowledged the dual-use nature of such tools and potential for misuse by malware developers, but emphasized the focus on helping those under censored regimes.
+
+## Decisions and Action Items
+
+*   **Community Feedback on RFC Editor Model**: Participants are urged to review "draft-iab-rfc-ed-future-rfc-ed-model" during its community-wide last call and provide feedback. A meeting is scheduled for tomorrow (14:30 UTC), and a mailing list is available.
+*   **ANRP 2022 Nominations**: Nominations for the 2022 Applied Networking Research Prize are now open. The deadline is November 19th. Both third-party and self-nominations are encouraged.
+*   **Engage with ANRP Winners**: Attendees are encouraged to talk to the ANRP winners in the gather space or via email for further discussion.
+
+## Next Steps
+
+*   **Review RFC Editor Model Draft**: Actively participate in the community-wide last call for the RFC Editor future model.
+*   **Nominate for ANRP**: Submit nominations for the 2022 Applied Networking Research Prize by November 19th.
+*   **Continue Research Engagement**: Follow up with the ANRP presenters and their research, especially regarding practical applications of xBGPM, addressing third-party dependencies, and evolving censorship evasion techniques.

@@ -1,0 +1,58 @@
+**Session Date/Time:** 23 Mar 2022 13:30
+
+# ohai Session
+
+## Summary
+
+The ohai session at IETF113 covered several key technical areas related to Oblivious HTTP (OHTTP). Martin Thomson provided updates on the core OHTTP draft, including discussions on proxy metadata, streaming HTTP, and anti-replay mechanisms, along with clarifying the draft's status and scope regarding discovery. Heru presented a new draft on oblivious proxy feedback for rate limiting, which sparked significant debate on its interaction with OHTTP's anonymity properties and existing HTTP rate limit headers. Finally, Tommy Pauly introduced a draft on oblivious target discovery via DNS, raising concerns about security implications, trust models, and architectural fit within the broader OHTTP ecosystem.
+
+## Key Discussion Points
+
+*   **Proxy Information to Server (Shadow Banning):**
+    *   Discussion centered on the type and amount of information an OHTTP proxy can provide to a server while preserving client privacy, specifically a "shadow banning" bit for identifying abusive clients.
+    *   Some argued that strict normative language is difficult to enforce and that applications/clients should agree on a known proxy policy.
+    *   A distinction was drawn between "public metadata" (agreed by client/proxy) and "private metadata" (client unaware, e.g., shadow banning bit), with calls for the latter to be strictly bounded.
+    *   Concerns were raised about the potential for tracking and the danger of sharing geolocation information.
+    *   It was suggested that some desired functionalities might be better addressed by generic HTTP features (e.g., new HTTP header fields).
+*   **Streaming HTTP:**
+    *   The current OHTTP design is suboptimal for large, streaming HTTP request/response bodies or 1xx responses.
+    *   A proposed design involved multiple AEAD invocations, sending messages in chunks with internal counters and an end-of-message signal.
+    *   Concerns were raised about whether this functionality is strictly necessary for OHTTP's primary use cases, with some suggesting MASQUE as a more suitable protocol for extensive streaming.
+    *   Questions about potential "crypto foot-guns" and the complexity versus benefit were also highlighted.
+*   **Anti-Replay Protection:**
+    *   OHTTP, by design, does not inherently prevent a malicious proxy from replaying encapsulated requests, which could lead to unwanted multiple processing by the server.
+    *   Potential solutions explored included server-side remembering of request identifiers (e.g., 16 bytes of the encapsulated key) or client-provided timestamps (e.g., HTTP Date header).
+    *   The challenge of unreliable client clocks was discussed, with a proposed mechanism for servers to signal clock inaccuracies, prompting clients to retry with a server-provided timestamp.
+    *   Concerns were raised about "distinctive skew linkability" if client clock offsets are used in a non-fuzzed manner, potentially compromising client privacy.
+    *   Some suggested that replay protection might not be universally required for all OHTTP deployments and could be handled as an informational guidance or a separate, optional specification rather than a core normative requirement.
+*   **Oblivious Proxy Feedback:**
+    *   The draft proposes a mechanism for a target server to signal overload or malicious client behavior back to an OHTTP proxy, allowing the proxy to rate limit or ban specific clients.
+    *   A new `OHTTP-Proxy-Feedback` header was proposed, intended to be stripped by the proxy before forwarding to the client, to align with existing HTTP rate limit headers while keeping the signal proxy-specific.
+    *   Significant discussion revolved around whether this approach compromises the "oblivious" nature of the protocol by requiring the target server to infer or know that it's interacting with a proxy, and how to distinguish between legitimate and malicious volumetric traffic.
+    *   Concerns were raised about the complexity of state management for proxies in volumetric attacks and the risk of the target server accidentally DDoSing the entire proxy infrastructure.
+    *   The discussion drew parallels to the "shadow banning" debate, suggesting that a simple "bad request" bit from the target to the proxy might be a more aligned and simpler solution.
+*   **Oblivious Target Discovery via DNS:**
+    *   A draft was presented proposing the use of DNS Service Binding (SVCB/HTTPS RR types) to discover OHTTP target configurations, including HTTP paths and OHTTP configs, particularly for Oblivious DNS over HTTPS (ODoH).
+    *   The draft explicitly excludes oblivious *proxy* discovery, focusing on targets that can be reached through pre-trusted proxies.
+    *   Major security and privacy concerns were raised:
+        *   **Linkability:** An ISP potentially providing unique target paths or configurations to individual clients, enabling linkage and undermining privacy.
+        *   **Impersonation:** If a proxy can poison DNS, it could inject synthetic OHTTP configs and impersonate arbitrary origins, effectively gaining root CA powers over the client's OHTTP traffic.
+        *   **Dangers of Flexible Paths:** The use of flexible `dohpath` parameters in SVCB was cited as problematic due to attacker control and potential interference.
+    *   Architectural questions were posed regarding the integration of target and proxy discovery, and how to establish a trusted relationship between a client, its proxy, and a discovered target in a secure manner.
+    *   Some participants saw value in the problem being solved (enabling ISPs to offer privacy-preserving services), but emphasized the need to address the significant security concerns.
+
+## Decisions and Action Items
+
+*   **Proxy Metadata / Shadow Banning:** Discussion on normative language for proxy metadata and shadow banning will continue on the associated pull request.
+*   **Streaming HTTP:** Martin Thomson will publish a Pull Request (PR) for the proposed streaming HTTP design and circulate it on the mailing list for feedback.
+*   **Anti-Replay Protection:** Discussion on anti-replay mechanisms will continue on the mailing list.
+*   **OHTTP Draft Status:** The working group affirmed that the OHTTP core specification should not be considered "Experimental" but rather aiming for Standards Track.
+*   **Discovery in Core OHTTP:** The working group reaffirmed that comprehensive discovery mechanisms will not be addressed in the main OHTTP draft, but may be pursued in separate drafts within the working group.
+*   **Oblivious Proxy Feedback Draft:** The authors of the "Oblivious Proxy Feedback" draft (`draft-heru-ohai-feedback`) will refine the draft based on feedback, considering alignment with existing HTTP API rate limit headers and the privacy implications. Discussion on its working group fit will continue on the mailing list.
+*   **Oblivious Target Discovery via DNS Draft:** The "Oblivious Target Discovery via DNS" draft (`draft-pauly-ohai-ohttp-target-discovery`) is not yet in an adoptable state. The authors will refine the problem statement and solution, with particular emphasis on addressing the raised security and privacy concerns (e.g., key ownership verification, linkability, impersonation, path validation).
+
+## Next Steps
+
+*   **Draft Refinement:** Authors of the discussed drafts (Martin Thomson, Heru, Tommy Pauly) are encouraged to revise their drafts on Github and circulate new versions on the mailing list, incorporating feedback from the session.
+*   **Mailing List Discussion:** Continue technical discussions on `ohai@ietf.org` for the proxy metadata, streaming HTTP, anti-replay, and oblivious proxy feedback topics.
+*   **Virtual Interim Consideration:** While no virtual interim is immediately scheduled, the co-chairs will consider scheduling a dedicated virtual interim for deeper dives into the more complex topics, particularly "Oblivious Target Discovery" and potentially "Anti-Replay," once initial mailing list discussions have progressed.

@@ -1,0 +1,82 @@
+**Session Date/Time:** 21 Mar 2025 02:30
+
+# DKIM Working Group Session
+
+## Summary
+
+The DKIM working group held its first in-person session to discuss DKIM2, a proposed new protocol to address limitations in the current DKIM implementation. The session covered working group procedures, charter goals, and detailed technical presentations on three proposed documents addressing DKIM replay attacks, backscatter mitigation, and message forwarding challenges. Key discussion points included the requirement for one recipient per message, signature validation across message modifications, and interoperability between DKIM1 and DKIM2 systems.
+
+## Key Discussion Points
+
+### Working Group Operations and Charter
+- **Code of Conduct**: Working group will be stricter on code of conduct enforcement given potential contentious discussions in email authentication space
+- **Compatibility Requirements**: Solutions must not break existing deployed email infrastructure; incremental upgrades preferred over disruptive changes
+- **Charter Goals**: Four main problems to solve:
+  - Maintain validation of signatures across forwarding modifications (with abuse-resistant methods)
+  - Solve DKIM replay problem
+  - Address backscatter concerns
+  - Provide better visibility into resulting errors
+- **Scope Limitations**: Email core protocols (SMTP) are out of bounds; focus strictly on charter-defined problems
+
+### Technical Architecture Decisions
+- **One Recipient Per Message**: Extensive debate on requiring single recipient per message to prevent BCC address leakage and enable proper replay detection
+  - Data from Yahoo/Gmail shows >99% of messages already go to single recipients
+  - Corporate email with attachments to multiple recipients identified as edge case
+  - Privacy preservation for forwarding requires this restriction
+- **DKIM2 vs DKIM1 Headers**: Decision to use separate header field rather than extending existing DKIM-Signature header to avoid breaking existing validation systems
+- **Signature Per Hop**: Each forwarding hop must add its own signature to create ordered chain of modifications
+
+### Message Modification Handling
+- **Modification Algebra**: Proposal for powerful but receiver-friendly algorithm to describe message changes
+  - Copy instructions to recreate earlier message versions
+  - Supports complex modifications while remaining simple for validators
+  - Discussion on whether to support simple common cases vs. full flexibility
+- **Canonicalization**: Strong preference for strict body canonicalization (not relaxed) since bodies will be processed in memory for modification algebra
+- **Header Signing**: Proposal for mandatory header list based on best practices rather than sender choice
+
+### Interoperability and Deployment
+- **DKIM1 to DKIM2 Upgrade Path**: Discussion of mechanisms to detect DKIM2 support and handle transitions
+  - DNS lookup or SMTP extension detection proposed
+  - Challenges with caching capability information
+  - Potential for double-signing during transition period
+- **Backscatter Prevention**: Bounce messages must be cryptographically verifiable and follow same path as original delivery
+- **Fragmentation Concerns**: Acknowledgment that deployment may create email ecosystem fragmentation but consensus this is acceptable trade-off
+
+### Implementation and Testing
+- **Experimental Header Names**: Recommendation against experimental header names due to historical problems with migration
+- **Early Implementation**: Multiple parties expressed interest in implementation and testing once specifications stabilize
+- **Crypto Agility**: Post-quantum cryptography mentioned as future consideration but not core requirement
+
+## Decisions and Action Items
+
+### Immediate Actions
+- **Document Adoption**: Consensus to proceed with adoption call for three proposed documents:
+  - Problem statement and overview document (informational)
+  - Technical specification documents (standards track)  
+  - Applicability statement (standards track)
+- **Header Requirements**: Richard Clayton to provide list of mandatory headers for signing based on best practices
+- **Bounce Handling**: Alan (remote participant) to contribute bounce message format specifications
+
+### Technical Decisions
+- **Single Recipient Requirement**: Working group consensus to proceed with one recipient per message requirement
+- **Separate Header Field**: Use new header field name rather than extending DKIM-Signature
+- **Strict Body Canonicalization**: Preference established for strict rather than relaxed body canonicalization
+
+## Next Steps
+
+### Short Term (Before Madrid IETF)
+- **Interim Meetings**: Plan for 2-3 interim meetings, with first meeting targeted for second half of April 2024
+- **Specification Lockdown**: Finalize header requirements, modification algebra format, and mandatory signing requirements to enable interoperability testing
+- **Implementation Phase**: Begin interoperability testing once core specifications are stable
+
+### Design Space Exploration
+- **Testing Priorities**: Focus initial testing on core functionality (replay prevention, modification handling) before advanced features (feedback mechanisms, crypto agility)
+- **Capability Detection**: Develop mechanisms for detecting DKIM2 support in receiving systems
+- **Transition Strategy**: Define approach for coexistence and migration from DKIM1 to DKIM2
+
+### Documentation Requirements
+- **Decision Rationale**: Document reasoning behind design decisions for future reference
+- **Security Considerations**: Address potential abuse scenarios including mailing list impersonation
+- **Deployment Guidance**: Provide clear guidance for staged deployment and interoperability
+
+The session concluded with strong momentum for moving forward with the DKIM2 proposal, pending resolution of remaining technical details and successful interoperability testing.

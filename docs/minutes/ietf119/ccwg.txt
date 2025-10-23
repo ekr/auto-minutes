@@ -1,0 +1,49 @@
+**Session Date/Time:** 21 Mar 2024 03:00
+
+```markdown
+# ccwg Meeting Minutes - IETF 119
+
+## Summary
+
+This meeting of the Congestion Control Working Group (CCWG) covered the status of several congestion control related drafts, including 5033bis, rate-limited senders, screen congestion control, HPCC++, and BBRv3. Discussions focused on clarifying the scope and goals of these drafts, ensuring safety and interoperability, and identifying potential future work items for the working group. The chairs also outlined a framework for determining where different congestion control related documents should be developed (ICCRG vs CCWG).
+
+## Key Discussion Points
+
+*   **5033bis (Congestion Control Evaluation Criteria):**
+    *   Concerns raised about including data center scenarios, particularly regarding co-designed forwarding plane/congestion control proposals. An issue will be opened to address this.
+    *   Importance of considering multiple dimensions of fairness beyond just bandwidth equality (e.g., packet loss, RTT).
+    *   Need for the document to avoid being interpreted as a mandatory checklist.
+*   **Rate-Limited Senders:**
+    *   Problem: Current TCP specs allow excessive `cwnd` growth for rate-limited senders.
+    *   Proposal: Restrict `cwnd` growth when flight size is less than `cwnd`.
+    *   Concerns: Equating congestion control with `cwnd`, as some protocols (e.g., BBR) use pacing instead. Need to define the principle more generically before implementation details.
+*   **Screen Congestion Control (SCReAM):**
+    *   SCReAMv2 aims to address cellular network realities, including resource allocation variations and the need for headrooms to cope with frame size variations.
+    *   Discussion about renaming `cwnd` to avoid confusion, as it can exceed the actual number of bytes in flight.
+    *   Comparison was requested to see how SCReAM version 1 compares to version 2 in the same scenario.
+*   **HPCC++ (High Precision Congestion Control):**
+    *   Designed for data center applications, using precise information from the network to adjust sending rates.
+    *   Benefits include fast convergence and potentially maintaining zero queue.
+    *   Different options exist for encoding the congestion notification (INT, IFA, IMS), but they should yield similar performance, though this will need further testing.
+*   **BBRv3 (Bottleneck Bandwidth and RTT):**
+    *   Goals: high throughput with random loss, bounded queuing delay, coexistence with Reno/Cubic.
+    *   Mechanisms: Model-based approach using bandwidth, RTT, ECN, and loss signals.
+    *   Deployment: Used internally at Google and for external YouTube traffic.
+    *   Desire to standardize BBR, focusing on the v3 variant and addressing implementation gotchas. Concerns were brought up of a plethora of variants making it harder to understand what is working or not.
+*   **Framework for Congestion Control Documents:**
+    *   ICCRG (Internet Congestion Control Research Group) for incubation and research.
+    *   CCWG for standards with significant deployment and demonstrated safety.
+    *   Independent Stream Editor for algorithms that won't change based on IETF review.
+
+## Decisions and Action Items
+
+*   **5033bis:** Corey will open an issue to include data center scenarios.
+*   Working group to further discuss the framework for congestion control documents.
+
+## Next Steps
+
+*   **5033bis:** Aim to ship the draft before Vancouver.
+*   Working group to decide on priorities for future work, considering BBR, rate-limited senders, HPCC++, SCReAMv2, and Reno updates.
+*   Discuss charter updates on the mailing list prior to Vancouver.
+*   Explore potential for a hackathon in Vancouver to test congestion control implementations.
+*   Authors to consider feedback and revise their drafts accordingly.

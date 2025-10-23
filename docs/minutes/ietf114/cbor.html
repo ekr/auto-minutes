@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="cbor.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-CBOR-20220728-2130">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 21:30</p>
+<h1>cbor</h1>
+<h2>Summary</h2>
+<p>The CBOR working group meeting at IETF 114 covered the status of existing documents, including newly published RFCs and those in the RFC Editor queue. Significant technical discussions revolved around the &quot;Time Tag&quot; document, specifically incorporating Sedate WG considerations and the potential for &quot;floating time&quot; support. The &quot;CBOR Packed&quot; draft was discussed, focusing on the concept of &quot;tag equivalence&quot; to address issues with generic tag validity. The recently published RFC 9254 (YANG/CBOR) was highlighted for its implications on defining CBOR data using YANG, emphasizing future alignment between CBOR's CDDL and YANG. Finally, a detailed roadmap for CDDL 2.0 was presented, prioritizing &quot;composition&quot; for modular specifications and &quot;annotation&quot; for richer schema validation feedback, along with a proposed timeline and feedback from implementers.</p>
+<h2>Key Discussion Points</h2>
+<h3>Document Status</h3>
+<ul>
+<li><strong>RFC 9164 (CBOR Tags for IPv4 and IPv6 Addresses and Prefixes)</strong>: Published.</li>
+<li><strong>RFC 9165 (Additional Control Operators for CDDL)</strong>: Published (essentially CDDL 1.1).</li>
+<li><strong>File Magic</strong>: In RFC Editor queue (finished IESG processing).</li>
+</ul>
+<h3>Time Tag (draft-ietf-cbor-time-tag-01)</h3>
+<ul>
+<li><strong>Purpose</strong>: To extend existing CBOR time tags (0, 1) to carry additional information. Tag 1001 is already registered and in use, designed for extensibility.</li>
+<li><strong>Sedate WG Integration</strong>: Sedate is converging on a standard for text-form Internet timestamps (RFC 3339 based) with added &quot;hints&quot; (time zone hints, Unicode calendar extensions). The Time Tag document proposes adding new keys (-10, -11, +10, +11) to incorporate Sedate's timezone hints and general extension suffixes.</li>
+<li><strong>CBOR-Specific Extensions</strong>: While Sedate is limited to RFC 3339 capabilities (UTC, time zones), the Time Tag is not. It already supports different time scales like TAI or Leap-Smeared UTC.</li>
+<li><strong>Floating Time</strong>: Discussion around adding support for &quot;floating time&quot; (local time without UTC relation), similar to the existing zoneless date tag (100). This could be inspired by NTPv5's use of a &quot;time scale&quot; field for local time.</li>
+<li><strong>Publication Strategy</strong>: Proposed synchronized publication with Sedate, but <em>without</em> waiting for NTPv5's completion due to its distant timeline (per Ira W. suggestion).</li>
+<li><strong>Alternative</strong>: Consider if &quot;floating time&quot; should be a separate tag rather than part of tag 1001.</li>
+</ul>
+<h3>CBOR Packed (draft-ietf-cbor-packed)</h3>
+<ul>
+<li><strong>Current State</strong>: Simpler design with a &quot;function tag&quot; concept and an extension point. Ongoing implementation work, likely requiring a second Working Group Last Call.</li>
+<li><strong>Tag Validity Issue (Tag Equivalence)</strong>:
+<ul>
+<li>RFC 8949 defines tag validity top-down (a tag defines its content structure), but not upwards (how an outer tag perceives an inner tag).</li>
+<li>This can cause issues for &quot;legacy generic decoders&quot; which may break if they encounter an unexpected inner tag (e.g., a reference tag inside a structure where it's not explicitly allowed).</li>
+<li>Examples: RFC 8746 (Typed Arrays) enumerates valid content tags, preventing future additions. CBOR Packed's reference tags could face similar validation failures.</li>
+<li>Brendan pointed out that a validator <em>should</em> know if it's inside a CBOR Packed structure, but Carsten noted that 8949 allows generic decoders to pass unknown tags to the application, potentially leading to validation failure at that stage.</li>
+</ul>
+</li>
+<li><strong>Proposed Solution (Tag Equivalence)</strong>: Define a concept where a tag can declare what it <em>looks like</em> to an enclosing tag for validity purposes (e.g., a data compression tag stands in for a byte string).</li>
+<li><strong>Limitations</strong>: This concept doesn't apply across fundamentally different data domains (e.g., <code>tag 4</code> vs <code>tag 264</code> for floating points).</li>
+<li><strong>Standardization Questions</strong>:
+<ul>
+<li>Should &quot;tag equivalence&quot; be part of the CBOR Packed specification or a separate document?</li>
+<li>Should it formally &quot;update&quot; RFC 8949? (Barry L. indicated that a Proposed Standard can update an Internet Standard, with the new feature being at the proposed standard level).</li>
+</ul>
+</li>
+<li><strong>CDDL Implications</strong>: CDDL currently lacks syntax to express tag equivalence; this would require a separate future effort.</li>
+</ul>
+<h3>RFC 9254 (YANG/CBOR)</h3>
+<ul>
+<li><strong>Context</strong>: A standard from the Core WG to encode YANG-defined data in CBOR for constrained devices.</li>
+<li><strong>Benefits</strong>: Allows defining CBOR data using YANG, with efficient encoding of YANG names as integers.</li>
+<li><strong>Impact</strong>: Introduces a new tool for the CBOR ecosystem. Emphasizes the need for future alignment between CDDL and YANG, as they both define data structures.</li>
+<li><strong>Example of Alignment</strong>: CDDL's regular expression syntax has already been aligned with YANG's.</li>
+</ul>
+<h3>CDDL 2.0 Roadmap</h3>
+<ul>
+<li><strong>CDDL 1.1 (RFC 9165)</strong>: Showed that significant additions can be made using existing extension points (control operators).</li>
+<li><strong>Future Work (Not 2.0)</strong>: JSON grammar for CDDL (for tool interchange).</li>
+<li><strong>CDDL 2.0 Priorities</strong>:
+<ul>
+<li><strong>Composition</strong>:
+<ul>
+<li>Building CDDL specifications from multiple files, enabling libraries (export/import interfaces, naming/namespaces).</li>
+<li>Supporting &quot;alternatives&quot; (specifications that generate different structures based on parameters).</li>
+<li>Automation: Making libraries available from RFCs, Internet-Drafts, registries, and non-IETF sources (e.g., 3GPP).</li>
+<li>Compatibility Goal: CDDL1-compatible syntax (a CDDL1 file is a CDDL2 file, and a CDDL2 file can be useful to a CDDL1 processor). This might involve using comments, control operators, or unused rules, potentially via a preprocessor-like mechanism.</li>
+<li>Brian T. (implementer) affirmed composition is &quot;very helpful&quot; due to current limits of copying/pasting. He expressed concern about using comments for new syntax and suggested new syntax elements with clear rules for converting back to CDDL1.</li>
+</ul>
+</li>
+<li><strong>Annotation</strong>:
+<ul>
+<li>Going beyond simple &quot;valid/invalid&quot; validation feedback.</li>
+<li>Providing richer information (e.g., semantic meaning of rules) from spec writers to annotators.</li>
+<li>Defining a &quot;Post-Schema Validation Instance&quot; (PSVI) data model for augmented instances, usable across JSON, CBOR diag, YAML, and CBOR.</li>
+<li>Brendan wondered how much of this belongs in CDDL versus external annotation.</li>
+</ul>
+</li>
+<li><strong>Embedding</strong>: Lawrence provided feedback on limitations of <code>.feature</code> for embedding CBOR in JSON (and vice-versa).</li>
+</ul>
+</li>
+<li><strong>Proposed Timeline</strong>:
+<ul>
+<li><strong>IETF 115</strong>: Prototype composition engine (preprocessor), first elements of annotation semantics (PSVI definition). Decide on functionality to pursue.</li>
+<li><strong>IETF 116</strong>: Technically complete specification, alignment with implementations, decide publication strategy.</li>
+<li><strong>Longer Term</strong>: Increased IANA integration for automation-friendly registries, improved integration with YANG.</li>
+</ul>
+</li>
+<li><strong>Call to Implementers</strong>: What toolkit elements are desired to best participate in development?</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Time Tag Floating Time</strong>: The discussion regarding the addition of &quot;floating time&quot; to the Time Tag document will be continued on the mailing list.</li>
+<li><strong>CBOR Packed Tag Equivalence</strong>: The document needs to make explicit text regarding the assumptions of legacy decoders and the concept of tag equivalence. A second Working Group Last Call is likely.</li>
+<li><strong>CDDL 2.0 Discussions</strong>: Further discussions on composition, annotation, and the challenges of embedding (as raised by Lawrence) will be pursued on the mailing list.</li>
+<li><strong>Next Interim Call</strong>: The next interim call is scheduled for August 24th. The Tag Registry item and other remaining agenda points from this meeting will be added to its agenda.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Working group members are encouraged to engage on the mailing list regarding:
+<ul>
+<li>Specific use cases and arguments for or against adding &quot;floating time&quot; to the CBOR Time Tag.</li>
+<li>Details of Lawrence's experience with embedding CBOR/JSON and limitations of <code>.feature</code> in CDDL.</li>
+<li>Feedback on the proposed CDDL 2.0 composition and annotation mechanisms, particularly the syntax approach (comments vs. new syntax elements).</li>
+</ul>
+</li>
+<li>The chairs will prepare for the next interim call on August 24th, including the Tag Registry item and any remaining open issues.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,60 @@
+**Session Date/Time:** 08 Nov 2021 14:30
+
+# ohai
+
+## Summary
+
+The first official working group meeting of the Oblivious HTTP Application Intermediation (OHAI) Working Group convened to discuss the Oblivious HTTP (OHTTP) protocol and related drafts. The session included a detailed presentation on the problem statement, the OHTTP protocol design, its privacy model, and operational considerations. Key discussions revolved around the scope of the protocol, particularly regarding collusion and message formatting. The primary decision was the adoption of the "Oblivious HTTP" draft as a working group item, with a strong consensus. It was also agreed that the "Binary HTTP Messages" draft should be developed by the HTTP Working Group due to its specialized nature.
+
+## Key Discussion Points
+
+*   **Oblivious HTTP (OHTTP) Protocol Overview:**
+    *   **Problem:** Clients often reveal sensitive data and their IP address directly to servers (e.g., DNS queries, safe browsing, telemetry), enabling linkability of data and identity.
+    *   **Limitations of Existing Solutions:**
+        *   General-purpose proxies (CONNECT, MASQUE, Tor) introduce performance overhead for single request/response transactions or allow linkability over long-lived connections.
+        *   Application-specific protocols (e.g., Prio) are complex, require significant infrastructure, and introduce unacceptable delays for performance-sensitive applications.
+    *   **OHTTP Design:** A simple, message-oriented proxy that combines:
+        1.  **Network Proxy:** Obfuscates the client's IP address from the target server.
+        2.  **Public Key Encryption (HPKE):** Hides the actual HTTP request/response data from the proxy itself.
+    *   **Privacy Model:** No single entity (client, proxy, or target) holds both the client's identity and the application data in cleartext, assuming non-collusion.
+        *   Client: Knows data and identity.
+        *   Proxy: Sees client and target identities, but data is encrypted.
+        *   Target: Sees proxy identity and decrypted client data.
+    *   **Threat Model & Scope:**
+        *   Assumes non-collusion between the proxy and target.
+        *   Traffic analysis (e.g., based on ciphertext size, timing) is out of scope of the OHTTP draft; specific applications (e.g., encrypted DNS) should provide guidance on padding.
+        *   Discovery and configuration of proxies and targets are explicitly out of scope for the OHTTP protocol.
+    *   **Operational Concerns:** OHTTP is an application-specific proxy protocol, not a general-purpose one. Targets need to account for replay attacks given static public keys by injecting fresh randomness.
+
+*   **Binary HTTP Messages Draft:**
+    *   This draft defines a binary encoding for encapsulating entire HTTP messages (method, URL, headers, body) for use within OHTTP.
+    *   It's designed to be unambiguous, easy to process, and draws lessons from HTTP/2 and HTTP/3 without inheriting their full complexity (e.g., intentionally avoids HPACK compression for security reasons).
+    *   **Work Split Proposal:** It was proposed and generally agreed that this specific message format (Binary HTTP Messages) should be developed by the HTTP Working Group, as it is a foundational HTTP concern, while the OHAI WG focuses on the oblivious intermediation mechanism.
+
+*   **Discussion on Collusion Detection:**
+    *   Concerns were raised regarding the "illusion of privacy" if no mechanisms exist to detect collusion between proxies and targets.
+    *   It was reiterated that collusion detection is out of scope for the initial OHTTP protocol development as per the working group charter, which assumes client selection of non-colluding parties.
+    *   The chairs noted that concrete proposals for post-facto or statistical collusion detection could be brought to the mailing list for future consideration.
+
+*   **Open Issues for OHTTP Draft Discussion:**
+    *   **Streamable Requests and Responses:** Discussion on whether OHTTP should support more generic HTTP capabilities like streaming, 1xx status codes, and incremental processing.
+        *   Concerns were raised about increased complexity and whether target applications for OHTTP (e.g., stateless DNS) truly require this.
+        *   Initial preference expressed to keep the OHTTP protocol simpler, focusing on single request/response semantics, even if it limits some HTTP features. More complex scenarios could potentially use new media types.
+    *   **Exposing Additional Authenticated Data (AAD) to Intermediaries:** Question of whether any data should be deliberately exposed to the proxy for more effective operation.
+        *   Context from Privacy Preserving Measurement (PPM) work where AAD is cleartext.
+        *   General sentiment against exposing more information to the proxy than necessary.
+    *   **Anti-Replay Capabilities:** Consideration of adding mechanisms (e.g., timestamps in messages) to help targets prevent replay attacks by proxies, as the draft currently does not explicitly specify this.
+
+## Decisions and Action Items
+
+*   **Decision:** The "Oblivious HTTP" draft was adopted as a working group document. This decision was reached by strong consensus via a show of hands and will be confirmed on the mailing list.
+*   **Decision:** The "Binary HTTP Messages" draft will be punted to the HTTP Working Group for development.
+*   **Action Item:** Tommy to file an issue against the OHTTP draft regarding the need for more clarity on proxy configuration and mapping state required to route requests.
+*   **Action Item:** Chairs will confirm the adoption of the OHTTP draft on the mailing list and invite further discussion for any outstanding reservations.
+*   **Action Item:** Anyone with concrete proposals for collusion detection mechanisms is invited to contribute to the mailing list for future consideration.
+
+## Next Steps
+
+*   The working group will proceed with addressing open issues within the newly adopted "Oblivious HTTP" draft.
+*   Discussions and issue resolution will primarily take place asynchronously via GitHub and the working group mailing list.
+*   Should real-time discussion become beneficial, virtual interim meetings can be scheduled with two weeks' notice.

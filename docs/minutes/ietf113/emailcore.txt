@@ -1,0 +1,66 @@
+**Session Date/Time:** 25 Mar 2022 11:30
+
+# emailcore
+
+## Summary
+
+The emailcore working group met at IETF 113 to discuss several open tickets related to the SMTP base specification (`rfc5321bis`) and the Applicability Statement (`AS`). Key discussions centered on IANA registration policy for SMTP extensions, the VERIFY command, clarification of "restricted capability client" terminology, handling of null MX responses, and issues related to list exploders and message header modification. While some issues were closed or saw a clear path forward, the IANA registration policy generated significant debate and will continue on the mailing list. The working group aims to schedule interims to maintain momentum on remaining items.
+
+## Key Discussion Points
+
+*   **Mail Transaction Clarity (Ticket 11)**: Initial concern about clarifying when a `MAIL` transaction begins and ends was discussed. The current text in `rfc5321bis` was largely deemed sufficient.
+*   **IANA Registration Policy for SMTP Extensions**: This was the most extensive discussion.
+    *   Current policy (`rfc5321`) requires "Standard Track or Experimental RFC approved by the IESG".
+    *   Proposed alternatives:
+        *   "Specification Required" (expert review + specification, not necessarily IETF stream RFC).
+        *   "First Come First Serve" with a reference requirement (specification templates).
+    *   Concerns were raised about the bar for registration (too high leading to non-registration, too low leading to "loony" or unreviewed extensions) and IANA's role in judging specification quality.
+    *   Suggestions included:
+        *   "Specification Required" with a willing expert (e.g., Barry).
+        *   "First Come First Serve" with a strong recommendation to post to the mailing list for feedback.
+        *   "First Come First Serve" with an immediate, temporary registration followed by a 60-day period for community review before permanence.
+    *   The group acknowledged a desire to encourage registration without creating undue hurdles, but also to ensure community input for potential issues. No clear consensus was reached during the session.
+*   **VERIFY Command**:
+    *   The document currently requires `VERIFY` but many implementations offer only stub responses (`252`).
+    *   `VERIFY` can also be a capability, but it is not registered with IANA.
+    *   Discussion revolved around whether to deprecate it, clarify the allowance for stub implementations, or ensure its capability registration. The existing text was considered to have enough loopholes for non-implementation if deemed insecure or non-sensible.
+*   **Restricted Capability Client**:
+    *   Confusion regarding the definition of "restricted capability client" and the associated text: "must not assume that any SMTP server on the Internet can be used as their mail processing relaying site."
+    *   The text was noted to be confusing, potentially misplaced, and possibly referring to SMTP clients rather than MUAs, or open relays.
+    *   Options discussed included clarifying the text or dropping it if its purpose and clarity cannot be established.
+*   **Null MX and 556 Response**:
+    *   Discussed the case where `mail.example.com` handles mail for `example.com` but not for `mail.example.com` itself.
+    *   The question was whether to return `550` (normal "not our mailbox" error) or `556` (null MX).
+    *   Experience suggests `550` is more realistic as mail servers typically know what domains they handle but not the reasons for others.
+    *   Consensus leaned towards no change, retaining `550` as the standard response.
+*   **Blind Copies (BCC) and Received Header Fields**:
+    *   Clarification needed on how BCC relates to `RCPT TO` and when `for` clauses in `Received` headers are inserted.
+    *   The existing text was considered problematic as SMTP servers don't inherently know about blind copies.
+*   **List Exploders and Header Modification**:
+    *   Discussion on the text "this change to MAIL FROM doesn't affect the header section of the message" related to list exploders modifying message headers.
+    *   The intent is to prevent exploders from incorrectly changing `From` headers when only `MAIL FROM` is changed, and to clarify they are not prohibited from making other unrelated header changes.
+    *   Option 3 ("replace it with: this change to MAIL FROM doesn't affect the header section of the message") was the preferred clarification.
+*   **MTA Terminology (Client/Server vs. Sender/Receiver)**:
+    *   Observation that `rfc5321bis` uses both "SMTP client/server" and "SMTP sender/receiver" interchangeably, causing potential minor confusion.
+    *   The "Crocker principle" of "it hasn't screwed up anyone" was invoked, suggesting minimal change.
+    *   A preference for "sender/receiver" was expressed due to its more functional description, especially when a single software acts in both capacities.
+    *   A proposal was made to add a sentence clarifying the interchangeability of these terms in `rfc5321bis`.
+*   **Sub-addressing**: Briefly mentioned as a common local convention (e.g., plus-addressing) but out of scope for the SMTP base specification, though potentially relevant for the Applicability Statement.
+
+## Decisions and Action Items
+
+*   **Mail Transaction Clarity (Ticket 11)**: Closed. John Clansen to propose a small editorial tweak (inserting "normal" in a sentence) on the mailing list for the next revision.
+*   **IANA Registration Policy for SMTP Extensions**: No decision. Discussion to continue on the mailing list. Barry Leiba volunteered to lead this discussion.
+*   **VERIFY Command**: No change to the base specification. John Clansen to propose editorial clarification for existing rules on the mailing list. Separate IANA registration for VERIFY capability to be pursued.
+*   **Restricted Capability Client**: John Clansen to propose a clarification to the text on the mailing list. If clarification proves difficult or contentious, the text will be dropped.
+*   **Null MX (556 response)**: No change to the document.
+*   **Blind Copies (BCC) and Received Header Fields**: John Clansen, with assistance from Pete Resnick, to propose clarifying text or changes on the mailing list.
+*   **List Exploders and Header Modification**: Adopted Option 3: "replace it with: this change to MAIL FROM doesn't affect the header section of the message." John Clansen to implement this change.
+*   **MTA Terminology**: John Clansen to propose a clarifying sentence for `rfc5321bis` indicating the general interchangeability of "SMTP client/server" and "SMTP sender/receiver."
+*   **Applicability Statement (AS) Review**: Todd Allcock to post the latest version of proposed text for Ticket 54 (authentication and encryption for ASrev4) to the mailing list for review. Ken will incorporate the text if no further comments.
+
+## Next Steps
+
+*   **Interim Meetings**: Co-chairs (Todd Allcock and Barry Leiba) will try to schedule one or two interim virtual meetings in the next one to two months to focus on remaining issues, acknowledging the value of interims for driving progress.
+*   **Mailing List Engagement**: Participants are encouraged to engage actively on the mailing list for discussions and proposals, aiming to make progress asynchronously and potentially reduce the need for interims.
+*   **Murray's Availability**: Murray Kucherawy will be away for most of the next month; action items requiring his input should be addressed before then or await his return.

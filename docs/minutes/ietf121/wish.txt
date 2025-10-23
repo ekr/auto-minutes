@@ -1,0 +1,28 @@
+**Session Date/Time:** 05 Nov 2024 15:00
+
+# wish
+
+## Summary
+This meeting focused on progressing the WebRTC HTTP Ingestion Protocol (WEP) draft towards RFC publication. The main discussion points revolved around addressing open issues, particularly regarding server-sent offers, event stream handling, and extension mechanisms. Several actions were identified to move the document forward.
+
+## Key Discussion Points
+
+*   **Server-Sent Offers (Issue #12):**  A significant discussion centered on whether WEP should support server-sent offers in addition to client-sent offers. Concerns were raised about the RESTfulness of server-sent offers, potential interoperability issues, and the lack of concrete proposals for implementation.  The main use case brought up was interoperability with whip.
+*   **Event Stream Handling (Issue #19):**  Julius proposed an alternative event stream architecture where the event stream is initiated before the WEP session, allowing for pre-session communication of information like simulcast envelopes.  Sergio expressed concerns about delaying RFC publication due to substantial redesign.  An alternative of using a data channel for events was brought up to avoid HTTP overhead.
+*   **Extension Mechanism:** Discussed the possibility of splitting the draft into a core WEP specification and an experimental extension specification for features like server-sent events and simulcast negotiation. An AD advised caution about experimental status. Agreement that a generic extension mechanism is important.
+*   **Data Channels for Events:** Discussed using data channels instead of HTTP for server-sent events, potentially alleviating HTTP-related overhead. Tim proposed modifying the current spec to be future-compatible with this by allowing the "m=application" line in the SDP offer, but instead of doing a 400 error, the client would just not include that M-line.
+*   **URL Discoverability (Issue #7):**  Discussed how to differentiate WEP URLs from other HTTP-based protocols, given that WEP uses HTTP URLs. The suggestion to use a ".wep" file extension was deemed impractical.
+*   **Server Behavior for Misbehaving Clients (Issue #20):**  Discussed whether the specification should define server behavior when a client requests an event that the server has not announced. It was determined that a one-sentence statement clarifying that the server is free to ignore or reject such requests would be beneficial.
+
+## Decisions and Action Items
+
+*   **Server-Sent Offers:**  The chairs requested a concrete proposal (PR) for server-sent offers. If no proposal is submitted within a reasonable timeframe, the issue will be closed. (Action: Open Issue #12 comment).
+*   **Data Channels and Events:** Tim will create a PR for supporting the M line today with data channel support to the spec and splitting the RFC into core WEP and the data channel extension RFC.
+*   **Misbehaving Clients:** A sentence clarifying server behavior when dealing with non-compliant clients will be added to the specification. (Action: Sergio to add the sentence).
+
+## Next Steps
+
+*   Tim to submit PR for data channel.
+*   Sergio to add one sentence regarding non compliant clients.
+*   Continue discussion on the mailing list to resolve open issues.
+*   Sergio will backport all changes from HTTP review.

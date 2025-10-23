@@ -1,0 +1,123 @@
+**Session Date/Time:** 24 Mar 2022 09:00
+
+# pals
+
+## Summary
+
+This joint meeting of the PALS, MPLS, and .NET working groups was convened to discuss architectural issues and solution proposals for new application uses at the bottom of the MPLS label stack, collectively referred to as MPLS Indicators and Ancillary Data (MIAD). The session included status reports from the Open Design Team (ODT), presentations on use cases, requirements, a framework, and multiple solution drafts proposing mechanisms for MIAD. Key discussions revolved around terminology, the need for in-stack vs. post-stack data, hardware compatibility, backward compatibility, and the process for adopting guiding documents and solution proposals.
+
+## Key Discussion Points
+
+*   **Welcome and Agenda (00:00:35 - 00:04:01)**
+    *   Joint meeting of PALS, MPLS, and .NET to discuss architectural issues and solution proposals for new application uses at the bottom of the MPLS label stack.
+    *   Agenda included ODT status, use cases, requirements, framework, technical proposals, and open discussion.
+
+*   **Open Design Team (ODT) Report (Lars Eggert) (00:04:01 - 00:12:03)**
+    *   ODT is a joint activity across PALS, MPLS, and .NET, meeting weekly with ~20 participants discussing ~20 documents.
+    *   The initiative, initially called "MIAD" (MPLS Indicator and Ancillary Data), aims to define an architecture for using the data plane to send instructions and ancillary data between LSRs.
+    *   Discussion around terminology: "Forwarding Actions," "Network Actions," "MIAD Actions," or simply "Actions." Preference to pick one term early.
+    *   Ancillary Data: Data used to perform requested actions, also sent in the packet.
+    *   Document Types: "Guiding" (requirements, framework, use cases) and "Specifying" (solutions).
+    *   Process for Progressing Documents: Desire to adopt guiding documents first, then solutions. Consensus calls across all three WGs, with discussion primarily on the MPLS list.
+    *   Challenges: Some proposed solutions are not compatible; ongoing discussion on the process for adoption. No consensus yet on an end-to-end discussion poll.
+    *   MIAD differs from traditional MPLS by using the data plane for instructions, introducing a strong dependency on hardware and optimization for coding. No strong consensus on hardware optimization yet, but nearing it.
+
+*   **Use Cases for MIAD (Tarek Saad) (00:12:03 - 00:29:56)**
+    *   Document compiles use cases for MIAD from ODT discussions.
+    *   MIAD aims to address requirements from new MPLS applications by including an indicator for specific functions and optional ancillary data.
+    *   Ancillary data is added by ingress LER, may be updated by transit LSRs, and removed by egress LER.
+    *   **Use Cases Presented:**
+        *   **No Further Reroute**: Indicator to prevent looping in FRR scenarios by disallowing further reroutes.
+        *   **In-situ OAM (iOAM)**: Carry telemetry/operational data within user traffic, requiring a function indicator to alert nodes for processing.
+        *   **Network Slicing**: Identify packets belonging to specific Network Resource Partitions (NRPs) to apply per-hop behavior using a resource selector indicator.
+        *   **Time-Sensitive Networking (TSN)**: Carry a timestamp or time budget for queuing decisions; requires engagement with the TSN WG.
+        *   **Network Programming**: Similar to SRv6, carry a packet processing program/sequence of instructions in MPLS packets as a function indicator with arguments as ancillary data.
+        *   **Service Function Chaining (SFC)**: Investigate carrying NSH as ancillary data, potentially superior to emulating NSH in the label stack.
+    *   Next steps: Welcome operator engagement and further input to the document.
+    *   **Discussion**: Question if "Network Programming" (use case #5) could be an overarching mechanism covering other use cases. Tarek clarified MIAD is generic, and #5 is an aspiration requiring WG interest.
+
+*   **MIAD Requirements Draft (Matthew Bocci) (00:30:02 - 00:48:01)**
+    *   Document captures key requirements for ancillary data and indicators, an output of the ODT.
+    *   **Key Terminology Defined:**
+        *   **Ancillary Data**: Data affecting forwarding/processing, can be "in-stack" or "post-stack."
+        *   **Ancillary Data Indicator (ADI)**: Indicator in the MPLS label stack that ancillary data exists, its type, and how to process it.
+    *   **General Requirements**: Maintain MPLS extensibility, flexibility, and efficiency (RFC 3031/3032 consistency). Solutions must not restrict generality, use existing MPLS mechanisms where possible, ensure efficient label stack parsing, and minimize label stack depth.
+    *   **Requirements on ADI**: Need for ADI, coexistence with existing MPLS, head-end knowledge of insertion, support for end-to-end/hop-by-hop processing.
+    *   **Requirements on Ancillary Data**: Coexistence with MPLS/post-stack mechanisms (control words/ACHs), protocol efficiency (not too deep in packet), processing impact (fast vs. slow path), scope (control, maintenance, user traffic), and security (authenticity, confidentiality).
+    *   Status: Draft is mature, needs editorial cleanup, ready for MPLS WG adoption.
+    *   **Discussion**:
+        *   Concern about limiting in-stack data size; the FAI document (Kirti's) suggests 4-8 octets and justification for in-stack placement.
+        *   Hardware limitations (e.g., Broadcom chips with 3-label depth); discussion on reusing label bits (TC/TTL) vs. new labels.
+        *   Need for clear signaling (e.g., via IGPs/BGP-LS) to indicate node capabilities to avoid imposing unreadable data.
+
+*   **Framework Draft (Lars Eggert) (00:48:01 - 00:54:33)**
+    *   Distinction: Framework (interworking with environment) vs. Architecture (internal workings).
+    *   Status: Initial version received positive comments but requires significant work. John Drake, Tony Lee, and Adrian Farrel have contributed text.
+    *   Next Steps: Tony Lee will take over editing. A new version will be posted after careful review by ODT and WGs, aiming to converge on terminology. Expected to be ready for WG adoption soon.
+
+*   **Solution: MPLS Extension Header Encoding (Jags) (00:54:33 - 01:18:22)**
+    *   Proposal for a generic framework to encode MPLS extension headers, carrying multiple forwarding instructions.
+    *   Supports flag-based instructions (no ancillary data) and instructions needing ancillary data. Allows in-stack, post-stack, and their coexistence. Backward compatibility is a goal.
+    *   Hardware analysis performed.
+    *   **Extension Header Indicator Options:**
+        1.  Extend existing ELI/EL by repurposing TC and TTL.
+        2.  Assign a new Special Purpose Label (SPL).
+        3.  Use a user-configured label.
+    *   Proposed **In-Stack Encoding**: Includes a 3-bit length field (for 4-byte words), presence indicators (in-stack, post-stack, hop-by-hop post-stack), an 8-bit opcode for forwarding instruction, and ancillary data. Control bits (D, E) for data stacking and end-to-end/hop-by-hop processing.
+    *   Opcode values: 1 for flag-based, 2 for byte offset of post-stack data, 3-254 for IANA assignment, 255 for extension.
+    *   Proposed **Post-Stack Encoding**: Indicators for presence and hop-by-hop processing. A generic format with a fixed zero-nibble, reserved label, 8-bit opcode, length, and flags (next header, hop-by-hop).
+    *   Examples provided for various scenarios.
+    *   Comparison: Option 1 (reusing ELI/EL) might lead to shorter stack depth (5 vs. 7 labels for option 2).
+    *   Request for WG adoption and feedback on indicator options.
+    *   **Discussion**: Concerns about multiple indicators and the `E` (end-to-end) bit meaning per instruction. Issue with older nodes popping ELI and exposing data, requiring all nodes to support new ELI interpretation. Comparison with other published documents on extension headers and post-stack data.
+
+*   **Solution: Entropy Label Control Field Extension (Bruno Decraene) (01:18:22 - 01:28:44)**
+    *   Proposal to extend the existing Entropy Label (EL) by redefining its TTL field as an 8-bit "Entropy Label Control Field" (ELCF).
+    *   The 8 flags are proposed to be user-defined to maximize reusability.
+    *   **Benefits**:
+        *   Faster deployment: Most existing egress LSRs already support ELI, so they won't drop packets. Incremental deployment possible.
+        *   Minimizes label stack: Adds indicators without extra labels, especially when load balancing is needed.
+        *   Leverages existing SPL and signaling.
+    *   Use cases include E2E loss measurement and slice ID.
+    *   Status: Individual draft since Dec 2020, presented multiple times, requesting call for adoption in MPLS WG.
+    *   **Discussion**:
+        *   Relationship to Jags' proposal: Bruno's is seen as independent, providing a specific mechanism for indicators.
+        *   Limited number of indicators (8-11 bits) vs. perceived needs. Bruno argues 8 is a good start, extensible if needed.
+        *   Strong advantage of backward compatibility for legacy nodes.
+
+*   **Solution: Forwarding Actions Indicator (FAI) (Kirti Purbhoo) (01:28:44 - 01:43:59)**
+    *   Draft is functionally stable, focusing on bit wrangling, backward compatibility, extensibility, IANA details, and deployment strategies.
+    *   **Key Contributions**:
+        *   Single SPL for multiple purposes, addressing SPL exhaustion.
+        *   Uses full label entry (including TC and TTL).
+        *   Encodes forwarding actions very succinctly for efficiency.
+    *   **Questions for Working Group Consensus (to be discussed on mailing list/survey):**
+        1.  **Value of In-Stack Data**: Should in-stack data be allowed? Authors' opinion: Yes, for critical/efficient forwarding, with guidelines on what, when, and how big.
+        2.  **Repeating In-Stack Data in Post-Stack**: Should in-stack data be repeated in post-stack? Authors' opinion: No, risk of conflict.
+        3.  **Efficiency and Extensibility**: Is the approach of encoding actions as single bits (with bit position defining action), using an IANA registry for associated data length, and extensible flag bits (via additional LSEs) acceptable? Authors' opinion: Yes, efficient and extensible, supported by hardware experts.
+        4.  **Two-Bit Flag for EL/Slice ID**: Is the flexibility of a 2-bit flag for combined Entropy Label and Slice ID useful, despite potential complexity? Authors' opinion: Yes, allows flexibility and often uses one LSE instead of two.
+        5.  **SPL Reaching Top of Stack**: Should the FAI SPL be allowed to reach the top of stack? Options: Never allow, allow with signaling, or push a neutral label (e.g., label 0).
+    *   Next steps: Editorial cleanup, IANA section, procedures. Request for WG adoption, not contingent on resolving all details.
+    *   **Discussion**: Suggested an electronic survey for the questions. Concern about encoding that requires "bouncing around" in the packet for associated data, although implementers report it's manageable.
+
+*   **IANA Registry for Post-Stack First Nibble (Kirti Purbhoo) (01:43:59 - 01:49:28)**
+    *   Proposal for an IANA registry for the first nibble *after* the bottom of the label stack.
+    *   Clarifies that the first nibble is *not* an IP version number and all 16 values (except 4 and 6, due to legacy hacks) can be used.
+    *   **Requirement**: If not an IP packet, a post-stack header (e.g., Control Word) *must* be used. This strengthens RFC 4928.
+    *   **Recommendation**: For load balancing, *do not* use the hack of guessing IP based on the first nibble (i.e., use an entropy label).
+    *   **Discussion**: This addresses issues with guessing packet types based on the first nibble, which can cause problems for load balancing and application-aware routing.
+
+## Decisions and Action Items
+
+*   **Decision**: The meeting concluded without a consensus on which solution draft(s) to adopt, or the preferred architectural approach. Multiple drafts are requesting Working Group adoption, highlighting the need for further discussion and resolution within the ODT and respective Working Groups.
+*   **Action Item**: The chairs will consider setting up an electronic survey to gather consolidated feedback on the specific questions raised by Kirti Purbhoo's FAI draft (and potentially other key architectural questions) from the community.
+*   **Action Item**: Tony Lee will take over as the primary editor for the Framework draft to progress it towards a new version and eventual Working Group adoption.
+*   **Action Item**: All architectural and solution proposals will continue to be discussed on the respective mailing lists, with a particular focus on addressing the backward compatibility, hardware implementation, and deployment concerns raised.
+
+## Next Steps
+
+*   **Working Group Adoption**: Calls for adoption are anticipated for the Requirements, Framework, and several Solution drafts in the MPLS WG and potentially PALS/.NET.
+*   **Terminology Convergence**: Continued effort to converge on a unified terminology across all MIAD-related drafts.
+*   **Deployment Considerations**: Detailed analysis and discussion are needed on hardware compatibility, backward compatibility with legacy devices, and practical deployment strategies for the proposed solutions.
+*   **Use Case Validation**: Further investigation and community engagement (e.g., with TSN WG) to validate and refine the compiled use cases.
+*   **Mailing List Discussion**: Further technical discussions on the various proposals, particularly the fundamental architectural choices (e.g., in-stack vs. post-stack data, specific indicator mechanisms), will continue on the working group mailing lists.

@@ -1,0 +1,101 @@
+**Session Date/Time:** 08 Nov 2021 16:00
+
+# iccrg
+
+## Summary
+
+The iccrg session at IETF 112 featured a diverse set of research presentations. Discussion began with a novel approach to congestion control in data centers using source priority flow control. This was followed by an update on implementing BBR for the DCCP protocol, including challenges with `ProbeRTT` and the question of whether to focus on BBRv1 or BBRv2. A thought-provoking presentation explored the game theory behind the coexistence of Cubic and BBR, suggesting the internet is likely to remain a heterogeneous mix of congestion control algorithms at a Nash equilibrium. Finally, updates were provided on the implementation of ALBAT (receive-side Ledbat) and BBRv2, including early performance data, challenges, and the status of the corresponding Internet-Drafts.
+
+## Key Discussion Points
+
+### Source Priority Flow Control in Data Centers
+
+*   **Problem:** In-cast congestion in data centers causes significant tail latency and packet drops. Traditional AIMD congestion control reacts too slowly (multiple RTTs). Existing L2 PFC prevents drops but induces head-of-line blocking and operational issues like PFC storms/deadlocks.
+*   **Proposal:** Introduce Layer 3 Source Priority Flow Control (sPFC) or Source Flow Control (SFC) for sub-RTT reaction to heavy in-cast.
+    *   **Mechanism:** A congested switch detects queue buildup, computes the minimum drain time, and sends a signaling packet backwards to the in-cast senders.
+    *   **sPFC:** The sender-side Top-of-Rack (ToR) switch converts the L3 signal to a standard PFC frame, immediately pausing the sender NIC queues. This avoids inter-switch head-of-line blocking and PFC side effects.
+    *   **SFC:** The signal is forwarded to the sender's NIC hardware or host networking stack to pause specific flows. This offers more granular, flow-level control.
+    *   **Information Carried:** Signaling packets carry the target queue drain time, QoS priority, and optionally the original destination IP for caching at the ToR, or L4 port/QPID for SFC.
+*   **Comparisons:**
+    *   **Source Quench (deprecated ICMP):** SFC is explicit about duration and promotes immediate stopping, designed for single-domain data centers, unlike Source Quench.
+    *   **HPCC (multi-bit ECN):** HPCC is 4-direction signaling coupled with ongoing congestion. SFC's direct back-to-sender approach is faster for severe in-cast.
+    *   **Timely/Swift (Google, RTT-based RDMA CC):** These still react in 2-3+ RTTs as signals traverse congested paths. SFC provides in-cast information directly to the sender within one RTT.
+*   **Applicability:** Primarily targets RDMA (Rocky v2) but can extend to non-RDMA cases (e.g., Onramp). Relevant for machine learning training workloads.
+*   **Discussion:** The effectiveness was demonstrated in simulations and Huawei testbeds, showing benefits even with typical data center oversubscription ratios and mixed traffic. The host encouraged feedback on the mailing list given its relevance to transport research.
+
+### CCID for BBR for DCCP
+
+*   **Motivation:** DCCP currently relies only on loss-based congestion control algorithms. The goal is to bring the non-loss-based BBR algorithm to DCCP, particularly for multipath scenarios where latency differences are critical, and to assess if BBR's benefits (low latency, high bandwidth, bufferbloat avoidance) translate to DCCP.
+*   **Implementation:** BBRv1 for DCCP (CCID5) was implemented in the Linux kernel (open source), adapting the TCP BBR implementation. The unreliable nature of DCCP means ACK generation/processing is handled by the CCID.
+*   **Evaluation:** Initial tests in single and multipath scenarios showed CCID5 significantly improved latency over CCID2 (default DCCP CC) under bandwidth limitations and improved multipath scheduling.
+*   **`ProbeRTT` Latency Problem:** Testing in realistic NLT links revealed deeper bandwidth drops and longer `ProbeRTT` phases for CCID5 compared to TCP BBR. This was attributed to DCCP's need for sequence/ACK validity window synchronization, which is latency-dependent and delays congestion window restoration after `ProbeRTT`. A temporary solution was implemented by triggering synchronization but not waiting for confirmation, achieving similar performance to TCP BBR.
+*   **Discussion:**
+    *   **Standardization:** An initial draft was submitted to iccrg but feedback suggested TSVWG as the more appropriate venue for standardization.
+    *   **BBRv1 vs BBRv2:** A key question was whether to standardize BBRv1 or wait for BBRv2 (which is still evolving) to mature. The presenter acknowledged BBRv2 would be preferable and is in their future work plans.
+    *   **Venue for `ProbeRTT` Fix:** Unclear if the discussion on solving the `ProbeRTT` latency dependency (e.g., new feature negotiation) should occur in iccrg or TSVWG.
+*   **Decision:** The host recommended taking the discussion onto the mailing list and coordinating with TSVWG chairs regarding the appropriate venue and timing for a draft.
+
+### Game Theory Behind Running Cubic and BBR
+
+*   **Context:** BBR adoption is growing, mirroring the past transition from Reno to Cubic. However, Cubic-BBR is a paradigm shift (loss-based vs. RTT/BDP-based), creating a mix of congestion signals.
+*   **Question:** Will everyone switch to BBR, or will the internet settle into a mixed state?
+*   **Approach:** Modeled the choice between Cubic and BBR as a normal form game, where websites (players) choose an algorithm (strategy) to maximize network performance (utility). The analysis aimed to find Nash Equilibria.
+    *   **Nash Equilibrium:** A state where no player has an incentive (performance benefit) to switch to another algorithm.
+*   **Conjecture & Observations:** A Nash Equilibrium is conjectured to exist. Observations showed that a small number of BBR flows disproportionately claim bandwidth. Plotting combined BBR throughput against the percentage of BBR flows, the intersection with a "fair share line" indicates the Nash Equilibrium, where the average bandwidths of Cubic and BBR flows are equal. Any deviation from this point leads to worse performance for the switching algorithm, thus no incentive to switch.
+*   **Empirical Validation:** Experiments with varying numbers of flows, link speeds, and buffer sizes validated the existence of a single Nash Equilibrium. It was observed that smaller RTT flows tended to choose Cubic, while larger RTT flows opted for BBR. Buffer size had the most significant impact on the equilibrium distribution (deeper buffers favoring Cubic).
+*   **Summary:** Despite BBR's current benefits, Cubic is unlikely to disappear due to diminishing returns for BBR as its adoption increases. The internet will likely remain a heterogeneous mix, and TCP performance is highly contextual.
+*   **Future Work:** Formal proof for general N-flow games, complex utility functions (throughput + delay, QoE for video), effects of BBRv2, multi-hop paths, ECN, and very deep buffers.
+*   **Discussion:** The study focused on long-lived flows in congestion avoidance. Feedback highlighted the complexity of real-world scenarios, including mixes of short/long flows, the economic value of different flow types, and the nuances of RTT interpretation (base RTT vs. RTT with buffer occupancy). There was a strong interest in extending the work to BBRv2 and using QoE as a utility function for video workloads.
+
+### BBRv2 and ALBAT Implementation Updates
+
+#### ALBAT (Receive-Side Ledbat)
+
+*   **Goal:** Bring Ledbat++ benefits to the receiver side of the transport connection, primarily by controlling the TCP receive window.
+*   **Motivation:** Challenges in deploying Ledbat++ on all CDNs, proxies interfering with end-to-end operation, and the receiver having better information about application-specific download priorities.
+*   **Implementation (Windows TCP stack):** Based on `draft-ietf-iccrg-receive-side-lebat`, incorporating Ledbat++ features (RTT measurements, slower CWND increase, adaptive multiplicative decrease, periodic slowdown, simplified base delay). Requires timestamp negotiation.
+*   **Challenges:** Some CDNs do not enable timestamps (working with them). No action taken if middleboxes strip timestamps. RTT inflation from slow start bursts without a clear receive-side mitigation.
+*   **Next Steps:** Measuring with Windows update downloads; aiming to share data by the next iccrg. Question posed to the group about publishing the draft as an experimental RFC.
+
+#### BBRv2 Implementation
+
+*   **Goal:** A model-based congestion control algorithm aiming for low queue occupancy, low loss, and improved coexistence with Cubic. Incorporates bandwidth, RTT, loss, and ECN signals.
+*   **Implementation (Windows TCP stack):** Based on open-source Linux kernel code for BBRv2, integrated as a CC module in Windows 11 insider builds. Rate-based pacing built into TCP.
+*   **Challenges:** The evolving nature of the BBRv2 code and the lack of a formal specification made implementation difficult, requiring close collaboration with Google engineers. ECN handling is currently simplified/disabled.
+*   **Early Data:**
+    *   **Latency:** Significant improvements (up to 10x) over Cubic in lab WAN emulation.
+    *   **Throughput:** Improvements observed in lab tests and ~20% improvement in inter-region Azure cloud tests (low loss, ample headroom), but no significant latency difference in the latter.
+    *   **CPU Usage:** Higher CPU usage compared to Cubic in ultra-low latency scenarios.
+    *   **LSO Interaction:** Fewer opportunities and smaller sizes for LSO (Large Send Offload) due to pacing.
+    *   **Fairness:** Significant fairness issues observed, with Cubic dominating BBRv2 in lab tests, making incremental deployment challenging.
+
+### BBRv2 Updates from Google
+
+*   **Deployment Status:** BBRv2 is the default or in pilot for Google's internal traffic (including a Swift variant). External traffic is still on BBRv1 but transitioning to v2, iterating on QoE and latency data.
+*   **CPU Usage:** A patch set exists to introduce a fast path for BBR processing, bringing CPU usage to parity with Cubic for production workloads.
+*   **Internet-Drafts:**
+    *   `draft-ietf-iccrg-delivery-rate-estimation`: Describes the bandwidth sampling mechanism used by BBRv1/v2, largely unchanged with one significant bug fix.
+    *   `draft-ietf-iccrg-bbr-congestion-control`: Updated to cover the current BBRv2 algorithm, including core model, loss response, and Cubic/Reno coexistence. ECN aspects are pending addition due to time limitations.
+*   **Ian's BBRv2 Tweaks (Quick):** Several small changes are being tested, primarily in Quick, to address specific issues:
+    *   **Bandwidth Crash after Loss:** When `inflight_high` is set low due to loss, it's hard to recover the true bandwidth. A fix involves tracking `max_bytes_delivered_in_round` to more accurately estimate pipe size, improving QoE and reducing bandwidth crashes.
+    *   **Early `ProbeUp` Exit:** Aggressive exit criteria for `ProbeUp` (e.g., `bytes_in_flight > 1.25 * BDP + 2MSS`) can prevent `inflight_high` from growing sufficiently. Tweaks involve waiting longer in `ProbeUp` (e.g., a full round instead of `min_rtt`) or using a persistent queue check to avoid premature exits.
+    *   **Excessive Time in `ProbeRTT`:** Flows coming out of quiescence can stay in `ProbeRTT` for a full round, sending at low rates. A fix ensures earlier exit.
+*   **Discussion:**
+    *   **ECN:** BBRv2's ECN handling is similar to DC-TCP, using multiplicative decrease proportional to an EWMA of recent ECN marks, with future intent for L4S compliance.
+    *   **`inflight_high`:** The coupling between `inflight_high` and bandwidth estimates can lead to flows getting "stuck" at lower rates after a packet loss. Fixing this impacts coexistence with Cubic/Reno, requiring a "shrewder" probing strategy.
+    *   **Quick/TCP Divergence:** Differences between Quick and TCP implementations are primarily due to continuous experimentation in different codebases (user space vs. kernel) and manifest differently due to factors like ACK decimation and scheduling. The goal is to coalesce on a single, proven algorithm for both.
+
+## Decisions and Action Items
+
+*   **BBR for DCCP:** Discussion on the `ProbeRTT` issue and the appropriate venue for its standardization (ICCRG vs. TSVWG) will be taken to the mailing list and coordinated with TSVWG chairs.
+*   **ALBAT:** Praveen (Microsoft) committed to sharing data from Windows update downloads by the next iccrg session. The group will consider discussing the `receive-side-lebat` draft for publication as an experimental RFC.
+*   **BBRv2:** Praveen (Microsoft) offered to collaborate on reviewing the BBRv2 Internet-Drafts. Neil Cardwell (Google) committed to updating the `bbr-congestion-control` draft to include ECN handling as soon as possible.
+*   **General:** The chair requested that all technical discussions, including clarifications on implementations, be conducted on the iccrg mailing list or Slack channel to ensure a public record and benefit the wider community.
+
+## Next Steps
+
+*   **Source Priority Flow Control:** Continue work on the IEEE 802.1Qcz draft, and explore IETF as a forum for the transport-layer aspects of Source Flow Control.
+*   **BBR for DCCP:** Submit an updated draft to TSVWG, further discuss the `ProbeRTT` latency dependency, and plan for implementing BBRv2 for DCCP.
+*   **Game Theory of CC:** Continue research on a formal proof for general N-flow games, explore more complex network utility functions (including QoE for video), analyze the effects of BBRv2, multi-hop paths, ECN, and very deep buffers, and investigate mixed workload scenarios (short/long flows).
+*   **ALBAT:** Further investigate the implications of middleboxes stripping timestamps and RTT inflation during slow start.
+*   **BBRv2:** The community is encouraged to review the updated BBRv2 drafts and provide feedback. Key technical challenges to address include resolving fairness issues with Cubic coexistence and optimizing CPU usage. Experiments will continue to integrate proven enhancements into both TCP and Quick implementations, aiming for production deployment.

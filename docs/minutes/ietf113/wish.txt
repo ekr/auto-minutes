@@ -1,0 +1,61 @@
+**Session Date/Time:** 21 Mar 2022 12:00
+
+# wish
+
+## Summary
+
+The "wish" session primarily focused on updates to the WebRTC-HTTP Ingest Protocol (WIP) draft, particularly addressing out-of-order `PATCH` requests during ICE restarts using HTTP `ETags`. An extensive discussion followed regarding the clarity of the draft's language, error handling specifics, and the semantics of `ETags`. The session also included a presentation of implementation experience with both a WIP client (using GStreamer) and server (using Janus), highlighting current capabilities, limitations, and potential use cases. The chairs expressed the intent to move the draft to Working Group Last Call (WGLC) soon after addressing the identified issues.
+
+## Key Discussion Points
+
+*   **WIP Draft Updates (Presenter: Sergio Garcia Murillo)**
+    *   **Minor Change**: Renamed `urn:ietf:params:wish` to `urn:ietf:params:ietf:wish`.
+    *   **Major Change (ETag for ICE Restarts)**: Addressed handling out-of-order `PATCH` requests for ICE candidates when an ICE restart is pending.
+        *   HTTP `ETags` are now associated with each ICE session.
+        *   `ETag` is an opaque server-generated value (e.g., counter, UUID, `ice-ufrag`).
+        *   The `ETag` value *must* be returned in `201 Created` responses (initial `POST`) and `200 OK` responses to `PATCH` requests that trigger an ICE restart. It must change with each new ICE session.
+        *   `PATCH` requests for trickle ICE candidates *must* contain an `If-Match` header with the last known `ETag` value. Servers *must* reject out-of-order requests with `412 Precondition Failed` if `ETags` do not match.
+        *   `PATCH` requests for ICE restarts *must* contain `If-Match: *` (wildcard) to indicate the restart should happen regardless of the current `ETag`.
+        *   Clients *must* buffer ICE candidates gathered after sending an ICE restart until the updated `ETag` is received in the response.
+*   **Discussion on WIP Draft Changes**
+    *   **Server Determination of Restart/Candidate (Julius) **: Clarified that servers determine if an SDP fragment signifies a restart by checking the `ufrag`/`pwd` values (as per WebRTC RFCs), not solely the `If-Match` header. This should be made explicit in the draft.
+    *   **Concurrent ICE Restarts (Jonathan Lennox)**: Suggested adding a requirement to prevent multiple ICE restarts from being in flight simultaneously to avoid confusion, especially in flapping network conditions. The behavior when a previous restart is not completed (e.g., due to timeout or network failure) needs clarification.
+    *   **ETag Change Semantics (Jonathan Lennox)**: Requested clarification in the draft that the `ETag` changes for a `PATCH` request only if it triggers an ICE restart, not if it's for sending new ICE candidates.
+    *   **Normative Language for ICE Consent (Julius)**: Questioned the consistency of normative language for ICE consent monitoring. Suggested either explicitly stating the normative behavior (even if repeating other RFCs) or only referring to external documents, rather than the current halfway approach.
+    *   **ETag Semantics & RFC 7232 (Adam Roach)**: Recommended that the draft point to RFC 7232 for `ETag` semantics rather than defining them internally. Noted that `ETags` should likely change even when trickle candidates arrive as they modify the resource.
+    *   **Error Handling (Julius vs. Sergio)**: Julius advocated for more precise guidance on HTTP error codes for various failure scenarios (e.g., invalid SDP, unparseable candidates, resource not found) to aid implementers. Sergio argued for following standard HTTP responses for general errors. Consensus was reached that specific server behaviors for application-level issues (e.g., ignoring unparseable candidates) should be documented.
+*   **WIP Implementation Experience (Presenter: Lorenzo Miniero)**
+    *   **Server Implementation**: Used a Node.js wrapper in front of a Janus WebRTC Server (SFU plugin) to translate WIP API calls to Janus's JSON API. The server is open source.
+    *   **Client Implementation**: Used GStreamer with `webrtcbin` for a native WIP client, suitable for broadcasting tools like OBS. The client is open source.
+    *   **Features**: Supports trickle ICE (advanced or via `Link` header), authorization tokens, `DELETE` requests, non-trickle mode, and forced TURN usage. Audio/video pipelines are customizable via GStreamer format.
+    *   **Limitations**:
+        *   GStreamer's `webrtcbin` currently lacks support for ICE restarts.
+        *   `webrtcbin` does not allow adding STUN/TURN servers after an offer has been generated, limiting the use of the `Link` header in `POST` responses for this purpose.
+        *   Client currently only supports Linux.
+    *   **Use Cases**: Demonstrated live streaming from OBS via NDI to the WIP client and then to Janus. Highlighted its utility for prototyping new WebRTC features (e.g., custom pixel formats, H.264 profiles) with browsers.
+*   **Future Work / Next Steps for WIP Extensions**:
+    *   Discussion on how to handle extensions for new functionalities like metadata, multi-language support, and subtitles.
+    *   Current `wish` charter is tightly scoped.
+    *   Chairs will need to consult with ADs on whether to extend the working group charter or dispatch new work to other WGs (e.g., `avtcore`).
+    *   Participants with ideas for extensions are encouraged to start drafting new documents.
+
+## Decisions and Action Items
+
+*   **Sergio Garcia Murillo**:
+    *   Clear up all outstanding issues and pull requests on the GitHub repository.
+    *   Incorporate editorial changes discussed during the session, including:
+        *   Clarifying `ETag` change behavior for `PATCH` requests (only changes for ICE restart, not trickle candidates).
+        *   Adding explicit normative language about how servers determine if an SDP fragment is an ICE restart (checking `ufrag`/`pwd`).
+        *   Documenting specific server behaviors for handling unexpected or unparseable candidates.
+    *   Respond to Adam Roach's PR regarding `ETag` semantics and RFC 7232.
+*   **Adam Roach**:
+    *   Open a Pull Request (PR) to clarify `ETag` semantics, pointing to RFC 7232, and specify `ETag` behavior when trickle candidates arrive (if it changes the resource, the `ETag` should likely change).
+*   **Chairs (Sean Turner, Niels ten Oever)**:
+    *   Monitor the GitHub repository to ensure outstanding issues and editorial changes are addressed promptly.
+    *   Initiate Working Group Last Call (WGLC) for the `wish` draft as soon as possible after the agreed-upon changes are implemented.
+    *   Take the item to discuss with the Area Directors (ADs) about the process for handling future extensions to `wish` (e.g., metadata, subtitles, multi-language support), given the current charter's scope.
+
+## Next Steps
+
+*   **WIP Draft**: Focus on incorporating editorial feedback and resolving open GitHub items to prepare for Working Group Last Call.
+*   **WIP Extensions**: Interested parties should consider drafting proposals for new functionalities (metadata, subtitles, etc.) to inform discussions with ADs on the working group's future scope.

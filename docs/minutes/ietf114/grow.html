@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="grow.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-GROW-20220728-2130">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 21:30</p>
+<h1>grow</h1>
+<h2>Summary</h2>
+<p>The grow working group session began with administrative announcements. The main technical agenda included an update on the status of various working group documents, a presentation and discussion on a draft defining a well-known BGP Anycast community, and an update on the BMP Yang module draft. Key discussions revolved around the utility and implications of a well-known anycast community, including trust models and community type, as well as the design and filtering capabilities of the BMP Yang module. The chairs called for mailing list discussions regarding working group adoption for both the Anycast Community and BMP Yang module drafts.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrative Items</strong>:</p>
+<ul>
+<li>Participants were reminded of IETF Note Well obligations and the mandatory mask policy.</li>
+<li>Blue sheets are now QR code-based; participants requested to scan.</li>
+<li>Richard Patterson volunteered as minutes taker, Warren Kumari as Jabber scribe.</li>
+<li>No additions were made to the agenda.</li>
+</ul>
+</li>
+<li>
+<p><strong>Working Group Document Status</strong>:</p>
+<ul>
+<li>The <code>grow-bmp-tlv</code> draft was approved for working group adoption and is now in the system as a WG document. Chairs will provide a write-up for this.</li>
+<li>Work on NRTM version 4 was approved for working group adoption; a new renamed document is expected to be uploaded soon.</li>
+</ul>
+</li>
+<li>
+<p><strong>Well-Known BGP Anycast Community (Maximilian Wilhelm)</strong>:</p>
+<ul>
+<li><strong>Motivation</strong>: To improve routing decisions for anycast prefixes. Example: A Swiss ISP wishing to prefer its own international path for general traffic but route anycast prefixes locally to optimize user latency and experience.</li>
+<li><strong>Proposed Solution</strong>: Define a well-known BGP community to denote prefixes used for anycast.</li>
+<li><strong>Proposed Usage</strong>: Operators applying the community should do so on all announcements or none, and it is recommended to use &quot;hot potato&quot; routing for such prefixes.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Community Type</strong>: Questions arose about using Large Communities or Extended Communities to include AS information or sender details, but concerns were raised about current implementation support and the difficulty of securing communities. It was noted there is no current well-known large communities registry.</li>
+<li><strong>Trust Model</strong>: Participants expressed concerns that altering local routing policy based on third-party hints requires a significant degree of trust, which might negate the &quot;well-known&quot; aspect, as social interaction would still be needed.</li>
+<li><strong>&quot;All or Nothing&quot; Enforcement</strong>: A concern was raised about the potential for inconsistency or &quot;hygiene&quot; issues if operators do not apply the community in an &quot;all or nothing&quot; fashion. It was suggested that existing route leak detection services could potentially be extended to monitor this.</li>
+<li><strong>Informational vs. Policy Change</strong>: Discussion on whether the community is purely informational or implies a request for routing policy change (e.g., hot potato routing).</li>
+<li><strong>Definition of Anycast</strong>: A suggestion was made to clarify the definition of &quot;anycast&quot; within the draft for IETF document purposes.</li>
+<li><strong>Real-world Use Case</strong>: An author (Freddie Kunsler) provided a real-world example of an ISP needing to filter anycast prefixes received via transit to prevent suboptimal routing for their customers.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>BMP Yang Module Update (Camilo Cardona)</strong>:</p>
+<ul>
+<li><strong>Updates in the Draft</strong>: Added active/passive connection choice, maximum segment size (MSS), keepalives (copied from TCMP module), and session security (copied from BGP draft, to be re-evaluated).</li>
+<li><strong>Network Instance Support</strong>: Added support for specifying BMP data per network instance, including an identity <code>vmpn</code> for &quot;all network instances.&quot;</li>
+<li><strong>Granular Data Specification</strong>: The model aims for flexible and unambiguous control over what information is sent to collectors, specifying data by:
+<ul>
+<li><strong>Network Instances</strong>: Global or specific instances, or all instances.</li>
+<li><strong>Remotes</strong>: Explicitly pre/post RIB or local RIB.</li>
+<li><strong>Address Families</strong>: Using values from the BGP Yang module.</li>
+<li><strong>Peers</strong>: Individual IP addresses or types (e.g., all external peers).</li>
+</ul>
+</li>
+<li><strong>Gaps</strong>: Initiation delay and backoff times are noted as still to be integrated.</li>
+<li><strong>Future Enhancements</strong>: Acknowledged feedback from Jimmy Chen about the need for prefix-level filtering using a specific routing policy model, which is being processed.</li>
+<li><strong>Tooling</strong>: The author uses <code>pyang</code> and a Cisco tool for validation. Discussion around IETF Yang Doctors and collating Yang models in a Netmod GitHub repository was noted as beneficial for future contributions.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>The <code>grow-bmp-tlv</code> draft was <strong>approved for working group adoption</strong>.</li>
+<li>The NRTM version 4 draft was <strong>approved for working group adoption</strong>.</li>
+<li><strong>Action Item</strong>: Chairs (Paolo Lucente) to write up the <code>grow-bmp-tlv</code> working group document in the next few days.</li>
+<li><strong>Action Item</strong>: The draft authors of the Well-Known BGP Anycast Community are requested to clarify the definition of &quot;anycast&quot; within the document.</li>
+<li><strong>Action Item</strong>: Camilo Cardona to make the BMP Yang module work available on GitHub.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>A mailing list discussion will be initiated to assess consensus for <strong>working group adoption of the Well-Known BGP Anycast Community draft</strong>.</li>
+<li>A mailing list discussion will be initiated to assess consensus for <strong>working group adoption of the BMP Yang Module draft</strong>.</li>
+<li>The working group will reconvene at IETF 115 in London.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

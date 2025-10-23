@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="wish.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-WISH-20220321-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2022 12:00</p>
+<h1>wish</h1>
+<h2>Summary</h2>
+<p>The &quot;wish&quot; session primarily focused on updates to the WebRTC-HTTP Ingest Protocol (WIP) draft, particularly addressing out-of-order <code>PATCH</code> requests during ICE restarts using HTTP <code>ETags</code>. An extensive discussion followed regarding the clarity of the draft's language, error handling specifics, and the semantics of <code>ETags</code>. The session also included a presentation of implementation experience with both a WIP client (using GStreamer) and server (using Janus), highlighting current capabilities, limitations, and potential use cases. The chairs expressed the intent to move the draft to Working Group Last Call (WGLC) soon after addressing the identified issues.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>WIP Draft Updates (Presenter: Sergio Garcia Murillo)</strong>
+<ul>
+<li><strong>Minor Change</strong>: Renamed <code>urn:ietf:params:wish</code> to <code>urn:ietf:params:ietf:wish</code>.</li>
+<li><strong>Major Change (ETag for ICE Restarts)</strong>: Addressed handling out-of-order <code>PATCH</code> requests for ICE candidates when an ICE restart is pending.
+<ul>
+<li>HTTP <code>ETags</code> are now associated with each ICE session.</li>
+<li><code>ETag</code> is an opaque server-generated value (e.g., counter, UUID, <code>ice-ufrag</code>).</li>
+<li>The <code>ETag</code> value <em>must</em> be returned in <code>201 Created</code> responses (initial <code>POST</code>) and <code>200 OK</code> responses to <code>PATCH</code> requests that trigger an ICE restart. It must change with each new ICE session.</li>
+<li><code>PATCH</code> requests for trickle ICE candidates <em>must</em> contain an <code>If-Match</code> header with the last known <code>ETag</code> value. Servers <em>must</em> reject out-of-order requests with <code>412 Precondition Failed</code> if <code>ETags</code> do not match.</li>
+<li><code>PATCH</code> requests for ICE restarts <em>must</em> contain <code>If-Match: *</code> (wildcard) to indicate the restart should happen regardless of the current <code>ETag</code>.</li>
+<li>Clients <em>must</em> buffer ICE candidates gathered after sending an ICE restart until the updated <code>ETag</code> is received in the response.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Discussion on WIP Draft Changes</strong>
+<ul>
+<li>**Server Determination of Restart/Candidate (Julius) **: Clarified that servers determine if an SDP fragment signifies a restart by checking the <code>ufrag</code>/<code>pwd</code> values (as per WebRTC RFCs), not solely the <code>If-Match</code> header. This should be made explicit in the draft.</li>
+<li><strong>Concurrent ICE Restarts (Jonathan Lennox)</strong>: Suggested adding a requirement to prevent multiple ICE restarts from being in flight simultaneously to avoid confusion, especially in flapping network conditions. The behavior when a previous restart is not completed (e.g., due to timeout or network failure) needs clarification.</li>
+<li><strong>ETag Change Semantics (Jonathan Lennox)</strong>: Requested clarification in the draft that the <code>ETag</code> changes for a <code>PATCH</code> request only if it triggers an ICE restart, not if it's for sending new ICE candidates.</li>
+<li><strong>Normative Language for ICE Consent (Julius)</strong>: Questioned the consistency of normative language for ICE consent monitoring. Suggested either explicitly stating the normative behavior (even if repeating other RFCs) or only referring to external documents, rather than the current halfway approach.</li>
+<li><strong>ETag Semantics &amp; RFC 7232 (Adam Roach)</strong>: Recommended that the draft point to RFC 7232 for <code>ETag</code> semantics rather than defining them internally. Noted that <code>ETags</code> should likely change even when trickle candidates arrive as they modify the resource.</li>
+<li><strong>Error Handling (Julius vs. Sergio)</strong>: Julius advocated for more precise guidance on HTTP error codes for various failure scenarios (e.g., invalid SDP, unparseable candidates, resource not found) to aid implementers. Sergio argued for following standard HTTP responses for general errors. Consensus was reached that specific server behaviors for application-level issues (e.g., ignoring unparseable candidates) should be documented.</li>
+</ul>
+</li>
+<li><strong>WIP Implementation Experience (Presenter: Lorenzo Miniero)</strong>
+<ul>
+<li><strong>Server Implementation</strong>: Used a Node.js wrapper in front of a Janus WebRTC Server (SFU plugin) to translate WIP API calls to Janus's JSON API. The server is open source.</li>
+<li><strong>Client Implementation</strong>: Used GStreamer with <code>webrtcbin</code> for a native WIP client, suitable for broadcasting tools like OBS. The client is open source.</li>
+<li><strong>Features</strong>: Supports trickle ICE (advanced or via <code>Link</code> header), authorization tokens, <code>DELETE</code> requests, non-trickle mode, and forced TURN usage. Audio/video pipelines are customizable via GStreamer format.</li>
+<li><strong>Limitations</strong>:
+<ul>
+<li>GStreamer's <code>webrtcbin</code> currently lacks support for ICE restarts.</li>
+<li><code>webrtcbin</code> does not allow adding STUN/TURN servers after an offer has been generated, limiting the use of the <code>Link</code> header in <code>POST</code> responses for this purpose.</li>
+<li>Client currently only supports Linux.</li>
+</ul>
+</li>
+<li><strong>Use Cases</strong>: Demonstrated live streaming from OBS via NDI to the WIP client and then to Janus. Highlighted its utility for prototyping new WebRTC features (e.g., custom pixel formats, H.264 profiles) with browsers.</li>
+</ul>
+</li>
+<li><strong>Future Work / Next Steps for WIP Extensions</strong>:
+<ul>
+<li>Discussion on how to handle extensions for new functionalities like metadata, multi-language support, and subtitles.</li>
+<li>Current <code>wish</code> charter is tightly scoped.</li>
+<li>Chairs will need to consult with ADs on whether to extend the working group charter or dispatch new work to other WGs (e.g., <code>avtcore</code>).</li>
+<li>Participants with ideas for extensions are encouraged to start drafting new documents.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Sergio Garcia Murillo</strong>:
+<ul>
+<li>Clear up all outstanding issues and pull requests on the GitHub repository.</li>
+<li>Incorporate editorial changes discussed during the session, including:
+<ul>
+<li>Clarifying <code>ETag</code> change behavior for <code>PATCH</code> requests (only changes for ICE restart, not trickle candidates).</li>
+<li>Adding explicit normative language about how servers determine if an SDP fragment is an ICE restart (checking <code>ufrag</code>/<code>pwd</code>).</li>
+<li>Documenting specific server behaviors for handling unexpected or unparseable candidates.</li>
+</ul>
+</li>
+<li>Respond to Adam Roach's PR regarding <code>ETag</code> semantics and RFC 7232.</li>
+</ul>
+</li>
+<li><strong>Adam Roach</strong>:
+<ul>
+<li>Open a Pull Request (PR) to clarify <code>ETag</code> semantics, pointing to RFC 7232, and specify <code>ETag</code> behavior when trickle candidates arrive (if it changes the resource, the <code>ETag</code> should likely change).</li>
+</ul>
+</li>
+<li><strong>Chairs (Sean Turner, Niels ten Oever)</strong>:
+<ul>
+<li>Monitor the GitHub repository to ensure outstanding issues and editorial changes are addressed promptly.</li>
+<li>Initiate Working Group Last Call (WGLC) for the <code>wish</code> draft as soon as possible after the agreed-upon changes are implemented.</li>
+<li>Take the item to discuss with the Area Directors (ADs) about the process for handling future extensions to <code>wish</code> (e.g., metadata, subtitles, multi-language support), given the current charter's scope.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>WIP Draft</strong>: Focus on incorporating editorial feedback and resolving open GitHub items to prepare for Working Group Last Call.</li>
+<li><strong>WIP Extensions</strong>: Interested parties should consider drafting proposals for new functionalities (metadata, subtitles, etc.) to inform discussions with ADs on the working group's future scope.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

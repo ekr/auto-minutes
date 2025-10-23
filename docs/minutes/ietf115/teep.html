@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="teep.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-TEEP-20221109-1500">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 09 Nov 2022 15:00</p>
+<h1>TEEP</h1>
+<h2>Summary</h2>
+<p>The TEEP session covered significant updates to the TEEP Protocol draft (v19), a report from the recent hackathon, and detailed discussions on open issues related to SUIT, EAT tokens, and attestation result delivery. Key technical points included an expanded threat model for compromised TAMs, mandatory cipher suites for authentication, and clarifications on the relationship between TEEP, SUIT, and RATs. Several editorial changes and minor clarifications were also incorporated. The session concluded with an overview of TEEP use cases for computational computing networks.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>TEEP Protocol Draft Update (v18 to v19)</strong></p>
+<ul>
+<li>Addressed multiple reviewer comments, including security reviews, terminology (e.g., &quot;trusted application&quot; vs. &quot;trusted component&quot;), device owner roles, and general wording.</li>
+<li><strong>Threat Model Expansion</strong>: Section 9.5 on &quot;Compromised TAM&quot; (or &quot;Hostile TAM&quot;) was significantly expanded to include potential mitigation strategies for TEEP agents and device owners, such as Access Control Lists (ACLs) for TAM keys, transparent logs, and remote attestation/de-attestation. It was clarified that &quot;hostile TAM&quot; is a special case of &quot;compromised TAM&quot;.</li>
+<li><strong>Clarifications</strong>:
+<ul>
+<li>Clarified device administrator privileges and TA installation delegation.</li>
+<li>Expanded use case examples for Trusted UI (e.g., Point of Sale devices) and IoT.</li>
+<li>Revised terminology for &quot;danger of attacks&quot; to &quot;risk of attacks.&quot;</li>
+<li>Clarified TAM/TE communication initiation, emphasizing broker-initiated contact due to firewalls.</li>
+<li>Standardized notation (e.g., <code>TA-1</code>, <code>UA-1</code>).</li>
+<li>Changed &quot;must&quot; usage to lowercase to align with IETF document conventions.</li>
+<li>Explicitly stated encryption purpose for data in motion.</li>
+<li>Adjusted the installation sequence for trusted applications to be more natural.</li>
+<li>Clarified the TAM's role, removing &quot;abstracts&quot; for clearer language on message relay.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Hackathon Report</strong></p>
+<ul>
+<li><strong>Attestation Payload Processing</strong>: TAMs will read the <code>attestation-payload-format</code> before deciding to open or verify the signature of the <code>attestation-payload</code>.</li>
+<li><strong>Passport/Background Check Model</strong>: Discussion on combining these models led to using the <code>Update</code> message for sending attestation results to the relying party.</li>
+<li><strong>SUIT Envelope</strong>: Decision to <em>not</em> use CBOR Tagged SUIT Envelope.</li>
+<li><strong>Authentication Algorithms</strong>: Reaffirmed mandatory support for <code>ES256</code> and <code>EdDSA</code> for authentication. <code>COSE_Sign</code> will be used in the <code>Query Request</code> to allow multiple signatures, accommodating situations where the TAM doesn't know the device's preferred algorithm.</li>
+<li><strong>CDDL Syntax Validation</strong>: Progress on fixing CDDL syntax errors for TEEP messages, with <code>suit</code> message syntax remaining a dependency.</li>
+<li><strong>Trusted Component Deletion</strong>: Shift from <code>SUIT Digest</code> to <code>SUIT Component Identifier</code> for targeting specific components for deletion, particularly important for devices with multiple TEEs or instances of the same component.</li>
+<li><strong>Implementations</strong>: Noted progress by various implementers on passport model, remote attestation, and other TEEP features.</li>
+</ul>
+</li>
+<li>
+<p><strong>TEEP Protocol Open Issues &amp; Proposals</strong></p>
+<ul>
+<li><strong>Cipher Suites</strong>: The TAM must support both <code>ES256</code> and <code>EdDSA</code> for the initial <code>Query Request</code> by signing with <code>COSE_Sign</code>. The device chooses one. Subsequent messages use the negotiated cipher suite.</li>
+<li><strong>Unrecognized TEEP Messages</strong>: If a TEEP agent receives an invalid message, it should reply with an error. If a TAM receives an invalid message, it may log, take implementation-specific actions, or attempt to update the TEEP agent.</li>
+<li><strong>Relationship to SUIT</strong>
+<ul>
+<li><strong>Uninstalling TAs</strong>: The <code>unneeded-manifest-list</code> in SUIT should include <code>unlinked directives</code> for robust uninstallation, allowing local administrators to trigger uninstalls even without the TEEP protocol.</li>
+<li><strong>SUIT Report Privacy</strong>: It was proposed that privacy of SUIT reports (encryption) should be specified in the SUIT Reports document, not TEEP, as SUIT reports can be used outside TEEP. Algorithm specifics (e.g., AES-GCM or AES-CCM) would be left to the encapsulating profile (e.g., EAT profile) or container.</li>
+</ul>
+</li>
+<li><strong>Relationship to EAT Tokens</strong>
+<ul>
+<li><strong>EAT Profile Encryption</strong>: Identified a bug in draft-11's EAT profile regarding encryption cipher suites. Proposed using AEADs like AES-GCM or AES-CCM for encrypting sensitive EAT tokens.</li>
+<li><strong>Mandatory EAT Claims</strong>: Proposed making specific claims mandatory in the EAT profile for TAMs: device unique identifier, OEM/hardware vendor ID, model, version, installed manifests, and a freshness mechanism (nonce or timestamp).</li>
+<li><strong>Embedding SUIT Manifests</strong>: Proposed embedding SUIT manifests in EAT tokens using a <code>SUIT Reference</code> (ID and URL), which would require a new CoAP Content Format value to be registered.</li>
+<li>Sample EAT token updated in the draft.</li>
+<li><strong>Attestation Result Delivery (TAM in the middle)</strong>: Discussed five options for how a verifier delivers attestation results to a TAM (which then forwards to a relying party/tester) when different formats/freshness mechanisms are required. Still an open issue, with a preference expressed for options that don't overly complicate message encapsulation or rely on double messages for constrained devices.</li>
+<li><strong>TEEP Protocol Version</strong>: The TEEP protocol version number can be used to manage changes to the EAT profile default values.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>TEEP Use Cases for Computational Computing Network</strong></p>
+<ul>
+<li><strong>Cloud Scenarios</strong>: The draft abstract and use case sections were updated to include cloud computing and MEC.</li>
+<li><strong>Terminology</strong>: Clarified &quot;computational container&quot; definitions, referring to the Confidential Computing Consortium (CCC) for alignment. (Concern raised by Muhammad about scientific justification for CCC definitions, to be discussed on mailing list).</li>
+<li><strong>Secure Channel</strong>: Need to specify or refer to a definition of &quot;secure channel&quot; (e.g., TLS/DTLS).</li>
+<li><strong>Provisioning</strong>: Revised provisioning steps to acknowledge that the TAM might not be the verifier, and UA distribution is out of scope.</li>
+<li><strong>Introduction Improvements</strong>: Proposed adding explanations using Multi-Party Computation (MPC) and Federated Machine Learning (FML) as examples of TEEP's application.</li>
+<li><strong>Data Owner</strong>: Replaced &quot;data owner&quot; with &quot;network user&quot; for clarity.</li>
+<li><strong>UA Tempering</strong>: Acknowledged that since the UA is untrusted, the TEEP architecture cannot guarantee its security or prevent DoS attacks. Filtering malicious traffic by a transparent TEEP broker is not reliable.</li>
+<li><strong>Scope Broadening</strong>: Document scope should include any computational computing environment configured by a network, not just edge computing.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>The TEEP Protocol draft will be updated with the following:
+<ul>
+<li>Expanded threat model for Compromised TAMs (Section 9.5).</li>
+<li>Standardized <code>ES256</code> and <code>EdDSA</code> as mandatory-to-implement authentication algorithms, using <code>COSE_Sign</code> for <code>Query Request</code> messages.</li>
+<li>Clarification on handling unrecognized TEEP messages by both TAM and TEEP agent.</li>
+<li>Decision to use <code>SUIT Component Identifier</code> for deletion of trusted components.</li>
+<li>Proposal to use AEADs (like AES-GCM or AES-CCM) for EAT token encryption.</li>
+<li>Specification of mandatory EAT claims for TAM consumption.</li>
+<li>Use of <code>SUIT Reference</code> in EAT (pending new CoAP Content Format registration).</li>
+<li>Updated sample EAT token in the draft.</li>
+<li>Incorporation of cloud scenarios, computational container terminology (with ongoing discussion), and broader scope for TEEP use cases.</li>
+</ul>
+</li>
+<li><strong>Action</strong>: Muhammad to post a link and information regarding the scientific justification of CCC definitions to the TEEP mailing list.</li>
+<li><strong>Action</strong>: Chairs will evaluate the readiness of the TEEP Protocol draft for early directorate reviews (Security, IoT).</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Authors to continue addressing open issues, particularly the mechanism for attestation result delivery when the TAM is in the middle and different formats are required by the TAM and other relying parties.</li>
+<li>Work on the SUIT Reports document to specify privacy and encryption considerations for SUIT reports.</li>
+<li>Proceed with registering the new CoAP Content Format value for <code>SUIT Reference</code>.</li>
+<li>Finalize updates for the TEEP Protocol draft to incorporate all agreed-upon changes.</li>
+<li>Initiate early reviews for the TEEP Protocol draft to prepare for WGLC.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

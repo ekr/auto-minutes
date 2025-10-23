@@ -1,0 +1,80 @@
+**Session Date/Time:** 12 Nov 2021 14:30
+
+# ntp Session
+
+## Summary
+
+The ntp working group met at IETF 112 to discuss the status of existing documents, review updates on Rough Time, NTPv5 use cases, and NTP over PTP, and hear about progress on NTS for PTP. Key discussions revolved around the updated charter, the path forward for NTPv5 requirements and protocol drafts, and the potential benefits and limitations of using hardware timestamping for NTP via PTP encapsulation. A call for adoption for the NTPv5 use cases document is planned after a new revision, and a virtual interim meeting in mid-January was suggested to accelerate progress.
+
+## Key Discussion Points
+
+*   **Administrative and Charter Update**
+    *   The IETF Notewell and Code of Conduct were presented.
+    *   The working group's updated charter is currently out for external review.
+    *   The name is being changed from "network time protocol" to "network time protocols" to encompass related efforts like Rough Time and PTP.
+
+*   **Document Status Review**
+    *   **Mode 6 Commands**: Awaiting author update (Brian), expected shortly.
+    *   **YANG Model**: Awaiting author update (Jouni), to be handled post-IETF.
+    *   **Interleave Mode**: In IESG evaluation, deferred, needs chair guidance and write-up.
+    *   **PTP Enterprise Profile**: Small update done, ready for IESG, needs write-up and to reference ongoing IEEE 1588 terminology work.
+    *   **Alternative Port**: In Working Group Last Call (WGLC), early TSV area review requested (Magnus). Chairs and Dieter to close WGLC.
+    *   **Chronos**: Adopted as a working group document, but progress has slowed. Chairs (Dieter and Chair) to reach out to authors to determine next steps towards WGLC.
+    *   **NTP Update Registries**: Rich submitted an update. No objections raised to moving it to Working Group Last Call.
+
+*   **Rough Time (Watson Ladd)**
+    *   **Problem Statement**: Addresses the need for time accurate within a few seconds, primarily for certificate validation (e.g., 30% of certificate errors from inaccurate client clocks).
+    *   **Discussion Points**:
+        *   Many issues raised on the mailing list are editorial; some contentious.
+        *   **SHA-512 Only**: Debate on requiring only SHA-512 vs. multiple hash functions. Argument for SHA-512: cross-protocol signing is insecure, EdDSA uses SHA-512 internally, promotes uniform implementation. Counter-arguments: extensibility, theoretical nature of some cross-protocol attacks.
+        *   **GREASE**: Necessary for protocol extensibility and preventing intolerant middleboxes.
+        *   **Slow Signatures**: EdDSA chosen for speed over RSA. More feedback requested on application-specific performance concerns.
+        *   **"Only Time Keeper"**: Protocol changes not deemed necessary; experiments needed to quantify impact compared to NTP.
+        *   **Leap Seconds / DTI-UTC**: Optional tags, ITU recommends inclusion in time signals.
+    *   **Next Steps**: "Ecosystem" document is stalled, needs input from server/client operators. "Wire Protocol" document will be revised in the coming weeks with editorial and contentious issues addressed. An early section review was suggested.
+
+*   **NTPv5 Use Cases (James Fenn)**
+    *   **Update**: Version 02 published, including an initial high-level threat model, updated requirements, and editorial fixes. Significant restructuring planned for next version.
+    *   **RFC 5905 Dependencies Analysis**:
+        *   **Date Formats/Epoch**: Many protocols copy/refer to NTP's epoch and timestamp formats. Changing this could be a "breaking change."
+        *   **Metadata/Identifiers**: Mostly YANG-related; an NTPv5 YANG model would be required.
+        *   **Service Discovery**: NTPv4 has DHCPv6 (RFC 5908), but not DHCPv4 or ICMPv6 RA. An orthogonal document may be needed for NTPv5 service discovery options.
+    *   **Remaining Work**: Further refinement of the threat model, rate limiting, and data minimization.
+    *   **Call for Adoption**: Requested that the document be adopted as a working group document to establish consensus on controversial topics (time scales, leap seconds, mandatory security).
+    *   **Security Discussion**: Doug asked for more detail on mandatory security for lightweight devices. James clarified a preference for mandatory authentication and optional confidentiality, suggesting NTS as a potential solution, and requested specific performance requirements for constrained devices.
+    *   **Next Steps**: James plans to publish a v03 within 1-2 weeks, primarily focusing on restructuring, before a call for adoption.
+
+*   **NTPv5 Protocol (Miroslav Lichvar)**
+    *   **Update**: Latest version included one small editorial change based on Doug's suggestion, no protocol changes.
+    *   **Dependency**: The protocol draft's path forward is dependent on clarification of requirements from the NTPv5 Use Cases document, particularly regarding security.
+    *   **Community Split**: Miroslav observed a split between those wanting to extend current NTP use cases and those seeking to restrict to a single, secure approach.
+    *   **Leap Smearing**: Doug praised the proposal's transparency regarding leap smearing.
+
+*   **NTP over PTP (Miroslav Lichvar)**
+    *   **Problem**: Achieving high accuracy requires hardware timestamping, which is typically limited to PTP messages in widely used network cards, not general NTP packets.
+    *   **Solution**: Wrap NTP messages within PTP messages to leverage hardware timestamping. This uses a valid PTP message format and won't break normal PTP clocks.
+    *   **Results**: Demonstrated significant accuracy improvement (from tens of microseconds to tens of nanoseconds offset) when using hardware timestamping. Asymmetries observed in hardware timestamps can cancel out with identical devices.
+    *   **Limitations**: Less beneficial over wide area networks due to variable latency and jitter. Some hardware (e.g., 10Gb Broadcom) has limited PTP support (multicast only), preventing unicast NTP over PTP.
+    *   **Discussion**:
+        *   Martin Schmidt: Inquired if it's limited to local networks (No, but less effective over WAN) and advantages over plain PTP (NTP's security, root delay/dispersion concepts, no amplification issues).
+        *   Watson Ladd: Expressed doubt for WAN, noted financial industry preference for NTP's multiple master voting over PTP.
+        *   Alain Internet: Discussed hardware-specific biases and asymmetries.
+        *   Doug: Noted that at sub-microsecond levels, physical factors like cable skew and forward/reverse transmission differences become significant.
+
+*   **NTS for PTP (Martin Schmidt)**
+    *   **Consolidation**: Two existing NTS-based drafts for securing PTP (`nts-for-ptp` and `nts-for-udpptp`) will be merged.
+    *   **Approach**: Authors met and agreed to design a new protocol, leveraging the unicast approach from `nts-for-udpptp` and the multicast support from `nts-for-ptp`.
+    *   **Goal**: Use the NTS establishment protocol for PTP key distribution.
+    *   **Timeline**: A first merged draft is anticipated in 2-3 months.
+
+## Decisions and Action Items
+
+*   **NTP Update Registries**: The document is ready for Working Group Last Call. Chairs will initiate this.
+*   **NTPv5 Use Cases (James Fenn)**: James Fenn will publish a new version (v03) within 1-2 weeks, primarily focusing on restructuring. Following this, the Chairs will issue a Call for Adoption.
+*   **Chronos**: Chairs (Dieter and Chair) to reach out to the authors to discuss the document's status and next steps towards a Working Group Last Call.
+
+## Next Steps
+
+*   A virtual interim meeting is tentatively planned for **mid-January** to accelerate progress on key documents.
+*   Working group participants are encouraged to review the updated NTPv5 use cases draft (James Fenn) and NTPv5 protocol draft (Miroslav Lichvar) and provide feedback on their path forward.
+*   The authors of NTS for PTP drafts will continue their work to merge the two proposals into a single document.

@@ -1,0 +1,84 @@
+**Session Date/Time:** 27 Jul 2023 22:30
+
+# dnssd
+
+## Summary
+
+This meeting covered updates on SLP and advertising proxy, issues with SLP replication, TSR, future work options, and multicast stream discovery. The discussion focused on addressing name conflicts, scalability concerns, and redundancy in SRP environments, particularly in the context of Thread networks and Matter devices.
+
+## Key Discussion Points
+
+*   **Advertising Proxy and Name Conflicts:** Discussion on name conflicts arising from multiple advertising proxy instances registering the same names, especially with the introduction of TSR. Renaming as a solution for MDNS name conflicts doesn't work well with Matter's name uniqueness requirements.
+*   **Namespace Considerations:** Need to differentiate between actual name conflicts and namespace disambiguation issues in MDNS, SRP zones, and multiple links.
+*   **Proposed Solution for Namespace Issues:** Consider SRP zones as distinct namespaces, handling left-most label conflicts differently to avoid MDNS conflict processes.  Explore options like appending a zone-specific identifier to names or leveraging the `service.arpa` domain.
+*   **Scalability Issues:** Multiple registrars cause probing storms when replicating records. Need to address how to load balance and mitigate continuous probing.
+*   **SRP Replication and Authority:** SRP clients act as authorities for their zones. Updates are signed, and the most recent update is authoritative.
+*   **SRP Startup and Synchronization:** Challenges in SRP startup due to election processes leading to potential stalls. Need to refine the algorithm to ensure reliable service discovery. Current all-to-all connection topology (n*(n-1)/2) of SRP servers does not scale well.
+*   **Limited Active Peers:** Apple's implementation currently limits active peers to 5.
+*   **Controlling Active Peers and the Primary:** Proposal to have the primary SRP server manage which servers can be active to limit connections.
+
+## Decisions and Action Items
+
+*   Ted will post an updated version of the advertising proxy document today or tomorrow, focusing on the advertising proxy function.
+*   Explore interim meetings to discuss namespace issues and SRP replication challenges within the DNSSD working group, rather than in other standards bodies.
+
+## Next Steps
+
+*   Continue the discussion on SRP replication challenges and solutions after the break.
+*   Further discussion on TSR and experiences with conflicts.
+*   Discuss future work options.
+*   Discuss Nate's multicast stream discovery proposal.
+
+
+---
+
+**Session Date/Time:** 28 Jul 2023 00:00
+
+# dnssd
+
+## Summary
+
+The dnssd session covered several topics, including updates on SRP replication, time since received (TSR), infrastructure DNS-SD, and a new approach for multicast DNS-SD discovery. The discussion focused on preventing friendly conflicts, improving multicast DNS reliability, and enabling unicast DNS-SD in home networks.
+
+## Key Discussion Points
+
+*   **SRP Replication and Conflicts:**
+    *   The current approach to handling conflicts assumes adversarial scenarios, which is often not the case with SRP replication.
+    *   Suggestions were made to update all servers before publishing updates to MDS to avoid self-inflicted conflicts.
+    *   Discussion of whether non-primary servers should perform conflict probing.
+    *   State machines for monitoring active peers, operational state, connections, and the SRP protocol itself need to be clearly called out in the document.
+*   **Time Since Received (TSR):**
+    *   TSR works well when all information is available, but can lead to ambiguity and weird decisions in cases of incomplete records or non-actual conflicts.
+    *   Concerns about TSR changing simultaneous probe behavior were raised.
+    *   The discussion covered the use of a hash of the SRP update signature in the TSR record to avoid unnecessary conflicts.
+    *   The group considered how to handle situations where SRP updates change only the timestamp, and thus the signature/hash, while the data remains the same.
+    *   Concerns about the TSR only being present in probes and not answers were raised.
+    *   Suggestions to include the TSR information in an EDNS0 option were made.
+*   **Cooperative mDNS and RFC6762 Update:**
+    *   The possibility of updating RFC6762 to improve cooperative mDNS was discussed, including addressing the issue of probing by advertising proxies.
+    *   The known unique records concept in the original multicast DNS RFC was mentioned, and issues regarding its use were discussed.
+    *   Concerns about Wi-Fi access points blocking multicast traffic due to traffic bursts were raised.
+    *   The group discussed the idea of not sending multicast DNS messages over both IPv4 and IPv6. DHCPv6 option for ipv6-only networks was mentioned.
+*   **Infrastructure DNS-SD:**
+    *   The session covered the lack of deployment of Unicast DNS-SD despite having all the necessary building blocks, and the need to enable it in home networks.
+    *   Suggestions were made for how home routers could do service discovery and SRP registration.
+    *   Discussion on how the other standards bodies, such as CSA (Matter), are interested in the template for what a home network should look like.
+*   **Multicast DNS-SD Discovery:**
+    *   A new way of doing a DNS based multicastrian discovery was presented, including a multicast address in the A or AAAA records to tip off the client to use that multicast address
+    *   The point was made about UDP having a pre assigned port in a multicast protocol which could be avoided
+    *   It was mentioned to update the document with UDP as it uses multicast
+    *   Discussed setting up the advertisement of PTR Records, reverse lookup of what those multicast addresses are in the chosen host name or group name
+
+## Decisions and Action Items
+
+*   **Action Item:** Ted to consider starting a new draft that updates the RC6762 protocol spec.
+*   **Action Item:** Invite folks to bring up the discussion about the home network and infrastructure discovery to the mailing list.
+*   **Action Item:** Stuart will email the new DNS based Multicast Discovery document.
+*   **Action Item:** Nate to update the DNS based Multicast Discovery document.
+*   **Decision:** Coordinate with the multicast people to address the issue with UDP with assigned ports in multicast
+
+## Next Steps
+
+*   Ted to initiate discussion on the mailing list about RFC6762 update.
+*   Nate and Stuart will collaborate on updating the DNS based Multicast Discovery draft.
+*   Discuss unicast DNS-SD in home networks and infrastructure discovery further on the mailing list.

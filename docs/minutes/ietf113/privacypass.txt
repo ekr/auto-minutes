@@ -1,0 +1,76 @@
+**Session Date/Time:** 24 Mar 2022 12:00
+
+# privacypass
+
+## Summary
+
+The privacypass session at IETF 113 focused on updates to the core architecture and authentication scheme drafts, as well as the introduction of a new draft for Rate Limit Tokens. Discussions covered deployment considerations, privacy implications, and specific technical changes to the challenge/response formats. A significant part of the session involved presenting and discussing the proposed Rate Limit Tokens protocol, including its motivation for anonymous fraud prevention and metered paywalls, and a call for working group adoption.
+
+## Key Discussion Points
+
+*   **Core Drafts Update (Architecture and Authentication Scheme)**
+    *   **Architecture Draft**
+        *   The latest revision explored deployment considerations and their impact on client privacy.
+        *   The architecture is split into an **issuance protocol** (client, attester, issuer) and a simpler **redemption protocol** (client, origin).
+        *   Introduced concepts of **Redemption Context** (origin name, timestamp, client IP, etc., seen by origin) and **Attestation Context** (timestamp, client IP, metadata, seen by attester).
+        *   **Meaningful privacy** is defined as no single entity linking per-client and per-server information across these contexts.
+        *   **Deployment Models:**
+            *   **Joint Deployment (Attester = Server):** As in current Privacy Pass deployments (e.g., CAPTCHAs). Requires client separation over time (via unlinkable tokens like blind signatures/OPRFs) or space (via proxies/Tor) to achieve meaningful privacy.
+            *   **Split Deployment (Attester != Server):** Useful for less privacy-friendly attestation mechanisms (e.g., account ownership). Lowers the privacy bar, as the attester and server do not share context. Attestation must not reveal per-server info, and redemption must not reveal per-client info.
+        *   **Next Steps for Architecture Draft:**
+            *   Address double-spend requirements for cross-origin tokens.
+            *   Update privacy parameterization based on the current architecture.
+            *   Address centralization (potentially punt to Mark's draft or integrate his text).
+            *   Consider working group last call or focus on issuance protocols.
+    *   **Authentication Scheme Draft**
+        *   Newly adopted; `01` version published with minor terminology changes.
+        *   **Terminology Renames:**
+            *   `redemption_nonce` field in the challenge structure was renamed to `redemption_context` to better reflect its purpose as a server-chosen context, not necessarily a nonce, for binding tokens.
+            *   A confusing context name in the token struct (returned to origin) was renamed to `challenge_digest`, as it is a hash digest of the challenge.
+        *   **Stabilizing Format:** Authors seek feedback now to stabilize the challenge and response format for deployment and interop.
+        *   **Challenge Structure (`private-token` HTTP auth scheme):** `token_type`, `issuer_name`, `redemption_context` (optional), `origin_name`.
+        *   **Redemption Structure:** `token_type`, `client_nonce`, `challenge_hash`, `token_key_id`, and issuance-protocol-specific bytes.
+        *   **Discussion on `origin_name`:** Ted Hardy questioned allowing `opaque_origin_name` to appear multiple times or represent a list of origins (e.g., for Google/YouTube) to scope tokens more precisely than general cross-origin. Stephen suggested `origin_name` be an opaque blob whose interpretation is left to the use case.
+        *   **Origin (Server) Behavior:** Simple challenge generation, choice of issuer(s) and token type (per/cross-origin). Optional `redemption_context` helps narrow double-spend prevention state (e.g., client IP hash, session ID).
+        *   **Client Behavior:** Manage token caching (reuse, eligibility), clear cached tokens with cookie state, verify `origin_name` information.
+        *   **Next Steps for Auth Scheme Draft:**
+            *   Address the discussion point regarding the `origin_name` field.
+            *   Continue polishing the document and interop testing.
+
+*   **Rate Limit Tokens Draft**
+    *   **Motivation:** Rate limiting is crucial for fraud prevention but often relies on privacy-invasive tracking (cookies, IP). Basic Privacy Pass tokens (attesting device legitimacy) are insufficient for cases like click farms or metered paywalls, leading to users still being blocked.
+    *   **Token Buckets:** Refreshed understanding of token bucket mechanics for rate limiting (replenish tokens, remove tokens on request, capacity limits).
+    *   **Rate-limited tokens** attest to both device legitimacy *and* that access rate for an origin is below a threshold, mitigating issues like click farms and enabling metered paywalls without user privacy loss.
+    *   **Protocol Overview:**
+        *   Extends basic RSA blind signature issuance protocol.
+        *   **Requires Split Deployment:** Attester and Issuer must be separate entities for meaningful privacy.
+        *   **Attester's Role:** Sees client identity, maintains a counter, learns a stable mapping between client and *anonymized* origin identifier (using per-client and per-origin secrets). Does *not* learn the specific origin.
+        *   **Issuer's Role:** Defines the rate limit (e.g., 3 times/hour) and informs the attester during issuance.
+        *   **Core Challenge:** Computing the stable mapping (bucket identifier) in a privacy-preserving way so the attester doesn't learn the specific origin, but can still enforce per-client, per-origin rate limits.
+        *   Uses a "signature scheme with key blinding" (similar to an OPRF) to achieve this.
+        *   **Status:** Operable implementations (ECDSA variant) exist. Security analysis is underway.
+    *   **Discussion on Adoption:**
+        *   Ben Schwartz questioned if standard Privacy Pass architecture could achieve similar goals (e.g., a magazine acting as issuer/validator issuing monthly tokens).
+        *   Authors clarified that Rate Limit Tokens address the *anonymous* case (e.g., fraud prevention during account creation) where users don't have existing accounts with the origin.
+        *   They highlighted the challenge of avoiding an issuer learning client browsing history if it maintains per-origin state for multiple services. The goal is to shard state and push accountability to an origin-funded entity, preventing a central attester from accumulating unbounded state or linking client activity across multiple origins.
+        *   Authors acknowledged that earlier, simpler designs compromised privacy (revealed origin info to attester) and encouraged suggestions for simpler solutions that maintain desired functional and privacy properties.
+
+## Decisions and Action Items
+
+*   **Architecture Draft:**
+    *   **Action:** Address the open issue regarding double-spend requirements for cross-origin tokens.
+    *   **Action:** Update privacy parameterization within the draft.
+    *   **Action:** Discuss how to address the centralization issue, either by punting to Mark's separate draft or integrating his text into the architecture document.
+*   **Authentication Scheme Draft:**
+    *   **Action:** Address the discussion point on how to best handle the `origin_name` field, particularly for scenarios involving multiple related origins or opaque definitions.
+    *   **Action:** Continue polishing the document and conducting interop testing.
+*   **Rate Limit Tokens Draft:**
+    *   **Decision (Pending):** The working group will continue discussion on the mailing list to determine interest in adopting this draft.
+    *   **Action:** Authors encourage the community to propose simpler architectural solutions that maintain the desired functional and privacy properties.
+
+## Next Steps
+
+*   Continue discussions on the privacypass mailing list regarding the adoption of the Rate Limit Tokens draft and potential alternative designs.
+*   Consider scheduling an interim meeting to discuss the Rate Limit Tokens draft and the consolidation of various issues across the core drafts.
+*   Authors of the core drafts will proceed with the identified action items, aiming towards potential working group last call for the architecture document once key issues are resolved.
+*   Authors of the Authentication Scheme draft will continue polishing the document and collaborating on interop testing.

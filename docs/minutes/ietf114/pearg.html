@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="pearg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-PEARG-20220725-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 17:30</p>
+<h1>pearg</h1>
+<h2>Summary</h2>
+<p>The <code>pearg</code> session featured three technical presentations and an update on a working group draft. Sophia Celia presented an informal comparison of privacy-preserving measurement techniques, highlighting various schemes like Differential Privacy, Prio-based systems, and solutions for the Heavy Hitters problem, while emphasizing the importance of user consent. Bharath Ragunathan introduced the &quot;Decoupling Principle&quot; for Internet privacy, suggesting that effective privacy preservation often involves ensuring third parties know at most one of sensitive user identity or sensitive user data. Mike Rosulek discussed privacy and security issues in current SSH public key authentication and proposed a new protocol using anonymous multi-CHEM and Private Set Intersection to enhance privacy. Finally, Mallory Knodel provided an update on <code>draft-knodel-safe-internet-measurement</code>, outlining its structure, open issues, and plans to seek community feedback and engage with an upcoming IAB workshop and the IETF PPM working group.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Privacy-Preserving Measurement Techniques (Sophia Celia):</strong>
+<ul>
+<li><strong>Challenge:</strong> Choosing suitable privacy-preserving schemes is complex due to the variety of techniques, varying privacy/security levels, and efficiency/cost considerations.</li>
+<li><strong>Goal:</strong> Enable collection of aggregate measurements while preserving user privacy, as explored by the IETF PPM working group.</li>
+<li><strong>Differential Privacy:</strong> Techniques like Rappor (costly) and Proflow (more efficient, uses Encode Shuffle Analyze (ESA) architecture but requires a trusted shuffler) add local randomness to data or function outputs. Aims for &quot;epsilon differential privacy.&quot;</li>
+<li><strong>Prio-based Systems:</strong> Focus on privacy, robustness, and scalability with small servers and many clients. Offers &quot;bounded privacy&quot; (some leakage of aggregate function output, e.g., number of users). Uses secret sharing and Secret Shared Non-Interactive Proofs (SNIPs) to ensure valid numeric inputs without revealing individual values. Noted inefficiencies in client-to-server communication for SNIPs and numeric-only data support.</li>
+<li><strong>Heavy Hitters Problem:</strong> Addresses privacy-preserving collection of non-numeric data (e.g., strings).
+<ul>
+<li><strong>STAR:</strong> Uses Threshold K-Anonymity (server learns data only if K-1 other clients submit same data) to prevent unique identification. Leverages Oblivious Pseudorandom Function (OPRF) for key derivation and Private Set Intersection (PSI) for aggregation. Considered monetary costs.</li>
+<li><strong>Poplar:</strong> Similar to Prio, finds most popular strings. Requires two non-colluding data collection servers.</li>
+</ul>
+</li>
+<li><strong>Comparison Factors:</strong> Data type (numeric vs. string), robustness (trust assumptions), specific privacy notion (level of leakage), efficiency, and monetary costs.</li>
+<li><strong>User Consent:</strong> Emphasized the critical importance of user consent and consideration of &quot;group privacy,&quot; noting that individual privacy may not be sufficient if aggregate results can still harm groups.</li>
+</ul>
+</li>
+<li><strong>The Decoupling Principle for Internet Privacy (Bharath Ragunathan):</strong>
+<ul>
+<li><strong>Core Principle:</strong> &quot;Decouple who you are from what you do&quot; to achieve meaningful internet privacy.</li>
+<li><strong>Application:</strong> Applies across various network layers and protocols, often by splitting responsibilities among entities.</li>
+<li><strong>Metadata Privacy:</strong> While data confidentiality is largely solved (TLS, encryption at rest), metadata privacy remains a complex, layered challenge.</li>
+<li><strong>Rule for Third Parties:</strong> In privacy-preserving systems, third parties (e.g., network relays, intermediate services) should know <em>at most one</em> of sensitive user identity or sensitive user data.</li>
+<li><strong>Examples:</strong> Illustrated with Mixnets/Tor where the sender knows both, but subsequent hops know less. Also applies to Privacy Pass, Oblivious DNS, Private Relay, and Private Aggregate Statistics.</li>
+<li><strong>Cautionary Tale:</strong> Traditional &quot;security gateway&quot; middleboxes often violate this principle by having full access to user identity and data, requiring complete trust in a single entity.</li>
+<li><strong>Caveats:</strong> Identity and data are often nuanced; non-collusion assumptions, hardware enclaves, and side channels are also critical considerations.</li>
+</ul>
+</li>
+<li><strong>Privacy-Preserving SSH Authentication (Mike Rosulek):</strong>
+<ul>
+<li><strong>Current SSH Problems:</strong>
+<ul>
+<li><strong>Client Fingerprinting:</strong> Servers can learn all public keys offered by a client (e.g., from an SSH agent), potentially linking users to services like GitHub even if not authenticating to that server.</li>
+<li><strong>Server Probing:</strong> Clients can use others' public keys to check for account existence on a server.</li>
+<li><strong>Non-Deniable Authentication:</strong> Server learns which specific key was used and can prove the authentication event occurred.</li>
+<li><strong>Unpredictable Success:</strong> Servers can accept connections without knowing the client's public key in advance.</li>
+</ul>
+</li>
+<li><strong>Proposed Protocol:</strong>
+<ul>
+<li><strong>Goal:</strong> The server learns only that <em>at least one</em> of the client's keys is authorized, but not <em>which one</em>. The client learns which of <em>its own</em> keys are authorized but cannot probe others' keys.</li>
+<li><strong>Mechanism:</strong> Uses two components:
+<ul>
+<li><strong>Anonymous Multi-CHEM:</strong> Server generates a ciphertext for a set of authorized public keys, hiding recipient identities.</li>
+<li><strong>Private Set Intersection (PSI):</strong> Client decrypts with all its secret keys; client learns intersection of its decrypted messages with server's expected messages; server only learns if the intersection is non-empty.</li>
+</ul>
+</li>
+<li><strong>Benefits:</strong> No site-specific configuration needed. Authentication is deniable. Server cannot trick a client into believing a connection was successful unless the key was pre-authorized.</li>
+<li><strong>Performance:</strong> Implemented as an OpenSSH extension, showing practical performance (e.g., 60ms for 5 client/10 server RSA keys, 9ms for elliptic curve keys).</li>
+<li><strong>Application to GitHub:</strong> Would require changes to the GitHub SSH flow (e.g., <code>repositoryname@github.com</code> to provide context to the server before authentication).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Update on draft-knodel-safe-internet-measurement (Mallory Knodel):</strong>
+<ul>
+<li><strong>Draft Status:</strong> Working group adopted draft (<code>draft-knodel-safe-internet-measurement</code>).</li>
+<li><strong>Scope:</strong> Defines safe internet measurement, focusing on consent (informed, proxy, implied), safety considerations, and risk analysis.</li>
+<li><strong>Recent Updates:</strong> Reworked table of contents, subsumed case studies into consent subsections.</li>
+<li><strong>Open Issues:</strong> Several low-hanging fruit issues remain (elaborating citations, suggesting text).</li>
+<li><strong>IAB Workshop:</strong> An upcoming IAB workshop in Q4 on &quot;Measurement Techniques in Encrypted Networks&quot; is a potential venue for presenting the draft and gathering feedback. The draft approaches measurement from a safety/privacy perspective, complementing the workshop's focus on measurement in encrypted environments.</li>
+<li><strong>PPM Cross-Pollination:</strong> Discussion on how this broader <code>pearg</code> draft could provide guidance to the IETF PPM working group on privacy-preserving measurement.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>Mallory Knodel will send a message to the <code>pearg</code> mailing list to solicit feedback, text suggestions for open issues, and reviews for <code>draft-knodel-safe-internet-measurement</code>.</li>
+<li>Mallory Knodel plans to submit a paper based on <code>draft-knodel-safe-internet-measurement</code> to the IAB workshop on &quot;Measurement Techniques in Encrypted Networks.&quot;</li>
+<li>Further discussion is needed on how <code>draft-knodel-safe-internet-measurement</code> can align with and inform the work of the IETF PPM working group.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continued development and community review of <code>draft-knodel-safe-internet-measurement</code>.</li>
+<li>Engagement with the IAB workshop to gather broader community feedback on safe internet measurement.</li>
+<li>Explore avenues for collaboration and cross-pollination between <code>pearg</code>'s work on safe internet measurement and the IETF PPM working group.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

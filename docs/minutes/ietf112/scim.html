@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="scim.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-SCIM-20211111-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 12:00</p>
+<h1>scim</h1>
+<h2>Summary</h2>
+<p>This first official SCIM Working Group meeting focused on laying the groundwork for future work. The session began with a recap of SCIM 2.0 (RFC 7643 and 7644) including its core concepts, protocol, schema, and current &quot;wrinkles&quot; identified for improvement. A significant portion of the meeting was dedicated to a presentation on revisiting RFC 7642 (Definitions, Overview, Concepts, and Requirements), highlighting its outdated terminology and lack of guidance for modern identity management patterns. Two new technical proposals were introduced: one for multi-value filtering in SCIM and another for new resources to improve discoverability of verified domains, roles, and entitlements. The working group also made procedural decisions regarding tools and meeting cadence for ongoing work.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Meeting Logistics</strong>:
+<ul>
+<li>Official note-taker: Pam Dingle. Call for a second note-taker.</li>
+<li>Reminders of the Note Well, IETF privacy processes, meeting tips, and code of conduct.</li>
+</ul>
+</li>
+<li><strong>SCIM 2.0 Introduction and Rechartering Context (Janelle Allen &amp; Danny Zissner)</strong>:
+<ul>
+<li>SCIM (System for Cross-domain Identity Management) standard, released around 2015, designed for sharing and normalizing identity data across contexts.</li>
+<li>Consists of a communication protocol (RFC 7644) and core schema (RFC 7643), designed for extensibility, speed, and ease of use.</li>
+<li><strong>Why SCIM?</strong>: Abstracts underlying data structures (SQL, LDAP), enabling scale.</li>
+<li><strong>SCIM Protocol (RFC 7644)</strong>: RESTful design using HTTP methods (GET, POST, PUT, PATCH, DELETE) for CRUD operations. Standardizes communication with &quot;service providers.&quot;
+<ul>
+<li>Endpoints: <code>/users</code>, <code>/groups</code> (core resources); <code>/me</code> (authenticated user self-management); discovery endpoints (<code>/schemas</code>, <code>/resourceTypes</code>, <code>/serviceProviderConfig</code>); special endpoints (<code>.search</code>, <code>/bulk</code>).</li>
+<li>Examples of operations: Creating users, filtering by attributes, retrieving by ID, full (PUT) vs. partial (PATCH) updates, bulk operations. <code>.search</code> using POST is for security to avoid PII in GET query URLs.</li>
+</ul>
+</li>
+<li><strong>SCIM Schema (RFC 7643)</strong>: Defines a minimal common set of attributes for user and group data, including an enterprise extension. Highly extensible for custom attributes and resource types (e.g., <code>/contacts</code>, <code>/conferenceRooms</code>).
+<ul>
+<li>Schema attributes are described textually and in JSON, with some noted confusion points between the two representations in the current RFC.</li>
+<li>Attributes can be simple (string, integer), complex (e.g., <code>name</code> with <code>givenName</code>, <code>familyName</code>), or multi-valued complex (e.g., <code>phoneNumbers</code>, <code>emails</code>).</li>
+<li>Data types: string, boolean, decimal, integer, datetime, binary, reference (URI pointer), complex.</li>
+</ul>
+</li>
+<li><strong>&quot;Wrinkles&quot; and Goals for Next Generation SCIM</strong>:
+<ul>
+<li>Usability issues and ambiguities in the spec lead to interoperability challenges.</li>
+<li>Limited guidance on groups, roles, entitlements, and unclear attribute definitions.</li>
+<li>Problems with bulk operations, pagination limitations, and need for core schema extensions.</li>
+<li>Emerging concepts like Privileged Access Management (PAM) need standardization.</li>
+<li>Goals: Improve best practices, clarify ambiguity (e.g., soft delete), enhance schema (HR, enterprise groups, PAM), improve data handling for large sets (pagination, automation scenarios).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Revisiting RFC 7642 - Use Cases and Concepts (Pam Dingle)</strong>:
+<ul>
+<li>RFC 7642 is an informational document, intended to help understand the core specifications, but is now dated.</li>
+<li><strong>Outdated Terminology</strong>: Actors like &quot;Cloud Service Provider,&quot; &quot;Enterprise Cloud Subscriber,&quot; and &quot;Cloud Service User&quot; are no longer precise. &quot;Service Provider&quot; in 7642 conflicts with its protocol-specific meaning in 7643/7644.</li>
+<li><strong>Use Cases and Triggers</strong>: Triggers like &quot;single sign-on&quot; are too narrow for modern just-in-time provisioning (e.g., privilege elevation).</li>
+<li><strong>Evolution of Identity Management</strong>: Over the last decade, PAM, real-time provisioning, webhooks, proof of possession (e.g., DPoP), and cloud-native enterprises have emerged. Governance has shifted from accounting to a security imperative.</li>
+<li><strong>Missing Concepts in 7642</strong>:
+<ul>
+<li><strong>Bi-directionality</strong>: Most SCIM deployments involve both pushes (client to SP) and pulls (client from SP), often requiring complex client logic to ensure data synchronization and efficiency.</li>
+<li><strong>Multiple Sources of Authority</strong>: Different systems can be authoritative for different attributes (e.g., HR for user existence, cloud platform for email address).</li>
+<li><strong>Provisioning Chains/Hubs</strong>: Data flows often involve intermediate &quot;provisioning hubs&quot; (acting as both client and service provider) creating complex ecosystems of pushes and pulls.</li>
+</ul>
+</li>
+<li><strong>Proposed Improvements</strong>:
+<ul>
+<li>Align taxonomy with protocol terms (service provider, client, resource, provisioning domain).</li>
+<li>Update use cases to reflect modern patterns (groups, <code>/me</code>, <code>.search</code>, custom resources). RFC 7642 currently only discusses users.</li>
+<li>Include advanced concepts like incremental attribute exchange, detailed <code>PUT</code> vs. <code>PATCH</code> distinctions, and synchronization guidance.</li>
+</ul>
+</li>
+<li><strong>Call for Volunteers</strong>: Pam Dingle volunteered to draft a revision of RFC 7642. Janelle Allen volunteered to assist.</li>
+</ul>
+</li>
+<li><strong>Multi-Value Filtering (Phil Hunt)</strong>:
+<ul>
+<li><strong>Problem</strong>: Current SCIM paging applies to resources, but there's a need to page or filter <em>values within</em> a multi-valued attribute (e.g., get a specific range of members from a large group).</li>
+<li><strong>Proposal</strong>: Extend the <code>attributes</code> parameter to allow value path filtering (e.g., <code>emails[type eq &quot;work&quot;]</code>) and paging (<code>startIndex</code>, <code>count</code>) for multi-value attributes.</li>
+<li><strong>Discovery</strong>: Introduce <code>meta.attribute.count</code> to indicate total values available for an attribute and a <code>serviceProviderConfig</code> parameter to advertise server support.</li>
+<li><strong>Disposition Discussion</strong>: Whether this should be a standalone RFC or integrated into an updated core SCIM specification. Danny Zissner expressed interest in this work.</li>
+</ul>
+</li>
+<li><strong>New Resources for Discoverability (Danny Zissner)</strong>:
+<ul>
+<li><strong>Verified Domains Draft</strong>:
+<ul>
+<li><strong>Problem</strong>: SCIM clients often provision users with <code>user@domain.com</code> usernames/emails. Failed requests occur if the domain isn't verified or doesn't match the service provider's required format.</li>
+<li><strong>Proposal</strong>: Add a <code>/verifiedDomains</code> read-only endpoint to allow clients to discover allowed domains. A <code>serviceProviderConfig</code> extension would advertise support and username/email requirements.</li>
+<li><strong>Schema</strong>: <code>domainName</code>, <code>allowSubdomains</code> (boolean), <code>verifiedDate</code> (optional).</li>
+<li><code>serviceProviderConfig</code> attributes: <code>supported</code> (boolean), <code>usernameProperties</code> (<code>userAtDomainFormat</code>, <code>domainSuffixRequiredVerified</code>), <code>emailsVerifiedDomainRequired</code>.</li>
+</ul>
+</li>
+<li><strong>Roles and Entitlements Draft</strong>:
+<ul>
+<li><strong>Problem</strong>: Clients need to discover acceptable values for user roles and entitlements to avoid sending invalid requests.</li>
+<li><strong>Proposal</strong>: Add <code>/roles</code> and <code>/entitlements</code> endpoints. These would return complex objects mirroring the sub-attributes of the user's <code>roles</code> and <code>entitlements</code> attributes (<code>value</code>, <code>display</code>, <code>type</code>).</li>
+<li><strong>Schema</strong>: Includes <code>value</code>, <code>display</code>, <code>type</code>, and a new <code>enabled</code> (boolean) attribute to indicate if a role/entitlement exists but is not currently usable.</li>
+<li><code>serviceProviderConfig</code> attributes: Advertise support for roles/entitlements, whether multiple roles are supported, and support for <code>primary</code> and <code>type</code> sub-attributes.</li>
+<li><strong>Open Questions</strong>: Adoption of <code>type</code> sub-attribute in existing implementations, discoverability of allowed types (global vs. per-role), and disposition of the draft (standalone vs. core spec integration).</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>
+<p><strong>Decision</strong>: The SCIM Working Group will use <strong>GitHub</strong> for tracking issues, suggestions, and pull requests for adopted working group documents. (Unanimous consensus via poll)</p>
+</li>
+<li>
+<p><strong>Decision</strong>: The SCIM Working Group will <strong>continue to hold virtual interim meetings</strong>. (Unanimous consensus via poll)</p>
+</li>
+<li>
+<p><strong>Decision</strong>: Virtual interim meetings will run on a <strong>monthly cadence</strong>. (No objections)</p>
+</li>
+<li>
+<p><strong>Action Item</strong>: Chairs (Nancy Cam-Winget) to create a SCIM WG GitHub repository.</p>
+</li>
+<li>
+<p><strong>Action Item</strong>: Chairs (Nancy Cam-Winget) to send out a Doodle poll for establishing recurring monthly virtual interim meeting times.</p>
+</li>
+<li>
+<p><strong>Action Item</strong>: Chairs (Nancy Cam-Winget) to send a call for interest on the mailing list for Phil Hunt's &quot;Multi-Value Filtering&quot; draft.</p>
+</li>
+<li>
+<p><strong>Action Item</strong>: Chairs (Nancy Cam-Winget) to send a call for interest on the mailing list for Danny Zissner's &quot;Verified Domains&quot; and &quot;Roles &amp; Entitlements&quot; drafts.</p>
+</li>
+<li>
+<p><strong>Action Item</strong>: Chairs (Nancy Cam-Winget) to send a call for volunteers/editors for the core schema (RFC 7643) and protocol (RFC 7644) drafts on the mailing list.</p>
+</li>
+<li>
+<p><strong>Action Item</strong>: Pam Dingle to draft a proposal for updating RFC 7642 (Use Cases and Concepts). Janelle Allen volunteered to assist.</p>
+</li>
+<li>
+<p><strong>Action Item</strong>: Danny Zissner volunteered to be an editor for the core schema and protocol drafts.</p>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussions and refine proposals on the SCIM mailing list.</li>
+<li>Chairs to establish the GitHub repository and schedule the first monthly virtual interim.</li>
+<li>Authors of proposed drafts to refine their work based on initial feedback.</li>
+<li>Gather further volunteers for editing the core SCIM specifications.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

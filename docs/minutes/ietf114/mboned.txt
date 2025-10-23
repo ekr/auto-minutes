@@ -1,0 +1,139 @@
+**Session Date/Time:** 28 Jul 2022 17:30
+
+# mboned
+
+## Summary
+
+The mboned session covered several active areas: updates on working group documents including a call for reviews for YANG models and the redundant ingress failover draft, and a working group last call for DORMS. Key technical discussions included a detailed presentation on In-situ OAM (iOAM) telemetry for multicast, proposing solutions to data redundancy and introducing a "branch ID" for direct export. A significant portion was dedicated to the Multicast Quick Extension, exploring its architecture for bringing multicast to browsers, addressing security, reliability, and scaling challenges. The session also featured a highly successful live demonstration of the Multicast Menu and Off-Net Sourcing project, which enables streaming content over the MBone and receiving it on unicast-only networks via AMT. Finally, a historical overview of multicast receivers and updates on ongoing student projects (IPv6 for AMT, graceful failover, and Multicast Menu enhancements) were presented, highlighting continued innovation in the multicast space.
+
+## Key Discussion Points
+
+*   **Session Logistics**: An initial call for a notetaker was made. The Note Well was presented, and attendees were reminded to join the MeetEcho tool, wear masks, and keep audio/video off unless speaking.
+*   **Working Group Document Status**:
+    *   **YANG Models for Multicast**: Draft still awaiting comments and reviews. Sandy (author) encouraged engagement.
+    *   **Redundant Ingress Failover Draft**: Adopted as a new working group document since IETF 113. Authors encouraged reviews. Jake committed to reviewing.
+    *   **Multicast to the Browser (DORMS, AMBI, MNET, CBAC)**:
+        *   **DORMS** (Deployment of Overlay Reliable Multicast Solutions) entered Working Group Last Call. WG members were encouraged to provide comments to advance the document to IESG.
+        *   **MNET** (Multicast Network Transport) is next on Jake's priority list for review.
+        *   **AMBI** (Application-Layer Multicast with Browser Integration) and **CBAC** (Content-Based Access Control) will follow, with a focus on security and transport reviews due to their dependency on DORMS.
+        *   Clustering of documents (DORMS, AMBI, CBAC) for RFC publication was discussed, noting automatic clustering for normative references or explicit request to RFC Editors. MNET is not part of this cluster.
+*   **IETF AD Term Expiration**: Warren's term as AD is expiring soon, and potential successors were encouraged to reach out to him for information.
+*   **In-situ OAM (iOAM) Telemetry for Multicast** (Presented by Haoyu Song):
+    *   **Problem**: Applying iOAM to multicast introduces significant data redundancy, as each destination node collects the entire path trace, leading to overlapping data sections.
+    *   **Solution 1 (Trace Option with Postcard-based Telemetry)**: At branching nodes, export collected data, clear the trace, and restart collection on each branch. This reduces redundancy without requiring updates to RFC 9197, only data plane configuration. Node ID is mandatory for tree reconstruction.
+    *   **Solution 2 (Direct Export - DX Option)**: Each packet carries only instruction headers. Nodes send independent "postcard" packets with local data to collectors, avoiding data redundancy in user packets.
+    *   **Challenge for DX**: Correlating postcard data, especially to identify which branch it came from.
+    *   **Proposed Solution (Branch ID)**: Introduce a new data type, "Branch ID," comprising a Node ID (3 bytes) and a Branch Index (1 byte, supporting up to 256 local branches per node). This allows unique identification of each branch.
+    *   **DX Instruction Header Modification**: A new 'M' flag indicates an optional "multicast branch ID" field.
+    *   **Call for Working Group Last Call**: The authors believe the document is mature and requested WG Last Call.
+    *   **Discussion**:
+        *   **Implementation**: General iOAM implementation exists in products, but not specifically for the multicast extensions.
+        *   **Branch ID Stability**: Branch IDs are envisioned as static assignments per interface.
+        *   **Scaling Concerns**: A single byte for branch index (256 branches) might be insufficient for large IPTV routers with 350+ multicast-activated interfaces. The importance of the interface ID for tree reconstruction was emphasized. Flow ID and sequence number already help distinguish streams.
+        *   **Support**: The problem statement resonated with needs for multicast telemetry (e.g., Olympic broadcasters), with LISP overlays mentioned as an alternative approach for RTT/hop count.
+        *   **Review Status**: Few attendees had read the draft, highlighting the need for more reviews from WG members.
+*   **Multicast Quick Extension** (Presented by Max Franke):
+    *   **Basic Idea**: Utilize existing Quick implementations in browsers to enable multicast reception.
+    *   **Mechanism**: A Quick unicast connection serves as an anchor. The client informs the server of its multicast support and limits. The server then directs the client to join specific SSM multicast channels.
+    *   **Data Flow**: Clients receive Quick frames/packets over multicast. If unable to join or receive multicast, the server can fall back to unicast delivery.
+    *   **Transparency**: Intended to be transparent to overlying applications, requiring only a flag for multicast support.
+    *   **Security & Integrity**: Packets are encrypted. While the key is shared, integrity frames (hashes) are sent via unicast to guarantee packet validity.
+    *   **Reliability**: Clients ACK received packets (multicast or unicast) over the unicast channel, allowing the server to track losses and retransmit.
+    *   **Flow/Congestion Control**: Client sets its rate limits. Server can adjust subscribed channels if high packet loss is detected.
+    *   **Direction**: Server-to-client only, making it a source-initiated multicast communication.
+    *   **Discussion**:
+        *   **Terminology**: Clarified "server" as the Quick server (initiating connection) and "client" as the Quick client (receiver), which incidentally also map to multicast source and receiver for the data plane. The Quick server can be separate from the multicast source.
+        *   **Access Control**: The server effectively controls who joins/decrypts the multicast stream. Not a general multicast mechanism, but for existing Quick server-client relationships.
+        *   **ACK Scaling**: Acknowledging packets from 10,000 clients over unicast still scales linearly, but with a lower constant than full unicast data. Suggestions included NACK frames, FEC, and ACK aggregation (Quick already supports bundled ACKs). Analogy drawn to NORM for single-server scaling limits and distributed server models for larger scale.
+        *   **Reliable Multicast Comparison**: Compared to PGM and early unreliable multicast work. The current approach is simpler, relying on endpoints to discard duplicates rather than complex router-assisted NACK neighborhoods.
+        *   **Working Group Placement**: Discussion on whether this work belongs in the Transport Area (due to reliability) or mboned (due to multicast concerns in Transport). Currently progressing in the Quick WG.
+        *   **Implementation**: Initial work in Chromium encountered challenges with feeding multicast packets into the event loop. Considering a Python-based (aioquic) demo first, with eventual goal for full browser integration.
+        *   **Quick WG Feedback**: Some skepticism regarding the origin security model for browsers, but potential to address privacy (e.g., requiring user input for multicast group joins).
+        *   **Positive Outlook**: Dino expressed strong support for the architecture, noting solutions for source discovery and flexibility for overlay/underlay mixing.
+        *   **Use Cases**: Supports both unreliable (datagrams) and reliable (streams with resets) transmission. FEC was suggested for real-time live events. Many-to-many communication would require N-squared unicast connections to a central anchor. Can mix unicast (e.g., bespoke advertising) with multicast streams.
+*   **Multicast Menu and Off-Net Sourcing (Lauren Trudgen - Live Demo)**:
+    *   **Project Overview**: Presented two core components: Multicast Menu (discovery/management portal) and Off-Net Sourcing (enabling non-multicast sources).
+    *   **Multicast Menu Features**:
+        *   Allows manual or automatic registration of multicast streams (via Internet2/GEANT looking glasses).
+        *   API for programmatic stream addition/management.
+        *   Manages stream information (title, description, category).
+        *   Simplified viewing (direct open in VLC, with pending AMT relay option and protocol handler for browser).
+        *   UI overhauled by a TU Berlin student, including thumbnails and stream sorting (trending, editors' choice, genres).
+    *   **Off-Net Sourcing**:
+        *   **File Upload**: Users can upload video files to Multicast Menu, which sends them to a "Multicast Translator" to be streamed as multicast.
+        *   **Live from Phone**: An app (e.g., Hi Vision Live) sends an SRT/UDP stream to a "Transport Translator" (AWS box), which converts it to regular UDP, then to the "Multicast Translator," which converts it to multicast.
+        *   **Future Goals**: Combine sending/receiving capabilities into a single app, and develop for iOS.
+    *   **TJTV Example**: An existing project allowing a high school to easily set up multicast streams using VLC and an AMT relay.
+    *   **Live Demos (all successful!)**:
+        1.  **Viewing TJTV Stream**: Demonstrated opening a TJTV stream from the Multicast Menu in VLC, with the stream delivered via an AMT relay due to the IETF network being unicast-only.
+        2.  **Streaming from a File**: Uploaded a video file via Multicast Menu, observed its translation to multicast, and then viewed it in VLC.
+        3.  **Live Streaming from Phone**: Streamed the current mboned meeting from a phone app (Hi Vision Live) through the transport and multicast translators, and viewed it live in VLC, showcasing the full off-net sourcing capability.
+    *   **Significance**: This work brings IETF content back to the MBone after 15-20 years, and crucially, makes it accessible to unicast-only internet users via AMT. Automatic teardown of streams upon source disconnection was also highlighted.
+    *   **Discussion**:
+        *   **Other Sources**: Possibility of pulling streams from existing IP cameras.
+        *   **SRT/UDP Clarification**: The phone app sends SRT/UDP to the transport translator, which then converts it to UDP unicast before the multicast translator converts it to multicast.
+        *   **Praise**: The successful live demos received significant applause and commendation for impressive multi-year development.
+        *   **Scalability**: Acknowledged as a next step, as the current infrastructure is small (tiny AWS box).
+        *   **Funding**: The AWS translator is currently personally funded, with plans to formalize support.
+*   **History of Multicast Receivers and Future Considerations** (Presented by Eric Vyncke):
+    *   **Legacy Receivers (1990s)**: Recalled thick clients like Starlight Networks, RealPlayer, QuickTime, Windows Media Player, and VLC, primarily used in closed, single-domain enterprise networks for a limited number of channels.
+    *   **Browser Integration Evolution**:
+        *   Plugins for RealPlayer/Windows Media.
+        *   Flash Player: Offered multicast capabilities from its server, including "Fusion" (blending peer-to-peer, multicast, unicast failover).
+        *   Windows Media Player's NFC files for unicast failover.
+        *   The trend was to bring the multicast experience into the browser for interactivity.
+    *   **Current Enterprise Solutions (Workarounds)**:
+        *   Companies like Highvision, Kumu, Vibrik, Kaltura use "agent software" (a local web server) deployed on desktops.
+        *   This agent listens for localhost HTTPS requests from the browser, joins a transport stream multicast, and then repackages the transport stream into HLS/TLS for the browser.
+        *   This approach, while solving the problem, introduces security complexities and does not support mobile devices (due to sandboxing).
+    *   **Vivo's Approach**: Building thick clients for various platforms (Zoom, Google Meet) using VP8, RTP, FEC, Chromium, GStreamer, and QT, with interactivity capabilities.
+    *   **Future Hopes**: Expressed enthusiasm for Quick Multicast to simplify and streamline these complex solutions, potentially integrating directly with Chromium.
+    *   **Discussion**:
+        *   **Mobile Support**: The localhost web server model generally lacks mobile support due to sandboxing; gateways on local Wi-Fi networks are used for mobile unicast delivery.
+        *   **Spouse Discovery**: Eric humorously shared that a multicast demo helped him meet his wife.
+*   **Student Projects at TU Berlin** (Presented by Max Franke):
+    *   **IPv6 Support for VLC/AMT**:
+        *   Goal: Add comprehensive IPv6 support to the VLC AMT implementation.
+        *   Status: Near completion (within 3 weeks).
+        *   Call to Action: Seeking IPv6-capable AMT relays for deployment and potential upstreaming. TU Berlin is working on setting up its own relay.
+    *   **Graceful Failover for AMT**:
+        *   Goal: Implement graceful failover using the L-flag in AMT (currently unused) to enable relays to signal impending shutdown.
+        *   Mechanism: Relays set the L-flag before shutting down, prompting gateways to initiate discovery and find alternative relays, ensuring stream continuity.
+        *   Discussion: Question about graceful restart on the client side (gateway) to inform the relay of a shutdown, allowing the relay to tear down tunnels faster and avoid encapsulating to dead clients.
+    *   **Multicast Menu Updates**:
+        *   UI Overhaul: Done (as demoed by Lauren).
+        *   Preview Frames: Measurements are ongoing to assess resource usage for pulling preview frames.
+        *   Stream Ranking: A challenge due to lack of traditional viewer metrics (like Twitch). Current approach uses a cache management algorithm based on "likes" on the website.
+        *   Future Work: Explore integrating telemetry or tracking click-through rates and viewing duration to better assess stream popularity.
+    *   **Future Big Idea**: Investigate APT-GET package distribution over multicast for popular software updates.
+    *   **Call for Collaboration**: Max invited anyone with ideas for multicast-related student thesis topics or collaborations to reach out, as they have many interested students.
+*   **Open Discussion**:
+    *   Reminder about the slack group for multicast activity and collaboration.
+    *   The Multicast Menu can help prevent "dead streams" by providing real-time status.
+
+## Decisions and Action Items
+
+**Decisions:**
+*   No formal working group decisions were explicitly recorded during this session.
+
+**Action Items:**
+*   **WG Members**: Provide comments and reviews for the **YANG models for multicast draft**.
+*   **WG Members**: Provide comments and reviews for the **Redundant Ingress Failover draft**. (Jake to provide review).
+*   **WG Members**: Review the **DORMS draft** and provide comments during its Working Group Last Call phase to facilitate its advancement to IESG.
+*   **Jake**: Seek security and transport reviews for the **AMBI, MNET, and CBAC drafts**.
+*   **WG Members**: Read and review the **iOAM telemetry for multicast draft** to inform further progression and potential WG Last Call.
+*   **Max Franke / Quick Multicast Authors**: Continue implementation efforts, particularly addressing Chromium integration and browser security concerns.
+*   **Lauren Trudgen / Multicast Menu Project**: Continue development of Multicast Menu and Off-Net Sourcing, focusing on scalability, iOS support, and formalizing funding for infrastructure.
+*   **TU Berlin Students (Max Franke)**:
+    *   Complete **IPv6 support for VLC/AMT** and seek deployment opportunities on IPv6-capable AMT relays.
+    *   Continue development and measurement for **graceful failover in AMT**.
+    *   Further enhance **Multicast Menu stream ranking** mechanisms.
+*   **WG Members**: Join the mboned Slack group for ongoing collaboration and discussion.
+
+## Next Steps
+
+*   Continue the review process for existing working group drafts and new proposals.
+*   Advance the Multicast Quick Extension and Multicast Menu/Off-Net Sourcing projects through further development, testing, and community feedback.
+*   Actively seek out opportunities for IPv6 AMT relay deployments.
+*   Explore and initiate new student projects and collaborations related to multicast technologies.
+*   The working group will continue its efforts at the next IETF meeting in London.

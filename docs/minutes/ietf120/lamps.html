@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lamps.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF120-LAMPS-20240724-2230">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF120-LAMPS-20240726-2000">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 24 Jul 2024 22:30</p>
+<pre><code class="language-markdown"># lamps
+
+## Summary
+
+The LAMPS working group meeting covered a wide range of topics, including RFC editor status updates, IESG status updates, and discussions on various drafts related to certificate management and cryptographic algorithms. Key discussions revolved around header protection, CMC bis, CSR attestation, freshness, and quantum-resistant cryptography. Several drafts are nearing working group last call.
+
+## Key Discussion Points
+
+*   **RFC Editor Queue:** Updates on documents with the RFC editor, including clarification requests for 5999-bis and the status of the SHA-3 hash document and OCSP nonce update.
+*   **IESG Queue:** Status of CERT binding for multi-off and 519-bis, including pending approvals from authors.
+*   **Header Protection:** In-depth discussion of the header protection draft, focusing on changes to HCPs, the removal of the VAPMessage scheme, and mitigation of potential from address spoofing. The working group's feedback is requested, specifically on the from address spoofing guidance.
+*   **CMC Bis:** Presentation on CMC bis, covering adoption status, alignment with CMP, the use of CMSRI, and updates to address security concerns. The draft is currently out for a working group call for adoption.
+*   **CSR Attestation:** Discussion of the CSR attestation draft, including changes based on working group last call feedback and open issues related to verifier selection and trust anchor handling.
+*   **Freshness:** Overview of the freshness document, including its relationship to CSR attestation and the use of nonces.
+*   **Quantum-Resistant Cryptography:** Updates on the x509 stateful hash-based signatures and SLH-DSA in X.509 drafts. Key points included alignment with NIST drafts, addressing private key wrapping, and security considerations. The working group discussed whether to include pre-hashing algorithms.
+*   **Key Usage:** Discussion of the key usage for I AM draft, focusing on updates related to PSS-based ML MLDSA-44 and the domain separator.
+*   **Composite Signatures:** Review of the composite signatures draft.
+
+## Decisions and Action Items
+
+*   **Header Protection:** Working group to review and provide feedback on the guidance for mitigating from address spoofing. The document is potentially ready for working group last call, contingent on feedback.
+*   **CMC Bis:** A working group call for adoption is currently open.
+*   **4210 Bis:** Proceed with sending the document forward, without waiting for the nonce request.
+*   **CSR Attributes:** Next version to include alternate ASN1 to accommodate empty values.
+*   **Stateful Hash-Based Signatures:** Add text to state explicitly that private key encoding is not defined, and should not be attempted unless one fully understands the security implications.
+*   **SLH-DSA in X.509:** Consider removing the Brain Pool curve, given lack of interoperability or demand.
+*   **Composite Signatures:** Author to look into an update to the composite signatures to include a PSS and AP PKK 1.5 pair and ditch 2048 bit keys.
+*   **Action:** Sean to move the freshness repository into the Lamps working group GitHub org.
+
+## Next Steps
+
+*   Working group last calls for drafts deemed ready.
+*   Continued discussion and feedback on open issues via the mailing list and GitHub.
+*   Further refinement of drafts based on feedback received.
+*   Continue working on implementation of these standards.
+
+
+---
+
+**Session Date/Time:** 26 Jul 2024 20:00
+
+```markdown
+# lamps
+
+## Summary
+
+This LAMPs session focused on composite signatures and KEMs, updates to CMS drafts for post-quantum cryptography, and discussion of a draft proposing extensions to RFC 4210 for root CA certificate rollover.  Significant discussion occurred regarding the composition of hybrid cryptographic systems, including algorithm choices, key sizes, and the necessity of binding public keys and ciphertexts. The potential impact of NIST compliance and the need for interoperability with other standards, such as X-Wing and OpenPGP, were also prominent themes.
+
+## Key Discussion Points
+
+*   **Composite Signatures:**
+    *   Discussion centered on reducing the number of signature combinations.
+    *   Arguments were made for using different parts of the hybrid to accomplish specific goals (e.g., classical algorithms for compliance, post-quantum for security against implementation weaknesses).
+    *   NIST's recommendation to use level 5 security was discussed and whether it would be normative guidance or merely advisory
+    *   The need to include RSA 4096 was voiced by an implementer due to existing policy constraints.  Alternatives were discussed, including avoiding specifying a fixed RSA modulus size.
+    *   Domain separators in composite KEM construction for PEAK-HEX was discussed and whether it should stay distinct from other standards or align.
+    *   Whether binding public keys and ciphertexts externally in CMS is necessary was discussed.
+
+*   **CMS Updates:**
+    *   HKDF with SHA-2 and KMAC were discussed as potential mandatory-to-implement KDFs.  The consensus moved towards selecting one for interoperability reasons.
+    *   NIST compliance of KDF selections was raised as a consideration.
+    *   Discussion regarding the malbinding properties of ML-KEM and whether public keys and/or ciphertexts need to be explicitly included in the KDF was led by Sophie. The overall conclusion was that it was probably not necessary.
+
+*   **Root CA Certificate Re-keying:**
+    *   A draft extending RFC 4210 with a one-way link certificate-based solution for root CA certificate rollover was presented.
+    *   The goal is to support scenarios where entities are unaware of the new root CA certificate or cannot update.
+    *   Questions were raised about the novelty of the approach and whether it addresses a real-world problem.
+
+## Decisions and Action Items
+
+*   **Composite Signatures:**
+    *   Investigate whether to align the PEAK-HEX domain separator with X-Wing. (Mail list Discussion)
+    *   Determine if brainpool curves can be safely removed. (Mail list Discussion)
+    *   Need a proof regarding RSA OAEP sufficiency to achieve desired binding properties.
+    *   Investigate Shaw 3 versus Shaw 2 for KDF and whether to include both. (Mail list Discussion)
+
+*   **CMS Updates:**
+    *   Determine which KDF to implement (HKDF or KMAC) with a leaning towards HKDF with Shaw2 for compatibility.
+    *   Require the private key be transmitted as a seed and not stored as seed, to mitigate malbinding properties.
+
+*   **Action - General**
+    *   Generate samples for appendices in implementations.
+    *   Slides 7 from Mike's presentation need their own mail list discussion.
+
+## Next Steps
+
+*   Authors to address comments and open issues in the relevant drafts.
+*   Continued discussion on the mailing list regarding design choices and potential interoperability issues.
+*   Determine if a separate document for ML-DSA implementation in CMS needs to be drafted.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

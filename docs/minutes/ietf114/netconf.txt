@@ -1,0 +1,120 @@
+**Session Date/Time:** 25 Jul 2022 14:00
+
+# netconf
+
+## Summary
+
+The `netconf` working group meeting at IETF 114 covered updates on several drafts, including `ietf-netconf-udp-notif`, `ietf-netconf-distributed-notif`, `ietf-netconf-pagination`, `ietf-netconf-transaction-id`, `netconf-over-quick`, and `netconf-over-tls13`. Key discussions revolved around technical clarifications, security considerations, and potential workgroup adoption. The session concluded with a significant discussion on the future of NETCONF and RESTCONF protocols, exploring potential next versions and areas for improvement, such as binary encoding and capability exchange.
+
+## Key Discussion Points
+
+*   **Administrative Items:** Initial technical glitches (poll overlay) were resolved. The note-well was presented, and attendees were reminded that MeetEcho serves as the virtual blue sheet, with Zulip being introduced for chat.
+
+*   **Chartered Work Items Status:**
+    *   `https-notif`: -11 published, -12 coming to address shepherd comments.
+    *   `client-server` drafts: WGLC issues resolved, ready for write-up. Volunteers sought for shepherding.
+    *   `udp-notif`: Work in progress, discussed in this meeting.
+    *   `distributed-notif`: Work in progress, discussed in this meeting.
+    *   `adaptive-subscription`: Adopted as experimental, not discussed.
+
+*   **`ietf-netconf-udp-notif` Update (Alex Juan):**
+    *   **Context:** UDP-based transport for YANG push, uses a shim header, and proposes DTLS for unsecured networks.
+    *   **Changes (v05 to v06):** Addressed chairs' comments by updating the YANG model. A new flag `enable-dtls` and a `dtls` container (importing `tls-client-server` grouping) were added for DTLS configuration. `dtls` and `segmentation` features were added. `udp-receiver-grouping` was renamed, and the port was made mandatory. `max-segment-size` leaf rephrased. Shim header version updated to allow collectors to receive different versions. Configuration examples are planned.
+    *   **Discussion:**
+        *   **Christian:** Suggested making the `dtls` container a presence container and removing the `enable-dtls` boolean leaf.
+        *   **Benoît:** Recommended adding a reference to RFC 8799 (limited domains and internet protocols) in security considerations.
+        *   **Rob Wilson:** Asked for clarification on the shim header version change and suggested adding a consideration section for IANA registry management of version numbers.
+
+*   **`ietf-netconf-distributed-notif` Update (Alex Juan):**
+    *   No changes since the last draft version. Authors believe it's stable but are waiting for `udp-notif` to reach WGLC before progressing this draft, as `udp-notif` is its only reference.
+    *   **Discussion:** The chair requested the authors to confirm readiness for a security review.
+
+*   **Pagination Mechanism for NETCONF and RESTCONF (Chin Wu):**
+    *   **Motivation:** To address latency and resource consumption when retrieving large amounts of data (lists/leaf-lists), borrowing concepts from SQL.
+    *   **Three Related Drafts:** A generic pagination mechanism, a NETCONF protocol extension, and a RESTCONF protocol extension.
+    *   **Generic Mechanism (`ietf-netconf-list-pagination`):** Defines six query parameters: `where` (selection filter), `sort-by` (index node), `direction` (ascending/descending), `offset`, `limit`, and `sublist-limit`. Introduced `remaining` metadata for client to know remaining entries. Defined server processing order and a server-list pagination constraint discovery mechanism.
+    *   **NETCONF Extension:** Augments `<get>`, `<get-config>`, and `<get-data>` RPCs with the pagination query parameters.
+    *   **RESTCONF Extension:** Adds list/leaf-list as valid resource targets for GET, allows DELETE operation on lists, and introduces a new media type (`application/yang-data+xml-list`).
+    *   **Discussion:**
+        *   **Balazs:** Raised concerns about the stability of sort order between requests, complexity of sorting (e.g., multilingual alphabetic), and behavior with XPath filters resulting in multiple lists.
+        *   **John O'Brien:** Suggested `order-by` instead of `sort-by` and `ascending/descending` for `direction` (with `ascending` as default).
+        *   **Rob Wilson:** Questioned the performance impact of repeated filtering/sorting for subsequent paginated requests and whether the server maintains state. Suggested considering a "stable snapshot" mechanism or a "last key displayed" cursor to improve efficiency.
+        *   **Jeff:** Supported the need for stable sort order and suggested a cursor mechanism (tracking the last key displayed) to handle data changes.
+
+*   **NETCONF Transaction ID (Jan Lindblad):**
+    *   **Update (v02):** Re-introduced "last modified transaction ID" mechanism and added integration with YANG Push.
+    *   **Clarifications:** Improved text, diagrams, examples, and specified XPath locations for attributes.
+    *   **Problems Addressed:**
+        1.  Detecting configuration changes without full retrieval.
+        2.  Preventing YANG Push "echoes" of self-initiated changes.
+        3.  Allowing optimistic locking for clients to make changes, ensuring no other client changes occurred concurrently (without explicit locks).
+    *   **Last Modified Transaction ID:** Uses a timestamp (`txid:last-modified`) in addition to the existing `etag` (`txid:etag`).
+    *   **Timestamp Resolution:** Noted that RESTCONF RFC 8040 uses 1-second resolution, which this draft currently aligns with. However, this could be ambiguous if multiple changes occur within one second.
+    *   **Discussion on Timestamp Resolution:**
+        *   **Rob Wilson:** Asked if fractional timestamps aim for guaranteed uniqueness.
+        *   **Erickson:** Argued 1-second resolution is unreliable and defeats the purpose, suggesting a more detailed timestamp or order of transactions.
+        *   **John O'Brien:** Raised concerns about device clock accuracy, time synchronization issues, and device boot time affecting timestamp reliability. The draft currently only defines equality comparison for timestamps.
+        *   **Mahesh:** Suggested using 1-second resolution for common cases and `etag` for scenarios requiring strict correctness or higher resolution.
+        *   **Rob Wilson:** Suggested clarifying in the draft the limitations of timestamp comparisons and advising clients to use the more robust `etag` mechanism when strictness is required.
+        *   **Charles Eccles:** Asked for clarification on server error handling (distinguishing between "relevant change" and non-existent data) and confirmed specific error messages are defined.
+    *   **YANG Push Integration:** A simple `ietf-netconf-transaction-id-yp` leaf `etag true` is added to `push-subscribe`, and `transaction-id:etag` is included in YANG Patch `edit` updates.
+
+*   **NETCONF over QUICK (Yan Wu):**
+    *   **Motivation:** Address TCP's head-of-line blocking by using UDP-based QUICK as a secure transport, leveraging its faster connection setup, authentication, and encryption.
+    *   **Proposal:** Defines connection management, connection termination, and mapping of NETCONF bi-directional/unidirectional communications to QUICK streams. Reuses RFC 4642 rules for server identity. Requires IANA ALPN registration (`noc`) and a UDP port number.
+    *   **Discussion:**
+        *   **Anthony Somerset:** Raised concerns about reliability over UDP (even with QUICK). The presenter clarified that QUICK provides reliability.
+        *   **Rob Wilson:** Found the work interesting but questioned the practical benefits over TLS for current NETCONF/YANG Push (e.g., separate streams vs. separate sessions, startup time). Suggested framing this discussion within "Netconf Next / Resconf Next" rather than as an immediate addition.
+
+*   **NETCONF over TLS 1.3 (Sean Turner):**
+    *   **Motivation:** Update NETCONF's TLS profile to leverage TLS 1.3 features.
+    *   **Approach:** Based on RFC 7589, focusing on two key aspects for profiling TLS 1.3.
+    *   **Zero RTT:** Explicitly states that Zero RTT (0-RTT) should *not* be used due to replayability issues, aligning with recommendations in other drafts (e.g., RESTCONF).
+    *   **Cipher Suites:** Updates mandatory-to-implement (MTI) cipher suites to modern, forward-secure ones specified in TLS 1.3.
+    *   **IANA:** Updates IANA registries to point to this new draft.
+    *   **Discussion:**
+        *   **Rob Wilson:** Expressed strong support, seeing it as helpful for the industry to move towards TLS 1.3.
+
+*   **Discussion on RESTCONF Next and NETCONF Next:**
+    *   **Motivation:** Existing GitHub issue trackers for NETCONF Next, RESTCONF Next, and YANG Next. Updates to YANG necessitate corresponding updates to NETCONF/RESTCONF. The chairs sought the working group's appetite for refreshing these protocols.
+    *   **Rob Wilson:** Identified several areas for improvement: using QUICK, moving towards binary encoding (e.g., CBOR) instead of XML/JSON, transitioning to private candidate data stores, and clarifying ambiguous parts of the specifications. Questioned if waiting for YANG Next is strictly necessary.
+    *   **Jeff:** Strongly advocated for binary encoding (CBOR) to reduce overhead and improve performance, especially for large data transfers (e.g., streaming telemetry, BGP rib). Raised the question of how binary encoding would affect YANG validators.
+    *   **Chairs (Contributors):** Noted existing issues for QUICK, private candidate, MACAM integration, JSON encoding, and cleanup of RFC 7950. Discussed if a "binary notif" focusing solely on telemetry data would address most of the binary encoding concerns.
+    *   **Thomas:** Supported the idea of binary encoding for notification message headers (XPath, YANG model, versioning).
+    *   **Hello Message/Capabilities Cleanup:** Discussed the proliferation of mechanisms for exchanging YANG module information (YANG Library, YANG Packages) and the desire to simplify this process.
+    *   **General Interest Poll:** A poll was conducted to gauge general interest in "starting this work." The response was fairly positive.
+    *   **Benoît:** Clarified his interest was specific (binary encoding, headers) rather than a full revamp, suggesting issues could be handled incrementally.
+    *   **Rob Wilson:** Asked those who voted against the work to provide their rationale.
+    *   **Yan (Chat):** Suggested individual polls for specific proposals might be more effective than a global yes/no.
+
+## Decisions and Action Items
+
+*   **`ietf-netconf-udp-notif` & `ietf-netconf-distributed-notif`:**
+    *   **Action:** Authors to address feedback regarding the `dtls` container being a presence container and referencing RFC 8799 in security considerations.
+    *   **Action:** Authors to clarify IANA registry for shim header versioning.
+    *   **Action:** Document is to be sent for security review once ready.
+*   **`ietf-netconf-pagination`:**
+    *   **Action:** Authors to continue discussion on the mailing list and incorporate feedback regarding stable sort orders, complex sorting, handling of multiple lists, and keyword choices (`order-by`, `ascending/descending`).
+    *   **Action:** Authors to consider mechanisms for server-side state maintenance or snapshots to optimize subsequent paginated requests.
+*   **`ietf-netconf-transaction-id`:**
+    *   **Decision:** The working group voted overwhelmingly in favor of adopting the draft.
+    *   **Action:** Chairs will send a formal notice for working group adoption on the mailing list.
+    *   **Action:** Draft to clarify the limitations of timestamp comparisons and advise on the appropriate use of `etag` for strict correctness.
+*   **`netconf-over-quick`:**
+    *   **Action:** Authors to consider framing this proposal within the broader "NETCONF Next / RESTCONF Next" discussion.
+*   **`netconf-over-tls13`:**
+    *   **Decision:** The working group voted overwhelmingly in favor of adopting the draft.
+    *   **Action:** Chairs will send a formal notice for working group adoption on the mailing list.
+*   **NETCONF Next / RESTCONF Next Discussion:**
+    *   **Decision:** The working group has a fairly positive interest in initiating work on the next versions of NETCONF/RESTCONF.
+    *   **Action:** Chairs will discuss and bring specific "hot button" issues to the mailing list for prioritization.
+    *   **Action:** Further discussion is needed on whether this work should be tied to the `yang-next` timeline or if individual issues can be addressed independently.
+    *   **Action:** Those who voted against the general interest poll are encouraged to provide their rationale on the mailing list.
+
+## Next Steps
+
+*   Chairs to initiate formal adoption calls on the mailing list for `ietf-netconf-transaction-id` and `netconf-over-tls13`.
+*   Authors of `ietf-netconf-udp-notif` to make revisions based on feedback and coordinate security review.
+*   Authors of `ietf-netconf-pagination` to continue discussions on the mailing list and incorporate feedback.
+*   Chairs to poll the mailing list on specific "hot button" issues for NETCONF/RESTCONF Next and determine the approach (tied to YANG Next vs. independent issues).
+*   Further discussion on the mailing list regarding binary encoding for data (e.g., CBOR) and the cleanup of hello message/capabilities exchange mechanisms.

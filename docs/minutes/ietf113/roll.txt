@@ -1,0 +1,60 @@
+**Session Date/Time:** 23 Mar 2022 12:00
+
+# roll
+
+## Summary
+
+The roll working group meeting covered updates on several drafts, discussed milestone refreshes, and made key decisions on the future of some documents. `audev-rpl` was returned to the working group for further development due to outstanding issues. Significant technical discussions took place on `dow projection`, `enrollment priority` (proposing a lollipop counter), and `6lbr-multicast-registration` (MOB5), including its cross-WG implications.
+
+## Key Discussion Points
+
+*   **Meeting Logistics**: Standard IETF IPR and anti-harassment policies were noted. Pascal Thubert and Michael Richardson volunteered as note-takers.
+*   **Working Group Status Update**:
+    *   `nsa extension`: Awaiting author replies to typing issues.
+    *   `raw developer`: Open issues to be discussed.
+    *   `dow projection`: Issues addressed, ready for working group last call (WGLC).
+    *   `enrollment priority`: Open issues, including `mopex capabilities`, to be discussed. Work in progress.
+    *   `roll story acknowledge`: Proposed for working group adoption.
+    *   `fast border router graph detection`: New work adopted.
+*   **Milestones Review**:
+    *   Current milestones are significantly outdated (1-2 years behind).
+    *   Proposed new dates for `dow projection` (September), `mopex capabilities` (November, requiring interim meetings and implementations), and `roll story acknowledge` (next year).
+    *   **Yang Model for MIPL**: Discussion on the status of the MIPL Yang model. No active implementers or contributors identified. The AD (Alvaro) emphasized manageability importance for IoT networks and suggested discussing appropriate management tools if Yang isn't suitable, possibly during re-chartering. Pascal Thubert noted that `ysan` uses its own management, not Yang for MIPL.
+    *   **Self-taught Multicast for RPL (`sfc-mcast`)**: No clear progress or active work. The document's mechanism is questioned.
+    *   **`audev-rpl` Status**: Despite reviews, there are significant open issues and concerns about the specified mechanism's functionality. One implementation from 2016 is not updated.
+*   **DOW Projection Presentation (Pascal Thubert)**:
+    *   Positioned `dow projection` as an SDN variation of RPL for tighter traffic engineering control, contrasting it with AODV (reactive).
+    *   Explained two types of routes: `segments` (serial links, established via storing mode DAO) and `tracks` (aggregations of `track legs`, established via non-storing mode DAO).
+    *   `Segments` fill gaps between loose hops, allowing non-storing mode RPL to have loose source routes.
+    *   Discussed recent draft versions (v21-24), incorporating deep reviews from Torres, Michael, and Lee, leading to major restructuring and terminology clarification (e.g., `segments`, `legs`, `subtracts`).
+    *   Addressed issues like multiple targets in DAO and the federation flag.
+    *   The draft is considered ready for WGLC after minor terminology rephrasing.
+*   **Enrollment Priority Discussion (Michael Richardson)**:
+    *   Merged with another document, but issues arose with its interaction with the trickle timer.
+    *   Previous proposal: Value would not change throughout the DAG, set by the root. Roland's needs not satisfied.
+    *   **New Proposal**: Add a lollipop counter to the extension to ensure freshness of information from different parents, similar to RFC 6550 Section 7.
+    *   Pascal agreed on the need for the lollipop counter for freshness, but cautioned that it doesn't solve global DAG balancing, which is a more complex, potentially controller-driven problem.
+    *   Concern about node capacity: Michael argued the extension helps nodes avoid enrolling in parts of the graph with no capacity. Pascal countered that beacon manipulation is sufficient for local neighbor cash protection; throughput balancing is a broader problem.
+    *   Discussion on lollipop counter size: 1 byte suggested for consistency with RFC 6550 Section 7.
+*   **`6lbr-multicast-registration` (MOB5) Discussion (Pascal Thubert)**:
+    *   Extends `6lo-nd` (RFC 8505) for anycast and multicast addresses, previously only for unicast.
+    *   This is an adaptation of IPv6 Neighbor Discovery for IoT, agnostic to the underlying routing protocol.
+    *   Provides a RPL counterpart for non-storing mode, leveraging RFC 8008 for multicast distribution across tunnels.
+    *   Updates include cleaning anycast support, improving backward compatibility (RFC 9010), EDA/DAC flags, clarifying whole-node multicast group behavior (FF02::1), and aligning with BGP/EVPN redistribution work.
+    *   Key concern: Document ownership (RAW vs. 6Lo) due to its dual nature. Pascal suggested RAW as a better home given minor 6Lo changes.
+
+## Decisions and Action Items
+
+*   **`audev-rpl`**: The document will be **returned to the working group** for further development, addressing open issues and ensuring the mechanism works as described.
+*   **Milestones**: The chairs will **refresh the working group milestones** with updated proposed dates.
+*   **Yang Model for MIPL**: The chairs will **initiate a mailing list discussion** to confirm the removal of the MIPL Yang model from the charter, given lack of interest/resources.
+*   **`enrollment priority`**: The next revision of the draft will **incorporate a 1-byte lollipop counter** as described in RFC 6550 Section 7.
+*   **`6lbr-multicast-registration` (MOB5)**: The RAW chairs will **discuss with the 6Lo chairs** and the AD (Alvaro) to determine the best path forward for this document, considering ownership, charter fit, and processing.
+
+## Next Steps
+
+*   **`dow projection`**: Finalize minor terminology clarifications and then proceed towards a **Working Group Last Call**.
+*   **`enrollment priority`**: Michael Richardson will implement the lollipop counter in the next revision (05) of the document. Further deep review, especially from implementers, is encouraged.
+*   **`audev-rpl`**: The working group needs to **solicit active contributors** to address the fundamental issues identified by reviewers.
+*   **`6lbr-multicast-registration` (MOB5)**: A decision on the document's processing (e.g., single document in RAW, dual documents, joint last call) will be communicated after discussions between chairs and ADs.
+*   **Mailing List**: Conclusions from the meeting and triggers for corresponding threads will be sent to the mailing list.

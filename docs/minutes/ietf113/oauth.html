@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="oauth.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-OAUTH-20220321-1330">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-OAUTH-20220324-1330">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2022 13:30</p>
+<h1>oauth</h1>
+<h2>Summary</h2>
+<p>The OAuth working group meeting covered updates on current drafts and RFCs, followed by presentations and discussions on three key areas: D-Pop (Demonstrating Proof-of-Possession), redirection attacks in OAuth, and the ongoing development of OAuth 2.1. Key discussions revolved around the readiness of D-Pop for Working Group Last Call, how to address known redirection vulnerabilities, and several outstanding issues in OAuth 2.1, including the <code>iss</code> response parameter, access token lifetimes, and redirect URI methods for native apps, as well as the definitions of client types.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Updates:</strong>
+<ul>
+<li>RFC 9207 was published (congratulations to Danielle and Creston).</li>
+<li>One Jot response for token introspection is in the RFC edit queue.</li>
+<li>Christina's and Mike's &quot;simple document&quot; has reached working group consensus.</li>
+<li>The Security BCP is undergoing chair review, with progress expected soon.</li>
+<li>The RAW document has been updated by Thorsten and will proceed to shepherd write-up.</li>
+</ul>
+</li>
+<li><strong>D-Pop (Demonstrating Proof-of-Possession):</strong>
+<ul>
+<li>Brian Campbell provided a full overview, highlighting recent changes.</li>
+<li><strong>Protocol Overview:</strong> D-Pop is a pragmatic application-level proof-of-possession mechanism for OAuth 2 tokens issued to public clients. It uses a <code>dpop+jwt</code> as an HTTP header.</li>
+<li><strong>Key Updates/Features:</strong>
+<ul>
+<li>Proofs are <code>dpop+jwt</code> typed, use asymmetric signatures, include the JWK in the header, JTI for replay prevention, and HTTP request info (<code>htu</code>, <code>htm</code>).</li>
+<li><code>ath</code> (access token hash) claim introduced for protected resource access.</li>
+<li>Server-provided <code>nonce</code> challenge (<code>use_dpop_nonce</code> error and <code>DPoP-Nonce</code> header) for replay prevention.</li>
+<li>Authorization server metadata (<code>dpop_signing_alg_values_supported</code>) and client registration metadata (<code>dpop_bound_access_tokens</code>) added.</li>
+<li><code>dpop_jkt</code> parameter added to authorization requests to bind authorization codes to a D-Pop key, enhancing end-to-end flow binding, compatible with PKCE and PAR.</li>
+</ul>
+</li>
+<li><strong>Open Questions:</strong>
+<ul>
+<li>Necessity of <code>application/dpop+jwt</code> media type registration: Mike Jones recommended proceeding with registration, as <code>typ</code> claims are intended for media types.</li>
+<li>Number of authors: Roman (AD) confirmed support for retaining all six authors if the working group deems their contributions significant, documenting this in the shepherd write-up.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Redirection Attacks in OAuth:</strong>
+<ul>
+<li>Roman provided an overview of vulnerabilities arising from mismanaged redirections, which are not vendor-specific.</li>
+<li><strong>Attack Scenarios:</strong>
+<ul>
+<li>Redirection to an attacker-controlled URI after user authentication when parameters like <code>response_type</code> or <code>scope</code> are invalid.</li>
+<li>Redirection to an attacker-controlled URI even if the user denies consent.</li>
+<li>Automatic redirection before user authentication due to missing or invalid parameters.</li>
+<li>Redirection during silent authentication in OpenID Connect.</li>
+</ul>
+</li>
+<li><strong>RFC 6749 Context:</strong> The RFC states AS &quot;must not automatically redirect&quot; for <code>redirect_uri</code> or <code>client_id</code> errors, but &quot;informs the client by redirecting&quot; for other errors or user denial, creating an ambiguity.</li>
+<li><strong>Community Feedback:</strong>
+<ul>
+<li>Consensus that these are well-known front-channel trade-offs, not new attacks.</li>
+<li>Suggestions to add specific paragraphs to the existing Security BCP rather than creating a new document or delaying the BCP, focusing on implementer guidance and security implications.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>OAuth 2.1 Updates:</strong>
+<ul>
+<li>Aaron Parecki presented on the ongoing work and current status.</li>
+<li><strong>Recent Updates:</strong> Mandatory TLS for redirect URIs (except loopback), consolidated TLS language, extensive editorial clarifications, normative text moved from security considerations into main body, refresh token guidance aligned with Security BCP.</li>
+<li><strong>Implicit Flow Clarification:</strong> A new section clarifies that OAuth 2.1 removes the <em>OAuth</em> implicit flow (issuing tokens from the authorization endpoint) but does not preclude OpenID Connect's use of <code>id_token</code> as a response type.</li>
+<li><strong>Remaining Work:</strong> More review feedback, normative text extraction, expanding the &quot;differences from OAuth 2&quot; section, and addressing open GitHub issues.</li>
+<li><strong>Specific Issues Discussed:</strong>
+<ul>
+<li><strong><code>iss</code> (Issuer) Response Parameter (RFC 9207):</strong> Now an RFC, discussion centered on whether to integrate it into 2.1.
+<ul>
+<li>Mike Jones and Daniel Fathauer suggested providing brief guidance and examples within 2.1, referencing RFC 9207 for full details and corner cases.</li>
+<li>Vittorio noted its utility for earlier verification in the response.</li>
+</ul>
+</li>
+<li><strong>Access Token Lifetime:</strong> RFC 6750 implies tokens &quot;must&quot; have a limited lifetime, but this normative requirement was in security considerations and often ignored in practice.
+<ul>
+<li>Justin Richard argued it should be security advice (non-normative), as lifetime can be event-based or revoked, not just time-based, and allows for specific API key use cases.</li>
+<li>Vittorio and George Fletcher expressed concern about explicitly allowing &quot;forever&quot; tokens, emphasizing the need for robust revocation mechanisms and a &quot;sensible criteria&quot; for token validity.</li>
+</ul>
+</li>
+<li><strong>Redirect URI Methods for Native Apps:</strong> The Native Apps BCP (now part of 2.1) requires ASes to support all three methods (private URI schemes, HTTPS URLs, loopback interface), which conflicts with profiles like FAPI that prohibit less secure methods (e.g., private URI schemes).
+<ul>
+<li>Discussion favored removing the &quot;MUST support all three&quot; requirement.</li>
+<li>Suggestions included reordering the methods by security preference (HTTPS URLs first, loopback second, private URI schemes last) and adding context on their use and security implications.</li>
+</ul>
+</li>
+<li><strong>Client Definitions (Public/Confidential/Credentialed Clients):</strong> Discussion on clarifying the potentially confusing &quot;credentialed client&quot; term.
+<ul>
+<li>Justin Richard proposed collapsing core definitions back to &quot;public client&quot; (no secret) and &quot;confidential client&quot; (has a secret). The <em>method</em> of acquiring credentials and associated trust levels (e.g., static vs. dynamic registration) should be discussed as an orthogonal dimension.</li>
+<li>Vittorio raised concerns about redefining &quot;confidential client&quot; due to its historical implication of singleton applications and potential &quot;ripple effects&quot; on existing systems.</li>
+<li>General agreement on the need for clearer explanations of client types and trust models.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>D-Pop:</strong>
+<ul>
+<li><strong>Decision:</strong> Proceed with <code>application/dpop+jwt</code> media type registration.</li>
+<li><strong>Action Item:</strong> Brian Campbell to update the D-Pop draft based on media type discussion.</li>
+<li><strong>Decision:</strong> Target Working Group Last Call for D-Pop once updates are complete.</li>
+</ul>
+</li>
+<li><strong>Redirection Attacks:</strong>
+<ul>
+<li><strong>Decision:</strong> Incorporate description and implementer guidance on redirection attacks into the existing Security BCP, rather than making normative changes or creating a new document.</li>
+<li><strong>Action Item:</strong> Roman, Mike Jones, and others interested to draft initial text for the Security BCP, potentially discussing in side meetings.</li>
+</ul>
+</li>
+<li><strong>OAuth 2.1:</strong>
+<ul>
+<li><strong><code>iss</code> Response Parameter:</strong>
+<ul>
+<li><strong>Decision:</strong> OAuth 2.1 will include brief guidance for the <code>iss</code> parameter (RFC 9207), simple examples, and reference the RFC for full details and corner cases.</li>
+<li><strong>Action Item:</strong> Aaron Parecki to implement this guidance.</li>
+</ul>
+</li>
+<li><strong>Access Token Lifetime:</strong>
+<ul>
+<li><strong>Decision:</strong> No normative requirement for time-based access token expiry. The text will be rephrased as advice, guiding implementers on the importance of limiting token lifetime and having revocation mechanisms, acknowledging various models for achieving this.</li>
+<li><strong>Action Item:</strong> Aaron Parecki to update the draft accordingly.</li>
+</ul>
+</li>
+<li><strong>Redirect URI Methods for Native Apps:</strong>
+<ul>
+<li><strong>Decision:</strong> Reorder the list of redirect URI methods by security preference (claimed HTTPS URLs first, loopback second, private URI schemes last) and remove the normative &quot;MUST support all three&quot; requirement. Add contextual information on security implications.</li>
+<li><strong>Action Item:</strong> Aaron Parecki to update the draft accordingly.</li>
+</ul>
+</li>
+<li><strong>Client Definitions (Public/Confidential/Credentialed Clients):</strong>
+<ul>
+<li><strong>Action Item:</strong> This topic requires further asynchronous discussion on the mailing list or GitHub. Brian Campbell to file an issue for tracking. The general direction is to clarify existing definitions of public and confidential clients and discuss trust/credential acquisition as an orthogonal dimension.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Brian Campbell will update the D-Pop document and work towards Working Group Last Call.</li>
+<li>Roman and others will draft text on redirection attacks for the Security BCP.</li>
+<li>Aaron Parecki will incorporate the decisions regarding the <code>iss</code> parameter, access token lifetime, and redirect URI methods into the OAuth 2.1 draft.</li>
+<li>Further discussion on client definitions will proceed asynchronously on the mailing list and GitHub.</li>
+<li>The working group has two side meetings scheduled (Tuesday at 2 PM, Wednesday at 6 PM) and another official session on Thursday at the same time. Details for side meetings to be sent to the mailing list.</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 24 Mar 2022 13:30</p>
+<h1>oauth</h1>
+<h2>Summary</h2>
+<p>The oauth working group session covered three main topics: security vulnerabilities in the OAuth Device Code Flow, a proposed standard for Step-Up Authentication, and the current state and future needs for OAuth client libraries. A significant portion of the session was dedicated to understanding and addressing social engineering attacks against the Device Code Flow, including a live demonstration. Discussions also highlighted the challenges developers face when implementing OAuth and the need for better guidance and tooling. Finally, a recap of a side meeting on the OAuth 2.0 Security BCP re-affirmed the importance of PKCE, particularly for public clients.</p>
+<h2>Key Discussion Points</h2>
+<h3>Device Code Flow Exploits and Mitigations</h3>
+<p>Peter Castlemann, Philip Schippers, and Daniel Fett presented on social engineering exploits affecting the OAuth Device Code Flow (RFC 8628).</p>
+<ul>
+<li><strong>Vulnerability:</strong> The Device Code Flow is susceptible to phishing and social engineering attacks due to a &quot;gap&quot; in trust transfer between the consumption device (e.g., smart TV) and the authorization device (e.g., smartphone). Users are asked to manually transfer a code, creating an opportunity for an attacker to intercept or inject their own code.</li>
+<li><strong>Attack Pattern:</strong>
+<ol>
+<li>An attacker obtains a legitimate device code from the Authorization Server (AS) for a service.</li>
+<li>The attacker uses social engineering (e.g., phishing email, fake QR code, phone call) to trick a user into entering <em>the attacker's</em> code on the user's trusted authorization device.</li>
+<li>The user authenticates and authorizes the flow, unknowingly granting the attacker access to the service.</li>
+<li>The attacker retrieves tokens, gaining persistent access.</li>
+</ol>
+</li>
+<li><strong>Demonstration:</strong> Daniel Fett showcased a live phishing demo where a user attempting to log into a seemingly legitimate (but attacker-controlled) website scanned a QR code that, unknown to them, linked to a legitimate service (Nextcloud). The user authorized the login on their mobile wallet, and the attacker gained control of a Nextcloud session.</li>
+<li><strong>Current RFC 8628 Mitigations:</strong> The RFC suggests improved UI/UX and limiting token lifetimes. It also mentions proximity and device trustworthiness as considerations, but without strong guidance.</li>
+<li><strong>Proposed Mitigations/Improvements:</strong>
+<ul>
+<li>More concrete guidance on leveraging <strong>proximity</strong> (e.g., via Bluetooth) for secure context transfer, both for UX and backend risk mitigation.</li>
+<li>Deployment of <strong>content filtering</strong> solutions.</li>
+<li>Requiring <strong>additional metadata</strong> and <strong>token binding</strong> to prevent token exfiltration and lateral attacks.</li>
+<li><strong>Trusted devices</strong> policies, allowing only pre-registered/trusted devices in the flow.</li>
+<li>Exploration of <strong>secure QR codes</strong> (potentially related to FIDO/WebAuthn).</li>
+<li>Providing clear <strong>protocol selection guidance</strong> for engineers, indicating when Device Code Flow is appropriate and when more secure alternatives should be used.</li>
+<li><strong>Prioritizing non-textual code transmission (e.g., QR codes):</strong> Philip Schippers highlighted that textual entry of the verification URI (e.g., <code>example.com/device</code>) makes users vulnerable to phishing sites and guided social engineering attacks. Non-textual methods are less prone to such exploits.</li>
+</ul>
+</li>
+<li><strong>Future Direction:</strong> While WebAuthn and cross-device flows (potentially leveraging Bluetooth) offer a promising future for phishing-resistant authentication, there is a strong need to secure existing implementations and provide better guidance for current Device Code Flow deployments.</li>
+</ul>
+<h3>Step-Up Authentication</h3>
+<p>Vittorio Bertocci and Brian presented a proposal for a standard mechanism for Step-Up Authentication.</p>
+<ul>
+<li><strong>Problem:</strong> There is no standard, interoperable solution for scenarios where a Resource Server (RS) dynamically determines that the current authentication level of a user (represented by their access token) is insufficient for a requested action. This can occur due to dynamic policies, risk engines, or continuous authentication requirements, leading to clients repeatedly receiving &quot;service refused&quot; responses.</li>
+<li><strong>Proposal:</strong>
+<ul>
+<li>Introduce a new <code>www-authenticate</code> error code: <code>insufficient_user_authentication</code>.</li>
+<li>Allow the RS to specify desired authentication context class references (<code>acr_values</code>) in the challenge, similar to how <code>acr_values</code> is used in OpenID Connect.</li>
+<li>The client would then repeat the authorization request to the Authorization Server (AS), including the requested <code>acr_values</code> parameter.</li>
+<li>The AS, if it commits to this flow (indicated in its metadata), would attempt to comply with the requested <code>acr</code>, potentially requiring the user to perform additional authentication (e.g., MFA).</li>
+<li>The resulting access token would include an <code>acr</code> claim reflecting the new authentication level.</li>
+</ul>
+</li>
+<li><strong>Advantages:</strong> Provides an interoperable, low-overhead solution that reuses existing OAuth/OIDC extensibility mechanisms.</li>
+<li><strong>Discussion Points:</strong>
+<ul>
+<li>The <code>acr_values</code> parameter is multi-valued, consistent with OIDC semantics.</li>
+<li>The RS needing to care about authentication levels (beyond simple authorization scopes) is for its own internal authorization policies (e.g., reading vs. sending email with MFA).</li>
+<li>The proposal allows for simultaneous requests for higher <code>acr</code> and additional scopes.</li>
+<li>Concerns were raised about interoperability for <code>acr</code> values across different domains/Authorization Servers. While <code>acr</code> values are strings that require mutual understanding, some argued that this could be managed within federated ecosystems, not strictly limited to a single domain.</li>
+<li>The importance of <code>www-authenticate</code> and its proper parsing by clients was noted.</li>
+<li>The IANA registry for <code>authn</code> context classes (RFC 6711) was suggested as a potential resource for globally recognized <code>acr</code> values.</li>
+<li>The model addresses dynamic re-authentication needs, which are harder to convey through static scopes alone.</li>
+</ul>
+</li>
+</ul>
+<h3>OAuth Client Libraries</h3>
+<p>Daniel Fett discussed the current state of OAuth client libraries and proposed solutions for improvement.</p>
+<ul>
+<li><strong>Problem:</strong> There is a significant lack of good, modern, and universal OAuth client libraries. Many existing libraries are unmaintained, incomplete, vendor-specific, or fail to implement the latest security recommendations (e.g., PKCE). This forces developers to create custom implementations, leading to security vulnerabilities, developer frustration, and slow adoption of new standards.</li>
+<li><strong>&quot;Auth Configuration Hell&quot;:</strong> Without server metadata, developers must manually configure numerous endpoints and security parameters, making libraries less appealing.</li>
+<li><strong>Consequences:</strong> Fragmentation, slow adoption of new specs (e.g., <code>iss</code> parameter), increased development costs, and widespread security problems in custom code.</li>
+<li><strong>Proposed Solutions:</strong>
+<ol>
+<li><strong>Define a Goal/Profiles:</strong> The working group should define clear levels of support and mandatory features for OAuth client libraries, possibly based on existing profiles like OAuth 2.1 or FAPI. This would provide a target for library developers.</li>
+<li><strong>Make Server Metadata Mandatory:</strong> Require Authorization Servers to provide metadata (e.g., in OAuth 2.1). This enables client libraries to auto-configure, significantly reducing developer friction.</li>
+<li><strong>Conformance Tests:</strong> Establish conformance testing programs, similar to OpenID Connect's, to ensure libraries adhere to defined standards and profiles.</li>
+</ol>
+</li>
+<li><strong>Discussion Points:</strong>
+<ul>
+<li>While a &quot;universal&quot; library might be challenging given the contextual nature of OAuth, there's an &quot;80% use case&quot; for common flows (e.g., sign-in) that could be covered.</li>
+<li>IETF should not build libraries itself, but could bless or certify them.</li>
+<li>The OAuth protocol itself is complex, with multiple flows, making a single, comprehensive library difficult.</li>
+<li>Developers often want solutions specific to a provider (e.g., &quot;connect to GitHub&quot;), which vendor SDKs provide, but these often have poor OAuth implementations.</li>
+<li>There is broad agreement on the need for clearer guidance, quality standards, and testing to improve the security posture of OAuth implementations. Aaron Parecki expressed willingness to improve the <code>oauth.net/code</code> list to better highlight quality libraries.</li>
+<li>The idea of vendor collaboration to provide consistent documentation and discourage &quot;from scratch&quot; implementations was also raised.</li>
+</ul>
+</li>
+</ul>
+<h3>PKCE Security BCP Recap</h3>
+<p>Daniel Fett provided a recap of a side meeting discussion regarding the role of PKCE in the OAuth 2.0 Security BCP.</p>
+<ul>
+<li><strong>PKCE Importance:</strong> PKCE (Proof Key for Code Exchange) is essential for the Security BCP, providing CSRF protection and, critically, a protection layer for authorization codes.</li>
+<li><strong>Two Attack Types &amp; PKCE's Role:</strong>
+<ol>
+<li><strong>Direct Authorization Code Stealing/Usage (Public Clients):</strong> If an attacker steals an authorization code from a public client's authorization response, they can directly exchange it at the token endpoint to get tokens. PKCE is the <em>only</em> defense in this scenario because the attacker cannot provide the corresponding <code>code_verifier</code>.</li>
+<li><strong>Authorization Code Injection (Confidential Clients):</strong> For confidential clients, an attacker cannot directly use a stolen code due to client authentication. Instead, they inject the stolen code into a legitimate authorization flow initiated by the client. Both PKCE and the <code>nonce</code> parameter (in OIDC) prevent this by binding the authorization request to the token request.</li>
+</ol>
+</li>
+<li><strong>Conclusion:</strong> For public clients using <code>response_type=code</code>, PKCE is a <strong>MUST</strong> in the Security BCP because it is the sole defense against direct authorization code theft.</li>
+<li><strong>Discussion:</strong> Mike Jones volunteered to work with Daniel and other authors to refine the language in the Security BCP. There was a brief discussion about the nuances of <code>nonce</code> and <code>c_hash</code> in OIDC flows and whether they offer sufficient mitigation in some cases, but the general conclusion that PKCE is fundamental for public clients remains.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Device Code Flow:</strong> Peter Castlemann (with others) will take the feedback from the discussion, which indicates strong interest, to shape a response and explore potential additional implementation guidance, profiles, or alternative solutions. Interested parties are encouraged to reach out to Peter.</li>
+<li><strong>Step-Up Authentication:</strong> Vittorio Bertocci and Brian will update their draft proposal, taking into account the feedback received (e.g., clarifying domain interoperability, relationship to scopes/AMR), and resubmit a new version for further consideration by the working group. Reviewers (including Peter Castlemann and Philip Schippers) were identified.</li>
+<li><strong>OAuth Client Libraries:</strong> Daniel Fett will continue the discussion on the mailing list to gather more ideas and refine the proposals for defining library profiles, mandating metadata, and exploring conformance testing.</li>
+<li><strong>PKCE Security BCP:</strong> Daniel Fett, Mike Jones, and Aaron Parecki will collaborate to refine the wording in the OAuth 2.0 Security BCP to better explain the rationale for PKCE's &quot;MUST&quot; requirements, particularly distinguishing between different code theft/injection attack vectors and how various mitigations (PKCE, nonce, c_hash) apply.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussion on Device Code Flow security enhancements and alternatives.</li>
+<li>Advance the Step-Up Authentication draft.</li>
+<li>Further develop proposals for improving OAuth client libraries and their ecosystem.</li>
+<li>Refine the language and explanations in the OAuth 2.0 Security BCP concerning PKCE.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

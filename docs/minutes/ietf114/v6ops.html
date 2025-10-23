@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="v6ops.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-V6OPS-20220726-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 26 Jul 2022 14:00</p>
+<h1>v6ops Meeting Minutes - IETF 114</h1>
+<h2>Summary</h2>
+<p>The v6ops session featured presentations on several key IPv6 operational topics. Discussions included the unexpected behavior of Unique Local Addresses (ULAs) in dual-stack networks, a comprehensive measurement study on IPv6 Extension Header drop rates across the internet, proposed guidelines for enterprise IPv6 first-hop deployment, a framework for multi-domain IPv6-only networks, and valuable experience reports from Cisco.com and Alibaba Cloud on their large-scale IPv6 adoption journeys. Key challenges identified include vendor implementation inconsistencies, the complexity of large-scale transitions, and the ongoing need to drive IPv6 adoption in the face of persistent IPv4.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>IESG AD Welcome and Call for Candidates:</strong></p>
+<ul>
+<li>Warren Kumari (OPS AD) announced his third term is nearing its end and encouraged community members to consider running for the upcoming IESG cycle. He offered to chat with potential candidates about the role.</li>
+</ul>
+</li>
+<li>
+<p><strong>draft-broglio-v6ops-ula-unintended-behavior: ULA Unintended Behaviors (Nick Broglio)</strong></p>
+<ul>
+<li><strong>Problem:</strong> RFC 6724's default address selection policy prefers ULA addresses <em>below</em> IPv4 addresses. This is contrary to the common operational expectation that IPv6 is preferred if available in a dual-stack environment.</li>
+<li><strong>Consequence:</strong> In dual-stack networks using standard DNS (A and AAAA records for the same resource), ULA addresses are rarely, if ever, used, rendering them functionally useless despite being deployed.</li>
+<li><strong>Challenges:</strong> Workarounds (e.g., policy table adjustments) are heavy-weight, difficult to scale across diverse organizations, and problematic for legacy/embedded devices. Remnants of RFC 3484 (predecessor to 6724) are still found in actively deployed systems, indicating a long time to implement RFC changes.</li>
+<li><strong>Draft Goal:</strong> Codify and document this unexpected behavior to aid operational engineers, rather than proposing an immediate solution, given the long deployment cycles for RFC changes.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>Ted Lemon questioned if it's an &quot;operational problem&quot; if the behavior is documented in RFC 6724.</li>
+<li>Jen Linkova argued that if IPv6 (ULA) is never used, its functionality in a dual-stack setup is unverified, suggesting the draft should be more prescriptive (e.g., &quot;don't use ULA&quot; or &quot;use GUA&quot;).</li>
+<li>Mark Andrews stated that RFC 6724 included instructions for device vendors to prioritize ULA when communicating with other ULA, implying vendor implementation failure.</li>
+<li>Kevin Juniper noted that ULA is still relevant for lab environments and small deployments where obtaining Global Unicast Addresses (GUA) might not be feasible or desired.</li>
+<li>Eric Vyncke (Cisco) challenged the premise that enterprises <em>primarily</em> use ULA, though acknowledged it's a frequent inquiry.</li>
+</ul>
+</li>
+<li><strong>Conclusion:</strong> Continued discussion on the mailing list was requested.</li>
+</ul>
+</li>
+<li>
+<p><strong>draft-colitti-v6ops-extension-header-measurements: IPv6 Extension Header Measurements (Lorenzo Colitti)</strong></p>
+<ul>
+<li><strong>Objective:</strong> Update on measurements of IPv6 Extension Header (EH) drop rates across the public internet using a cooperative testbed of 21 VMs globally.</li>
+<li><strong>Methodology:</strong> Traceroute-like technique testing various EH types (Hop-by-Hop, Destination Options, Routing Headers, Fragment Headers, IPsec AH/ESP, No Next Header, Ethernet) with UDP and TCP, varying EH sizes.</li>
+<li><strong>Key Findings:</strong>
+<ul>
+<li><strong>Hop-by-Hop Options (HBHO)</strong>: Very low pass rate (10% for 8 bytes, 3% for 256 bytes), confirming unreliability over the public internet.</li>
+<li><strong>Destination Options (DO)</strong>: Mixed results. Acceptable for small sizes (up to 24 bytes), but significant drops observed at 32 bytes and larger (e.g., 64 bytes). Differences between UDP and TCP were noted, with UDP generally performing better for larger sizes.</li>
+<li><strong>Routing Headers (RH)</strong>: Types 2, 3, 5, 6 showed good pass rates. Types 0, 1 (deprecated) and 4 (Segment Routing Header, SRH) were unreliable, which is expected for deprecated types and potentially &quot;good from a security point of view&quot; if SRH is dropped.</li>
+<li><strong>Fragment Headers</strong>: Non-atomic fragments were &quot;not bad&quot; but not fully reliable. Atomic fragments with M-flag=0 had a 50% chance of passing.</li>
+<li><strong>IPsec (Authentication Header, AH; Encapsulating Security Payload, ESP)</strong>: All passed reliably.</li>
+<li><strong>No Next Header / Ethernet</strong>: All passed reliably.</li>
+</ul>
+</li>
+<li><strong>Conclusions:</strong> HBHOs are generally unusable. Small Destination Options (e.g., 40 bytes) show promise. IPsec EHs work well.</li>
+<li><strong>Next Steps:</strong> Continue &quot;wild&quot; measurements on random prefixes, improve the algorithm for attributing drops to specific Autonomous Systems (AS).</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>Nalini Elkins (Cisco) confirmed collaboration, noting that router bugs might contribute to HBHO drops and called for more localized testing.</li>
+<li>Jen Linkova asked about the size of Routing Headers tested (single segment), suggesting that larger RHs might see similar size-dependent drops as DO. She also proposed that TCP/UDP differences in DO drops could be due to the overall IPv6 header chain length. She emphasized that ESP's success proves EHs can work when operationally needed.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>draft-tseng-v6ops-enterprise-first-hop-guideline: Guidelines for Enterprise IPv6 First Hop Deployment (Chungli Tseng)</strong></p>
+<ul>
+<li><strong>Motivation:</strong> Over 30 RFCs on Neighbor Discovery (ND) optimization create complexity for enterprise deployments. A consolidated guideline, similar to RFC 1999 for IPv6 security, is needed.</li>
+<li><strong>Draft Updates:</strong> Clearly separates the <em>causes</em> of ND issues from their <em>consequences</em>.</li>
+<li><strong>Root Causes of ND Issues:</strong>
+<ol>
+<li>Multicast (leading to performance and reliability problems).</li>
+<li>Untrustworthy hosts (security concerns).</li>
+<li>ND Cache Entry (NCE) installed on VMs (causes operational issues).</li>
+</ol>
+</li>
+<li><strong>Solutions:</strong> The draft reviews existing RFCs and maps them to the issues they solve. A key lesson is that <strong>isolation</strong> is a common theme across solutions.</li>
+<li><strong>Four Isolation Methods Identified:</strong> Link, Subnet, GUA (using L-bit=0 to force router forwarding for GUA), and Proxy.</li>
+<li><strong>Guidance:</strong> The draft outlines four &quot;meaningful combinations&quot; of these isolation methods, ranked by strength. For each combination, it describes applicability, applicable scenarios, entry requirements, and remaining issues.</li>
+<li><strong>Request:</strong> Seeking Working Group (WG) adoption.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>Jen Linkova questioned the effectiveness of &quot;GUA isolation&quot; (L-bit=0) if hosts are untrustworthy, as hosts might ignore the L-bit and still attempt direct communication. Chungli clarified that this method is for specific scenarios and a stronger isolation strategy would be needed for untrusted hosts.</li>
+<li>Jen also raised concerns about relying on &quot;proxy neighbor discovery&quot; given its experimental RFC status and potential lack of widespread implementation.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>draft-huang-v6ops-multi-domain-ipv6-only-framework: A Framework of Multi-Domain IPv6-Only Network (Song Huang)</strong></p>
+<ul>
+<li><strong>Objective:</strong> Propose a framework for multi-domain IPv6-only networks to address challenges in partial deployments and ensure efficient IPv4 service delivery over an IPv6-only core.</li>
+<li><strong>Challenges Addressed:</strong>
+<ul>
+<li>Partial IPv6-only deployments (some domains IPv6-only, others not).</li>
+<li>Layer 3 traffic winding with stateful v4/v6 gateways.</li>
+<li>Loss of original IPv4 address visibility due to encapsulation.</li>
+<li>Inconsistent data formats (translation vs. encapsulation) leading to complex conversion gateways.</li>
+</ul>
+</li>
+<li><strong>Framework Concept:</strong>
+<ul>
+<li>Each Provider Edge (PE) device is identified by an IPv6 mapping prefix.</li>
+<li>PEs advertise associated IPv4 prefixes (local routing tables/address pools).</li>
+<li><strong>Mapping Rule:</strong> Defines the relationship between an IPv4 address block and an IPv6 mapping prefix. These rules are exchanged across domains (e.g., via BGP extensions).</li>
+<li><strong>IPv4 Embedded IPv6 Packet:</strong> Ingress PEs convert IPv4 source/destination addresses into IPv6 addresses by appending them to the appropriate IPv6 mapping prefix. Egress PEs use these rules to reverse the process.</li>
+<li>This provides prefix-level mapping without maintaining user-specific states.</li>
+</ul>
+</li>
+<li><strong>Architecture:</strong> PE devices have an &quot;Adapter&quot; function with a Rule Management Layer, Mapping Rule Database, and Forwarding Layer.</li>
+<li><strong>Field Trial:</strong> Conducted between two Chinese cities, demonstrating functionality, scalability, and integration with existing approaches like 464XLAT in a multi-domain production environment.</li>
+<li><strong>Request:</strong> Seeking WG adoption.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>Jen Linkova questioned vague requirements like &quot;beneficial for wider IPv6 adoption,&quot; and the inclusion of SRv6 as a requirement (potentially too prescriptive). She also challenged &quot;no additional security compromises,&quot; suggesting risk assessment allows for acceptable risks. Song Huang clarified that a v6-only core benefits adoption, SRv6 is a strong candidate for operators like China Telecom, and the framework minimizes new security risks by not maintaining user-related states.</li>
+<li>Ron Bonica (Juniper) asked for clarification on the intended network scope and the necessity of SRv6 as a requirement for all networks. Song suggested SRv6 could be a separate discussion.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>IPv6 Domain Transition - Lessons from Cisco.com (Emeri Nalerio)</strong></p>
+<ul>
+<li><strong>Experience:</strong> Shared insights from leading the IPv6 transition for Cisco.com.</li>
+<li><strong>Scale:</strong> Involved 33 top-level teams, 800+ external web applications, and required 69 director/senior manager authorizations. Ultimately enabled $40 billion of Cisco's annual run rate.</li>
+<li><strong>Key Challenges:</strong>
+<ul>
+<li><strong>Shared Infrastructure:</strong> Multiple teams often share the same underlying network infrastructure, making decisions about IPv6 transition complex and requiring widespread buy-in.</li>
+<li><strong>Organizational Evolution:</strong> Business units and teams evolve and change leadership, but their underlying infrastructure often remains the same.</li>
+<li><strong>Global Configurations:</strong> Global configurations in shared infrastructure necessitate a strategic decision: either bifurcate configurations for individual teams or convince all affected teams to transition simultaneously (&quot;eat the elephant whole&quot;).</li>
+</ul>
+</li>
+<li><strong>Recommendations:</strong>
+<ul>
+<li><strong>End-to-End Tracing:</strong> Trace the IP address flow from origin to destination across all systems to identify integration points and risks.</li>
+<li><strong>Deliberate Decisions on Global Configurations:</strong> Carefully plan how to manage global configurations (e.g., traffic profiles) to allow for incremental transitions or coordinated &quot;big bang&quot; approaches.</li>
+<li><strong>Transition Mechanisms:</strong> Define clear transition mechanisms at every point where IPv6 traffic might interact with non-IPv6-enabled systems.</li>
+<li><strong>Manage Application Team Expectations:</strong> Be aware that Happy Eyeballs behavior can cause inconsistencies during application release testing, making application teams nervous. Education is key.</li>
+<li><strong>Involve Non-IT Decision Makers:</strong> Crucial for budget allocation and aligning the transition with business objectives (e.g., tying to revenue).</li>
+</ul>
+</li>
+<li><strong>How v6ops Can Help:</strong> Develop recommendations for managing shared network infrastructure and global configurations, identify key applications (revenue-driving) to prioritize, and offer guidance on integration points.</li>
+<li><strong>Discussion:</strong> Chungli Tseng asked about the most challenging aspect. Emeri highlighted the importance of partnering with non-IT teams and leveraging existing internal relationships to secure the necessary buy-in and sign-offs, as this was critical for Cisco's success.</li>
+</ul>
+</li>
+<li>
+<p><strong>IPv6 Practicing in Alibaba (Davison Li)</strong></p>
+<ul>
+<li><strong>Timeline:</strong> Alibaba has progressed from research (2012-2017) to small-scale commercial adoption (2018-2019), and now to full IPv6 deployment (2020-present).</li>
+<li><strong>Current Status:</strong> Reached 1 billion active IPv6 users globally, with over 90% IPv6 traffic ratio in recent months. The next goal is to offer IPv6-only capabilities for users with IPv6-only networks.</li>
+<li><strong>Motivations:</strong> Rapidly increasing IPv4 address prices (e.g., $15 per address), government mandates in China, and leveraging IPv6 innovations (e.g., SRv6 for SDN).</li>
+<li><strong>Challenges:</strong> Ensuring stability, accessibility, and risk control for large-scale online services; coordinating numerous business units and engineers; an initially unprepared end-to-end IPv6 network (e.g., 75% TCP success rate in 2018); and &quot;broken Wi-Fi&quot; routers.</li>
+<li><strong>Technical Considerations for Smooth Migration:</strong>
+<ul>
+<li><strong>Quality Measurement:</strong> Utilizing Application Performance Management (APM) to monitor IPv6 network performance (TCP success rate, RTT, coverage). Performance has been optimized to be comparable or better than IPv4.</li>
+<li><strong>Progressive Rollout:</strong> Employing A/B testing and pushing configurations to specific user groups (geolocation, OS, ISP). Implemented an improved Happy Eyeballs strategy (combining DNS responses, server-pushed priority lists, maintaining state for IP/port/protocol tuples).</li>
+<li><strong>Application Behavior:</strong> Prioritizing IPv6 enablement for CDN domains and critical first-page resources. Apps pre-pool IPv6 addresses. Initial 30-minute penalty for IPv6 failures evolved to concurrent IPv4/IPv6 connection attempts with a 300ms delay.</li>
+<li><strong>IPv6 MTU:</strong> Initially set to a conservative 1280 bytes (TCP MSS 1240) due to middlebox issues, now testing larger MTU values in CDN environments.</li>
+</ul>
+</li>
+<li><strong>5-Year Comparison (2017 vs. Now):</strong>
+<ul>
+<li><strong>Good News:</strong> Fully connected IPv6 production network, &gt;90% penetration in LTE, IPv6 performance matching/exceeding IPv4, dual-stack proven as the best adoption approach.</li>
+<li><strong>Bad News:</strong> Persistent &quot;last-mile&quot; user-side network issues, continued high IPv4 address prices, dual-stack longevity prolonging IPv4 reliance. Noted the lack of a community-wide IPv4 sunset plan.</li>
+</ul>
+</li>
+<li><strong>Conclusion:</strong> IPv6 is mature, Alibaba achieved large-scale adoption, emphasizing stability and risk control. Dual-stack is the proven approach. Suggested the community consider an IPv4 &quot;countdown timer&quot; to incentivize IPv6-only adoption.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>Nalini Elkins asked about Alibaba's stance on an IPv4 sunset. Davison clarified it's an observation, suggesting a sunset could start from user-side access networks.</li>
+<li>Mike Ackermann inquired about the &quot;IPv4 pricing&quot; motivation, confirming Alibaba's need to purchase IPv4 blocks for new services at high costs ($15 per address). He also asked about other IPv6 capabilities; Davison mentioned leveraging SRv6 for SDN and traffic scheduling, though it's not the primary urgent driver for adoption currently.</li>
+<li>Fernando Gont asked about plans for v4-to-v6 translation for future IPv6-only applications to serve remaining IPv4-only users, which was not explicitly covered in the presentation.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Closing Remarks:</strong></p>
+<ul>
+<li>The chairs formally thanked Fred Baker for his 17 years of dedicated service as a v6ops co-chair.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>No formal WG decisions were made during this session regarding document adoption or specific technical paths.</li>
+<li><strong>Action Item:</strong> All presenters and participants are encouraged to continue discussions on the mailing list for their respective drafts, especially for those seeking Working Group adoption.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>draft-broglio-v6ops-ula-unintended-behavior:</strong> Continue mailing list discussion.</li>
+<li><strong>draft-colitti-v6ops-extension-header-measurements:</strong> Continue &quot;wild&quot; measurements, refine AS drop attribution algorithm.</li>
+<li><strong>draft-tseng-v6ops-enterprise-first-hop-guideline:</strong> Seek WG adoption after further mailing list discussion and review.</li>
+<li><strong>draft-huang-v6ops-multi-domain-ipv6-only-framework:</strong> Refine the document, seek WG adoption, and continue mailing list discussion.</li>
+<li><strong>General:</strong> The community is encouraged to consider the implications of a prolonged dual-stack environment and the potential benefits of an IPv4 &quot;countdown timer&quot; to accelerate IPv6-only adoption. Enterprise IPv6 transition efforts should proactively engage non-IT decision-makers and carefully manage shared infrastructure challenges.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="acme.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-ACME-20220321-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2022 12:00</p>
+<h1>acme Session Minutes</h1>
+<h2>Summary</h2>
+<p>The acme working group meeting at IETF 113 covered updates on existing drafts, including two documents stuck in ISG evaluation. Presentations were given for &quot;DTN Node ID,&quot; &quot;ACME Renewal Information (ARI),&quot; &quot;ACME Integrations,&quot; and &quot;ACME Subdomains.&quot; Key discussions included proposed changes to DTN Node ID for algorithm agility and alignment with existing RFCs, and the introduction of a &quot;renewal complete&quot; endpoint in ARI. Decisions were made to move &quot;ACME Integrations&quot; and &quot;ACME Subdomains&quot; towards Working Group Last Call, and to issue a Call for Adoption for the &quot;ACME Renewal Information&quot; draft.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>ACME Authority Token / ACME Authority Token TN off list:</strong> Both drafts remain in ISG evaluation with &quot;Revised ID Needed&quot; for several months. Roman asked how to expedite the process, suggesting authors (John Peterson) be pinged.</li>
+<li><strong>DTN Node ID (draft-ietf-acme-dtn-node-id):</strong>
+<ul>
+<li>Version -09 was recently published.</li>
+<li>Referenced DTN documents are now published RFCs.</li>
+<li>Major changes include:
+<ul>
+<li>Improved explanation of DTN terminology.</li>
+<li>Separation of tokens from the challenge identifier to avoid overlaps and align with RFC 8823 (email validation).</li>
+<li>Introduction of algorithm agility for the key authorization digest: the ACME server will provide a list of acceptable algorithms, from which the client chooses one. SHA-256 remains mandatory to be present in this list.</li>
+</ul>
+</li>
+<li>A known issue is that the referenced hash algorithms registry is still in Auth48.</li>
+<li>Reviewers were requested.</li>
+</ul>
+</li>
+<li><strong>ACME Client:</strong> No traffic on the mailing list since the last IETF. Kathleen noted that upcoming supply chain security efforts (S-BOMs, code signing signatures) are expected to drive new traffic. She specifically mentioned Sigstore's workflow, which currently differs from ACME, and expressed intent to collaborate to see if ACME can be used to further secure Sigstore.</li>
+<li><strong>ACME Renewal Information (ARI) (draft-ietf-acme-renewal-info):</strong>
+<ul>
+<li>Version -02 is pending publication after IETF 113 due to a publication freeze.</li>
+<li><strong>URL Construction:</strong> Now based on the <code>cert id</code> ASN.1 sequence from OCSP (certificate serial number, hashes of issuer name/key, hash algorithm), encoded as DER, then base64url, with padding stripped. This forms the path component for GET requests.</li>
+<li><strong>Renewal Complete Endpoint:</strong> A new utility added, allowing clients to send a POST as GET request to inform the ACME server that a certificate has been renewed and replaced.
+<ul>
+<li>Payload includes the <code>cert id</code> and metadata (e.g., <code>replaced: true</code>).</li>
+<li>Must be signed by the original subscriber's key.</li>
+<li>Benefits: Avoids sending renewal reminders, allows servers to stop polling, enables safer revocation during mass re-issuance events.</li>
+</ul>
+</li>
+<li><strong>Open Questions:</strong>
+<ul>
+<li>What other metadata might be useful in the &quot;renewal complete&quot; update (e.g., serial/cert ID of the replacement cert)? This could help with complex certificate mappings.</li>
+<li><strong>Explanation URI:</strong> The draft proposes including a URL in the renewal info response that points to a human-readable web document explaining the rationale behind the suggested renewal window (e.g., dynamic load balancing, mass re-issuance events). This is intended for human consumption, not mechanical processing.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>ACME Integrations (draft-ietf-acme-integrations):</strong> Version -06 mainly included editorial changes, aligning terminology (e.g., DNS), and adding missing acronyms. Authors believe the document is ready for Working Group Last Call.</li>
+<li><strong>ACME Subdomains (draft-ietf-acme-subdomains):</strong> This document was adopted before the last IETF and split from &quot;Integrations.&quot; Terminology was fixed to be consistent with ACME, and JSON examples for order parts were clarified, specifically changing <code>domainNamespace</code> to <code>subdomains</code> for authorization. Authors believe the document is ready for Working Group Last Call.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Action Item:</strong> Roman to ping John Peterson regarding the status of &quot;ACME Authority Token&quot; and &quot;ACME Authority Token TN off list&quot; documents in ISG evaluation.</li>
+<li><strong>Action Item:</strong> Brian to seek more volunteers for reviewing <code>draft-ietf-acme-dtn-node-id</code>. Alexei volunteered during the meeting.</li>
+<li><strong>Decision:</strong> The ACME Working Group chairs will issue a Call for Adoption for <code>draft-ietf-acme-renewal-info</code> (ARI) after IETF 113, once version -02 is published. This call will combine a request for review of the updated draft with the adoption decision.</li>
+<li><strong>Decision:</strong> <code>draft-ietf-acme-integrations</code> will proceed to Working Group Last Call after version -07 is published.</li>
+<li><strong>Decision:</strong> <code>draft-ietf-acme-subdomains</code> will proceed to Working Group Last Call after version -03 is published, likely concurrently with <code>draft-ietf-acme-integrations</code>.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Publication of <code>draft-ietf-acme-renewal-info-02</code>.</li>
+<li>Chairs to initiate a Call for Adoption for <code>draft-ietf-acme-renewal-info</code>.</li>
+<li>Publication of <code>draft-ietf-acme-integrations-07</code> and <code>draft-ietf-acme-subdomains-03</code>.</li>
+<li>Chairs to initiate Working Group Last Calls for <code>draft-ietf-acme-integrations</code> and <code>draft-ietf-acme-subdomains</code>.</li>
+<li>Depending on the success of these Last Calls and the adoption of ARI, the working group may review its future work content.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

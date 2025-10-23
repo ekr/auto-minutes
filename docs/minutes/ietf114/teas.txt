@@ -1,0 +1,120 @@
+**Session Date/Time:** 25 Jul 2022 14:00
+
+# teas
+
+## Summary
+
+The TEAS working group session covered the status of existing working group documents, including several nearing or undergoing last call, and presentations on various new and updated drafts. Key discussions revolved around YANG model updates for TE types, BVC to packet/optic integration, network slice NBI YANG, NRP policy and scalability YANG models, end-to-end and hierarchical network slicing, SR-based hierarchical slices, generalizing IETF network slicing, and applications/realizations of IETF network slices in 5G networks. Several documents are progressing towards Working Group Last Call (WGLC), and a recurring theme was the need for coordination and potential merging of overlapping drafts, especially within the network slicing and NRP space. The IESG provided guidance on lightweight update processes for small changes.
+
+## Key Discussion Points
+
+*   **Administrative Remarks**: Chairs Lou Berger and Pawan Birham welcomed attendees to the hybrid session, reminded of the Note Well, emphasized professional conduct, and outlined the collaborative note-taking process.
+*   **Working Group Document Status**:
+    *   **Documents in RFC Queue**: `gmpls-extensions-shared-mesh-production` (RFC 8776 bis)
+    *   **Post-Last Call**: One document (editor Adrian) had technical changes during last call; requires further review time. `pcc-use-cases` is nearing submission.
+    *   **ACT and Performance Monitoring (Slide 3)**: Ready for last call, but authors (Drew) are facing XML validation issues, particularly with imported models. Seeking working group help for YANG tooling setup or experience with `t-models`.
+    *   **Enhanced VPN Framework (Slide 7)**: One editorial revision away from requesting WGLC. Working group encouraged to review.
+    *   **GMPLS Controller Interwork (Slide 8)**: No changes since last session, no open issues reported. Authors (Yali) requested working group review for WGLC consideration.
+    *   **IETF Network Slices (Slide 10)**: Ready for last call (Adrian). Several changes made; working group encouraged to review and propose any further changes.
+    *   **TE Service Mapping YANG (Slide 16)**: Blocked by the `essa-policy-yang` document, which needs an update. Dependency should be straightforward (reference to underlay tunnel or policy via key/color/tag). Pawan Birham will work with authors to resolve this.
+    *   **Path Computation YANG (Slide 19)**: Several last call comments addressed in a recent revision; a few pending items will be in a subsequent revision. Expectation is for a short follow-up WGLC.
+    *   **YANG TE (Slide 23)**: Revision 30 addressed many last call comments. A sticky issue remains regarding the management of identities (IANA vs. local). Once resolved, another revision will be published, followed by a short WGLC.
+*   **`ietf-te-types-updates` (Intal Biffi)**:
+    *   **Motivation**: Minor updates (new typedef, new grouping) to RFC 8776 to support TE Tunnel model and other WGLC documents.
+    *   **Technical Issue: Encoding Switching Types**: Proposal to move a common grouping for encoding switching types from `ietf-te` module to `ietf-te-types` to avoid out-of-sync definitions and make it broadly available without mandating `ietf-te` module import. Argument: does no harm, helps future users.
+    *   **Technical Issue: Identifier Union**: Proposal to update `t-types` to allow node IDs (e.g., dotted quad) and TTP IDs (binary) to be unions with URI, to address deployment issues where different identifier types are used. Tarek raised concerns about mixed identification in a single topology and parsing reliance.
+    *   **Procedural Issue: Lightweight Updates**: Discussion on the best approach for small updates to existing RFCs (bis vs. new RFC for additions). John Scudder (IESG) suggested that for well-contained small change sets, IESG is encouraging review *only* of the changes, not the entire document, to facilitate faster progression.
+*   **`b-v-p-c-to-packet-optic-integration` (Intal Biffi)**:
+    *   **Updates**: Generalized description of SRT path discovery, applicable to any technology using the TE Tunnel model. SRT description covers SR-MPLS and SRv6. Inter-domain BGP-LU deemed out of scope.
+    *   **LAG Analysis**: Added analysis for Link Aggregation (LAG) in intra-domain links. Noted LLDP configuration implications, requiring LLDP snooping on lag *members* (black packets) vs. group (red packets). Suggestions: disable LAG on aggregated ports or use Link Aggregation TLV.
+    *   **Multi-domain Procedure Update**: Updated procedure for IP link over optical with LAG. MDSC explicitly tells the Packet PSC to configure a link as an IP link or member of a LAG, leveraging IP topology rewrite.
+    *   **Open Issues**: Need for API call examples (JSON encoding) vs. document size. Continue working on technology-specific augmentation for SRT.
+    *   **Feedback**: Pawan noted that the document needs to be more technology-agnostic in its descriptions, with technology-specific examples used only for deviations.
+*   **`network-slice-nbi-yang` (Reza Rokui)**:
+    *   **Updates**: Aligned STP connectivity construct with the framework document, reused common VPN models, aligned choices for connectivity services (P2P, P2MP, Any-to-Any), added clarifying examples, removed 5G examples (moved to specific 5G draft).
+    *   **Open Issues**:
+        1.  **Policy SLO Inheritance/Update**: How to define, configure, update, and inherit policies (e.g., "gold policy" with one attribute changed) across network slice, group, and connection layers.
+        2.  **Complex IP Header Matching**: Whether to allow complex combinations of IP headers for matching (e.g., using ACL-type references).
+        3.  **Technology-Agnostic Protocol Definition**: Balancing generic attribute/value and opaque definitions with specific protocol details for interoperability (e.g., for OSPF/BGP). Lou suggested using a `choice` statement for future technology-specific augmentations.
+        4.  **Abstract Topology**: Need to add topology information to the model, similar to V2N in ICN. Discussion on whether this is needed and how to maintain technology-agnosticism. Pawan suggested leveraging existing ways of representing customized topology and referencing it in service requests.
+*   **`nrp-policy-yang` (Tarek Saad)**:
+    *   **Updates**: Added `target-node` as a state-only container describing a filtered topology (defined in `ietf-network-slices` draft). Filter can be used for overriding reservations. Two ways to represent filtered topology: reference to a created topology or pointers to elements in native topology.
+    *   **Next Steps**: Engage with authors of `wdt-teas-nrp-yang` for collaboration. Add JSON instances of the data model for examples.
+    *   **Feedback**: Adrian sought clarification on "control plane only" partitioning (mode B), where partitioning happens logically in a controller but the data plane is unaware. Tarek clarified it refers to bandwidth bookkeeping and reservation management.
+*   **`nrp-yang` (Bo Wu)**:
+    *   **Updates**: Added a section to summarize NRP modeling requirements, drawing from recently adopted NRP-related drafts (`nsip-mpls`, `nrp-scalability`). Components include partition mode, control plane (RTP, distributed, MT, FlexAlgo), data plane (selector, PHB, RPPID), topology (customized, filter rules).
+    *   **Model Usage**: Aligns with NS Framework definition (NRP model as network configuration interface model).
+    *   **Summary of Components**: NRP model should cover configuration and monitoring. Configuration includes control plane/data plane partition, topology, resource reservation, and NRP policy.
+    *   **Feedback**: Lou noted a tight alignment needed between this draft and the `nrp-policy-yang` draft. Bo agreed that merging the two into one document is likely needed, covering filter and customized topology options.
+*   **`end-to-end-network-slice` and `hierarchical-network-slice` (Jianye Liu)**:
+    *   **Problem**: Elaborate on multi-domain and hierarchical slice scenarios briefly mentioned in the framework.
+    *   **End-to-End NS**: Multi-domain NRP achieved by concatenating intra-domain NRPs (similar to inter-domain VPN). Requires network controller for concatenation, ingress node for steering, and information carried in packets (end-to-end NRP ID or list of intra-domain IDs).
+    *   **Hierarchical NS**: First-level slice contains fine-granular slices. Discussed considerations for forwarding plane (resource partitioning, representation), data plane (hierarchical NRP IDs), control plane (distributing attributes, optimization), and management plane (independent lifecycle, relationships/constraints).
+    *   **Feedback**: John Scutter questioned concatenating NRPs directly vs. concatenating IETF network slices per transport domain, which might be more modular and allow different policies. Lou Berger stressed that if the content can be merged into existing, progressing documents (like the framework), it is preferable to having standalone drafts.
+*   **`sr-based-hierarchical-slices` (Bin Ye)**:
+    *   **Proposal**: Two-level hierarchical IETF network slice solution based on Segment Routing. Level 1 associated with Flex Algo (dedicated sub-interfaces, prefix/SRv6 locators for steering). Level 2 associated with SR policies under Level 1 NRP (queues, RPIID for steering).
+    *   **Resource Partitioning**: Hierarchical bandwidth guarantees (Layer 3 sub-interface for L1, PBR/queues for L2).
+    *   **Traffic Forwarding**: Illustrated with examples, showing encapsulation with Flex Algo for L1 and additional NRP ID for L2.
+    *   **Feedback**: Lou suggested presenting this in the SPRING WG as well, given its SR focus.
+*   **`generalize-ietf-network-slicing` (Jie Hu)**:
+    *   **Context**: Emerging requirements for new capabilities/functionality of IETF NS beyond 5G.
+    *   **NRP and Topology**: NRP needs to be associated with topology. Questioned relation between IETF NS and multi-topology/Flex Algo (independent vs. special case of NRP).
+    *   **NRP Resource Extension**: Extending NRP scope beyond SLA/SRE to guaranteed latency, network functions (e.g., security), and virtualized resources. Questions: relation between DetNet and IETF NS; can security services be seen as IETF NS/NRP?
+    *   **NRP for Multiple Connectivity Constructs**: Example of VLL mapping to NRP; question on bandwidth allocation for shared NRP.
+    *   **Generalization of IETF NS Application**: Extending NS use from 5G/metro/backbone to campus/DC/SD-WAN and supporting various IP tunnels (VXLAN, GRE).
+    *   **Feedback**: Lou noted the focus seems on static/dedicated resources. Suggested proposing text to `network-slices` and `nsip-mpls` documents.
+*   **`application-of-ietf-ns-in-5g` (Reza Rokui)**:
+    *   **Goal**: Combine three previous drafts into one, addressing various applicability and use cases of IETF NS in 5G. Align with 3GPP 541.
+    *   **Framework**: IETF NS addresses connectivity within RAN, core, or between them in 5G networks. Single 5G NS may involve multiple IETF NS (e.g., depending on RAN deployment like Cloud RAN).
+    *   **Open Issues**:
+        1.  **Terminology**: "5G end-to-end network slice" vs. "5G network slice". Julian proposed "5G network slice" for consistency with 3GPP and BBF TR522.
+        2.  **Access Network**: "Access Network" vs. "Radio Access Network". Julian suggested "Radio Access Network."
+        3.  **Scope**: Overlap with BBF TR522. Julian suggested IETF send liaison to BBF.
+    *   **Feedback**: Lou emphasized that IETF NS serves beyond 5G (e.g., broadband, wireline) and the document should focus on *mapping* 5G requirements to IETF NS, not defining IETF NS. Tarek supported the idea of transport network being part of the slicing story.
+*   **`realization-of-ietf-ns-for-5g` (Christoph Saarkozy)**:
+    *   **Goal**: Assess how IETF NS can be implemented using current IP/MPLS technologies for 5G services with minimal network changes (green/brownfield). Provides a blueprint.
+    *   **Terminology**: Uses 5G terminology (RAN, CN, TN) where Transport Slice refers to IETF NS.
+    *   **Content**: Overview of 5G networking, methods for handling traffic/cooperation, realization using current IP/MPLS. Defined 5G QoS models (5QI unaware/aware), capacity planning/management.
+    *   **Mapping Options**: Between 5G slice and transport slice (1:1, 1:N, different for UP/CP).
+    *   **Orchestration**: Differentiated deployment for first vs. subsequent slices.
+    *   **Realization Model**: Granular control at edge/service delivery points, coarse QoS control in transport.
+    *   **Handoff Methods**: Discussed VLAN and IP-based handoff, with plans for more.
+    *   **QoS Mapping**: How to map 5G 5QI to transport network QoS.
+    *   **Capacity Planning**: Shortest path, fixed path reservations, dynamic bandwidth reservations.
+    *   **Conclusion**: Existing IETF technologies provide a good foundation.
+    *   **Feedback**: Adrian found the document detailed but questioned if sections 3 (5G overview) and 5 (5G QoS) are suitable IETF material, suggesting they are more like a white paper to avoid conflicting with 3GPP. Also asked to discuss limitations of using default NRPs. Lou reiterated using framework-consistent terminology, avoiding "transport slice."
+
+## Decisions and Action Items
+
+*   **ACT and Performance Monitoring**: Authors to seek help from the working group regarding XML validation issues, potentially reaching out to YANG doctors or Netmod WG.
+*   **Enhanced VPN Framework**: Working group members to review the document in anticipation of WGLC.
+*   **GMPLS Controller Interwork**: Working group members to review the document for WGLC consideration.
+*   **IETF Network Slices**: Working group members to review the document for last call, proposing any further changes.
+*   **TE Service Mapping YANG**: Chairs (Pawan Birham) to work with authors and Kamran to unblock the draft from the `essa-policy-yang` dependency.
+*   **Path Computation YANG / YANG TE**: Authors to publish remaining revisions, followed by short WGLCs.
+*   **`ietf-te-types-updates`**:
+    *   Authors to address technical and procedural comments, aligning with IESG guidance on lightweight updates for small change sets.
+    *   **Decision**: Proceed with the update approach (potentially `bis`) with targeted review, rather than a full document rewrite, as per IESG guidance.
+    *   Authors to align dependent working group documents with the new types.
+*   **`b-v-p-c-to-packet-optic-integration`**: Authors to continue efforts on making descriptions technology-agnostic and addressing feedback.
+*   **`network-slice-nbi-yang`**: Authors to resolve open issues (policy, matching, technology-agnostic definitions, abstract topology) and consider suggestions from Lou (choice statement for augmentation) and Pawan (leveraging existing topology representation).
+*   **`nrp-policy-yang`**: Authors to clarify "control plane only" partitioning in the draft.
+*   **`end-to-end-network-slice` and `hierarchical-network-slice`**: Authors to explore merging text into existing working group documents (e.g., the framework document) rather than maintaining standalone drafts. Send text to the mailing list for discussion.
+*   **`sr-based-hierarchical-slices`**: Authors to consider presenting this in the SPRING working group.
+*   **`generalize-ietf-network-slicing`**: Authors to consider proposing text to the `network-slices` and `nsip-mpls` documents.
+*   **`application-of-ietf-ns-in-5g`**:
+    *   Authors to address terminology (use "5G network slice") and scope concerns, possibly engaging with BBF.
+    *   Focus on the *mapping* of 5G requirements to IETF NS rather than defining IETF NS itself.
+*   **`realization-of-ietf-ns-for-5g`**:
+    *   Authors to review sections describing 5G overview and QoS for suitability as IETF material.
+    *   Address feedback on terminology, ensuring consistency with the IETF Network Slice framework document.
+    *   Describe limitations of using default NRPs.
+    *   Avoid redefining concepts already in other documents; reference them instead.
+*   **`nrp-yang`**: **Action Item**: Authors to work towards merging with the `nrp-policy-yang` draft, covering filter and customized topology options.
+
+## Next Steps
+
+*   Many documents are progressing towards Working Group Last Call; working group members are urged to provide thorough reviews.
+*   Authors of several network slicing and NRP-related drafts are encouraged to collaborate and consider merging documents or proposing text into existing, more foundational drafts to streamline work.
+*   Address open technical issues and feedback raised during the session for respective drafts.
+*   Continue aligning YANG models with established IETF frameworks and practices.

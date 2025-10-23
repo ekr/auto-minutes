@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dance.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-DANCE-20220728-2130">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 21:30</p>
+<h1>dance</h1>
+<h2>Summary</h2>
+<p>The DANCE working group met to discuss the status of its core protocol documents and explore new use cases. The DANCE architecture document has been adopted. Key discussions revolved around the DANE TLS client authentication and TLS extension documents, specifically addressing differences in TLS 1.2 vs. 1.3 implementation, the necessity of TLS 1.2 support, and the potential need for a new TLS extension to solicit client certificates. The group also heard presentations on leveraging DNSSEC and DANE for digital identity trust registries and for securing communications in Unmanned Aircraft Systems (UAS) within the Drip context. A significant outcome was the decision to pursue a standalone draft for a TLS extension to solicit client certificates.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative Updates</strong>: Wes Redeker (Chair) opened the session, highlighting the IETF Note Well, masking policy, and the importance of signing into the meeting. Tim was noted as the primary note-taker, with a call for additional note-takers. The DANCE architecture document has been adopted.</li>
+<li><strong>DANCE Core Protocol Documents Status (Shumon Huque)</strong>:
+<ul>
+<li><strong>Documents in Focus</strong>: <code>draft-ietf-dance-tls-client-auth</code> (DANE protocol for TLS client authentication) and <code>draft-ietf-dance-tls-client-auth-extension</code> (TLS extension for signaling DANE usage and optionally conveying client domain name).</li>
+<li><strong>TLS 1.2 vs. 1.3 Differences</strong>: Shumon highlighted that in TLS 1.2, DANCE extensions are unencrypted in ClientHello/ServerHello. In TLS 1.3, they are moved to encrypted CertificateRequest/Certificate messages, requiring the server to send the extension first.</li>
+<li><strong>TLS 1.2 Support</strong>: Martin Thompson questioned the necessity of supporting TLS 1.2, given its age. Discussion points:
+<ul>
+<li>Initial security/privacy concerns with unencrypted extensions in TLS 1.2 led to the TLS 1.3 design.</li>
+<li>Some argued for continued TLS 1.2 support due to legacy applications, IETF mandates (UTA working group), and industrial applications.</li>
+<li>Renegotiation in TLS 1.2, a method to protect client authentication, is often disabled by servers due to security concerns (CPU denial of service attacks).</li>
+<li>Bob Moskowitz emphasized that many environments, especially industrial ones, will use TLS 1.2 for decades. He suggested adding justification text for 1.2 inclusion.</li>
+</ul>
+</li>
+<li><strong>Alternative Authentication Methods</strong>: Martin Thompson and Nick Sullivan suggested exploring Post-Handshake Authentication and Exported Authenticators in TLS 1.3, which could offer unified authentication compatible with both TLS 1.2 and 1.3 without handshake changes, though potentially requiring more application-layer work. Shumon acknowledged this but noted the design intent was to minimize application burden.</li>
+<li><strong>&quot;Solicit Client Certificate&quot; Extension</strong>: Victor Kuarsingh raised the need for a TLS extension that allows a client to request a server to solicit its certificate, particularly useful in cases where servers don't always require client certificates but might benefit from optional client authentication (e.g., SMTP, web servers with public/authenticated content).</li>
+<li><strong>Document Completion</strong>: Shumon expressed that the core documents are largely done, pending discussions on the TLS 1.2 justification and the &quot;solicit client certificate&quot; extension.</li>
+</ul>
+</li>
+<li><strong>New Use Case: DNSSEC for Digital Identity (Jacques Latour - CIRA)</strong>:
+<ul>
+<li><strong>Problem</strong>: Missing support in DNS/DNSSEC for finding, identifying, and authenticating digital trust registries in the digital identity world.</li>
+<li><strong>Proposal</strong>: Leverage DANE TLSA records and a potential new <code>TR</code> (Trust Registry) RR type.</li>
+<li><strong>Mechanism</strong>: An IoT registry issues verifiable credentials (digital certificates with FQDNs in SAN) to IoT devices. These certificates are verifiable via TLSA records in DNS. To establish a chain of trust for the issuer itself, the IoT registry publishes a TLSA record for its root certificate and a <code>TR</code> record indicating its registration in a higher-level trust registry (e.g., <code>trustregistry.ca</code>). This creates a chain of trust that could extend up to an IANA-level trust anchor.</li>
+<li><strong>Goal</strong>: Provide a DNSSEC-based anchoring for digital identity, offering an alternative to blockchain solutions for trust registries.</li>
+<li><strong>Discussion</strong>: Clarifying questions included the role of IANA (could be any top-level trust collector) and requests for simpler use cases/requirements documents to aid understanding of this complex topic. The need for a new RR type (<code>TR</code>) was questioned.</li>
+</ul>
+</li>
+<li><strong>New Use Case: Drip and Dance (Bob Moskowitz - HCL Technologies)</strong>:
+<ul>
+<li><strong>Context</strong>: Securing Unmanned Aircraft (UA) communications, a greenfield area, with constrained capacity. Two main communication types: Command and Control (C2) and Network Remote ID (telemetry).</li>
+<li><strong>Protocol Choices</strong>: DTLS is likely for network remote ID (fixed, known service provider). ESP (IPsec) with IKE/HIP is more likely for mobile C2 (e.g., UA launched from a moving truck). QUICK was mentioned as a potential third option but not extensively explored due to existing ICAO mandates for DTLS in manned aircraft.</li>
+<li><strong>UA Identities</strong>: Defined in <code>draft-ietf-drip-rid</code>, using Hierarchical Host Identity Tags (DET) that resolve to DNS FQDNs. DETs can be revoked by absence from DNS.</li>
+<li><strong>DNS Trust</strong>: DNSSEC for trust is challenging with millions of short-lived DETs. Bob proposed &quot;registration evidence&quot; using <code>CERT</code> resource records with private OIDs, providing proof of registration and trust in the DET without relying on DNSSEC signing of every record.</li>
+<li><strong>DANE/DANCE Integration</strong>: When using DTLS, sending an RFC 7250 raw public key is possible, but DANCE with a derived FQDN allows the server to look up all necessary information from DNS, simplifying the handshake. This is particularly relevant for network remote ID service providers, a limited number of servers.</li>
+<li><strong>Discussion</strong>: Paul Wouters suggested using DNS query chains for offline synchronization of client-server state, embedding them in TLS extensions. Bob acknowledged this but highlighted challenges with handoffs between UTM spaces and dynamic changes. Wes Redeker inquired about bandwidth savings with DANE/DANCE, which Bob confirmed is a focus, especially with byte counting and potential use of SCHC (Static Context Header Compression). Victor questioned the widespread support for raw public keys in TLS stacks, though others confirmed OpenSSL and Håkon Lönning's work in this area.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: The DANCE architecture document (<code>draft-ietf-dance-architecture</code>) has been adopted as a working group document.</li>
+<li><strong>Action Item</strong>: Shumon Huque (or editors of <code>draft-ietf-dance-tls-client-auth</code>) to add specific text justifying the inclusion and support for TLS 1.2, explaining its relevance to legacy applications and current IETF directions.</li>
+<li><strong>Decision</strong>: To address the need for selective client certificate solicitation, a <strong>standalone draft</strong> for a new TLS extension will be pursued. This extension should be general-purpose and decoupled from the DANCE core documents to allow broader use.</li>
+<li><strong>Action Item</strong>: Victor Kuarsingh (and potentially others) to consider authoring the standalone draft for the &quot;solicit client certificate&quot; TLS extension.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The editors of <code>draft-ietf-dance-tls-client-auth</code> and <code>draft-ietf-dance-tls-client-auth-extension</code> should continue to incorporate feedback, particularly regarding the TLS 1.2 justification, and prepare for a working group last call, potentially after further consideration of exported authenticators if the working group expresses strong interest.</li>
+<li>The Digital Identity and Drip use cases should be further discussed on the DANCE mailing list to determine if they warrant new work items or extensions to the working group's charter.</li>
+<li>The &quot;solicit client certificate&quot; extension draft should be initiated and discussed to determine its scope and appropriate publication venue (DANCE, TLS, or UTA working groups).</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

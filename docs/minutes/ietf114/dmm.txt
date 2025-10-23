@@ -1,0 +1,50 @@
+**Session Date/Time:** 25 Jul 2022 19:00
+
+# dmm
+
+## Summary
+
+The dmm working group session covered updates on existing working group documents, presentations on new draft proposals, and discussions on their technical implications. Key topics included aligning the "Mobility Aware Transport Network Slicing" draft with TEAS, the proposal for "Cryptographically Generated Device Identifiers" to address privacy and device-specific policies, an exploration of "Mobility Challenges in Virtualization Environments" focusing on resource and function mobility, and a preliminary discussion on a "Flattened 6G Architecture" integrating gNB and UPF functions.
+
+## Key Discussion Points
+
+*   **Mobility Aware Transport Network Slicing (draft-liu-dmm-slicing-mobility-04):**
+    *   The draft reached version 04, with minor editorial updates, mainly to align with the TEAS `t-slicing` draft.
+    *   Three use cases were outlined: CE and PE in the same node, CE and PE in the same L2 domain (e.g., VLANs in RAN), and UP-NF (gNB/UPF) and PE separated by an L3 network (where slice ID is transported). The third case was highlighted as less covered by existing TEAS work.
+    *   The authors emphasized the intent to align with and complement TEAS efforts, avoiding duplication.
+    *   Discussion clarified that the draft does not redefine 3GPP architecture but focuses on mapping 3GPP-derived information (e.g., related to SNSSAI from a UE's PDU session) to transport plane slices using mechanisms like VLANs, MPLS, SR, and potentially UDP ports for finer granularity. The management and configuration of the underlying transport network are external to this draft.
+
+*   **Cryptographically Generated Device Identifiers (CGDI) (draft-shree-dmm-cgdi-00):**
+    *   **Motivation:** The need for a standardized, privacy-preserving device identity distinct from user identity, especially for device-specific policies, private 5G/Wi-Fi with shared user credentials, and open roaming.
+    *   **Problem Statement:** Current identifiers (MAC, IMEI) face privacy issues (e.g., GDPR, MAC randomization) and traceability concerns across networks. No stable, privacy-respecting device ID format exists.
+    *   **Proposed Solution:** Cryptographically generated device identifiers (CGDI) that are dynamically generated, unique per device per access network, immutable within that network, access-agnostic, and allow the device to assert ownership (e.g., via private key).
+    *   **Discussion:** Questions arose regarding its relation to existing IETF work like SEND or Cryptographically Generated Interface Identifiers (CGIIDs). Concerns were raised about potential privacy destruction if CGDI is signaled alongside traceable identifiers like IMEI. The author suggested CGDI could potentially generate an IMEI-format identifier to replace fixed IMEIs, which would require significant 3GPP engagement.
+
+*   **Mobility Challenges in Virtualization Environments (draft-gonzalez-dmm-virtualization-challenges-00):**
+    *   **Problem:** Traditional IP mobility focuses on end-host movement. The rise of virtualized network functions (VNFs) and Service Function Chains (SFCs) introduces new mobility scenarios.
+    *   **Scenarios:**
+        1.  Traditional UE mobility impacting SFC instantiation.
+        2.  **Resource Mobility:** Physical nodes hosting VNFs move (e.g., functions on mobile platforms like cars or drones).
+        3.  **Function Migration:** VNFs move between static resources (e.g., for load balancing, maintenance).
+    *   **Discussion:** The distinction between Resource Mobility (not covered by traditional data center VM mobility) and Function Migration (which has existing solutions like MBO3's use of VXLAN/Geneve and EVPN, or 3GPP's AF registration) was clarified. The importance of defining concrete use cases was emphasized before exploring specific solutions, focusing on localized mobility rather than global IP changes.
+
+*   **Specific Example: Solution for SFC with Mobile Nodes (draft-gonzalez-dmm-sfc-mobility-00):**
+    *   This draft presented a specific solution example for the Resource Mobility scenario, proposing the use of IP mobility protocols (e.g., Mobile IP extensions) to update service function chains when nodes hosting functions are mobile. It defined messages like `Service Path Update` and `Service Path Acknowledgement` to notify changes in function location and update tunneling. This was presented as an illustration, not a general solution for all virtualization challenges.
+
+*   **Flattened 6G Architecture (draft-li-dmm-flattened-6g-architecture-00):**
+    *   **Proposal:** Integration of gNB (Access Network) and UPF (User Plane Function) into a single "N-UP" function for 6G, effectively making the N-UP a router/switch with both wireless and wired connections.
+    *   **Advantages:** Simplified, flattened, and unified architecture for wireless and wired networks. Eliminates N3 tunneling and associated signaling overhead, optimizes data plane (no GTP-U encapsulation/decapsulation), and simplifies features like MEC.
+    *   **Discussion:** Mail list feedback addressed topics such as simplified signaling, multicast handling (leveraging wireline multicast to N-UP, then radio tech to UEs), and QoS (mapping 3GPP QoS to transport QoS at the N-UP). It was acknowledged that separate AN/UPF deployments would still be necessary for certain scenarios (e.g., roaming, virtual operators), suggesting an approach to "integrate when you can, separate when you have to." The N-UP would serve as the session anchor. The chair noted this is primarily a 3GPP-specific proposal, and the dmm WG is not chartered to work on it but welcomed its socialization.
+
+## Decisions and Action Items
+
+*   **Mobility Aware Transport Network Slicing:** The authors (John) will continue offline discussions with TEAS working group authors to ensure full alignment and complementarity with the TEAS `t-slicing` draft. A new revision will be published to incorporate further TEAS developments, after which detailed reviews from the dmm working group and other relevant groups will be sought.
+*   **Cryptographically Generated Device Identifiers:** The author (Shri) will investigate prior IETF work related to cryptographically generated identifiers (e.g., SEND, CGIIDs) and consider the implications of the proposal for 3GPP, particularly if it aims to replace or virtualize the IMEI.
+*   **Mobility Challenges in Virtualization Environments:** The author (Carlos) will refine and further elaborate on the use cases, especially for "Resource Mobility," and document existing IETF and 3GPP work that could address these challenges in an informational capacity.
+
+## Next Steps
+
+*   **Mobility Aware Transport Network Slicing:** Publish a new revision of the draft following TEAS alignment and seek working group reviews.
+*   **Cryptographically Generated Device Identifiers:** Continue discussion on the mailing list, seeking feedback on the technical approach and ecosystem implications.
+*   **Mobility Challenges in Virtualization Environments:** Further develop the use case document and explore how existing IETF/3GPP mechanisms can be applied.
+*   **Flattened 6G Architecture:** The proposal was presented for socialization within the IETF community. Any subsequent standardization efforts for this 3GPP-specific architecture would need to take place within 3GPP.

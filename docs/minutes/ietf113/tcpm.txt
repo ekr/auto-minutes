@@ -1,0 +1,77 @@
+**Session Date/Time:** 23 Mar 2022 13:30
+
+# tcpm
+
+## Summary
+
+The tcpm working group meeting covered updates on existing working group documents, presentations on documents nearing completion (High Start++, CUBIC, Accurate ECN), and initial discussions for several new or non-working group documents (TCP ACK Rate Request, MPTCP Robust Session Establishment, TCPLS). A significant portion of the discussion focused on the readiness of CUBIC (8312bis) for Proposed Standard status, with strong working group sentiment in favor despite some concerns about the historical deployment process. The working group also saw a change in its chairing team, with Michael stepping down and Ian joining.
+
+## Key Discussion Points
+
+*   **Working Group Personnel Updates:** Michael stepped down as co-chair, and Ian joined as a new co-chair.
+*   **Working Group Document Status:**
+    *   **Ao Test Vector:** RFC in EXAQ (expected soon).
+    *   **Young TCP:** Under IESG review.
+    *   **793bis:** Under IESG evaluation.
+    *   **8312bis (CUBIC):** Discussed for Proposed Standard readiness.
+    *   **High Start++:** Discussed for Working Group Last Call (WGLC) readiness.
+    *   **Accurate ECN:** Discussed for WGLC readiness, dependent on remaining open items.
+    *   **Generalized ECN:** On hold due to dependency on Accurate ECN. Discussion re-initiated to proceed to WGLC.
+    *   **IDO Draft:** Lacks feedback; chairs requested specific reviewers and implementation experience. Jonathan Hoyland volunteered to review.
+    *   **6937bis:** Inactive, but authors plan to publish a new version soon.
+*   **TCP Option Extension:** Discussion on how to proceed with proposals for extending TCP option space, including Joe Touch's specific draft. Consensus leaned towards working group adoption rather than an independent stream, acknowledging the fundamental nature of option extensions for TCP.
+*   **High Start++ (draft-ietf-tcpm-hystartplusplus):**
+    *   **Problem:** Slow start overshoot causing packet loss.
+    *   **Solution (v04):** Uses delay increases to detect queue filling and exit slow start early. Includes a "conservative slow start" (CSS) phase (5 rounds) to detect and recover from spurious exits due to jitter. Resumes High Start++ if the exit was spurious.
+    *   **Updates:** Addressed all outstanding reviews, removed dependency on `low_ss_thresh` (simplifying logic).
+    *   **Implementations:** Three known production implementations (Windows TCP CUBIC, Cloudflare's QUIC library Quiche, FreeBSD TCP CUBIC).
+    *   **WG Consensus:** Stable and seemingly ready for WGLC.
+*   **CUBIC (8312bis) (draft-ietf-tcpm-rfc8312bis):**
+    *   **Updates (v04):** Clarified handling of spurious congestion events (timeouts, loss detection via ACKs), meaning of application-limited, and justification for using RFC7661 (pipe-back value based on acknowledged bytes).
+    *   **Main Discussion:** Whether to publish as Proposed Standard (PS) or Experimental (Exp).
+        *   Concerns raised by Marco and Lars Eggert about CUBIC not following the established IETF process for new congestion control algorithms, which typically involves thorough evaluation before standardization.
+        *   Counter-arguments emphasized CUBIC's widespread deployment and ubiquitous use on the internet, suggesting it should be standardized as it reflects current reality.
+        *   A poll indicated strong working group support for Proposed Standard (28 votes) over Experimental (1-2 votes).
+    *   **Action:** Continued discussion on potentially adding text acknowledging the deviation from standard process.
+*   **Accurate ECN (draft-ietf-tcpm-accurate-ecn):**
+    *   **Updates (v18):** Three recent updates. Discussion on handling ECN congestion feedback when the sender is not sending ECN-capable packets (e.g., due to middlebox mangling, broken receiver). Normative text changes (`must`/`should`/`may` replaced with non-normative phrasing where appropriate). Increased `ce_pkts_before_ce_feedback` to 7.
+    *   **Upcoming Changes:** Discussion about whether to update RFC3449 (Network Path Asymmetry) or simply outline the problem. Proposal to prioritize implementing *sending* Accurate ECN options over *receiving* them, due to implementation complexity.
+    *   **Feedback:** Jonathan Hoyland noted the proposed change on sender/receiver priority might contradict the interoperability principle. Gory Ferrand raised concerns about "strongly recommended" language.
+*   **TCP ACK Rate Request (draft-gomez-tcpm-accurate-ack-request-opt):**
+    *   **Motivation:** Address suboptimal performance from delayed ACKs in large/small congestion windows and asymmetric paths.
+    *   **Proposal (v03):** New 5-byte TCP option with a 6-bit `R` field (ACK rate requested) and a reserved `V` bit. `R=1` means immediate ACK.
+    *   **Encoding:** Two options for `R` field encoding (binary vs. mantissa/exponent). Binary encoding up to 63, mantissa/exponent up to 124 (with different granularity).
+    *   **Behavior:** Receiver "SHOULD" (not MUST) satisfy the request. Support for the option can be announced in SYN/SYN-ACK (though the SYN-ACK response is not reliably delivered). Re-transmissions not required to carry the option.
+    *   **Removed:** The "ignore order" feature due to unclear benefit.
+    *   **Feedback:** Discussion on the appropriate maximum value for `R` and its safety implications; concerns about announcing support in SYN-ACK due to unreliability.
+*   **MPTCP Robust Session Establishment (draft-peng-mptcp-robust-session-establishment):**
+    *   **Problem:** Connection setup failures due to default paths with unknown characteristics (e.g., bad Wi-Fi).
+    *   **Solution:** Extensions to MPTCP and MPTCPv1 to provide more robust session establishment, including timer-based re-attempts, simultaneous multipath connection setup (using SYN, ECN, IPS).
+    *   **Call for Adoption:** Authors requested working group adoption.
+    *   **Chairs' Feedback:** Need more broad support, operational experience, or solid test results beyond current demonstrations to convince the working group for adoption. IPR clarity was also requested.
+*   **TCPLS Modern Transport Services (draft-gomez-tcpls):**
+    *   **New Draft (First Presentation):** Proposes new transport services by bringing TCP and TLS closer.
+    *   **Motivation:** Learnings from MPTCP (backward compatibility, middlebox interference) and QUIC (UDP-based, TLS for header security, user-space implementation). Leveraging TLS ubiquity and TCP support.
+    *   **Services:** Stream multiplexing (like HTTP/2), connection migration and failover, multi-path by scheduling at the TLS record level. Aims for efficiency over HTTP/2, TLS, MPTCP due to combined design.
+    *   **Protocol:** Uses a new TLS extension to indicate TCPLS support. Introduces a framing layer (TCPLS frames) inside TLS application data records for streams. Manages multiple TCP connections within a single TCPLS session. Modifies the TLS IV nonce construction to incorporate a connection ID for shared TLS session state across multiple TCP connections. Introduces TCPLS acknowledgements for failover.
+    *   **Implementation:** Prototype in C (2.5k lines) built on PicoTLS, implementing stream multiplexing, failover, and multipath.
+    *   **Feedback:** Questioned whether this is within the scope of tcpm or more suitable for the TLS working group. Concerns about inventing new nonce derivation without formal cryptographic analysis.
+
+## Decisions and Action Items
+
+*   **Generalized ECN:** Richard will initiate a mailing list discussion to assess readiness for Working Group Last Call.
+*   **IDO Draft:** Jonathan Hoyland committed to reviewing the draft. Chairs may contact others for additional review and request implementation experience from the mailing list.
+*   **High Start++:** Chairs will confirm Working Group Last Call readiness on the mailing list.
+*   **CUBIC (8312bis):** Chairs will further discuss the path forward, taking into account the strong working group sentiment for Proposed Standard and the suggestion to add text addressing the historical deployment process.
+*   **Accurate ECN:** Discussion to continue on the mailing list. Bob will update the "strongly recommended" normative text to "recommended."
+*   **TCP ACK Rate Request:** Authors to continue discussion on the mailing list and update the draft based on feedback, particularly regarding the `R` field encoding and safety.
+*   **MPTCP Robust Session Establishment:** Authors are encouraged to provide more broad support, operational experience, or solid test results, and clarify IPRs to aid the chairs in considering adoption.
+*   **TCPLS:** Discussion on the draft's scope and relevance will continue on the tcpm mailing list, with a suggestion for engagement with the TLS working group.
+
+## Next Steps
+
+*   Working Group Last Call (WGLC) consideration for High Start++ and Accurate ECN (pending resolution of open issues).
+*   Continued discussion on CUBIC (8312bis) to finalize its status as Proposed Standard.
+*   Further development and feedback for TCP ACK Rate Request.
+*   Authors of MPTCP Robust Session Establishment to gather more evidence for working group adoption.
+*   Continued discussion on the TCPLS draft, specifically its scope and appropriate working group alignment.

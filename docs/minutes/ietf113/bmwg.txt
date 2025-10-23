@@ -1,0 +1,86 @@
+**Session Date/Time:** 23 Mar 2022 09:00
+
+# bmwg
+
+## Summary
+
+The BMWG session covered updates on existing working group drafts, reviewed proposals for new work, and addressed administrative items. Key discussions included the status of several drafts, challenges in resolving IESG discuss ballots for the Next Generation Firewall Benchmarking draft (particularly the use of "should" vs. "must"), a pending working group adoption for a YANG model, and new proposals for benchmarking Segment Routing (MPLS and IPv6 flavors) and Stateful NAT XY Gateways. The session concluded with an encouragement for active community feedback on ongoing and proposed work.
+
+## Key Discussion Points
+
+*   **Working Group Status Update:**
+    *   The **EVPN Benchmarking** draft is officially "status dead" due to a lack of author engagement and no new file submission after IESG comments.
+    *   The **Next Generation Firewall Benchmarking** draft is actively working to resolve IESG discuss ballots, with one requiring a second Transport Area review by Tommy Pauly.
+    *   The **Multiple Loss Ratio Search** draft is undergoing a significant rewrite, aiming to clarify terminology and explicitly state goals.
+    *   No new RFCs were published since the last meeting, but the working group charter remains stable.
+    *   Working group milestones are out of date.
+
+*   **Multiple Loss Ratio Search (Radko):**
+    *   The draft is being rewritten to explicitly define goals and solution parts, and to transition from non-official terminology (NDR, PDR) to RFC-defined terms.
+    *   The core idea is to search for loads achieving specific loss ratios, not just zero loss, to obtain more stable results for certain Device Under Test (DUT) behaviors.
+    *   The methodology incorporates "tricks" for faster search times through optimized load selection and short iterations.
+    *   It aims to make explicit requirements for test equipment reliability (intended vs. offered load) and proposes search stop criteria, which were missing in RFC 2544.
+    *   During discussion, feedback was provided that slides need more context for standalone understanding. The presenter clarified that the algorithm aims for small standard deviation even with non-deterministic DUTs to improve result repeatability across different testing groups. Suggestions were made to clarify tables and consider transients versus steady-state performance.
+
+*   **Next Generation Firewall Benchmarking (Bala & Bryan):**
+    *   The draft has received significant feedback from IESG review, including 8 discuss submissions, with 5 having proposed resolutions. Three remain challenging, particularly from Lars Edgar and Benjamin Kaduk.
+    *   A major discussion point revolved around the extensive use of "should" versus "must" in the document and the suggestion to explain the rationale for each "should."
+    *   Authors expressed concern that this requirement could broadly impact IETF documents and impede progress, as it's not consistently applied across all RFCs.
+    *   Suggestions to address the "should" issue included:
+        *   Converting polite "shoulds" to "musts" where no legitimate reason exists for deviation.
+        *   Adding a broad disclaimer paragraph at the beginning of the document to explain that guidance is for normal circumstances, but testers may deviate for specific use cases.
+        *   Distinguishing between uppercase "Shoulds" (RFC 2119 meaning) and lowercase "shoulds" (general advice).
+        *   Engaging directly with the Area Director (AD) to clarify expectations.
+
+*   **YANG Model for Network Interconnect Tester Management:**
+    *   Working group adoption is pending, with the main sticking point being the draft's title.
+    *   Vladimir (an author) argued that "network interconnect device" is a known term within the working group, and shortening the title might inadvertently broaden the scope beyond the draft's actual content. He is open to title changes that do not compromise the scope.
+    *   The working group generally agrees on the value of the work and that the title should not prevent adoption.
+
+*   **Benchmarking Methodology for Stateful NAT XY Gateways (Keiichi Shima):**
+    *   This draft provides a guideline for measuring performance of stateful NAT XY gateways.
+    *   It focuses on connection establishment, **connection teardown performance (new in this version)**, and operational guidelines for using pseudorandom port numbers.
+    *   Testing involves preliminary and real test phases to manage connection tracking tables.
+    *   Preliminary test results for connection teardown (using Linux ip_tables and NAT counter modules) demonstrate the methodology's ability to produce stable and reproducible deletion rates.
+    *   Authors invited further discussion on the new teardown measurement procedure. Bill Fenner suggested exploring direct v-pair connections between containers to eliminate v-switches for east-west traffic, potentially improving performance.
+
+*   **Considerations for Benchmarking Network Performance in Containerized Infrastructures (Tran):**
+    *   The draft aims to distinguish containerized infrastructure benchmarking from VM-based methods.
+    *   Updates include restructured sections, new networking models (e.g., eBPF acceleration, model combinations for Service Function Chaining), and new performance impact considerations (SFC aspects, internal networking).
+    *   Hackathon results were presented, showing:
+        *   SR-IOV performed significantly better than OVS-DPDK for throughput in SFC scenarios.
+        *   Increasing the number of VNFs impacts OVS-DPDK performance for small packet sizes, but not for larger ones.
+        *   Multi-node SFC showed slightly lower throughput than single-node for small packets.
+
+*   **Benchmarking Methodology for MPLS Segment Routing (Giuseppe Piro):**
+    *   This new draft proposes a methodology to benchmark SR-MPLS behavior, complementing RFC 5695.
+    *   Proposed changes from RFC 5695 include: requiring DUT support for SR extensions in IGPs, generalizing the number of MPLS labels in the stack, and adding new reporting parameters (forwarding operation, number of segments, SID type, head/endpoint behavior).
+    *   Discussion points included whether to extend RFC 5695 or create a new document, the reasonable number of labels to test, and whether to include background traffic or Traffic Engineering (TE) tests (TE is typically in separate documents).
+    *   Chair feedback suggested referencing updated RFC 2544 latency (min/max/avg) and back-to-back (RFC 9002) procedures, considering ETSI NFV guidelines for virtualized environments, and providing test results to garner interest. It was suggested to keep TE and background traffic out of scope for now.
+
+*   **Benchmarking Methodology for SRv6 (Giuseppe Piro):**
+    *   This new draft complements RFC 5180 for IPv6 devices, focusing on SRv6.
+    *   Key changes from RFC 5180 are required due to SRv6's new routing header (SRH) and network programming model (RFC 8986). This includes redefining extension header chain length limits and adding parameters for node types, segments in SRH, and network programming behaviors.
+    *   Discussion focused on which SRv6 functions (from RFC 8986) to include in testing, and whether to cover compressed SIDs (as the reference document is still in progress).
+    *   Similar to SR-MPLS, feedback emphasized referencing updated benchmarking procedures from the BMWG literature and considering virtualized environments.
+
+## Decisions and Action Items
+
+*   **WG Milestones:** Sarah Banks will work with Al Morton to update the working group milestones.
+*   **YANG Model for Network Interconnect Tester Management:** The working group will work to quickly reach agreement on a suitable title to proceed with the adoption call.
+*   **Next Generation Firewall Benchmarking:** Authors will prepare one comprehensive update to the draft addressing all IESG discuss points and the "should" vs. "must" comments. They should also consider submitting incremental versions to clear resolved discuss points more rapidly.
+
+## Next Steps
+
+*   **Multiple Loss Ratio Search:** Authors are encouraged to clarify tables, consider transients versus steady-state performance, and address specific feedback on the mailing list.
+*   **Next Generation Firewall Benchmarking:** Tommy Pauly is tasked with conducting a second Transport Area review.
+*   **YANG Model for Network Interconnect Tester Management:** Once the title issue is resolved, the chairs will initiate a working group adoption call.
+*   **Benchmarking Methodology for Stateful NAT XY Gateways:** The chairs plan to initiate a working group adoption call after the YANG model is sorted. Authors are encouraged to continue discussions on the mailing list, and Bill Fenner will provide specific feedback via email.
+*   **Benchmarking Containerized Infrastructures:** Authors should continue to update the draft with the latest technologies, plan tests for internal networking and eBPF acceleration (with/without NSC offloading), and Bill Fenner will provide feedback via email regarding direct v-pair connections.
+*   **Benchmarking MPLS Segment Routing and SRv6:** Authors are advised to:
+    *   Incorporate references to updated RFC 2544 procedures, specifically for latency (min/max/avg) and back-to-back testing (RFC 9002).
+    *   Review ETSI NFV Test Working Group documents for guidance on benchmarking in virtualized environments.
+    *   Provide test results (graphs/tables) in future presentations to engage the working group.
+    *   Seek further community feedback on the appropriate number of labels/segments to test and which specific SRv6 functions should be covered.
+    *   Keep Traffic Engineering and Background Traffic out of scope for these initial drafts.
+*   **General:** All working group participants are strongly encouraged to read the drafts and provide constructive feedback on the mailing list to facilitate progress and foster adoption.

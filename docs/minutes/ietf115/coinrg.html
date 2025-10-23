@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="coinrg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-COINRG-20221108-0930">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2022 09:30</p>
+<h1>coinrg</h1>
+<h2>Summary</h2>
+<p>The coinrg session featured three research presentations covering practical aspects of in-network classification, the interplay between the end-to-end principle and in-network computing, and the observed impact of Distributed Ledger Technologies (DLTs) on provider networks. A new draft proposing a system for alternative secure elements in the internet was also presented. Discussions included resource constraints in programmable data planes, challenges in designing end-to-end compliant transport protocols for in-network compute, DLT communication patterns, and the role of secure elements in enhancing network trust. The chairs outlined plans for an interim meeting to review existing drafts and future directions.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Practical In-Network Classification (Yiming Chen, University of Oxford)</strong></p>
+<ul>
+<li><strong>Research Evolution</strong>: Presented three years of research, starting with &quot;Easy&quot; (2019) demonstrating ML model mapping to programmable network devices (P4, BME2, NetFPGA), evolving to an &quot;Automating Network Machine Learning&quot; framework for end-to-end automatic deployment.</li>
+<li><strong>Framework Capabilities</strong>: Supports over 12 ML models, generates P4 and P4 runtime files, auto-tests on Python/software switches, and deploys to hardware (Tofino, Papi, Raspberry Pi, Nvidia Spectrum, FPGA).</li>
+<li><strong>Challenges &amp; Solutions</strong>:
+<ul>
+<li><strong>Limited Stages</strong>: Solved by parallelizing independent functions (e.g., parallel feature and tree tables) and using lookup tables.</li>
+<li><strong>Limited Memory</strong>: Addressed with efficient mapping solutions (lookup-based vs. tree-like) and advanced table types (LPM, ternary, range match) with &quot;smart rope&quot; to reduce entries.</li>
+<li><strong>Coexistence with Network Functions</strong>: Demonstrated co-existence with L2/L3 switch programs (Intel Tofino switch.p4), consuming 5-65% of resources with minimal latency impact.</li>
+</ul>
+</li>
+<li><strong>Trade-offs</strong>: Hyper-parameter selection for features, trees, and depth is crucial due to resource constraints. Support for features varies based on header format (custom vs. ASCII) and co-deployment.</li>
+<li><strong>Deployment &amp; Updates</strong>: Runtime retraining and updates are handled via digest and shadow updates, allowing non-disruptive model modifications without changing the P4 program.</li>
+<li><strong>Performance</strong>: Achieves full line rate on commodity switches (e.g., 64-port Tofino) with sub-microsecond latency, without recirculation/resubmission or control plane dependencies.</li>
+<li><strong>Hybrid Deployment</strong>: For high accuracy/large models, a small model is deployed in-network, and a large model acts as a backend server. Decision confidence determines if packets are processed locally or forwarded to the backend.</li>
+<li><strong>Discussion</strong>: Questions arose about specific resource constraints (stages, memory, parser limitations for header fields, lack of floating-point/multiplication support) and handling new traffic features/data (currently not addressed for &quot;feature&quot; data but generally using unsupervised learning for retraining).</li>
+</ul>
+</li>
+<li>
+<p><strong>The End-to-End Transport Layer (Ike Wiermann, Technical University of Munich)</strong></p>
+<ul>
+<li><strong>Context</strong>: Networks are evolving from &quot;dumb pipes&quot; to &quot;smarter networks&quot; with in-network computation (Coin), challenging traditional transport layer assumptions and the end-to-end principle.</li>
+<li><strong>End-to-End Principle</strong>: Reaffirmed its core tenet (functions implemented completely and correctly at endpoints) but also noted the allowance for network-provided &quot;incomplete versions&quot; as performance enhancements.</li>
+<li><strong>Coin Element Definition</strong>: Generalized Coin elements as any capability between endpoints, distinguishing between &quot;on-path&quot; and &quot;off-path&quot; computations.</li>
+<li><strong>Functionality Types</strong>:
+<ul>
+<li><strong>End-to-End Function Internal Computation</strong>: Incomplete or tweaked versions of original end-to-end functions, deemed potentially end-to-end compliant.</li>
+<li><strong>End-to-End Function External Computation</strong>: New functionalities not part of the original end-to-end function, viewed as more akin to edge/cloud computing and potentially problematic for end-to-end compliance.</li>
+</ul>
+</li>
+<li><strong>Design Principles for Coin</strong>:
+<ol>
+<li><strong>Placement Location</strong>: Adhere to original requirements, enrich functionality, optimize functional complexity against key communication requirements (e.g., latency).</li>
+<li><strong>Transparency</strong>: Insert Coin functionality in full transparency to endpoints to avoid unexpected issues (e.g., like performance-enhancing proxies).</li>
+</ol>
+</li>
+<li><strong>Transport Protocol Considerations</strong>: Focused on addressing, flow granularity, and collective communication.
+<ul>
+<li><strong>Addressing</strong>: Explored implicit integration (strategic placement) vs. explicit steering mechanisms (tagging packets). Raised questions about exact location vs. constraint-based specification and instance affinity.</li>
+<li><strong>Existing Solutions</strong>: Mentioned source routing, service function chaining (SFC), and information-centric networking (ICN) as potentially applicable.</li>
+</ul>
+</li>
+<li><strong>Provocative Questions</strong>: Discussed whether a single global protocol is needed for Coin's E2E problems, or if specialized protocols for limited domains, possibly with standardized interaction, are preferable. Also, questioned if the end-to-end principle could be &quot;bent&quot; in controlled, limited domains (e.g., industrial networks).</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Dirk Trossen suggested that defining a Coin protocol prematurely without knowing specific use cases might be too hard and that the end-to-end principle might not apply to all Coin goals (e.g., data flow systems).</li>
+<li>Olaf noted robustness and innovation protection as advantages of the E2E principle and raised concerns about interdependencies/side effects of partial functions and the complexity of requiring applications to have network knowledge for addressing.</li>
+<li>Andy Reid emphasized the central role of transparency and addressing, suggesting further development on these ideas.</li>
+<li>Lars Eggert found the initial E2E framing very useful and encouraged focusing on &quot;low-hanging fruit&quot; and &quot;minimal changes&quot; to existing protocols for practical, near-term deployment, especially for IETF-related work.</li>
+<li>Eric Norman highlighted the importance of considering state in the network and state-sharing aspects related to robustness, also inquiring about the spectrum of research possibilities from minor tweaks to entirely new paradigms.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Insights on the Impact of DLTs in Provider Networks (David R. W., Technical University of Munich)</strong></p>
+<ul>
+<li><strong>Background</strong>: Dlts (e.g., Ethereum, Bitcoin) build on distributed hash tables and consensus mechanisms over P2P networks (UDP/TCP/QUIC).</li>
+<li><strong>DLT Service Interactions</strong>: Client transactions, miner block commits, and client reads.</li>
+<li><strong>Key Mechanism</strong>: Atomic broadcast, randomized over receivers to avoid collusion and ensure ledger distribution, deals with scale and permissionless nature.</li>
+<li><strong>Communication Patterns</strong>: Discovery (UDP ping/pong, query for more nodes) and Pool Establishment (TCP, TLS, capability exchange for upper-layer protocols).</li>
+<li><strong>Challenges</strong>: High cost for pool maintenance (continuous reachability, discovery, state exchange), resilience (failing nodes cause latency), unicast replication overhead, and IP address privacy exposure.</li>
+<li><strong>Experimental Results</strong>: Measured pool establishment time, showing a log-normal/power-law distribution, indicating significant delays. Analyzed attempts, reachability, and success rates for outgoing/incoming requests. Identified failures in TCP socket initialization, TLS negotiation, and capability checkpoints.</li>
+<li><strong>Proposed Network-Level Assistance (Coin)</strong>:
+<ul>
+<li>Service-centric abstraction for miners (service instances).</li>
+<li>Encoded constraints for improved reachability.</li>
+<li>Replacing randomized unicast with network-built multicast capabilities for fixed peer groups.</li>
+<li>Using IP multicast to ensure randomized peer selection for requests.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>: No questions were explicitly captured during the Q&amp;A for this presentation.</li>
+</ul>
+</li>
+<li>
+<p><strong>An IOC (I/O Computing) System for Alternative Secure Elements (Pascal Sarrus)</strong></p>
+<ul>
+<li><strong>Secure Elements (SEs)</strong>: Tamper-resistant microcontrollers with embedded software (e.g., bank cards, SIM cards, passports). Feature modest CPU/memory but strong crypto processors (EAL 6+). Communicate via ISO 7816 (small APDU packets) or other interfaces. Open programming (Java Card).</li>
+<li><strong>Global Platform</strong>: A standardized framework for secure software management (list, delete, upload applications).</li>
+<li><strong>Goal</strong>: Connect SEs to the internet to deploy online cryptographic resources, identified by URIs, offering a higher level of trust.</li>
+<li><strong>Architecture Requirements</strong>: Additional processors for network interface/TCP/IP, Global Platform for on-demand applications, TLS for user/service interface, SE naming, and attestation procedures.</li>
+<li><strong>URI Naming</strong>: SEs identified by a server name (SCL) with an associated pre-shared key. Access via TLS secured command-line interface.</li>
+<li><strong>Administration Plane (ROCKS)</strong>: Uses TLS with client/server certificates (PKI) to transport ISO 7816 packets, supporting Global Platform for application management (download/delete/upload).</li>
+<li><strong>Service Plane (TLS for Secure Elements)</strong>: A specific TLS server profile using pre-shared keys. The server name is embedded in the SE's &quot;answer to request&quot; (historical bytes). A client-facing server routes incoming/outgoing packets to the TLS backend server.</li>
+<li><strong>On-Demand Application Attestation</strong>: Application provider downloads app and binds SE name. The SE creates a public/private key pair. Provider delivers public key, certificate, and pre-shared key to the user. User connects via TLS, verifies certificate, and confirms SE knowledge of both the unshared secret and public key, ensuring no man-in-the-middle. User can then modify the pre-shared key.</li>
+<li><strong>Implementation Status</strong>: Code available on GitHub for TLS/SC for Java Card (compatible with v3.04/3.05 APIs). Server code (V5) supports Windows/Unix/Raspberry Pi and uses PC/SC for SE communication. No patents, all open-source.</li>
+<li><strong>Connection to Coin</strong>: When cryptographic procedures are needed within the network (e.g., for blockchain issues, as discussed earlier), secure elements provide a trustworthy, open, and provable way to store keys and perform cryptographic computations. They offer a strong root of trust (certified EAL levels) at scale (billions deployed annually) for in-network secure procedures.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Draft Review Interim</strong>: The chairs plan to hold an interim meeting, likely in January, to review the existing list of publications, drafts (including expired ones for potential re-kindling), and the newly presented draft by Pascal Sarrus, to discuss which documents should be considered for working group adoption.</li>
+<li><strong>Continued Discussion</strong>: Specific discussions from Ike Wiermann's presentation (e.g., about problem framing, robustness, application knowledge, low-hanging fruit, and state in the network) were suggested for further offline or list-based engagement.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Interim Meeting</strong>: An interim meeting is planned for January to review current and expired drafts, focusing on potential working group adoption and future directions for the research group.</li>
+<li><strong>IETF 116</strong>: The coinrg will most likely hold a session at IETF 116 in Japan in March.</li>
+<li><strong>Community Engagement</strong>: Continue monitoring discussions related to the 5G NetApp Lab proposal and relevant papers from conferences like HotNets.</li>
+<li><strong>Mailing List</strong>: Attendees and interested parties are encouraged to subscribe to the mailing list for ongoing conversation and to peruse archives for materials.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

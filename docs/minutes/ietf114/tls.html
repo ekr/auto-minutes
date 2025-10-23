@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="tls.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-TLS-20220725-1900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 19:00</p>
+<h1>tls</h1>
+<h2>Summary</h2>
+<p>The TLS Working Group convened to discuss updates on several key drafts, including the evolving Compact TLS (CTLS) protocol, a proposed mechanism for well-known ECH keys, an update to the TLS registry for cryptographic algorithm recommendations, and the deprecation of obsolete key exchange methods. New work on TLS attestation was presented, exploring hardware-backed identity for endpoints. Finally, the significant challenges and considerations for integrating Post-Quantum Cryptography (PQC) into TLS were highlighted, alongside a decision on the behavior of the TLS Flags extension.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Document Status Update:</strong></p>
+<ul>
+<li>DTLS 1.3, Ticket Requests, and Exported Authenticators have been published.</li>
+<li>Remaining PSK-related drafts are in the RFC 48 queue.</li>
+<li>Delegated Credentials (Subcerts) draft is awaiting progress.</li>
+<li>The RFC for TLS 1.2 and 1.3 is currently in Work Group Last Call, ending August 5th.</li>
+<li>Cross/TLS 1.3 Resumption and TLS Flags Extension drafts were paused but are now being revisited.</li>
+<li>Discussion is pending on whether to revive or abandon several scaled/expired working group drafts.</li>
+</ul>
+</li>
+<li>
+<p><strong>Compact TLS (CTLS) - draft-ietf-tls-ctls-06 (Ben Schwartz)</strong></p>
+<ul>
+<li><strong>Profile IDs:</strong> Now defined as byte strings (1-255 bytes). Short IDs (&lt;=4 bytes) are reserved for IANA registration and assume prior knowledge by the recipient. Longer IDs are for specific deployments and are not registered.</li>
+<li><strong>Protocol Generator:</strong> CTLS is no longer a compression layer. It now defines unique TLS-like protocols and authenticates its <em>own</em> transcript, rather than reconstructing a standard TLS transcript.</li>
+<li><strong>Template in Transcript:</strong> Shared template information is prepended to the transcript and hashed into the <code>Finished</code> message to ensure agreement between parties.</li>
+<li><strong>Binary Templates:</strong> A new consistent, reproducible binary format for templates has been defined to facilitate consistent hashing, alongside the existing JSON format.</li>
+<li><strong>Handshake Framing:</strong> Supports both full-size, fragmented handshake messages (for DTLS) and single-record handshake messages for byte savings.</li>
+<li><strong>Discussion Points:</strong>
+<ul>
+<li>Compressed elliptic curves: Suggestion to define new code points (like X25519/X448).</li>
+<li>Omitting empty messages (e.g., <code>EndOfEarlyData</code>): Martin Thompson argued strongly against omitting critical empty messages in stream-based TLS, as they signal transition points. This optimization is likely to be removed.</li>
+<li>Relationship to DTLS 1.3: CTLS aims to generate both streaming (TLS) and datagram (DTLS) security protocols. Prototyping will validate this.</li>
+<li>Security properties: Clarified that CTLS aims for the same security properties as TLS 1.3, though a profile could theoretically define a broken configuration. Formal analysis would need to model the wire format.</li>
+<li>Versioning: A context string in the transcript is considered sufficient for versioning, provided clients reject unknown versions.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Well-Known ECH Keys - draft-ietf-tls-well-known-ech (Stephen Farrell)</strong></p>
+<ul>
+<li><strong>Proposal:</strong> A <code>/well-known</code> URL mechanism for web servers to publish ECH keys, intended for authoritative DNS servers to retrieve and publish in HTTPS RRs. This is to address the challenge of regularly updating ECH keys in DNS.</li>
+<li><strong>Co-authorship:</strong> Rich and Ben Schwartz joined as co-authors.</li>
+<li><strong>Discussion Points:</strong>
+<ul>
+<li><strong>Limited Use Case:</strong> Crucially, this mechanism is intended <em>only</em> for communication between an HTTP server and DNS infrastructure, <em>not</em> for generic clients. This distinction is critical to avoid desynchronization issues (e.g., caching ECH config from one CDN, IP from another) that general-purpose HTTPS RRs address.</li>
+<li><strong>Alternatives:</strong> Discussed using retry configs (requires ECH draft changes) or other resource records (loses server authentication), both deemed less satisfactory.</li>
+<li><strong>Generality:</strong> Whether to make it a more generic mechanism for HTTP servers to describe themselves to DNS infrastructure, or keep it specific to ECH keys. Stephen favors specific for now.</li>
+<li><strong>Technical Details:</strong> ALPN information and SVCB complexities need further consideration.</li>
+<li><strong>Caching:</strong> Ted suggested that the caching infrastructure for HTTP is not fully considered, and recommended registering it as a provisional experimental document via RFC 8615 to gather deployment experience, especially given its target use case where HTTP and DNS infrastructure owners may be separate.</li>
+<li><strong>Ports:</strong> The JSON description of ports mentions TCP, but could be generalized for other protocols like QUIC.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>TLS Registry Update (8447bis) - draft-ietf-tls-rfc8447bis (Shawn Turner)</strong></p>
+<ul>
+<li><strong>Proposal:</strong> Updates RFC 8447 to add a &quot;D&quot; (Discouraged/Weak) column to TLS registries.</li>
+<li><strong>Specific Recommendations (to be revised):</strong>
+<ul>
+<li>Extension Types: <code>truncated_hmac</code> and <code>connection_id</code> proposed as 'D'.</li>
+<li>Cipher Suites: <code>_DUPLICATED_</code> (deprecated) proposed as 'D'. Discussion on renaming to <code>_RESERVED_</code>.</li>
+<li>Hash Algorithms: MD5, SHA1, SHA224 proposed as 'D' (weak).</li>
+<li>Signature Algorithms: Anonymous, DSA, and Ghost algorithms proposed as 'N' (Not Recommended), with strong sentiment that anonymous and DSA should be 'D'. Martin Thompson suggested the standard for 'D' should be explicit RFCs stating the algorithm is bad.</li>
+<li>Certificate Types: Fortezza, ephemeral RSA, and DH reserved types proposed as 'D'.</li>
+<li>Elliptic Curve Related Registries: Most proposed as 'D' (e.g., explicit curves are broken, compressed are unused/problematic), keeping only <code>uncompressed</code> and <code>named_curve</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Deprecated Obsolete Exchange Methods - draft-ietf-tls-ohttp-dhe-deprecate (Nimrod Aviram)</strong></p>
+<ul>
+<li><strong>Proposal:</strong> Deprecates RSA key exchange, static Finite-Field Diffie-Hellman Ephemeral (FF-DHE), limits FF-DHE to ephemeral forms with reasonable security groups, and discourages static Elliptic Curve Diffie-Hellman (EC-DHE).</li>
+<li>Confirmed by Security AD that the document belongs to the TLS WG.</li>
+<li><strong>Open Issues:</strong>
+<ul>
+<li><strong>FF-DHE Groups:</strong> Whether to safe-list widely used but non-standardized groups (e.g., Postfix). Leaning towards yes for sufficient security.</li>
+<li><strong>Client Behavior:</strong> If a client encounters a &quot;bad group,&quot; should it <code>MUST abort</code> or <code>SHOULD abort</code>? Verifying group structure is computationally expensive.</li>
+</ul>
+</li>
+<li><strong>Discussion Points:</strong>
+<ul>
+<li>Some felt the proposed deprecation list was overly strict, especially considering future post-quantum algorithms.</li>
+<li>Recommendation to forbid anything other than named groups for FF-DHE.</li>
+<li>Pen testers are increasingly flagging known DH groups as insecure (due to precomputation attack concerns), leading to users asking to generate arbitrary groups, which is problematic for validation. The document needs to address this directly, explaining why random group generation is a bad idea in practice and advocating for safe-listed or standardized named groups.</li>
+<li>FF-DHE is generally seen as on its way out in favor of ECDHE. Martin Thompson suggested a flat prohibition on FF-DHE in TLS 1.2 would be the most sensible, though a major revision.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>TLS Attestation - draft-tschofenig-tls-attestation-00 (Hannes Tschofenig)</strong></p>
+<ul>
+<li><strong>Proposal:</strong> New work exploring a generalized mechanism to convey hardware-backed attestation information within TLS, building on new hardware isolation features.</li>
+<li><strong>Goal:</strong> Avoid ad-hoc solutions, support RATS &quot;background check&quot; and &quot;passport&quot; models, support various attestation formats (TPM, ARM PSA attestation token), and be technology-agnostic.</li>
+<li><strong>Technical Approach:</strong> A TLS extension for negotiation, using <code>certificate_types</code> but requiring a new <code>nonce</code> field for freshness, making direct reuse of existing certificate types extensions complex. Attestation information (a &quot;bare token&quot;) would be augmented with a key for TLS client authentication, often via a &quot;key attestation token&quot; (e.g., CBOR Web Document with Proof of Possession).</li>
+<li><strong>Discussion Points:</strong>
+<ul>
+<li>It can support both client and server attestation.</li>
+<li><strong>Privacy Concerns:</strong> Significant concerns were raised regarding the persistence, anonymization, and linkability of platform state information conveyed via attestation, particularly for client-side attestation. The privacy considerations section is critical and needs early, thorough development.</li>
+<li><strong>Layer Choice:</strong> Questioned why this should be a TLS layer protocol rather than an application layer one, especially since many fraud cases are application-specific. Hannes noted TLS extensions are needed, and the protocol itself is short, but the context of attestation is broad. Server attestation for confidential cloud workloads was suggested as a clearer use case with fewer privacy pitfalls.</li>
+<li><strong>Terminology:</strong> Clarification needed between &quot;evidence&quot; and &quot;attestation results.&quot;</li>
+<li><strong>Complexity:</strong> Acknowledged as valuable but complex work, requiring definition of what platform aspects (BIOS, firmware, OS) are relevant.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Post-Quantum Cryptography (PQC) Process Update - Sophie Schmieg &amp; Tom Hünemörder</strong></p>
+<ul>
+<li><strong>Key Exchange (KEX):</strong> Relatively straightforward to integrate PQC KEX (hybrid approaches recommended).</li>
+<li><strong>Authentication:</strong> More challenging due to larger sizes and computational times of NIST Round 3 signature algorithms compared to classical ones.</li>
+<li><strong>NIST Algorithms:</strong> Dilithium 2 (faster computation, but larger size), Falcon (small, but tricky implementation), SPHINCS+ (hash-based, slow but conservative). NIST also has a call for new signature schemes (e.g., UOV with 400KB public keys).</li>
+<li><strong>Deployment Challenges:</strong>
+<ul>
+<li><strong>Network Dynamics:</strong> Few real-world authentication experiments. Early experiments focused on KEX (e.g., OpenSSH 8.9 uses Kyber).</li>
+<li><strong>Message Sizes:</strong> PQC certificate payloads can be very large (tens to hundreds of kilobytes), potentially exceeding TLS/QUIC message size limits (e.g., 16MB for certs, but much tighter limits for initial flights in QUIC - e.g., 1300-byte packets).</li>
+<li><strong>Performance:</strong> Large messages severely impact latency and performance, especially within initial window constraints (e.g., IW10 for TCP). Martin Thompson noted that Kyber in a first QUIC packet could already overflow. Sending ClientHello in multiple packets would also cause issues with stateless servers (adding RTT).</li>
+<li><strong>Security vs. Size:</strong> Martin Thompson suggested that NIST's chosen security levels might be too high for practical network limits, advocating for slightly lower security targets if it allows fitting algorithms into single packets.</li>
+</ul>
+</li>
+<li><strong>Next Steps:</strong> Continued engagement with NIST (workshops, events), further research into the practical size and performance implications for TLS and QUIC.</li>
+</ul>
+</li>
+<li>
+<p><strong>TLS Flags Extension - draft-ietf-tls-tls-flags-02 (Sean Turner)</strong></p>
+<ul>
+<li><strong>Open Issue:</strong> Can a flag bit sent in a <code>ClientHello</code> (indicating support for an extension) lead to a full extension response with actual content from the server, rather than just the same flag bit?</li>
+<li><strong>Discussion:</strong> There were differing views (Ecker for flexibility, Martin for simplicity). No strong consensus emerged on the mailing list prior to the meeting.</li>
+<li><strong>Consensus:</strong> It was decided to bring the issue to a head with a show of hands.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>
+<p><strong>Well-Known ECH Keys:</strong></p>
+<ul>
+<li><strong>Decision:</strong> Ben Schwartz and Rich will join as co-authors.</li>
+<li><strong>Action Item:</strong> Chairs to discuss creating a GitHub repository for the draft.</li>
+<li><strong>Action Item:</strong> Target WG Last Call around the time of ECH publication.</li>
+<li><strong>Action Item:</strong> Authors to consider the explicit warning about the limited use case (DNS server to HTTP server only) and avoid generic client use.</li>
+<li><strong>Action Item:</strong> Authors to consider registering as a provisional experimental document via RFC 8615.</li>
+</ul>
+</li>
+<li>
+<p><strong>TLS Registry Update (8447bis):</strong></p>
+<ul>
+<li><strong>Action Item:</strong> Shawn to revise the draft based on feedback, particularly regarding the 'D' and 'N' classifications for algorithms (e.g., anonymous signatures, DSA, SHA224, elliptic curve types). Shawn agreed to incorporate feedback.</li>
+</ul>
+</li>
+<li>
+<p><strong>Deprecated Obsolete Exchange Methods:</strong></p>
+<ul>
+<li><strong>Action Item:</strong> Nimrod to summarize the discussion points and take them to the mailing list for further discussion.</li>
+</ul>
+</li>
+<li>
+<p><strong>SVCB Validation Requests for DTLS:</strong></p>
+<ul>
+<li><strong>Action Item:</strong> Chairs will convene and take the request for Working Group adoption to the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>TLS Attestation:</strong></p>
+<ul>
+<li><strong>Action Item:</strong> Hannes to revise the draft (01 version), clarify terminology (evidence vs. attestation results), and thoroughly address privacy considerations.</li>
+<li><strong>Action Item:</strong> Hannes to post a white paper from the Confidential Computing Consortium to the mailing list to provide more context on use cases.</li>
+</ul>
+</li>
+<li>
+<p><strong>TLS Flags Extension:</strong></p>
+<ul>
+<li><strong>Decision:</strong> The Pull Request disallowing non-flag responses (i.e., a flag bit cannot elicit a full extension response with content) will be merged based on a 15-7 virtual show of hands.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>CTLS:</strong> Continue refining the draft, particularly addressing the omission of empty messages and clarifying the relationship with DTLS 1.3 through prototyping.</li>
+<li><strong>Well-Known ECH Keys:</strong> Develop the draft with new co-authors, explore GitHub repo, and prepare for WG Last Call aligned with ECH. Further investigate caching, generic approaches, and wording for port types.</li>
+<li><strong>TLS Registry Update:</strong> Implement revisions to the 8447bis draft.</li>
+<li><strong>Deprecated Obsolete Exchange Methods:</strong> Continue discussion on the mailing list regarding FF-DHE groups and client abort behavior.</li>
+<li><strong>TLS Attestation:</strong> Further develop the draft, focusing on privacy, use cases, and terminology.</li>
+<li><strong>Post-Quantum Cryptography:</strong> Continue to monitor NIST's process, participate in relevant workshops (e.g., NIST workshop in November, PQNet), and conduct further research and experiments into the network and performance implications of PQC algorithms in TLS/QUIC, especially regarding message sizes and round-trip times.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

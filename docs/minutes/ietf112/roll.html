@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="roll.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-ROLL-20211110-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 10 Nov 2021 14:30</p>
+<h1>roll</h1>
+<h2>Summary</h2>
+<p>The roll working group meeting covered the status of active Internet Drafts, with significant discussions on the AODV-RPL mode of operation, a new draft on Multicast Registration in 6lo/roll, and updates on Projection, Failure Detection of the Router, and Enrollment Priority drafts. Key decisions included investigating a change for AODV-RPL's mode of operation to reuse an existing value and adopting the Failure Detection of the Router draft as a working group item.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Status and Milestones</strong>:
+<ul>
+<li>Two documents (<code>projection</code> and <code>enrollment priority</code>) are active.</li>
+<li><code>aodv-rpl</code> is submitted to the IESG for publication. <code>moppex-capabilities</code> was recently submitted.</li>
+<li>Milestones related to MOPEX and Capabilities need updating. MOPEX is considered closer to Working Group Last Call (WGLC) with only one open action item, while Capabilities is more complex.</li>
+<li>A new version of <code>storing-root</code> is available for review and consideration as a work item.</li>
+<li>Authors were encouraged to check and close/update open tickets on GitHub.</li>
+</ul>
+</li>
+<li><strong>AODV-RPL Mode of Operation Discussion</strong>:
+<ul>
+<li>The current <code>aodv-rpl</code> draft uses Mode of Operation (MO) 5. Discussion revolved around reusing MO 4 from RFC 6997 (P2P-RPL) instead, to conserve MO values.</li>
+<li>RFC 6997 is experimental and not widely implemented (known implementation in RIOT OS only).</li>
+<li>The question of whether <code>aodv-rpl</code> should obsolete <code>p2p-rpl</code> (RFC 6997) was raised. Obsoleting would require clarifying that implementations cannot coexist and updating any RFCs that reference RFC 6997 (e.g., RFC 8773).</li>
+<li>If obsoleted, the process would involve examining the scope of changes to <code>aodv-rpl</code> and potentially pulling it back from IESG review.</li>
+<li>There was a general consensus among participants to lean towards reusing MO 4 and obsoleting RFC 6997, provided the scope of work is manageable.</li>
+</ul>
+</li>
+<li><strong>Multicast Registration in 6lo/roll</strong>:
+<ul>
+<li>Pascal Thubert introduced a new draft extending RFC 8505 (6LoWPAN ND registration) for multicast and anycast addresses, providing an operation in RPL (non-storing mode) to transport these addresses.</li>
+<li>This aims to remove the need for MLD in constrained devices, particularly for Wi-SUN applications.</li>
+<li>The 6LR would handle ingress replication for multicast and select one 6LR for anycast.</li>
+<li>The draft introduces new flags in the RPL Target Option for anycast and multicast.</li>
+<li>Backward compatibility for existing RPL deployments (Map 1) was discussed.</li>
+<li>Concerns were raised about the interaction with PIM and the potential impact on MLD standardization efforts. It was suggested to inform the PIM working group.</li>
+<li>The possibility of splitting the document into separate 6lo and roll components was also discussed to facilitate broader review and adoption.</li>
+</ul>
+</li>
+<li><strong>Projection (<code>draft-ietf-roll-rpl-optimizations</code>)</strong>:
+<ul>
+<li>The draft is now at revision 21, having undergone significant revisions based on a detailed review by Talos.</li>
+<li>Changes include a simpler introduction, a new Section 3 for domain context and requirements, extended projected DAO sections, and a larger Section 6 for protocol operation details, including maintenance.</li>
+<li>The document now explicitly states its applicability beyond IoT use cases (e.g., ANIMA).</li>
+<li>The authors feel it's ready for WGLC, pending additional reviews.</li>
+</ul>
+</li>
+<li><strong>Failure Detection of the Router (<code>draft-ietf-roll-rpl-rnv</code>)</strong>:
+<ul>
+<li>Conrad presented updates to the draft, addressing comments on floating products, virtual DAG routes, sentinel selection, and adding an activation/deactivation mechanism.</li>
+<li>Discussion highlighted the problem's complexity (classical Byzantine general problem) and the critical need for rapid root failure detection.</li>
+<li>The working group recognized the problem statement as important and the draft as a suitable starting point for a solution.</li>
+</ul>
+</li>
+<li><strong>Enrollment Priority (<code>draft-ietf-roll-rpl-enrollment-priority</code>)</strong>:
+<ul>
+<li>Conrad proposed two approaches: &quot;global&quot; (total congestion control/load balancing) and &quot;flexible&quot; (no clear use case identified yet).</li>
+<li>The authors haven't fully discussed the proposed use cases or the core mechanism (e.g., whether priority values are modified down the DAG).</li>
+<li>Pascal noted that Wi-SUN has an operational need for this draft, emphasizing that if the priority value set by the root is propagated unchanged, it is perfectly workable.</li>
+<li>More reviews are needed, and a new revision is expected from the authors.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>AODV-RPL Mode of Operation</strong>:
+<ul>
+<li><strong>Decision</strong>: The working group leans towards moving <code>aodv-rpl</code> to use Mode of Operation 4 (MO=4) from RFC 6997 and consequently obsoleting RFC 6997. This decision is contingent on the outcome of further investigation into the scope of changes.</li>
+<li><strong>Action</strong>: Alvaro to examine the scope of changes required for <code>aodv-rpl</code> and any related RFCs (e.g., RFC 8773) that would be impacted by obsoleting RFC 6997. This includes determining if the document needs to be pulled back from the IESG queue.</li>
+<li><strong>Action</strong>: A GitHub issue will be created to track documents that reference RFC 6997.</li>
+<li><strong>Action</strong>: A final call for strong objections regarding the reuse of MO=4 will be made on the mailing list.</li>
+</ul>
+</li>
+<li><strong>Multicast Registration</strong>:
+<ul>
+<li><strong>Action</strong>: Pascal Thubert to send an email to the PIM mailing list to make them aware of the <code>multicast-registration</code> draft and its implications for MLD.</li>
+<li><strong>Action</strong>: The chairs will coordinate with the 6lo chairs to ensure appropriate working group last call procedures are followed, especially if the document contains significant RPL elements.</li>
+</ul>
+</li>
+<li><strong>Failure Detection of the Router</strong>:
+<ul>
+<li><strong>Decision</strong>: Adopt <code>draft-ietf-roll-rpl-rnv</code> as a working group item. There were no strong objections raised during the meeting, and consensus was reached on the problem statement's importance.</li>
+<li><strong>Action</strong>: Confirm the adoption of <code>draft-ietf-roll-rpl-rnv</code> via the mailing list.</li>
+</ul>
+</li>
+<li><strong>Enrollment Priority</strong>:
+<ul>
+<li><strong>Action</strong>: Authors of <code>draft-ietf-roll-rpl-enrollment-priority</code> to discuss the proposed use cases and core mechanism, and post a new revision by the end of the month.</li>
+<li><strong>Action</strong>: New reviews are required for the updated draft.</li>
+</ul>
+</li>
+<li><strong>General</strong>:
+<ul>
+<li><strong>Action</strong>: Authors of MOPEX and Capabilities to provide appropriate dates for milestone updates. MOPEX is targeted for WGLC soon.</li>
+<li><strong>Action</strong>: Authors are encouraged to review their open tickets on GitHub and close/update them as appropriate.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The working group will await the investigation results for AODV-RPL's MO change and subsequent process.</li>
+<li>Continued engagement with the PIM WG regarding the multicast registration draft.</li>
+<li>The <code>failure-detection-of-the-router</code> draft will proceed as a working group item.</li>
+<li>A new revision of the <code>enrollment-priority</code> draft is expected, followed by further reviews.</li>
+<li>The <code>projection</code> draft is ready for WGLC once additional reviews are completed.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="tigress.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-TIGRESS-20220727-1900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 27 Jul 2022 19:00</p>
+<h1>tigress</h1>
+<h2>Summary</h2>
+<p>This session introduced the Tigress working group's problem statement and a proposed solution for standardizing digital credential sharing across various platforms and verticals. The core problem identified is the lack of a standardized cross-platform, cross-vertical method for users to share digital credentials (e.g., car, home, hotel keys). The proposed solution centers around a &quot;relay server&quot; that facilitates short-lived, encrypted communication channels between sender and receiver devices, decoupling the transfer mechanism from credential provisioning logic. Discussion revolved around the scope, security, privacy, and general applicability of the proposed transfer protocol, leading to a decision <em>not</em> to adopt the initial draft as a working group document, pending further refinement and a clear requirements/problem statement document.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Problem Statement</strong>: Today, no standardized cross-platform, cross-vertical method exists to enable users to share digital credentials stored in wallets (e.g., hotel keys, car keys, home keys).</li>
+<li><strong>Working Group Goals</strong>:
+<ul>
+<li>Minimize friction for cross-platform and cross-vertical sharing by defining simple APIs on top of existing protocols (e.g., HTTP), not creating new communication protocols.</li>
+<li>Maintain access control, ensuring senders approve recipients for a <em>subset</em> of their own access to facilitate minting a <em>new</em> credential, rather than sharing the exact same key.</li>
+<li>Meet security and privacy goals throughout the sharing process.</li>
+</ul>
+</li>
+<li><strong>Key Vocabulary Defined</strong>:
+<ul>
+<li><strong>Credential Authority (CA)</strong>: Entity facilitating credential information lifecycle (provisioning, termination, update).</li>
+<li><strong>Credential Information</strong>: Data used to transact with an access point (e.g., open a lock).</li>
+<li><strong>Provisioning Information</strong>: Data structure transferred from sender to recipient, necessary and sufficient to provision a credential on the receiving device.</li>
+<li><strong>Sender Device</strong>: Initiates transfer of provisioning information.</li>
+<li><strong>Receiver Device</strong>: Receives provisioning information to provision with the CA.</li>
+<li><strong>Relay Server</strong>: Intermediary server for transfer.</li>
+</ul>
+</li>
+<li><strong>Use Cases</strong>: Car key sharing (e.g., loaning car, valet), home/residential key sharing (e.g., visitors, housekeepers), hotel key sharing (e.g., partner access, multiple guests).</li>
+<li><strong>Requirements and Constraints for the Solution</strong>:
+<ul>
+<li>Sender initiates share over any communication channel (email, SMS, WhatsApp).</li>
+<li>Recipient views preview before accepting.</li>
+<li>Multiple round-trip communications within a limited time.</li>
+<li>Receiver requests additional provisioning information if needed.</li>
+<li>Does not require sender and receiver to be online simultaneously.</li>
+<li>Supports opaque message content (arbitrary formats, public standards like CCC, proprietary formats).</li>
+<li>Sender/receiver manage and interrupt transfer process.</li>
+<li><strong>Security</strong>: Prevent bad actors from obtaining credentials during transfer; ensure only intended recipient provisions; anti-replay (provisioned once); sender intent/attribution.</li>
+<li><strong>Privacy</strong>: Relay server should not learn sender/receiver information (aside from network metadata), create associations between shares, build a social graph, see sensitive details, or provision the credential itself.</li>
+</ul>
+</li>
+<li><strong>Out of Scope</strong>: Defining the mechanism for receiver to provision with CA; mechanism for sender to get provisioning information from CA; user interface (UI) on sender/receiver devices; format for fields within encrypted data.</li>
+<li><strong>Proposed Solution Overview</strong>:
+<ul>
+<li><strong>Core</strong>: A &quot;relay server&quot; facilitates a short-lived, encrypted communication channel. All messages are encrypted (asymmetric) and opaque to the relay server.</li>
+<li><strong>Data Flows</strong>:
+<ul>
+<li><strong>Stateless</strong>: Single unidirectional transfer (sender -&gt; relay -&gt; receiver). New credential generated by CA.</li>
+<li><strong>Stateful</strong>: Multiple data transfers (ping-pong) for registration/provisioning (e.g., new key material generated by receiver, authorized by sender, as per CCC spec).</li>
+</ul>
+</li>
+<li><strong>API</strong>: <code>create mailbox</code> (sender uploads encrypted info, gets share URL), <code>read display information</code> (messaging app previews), <code>read secure information</code> (receiver downloads, decrypts), <code>update mailbox</code> (for stateful flow), <code>delete mailbox</code> (cleanup/cancel).</li>
+</ul>
+</li>
+<li><strong>Discussion during Q&amp;A (Problem Statement &amp; Solution)</strong>:
+<ul>
+<li><strong>Authorization vs. Transfer</strong>: Clarified focus is on <em>transfer</em> of provisioning info, not authorization itself. Acknowledged different key types (symmetric/asymmetric) and granular control.</li>
+<li><strong>Credential Authority Control</strong>: CA defines sharing policies (e.g., Hilton vs. car owner). This WG focuses on the <em>transfer</em> mechanism, not CA actions.</li>
+<li><strong>&quot;Permissionless&quot; Sharing / FIDO</strong>: Protocol does not support permissionless sharing (e.g., giving website access without service provider permission); designed to prevent creation of share networks.</li>
+<li><strong>Relay Server Necessity</strong>: Required for asynchronous communication channels (SMS, email) and user experience (avoiding exposing complex data directly).</li>
+<li><strong>Replay Attacks</strong>: Aimed at preventing multiple recipients from claiming the same credential from a single share link without sender intent. Discussion on the role of trusted hardware/client-side logic and whether the relay or CA is ultimately responsible.</li>
+<li><strong>Generic Secret Message Transfer</strong>: Distinguishes from generic file transfer by separating encrypted content from the link, avoiding pre-shared secrets, focusing on short-lived one-to-one exchanges, and supporting mobile offline scenarios.</li>
+<li><strong>Trust and Attestation</strong>: Sender-relay trust can be established via device attestation (anonymous, generalized, implementation-dependent). Recipient trust relies on knowing the sender and using separate channels for verification. Relay servers might be &quot;allow-listed&quot; by verticals (e.g., CCC for car keys).</li>
+<li><strong>Channel Constraints</strong>: Assumes limited capacity for out-of-band channels (e.g., ~100-240 characters for SMS), driven by user experience.</li>
+<li><strong>Abuse/Phishing</strong>: Relies on sender's existing trust in the communication channel and the relay server's ability to provide a trusted preview. Delete mailbox API provides cancellation. Identity of sender/receiver is out of scope for the relay server.</li>
+<li><strong>Document Structure</strong>: Significant feedback suggested a dedicated requirements document, including a clear threat model, constraints, and comparison to existing solutions to clarify the problem space.</li>
+<li><strong>&quot;Mailbox&quot; Terminology</strong>: Participants questioned &quot;mailbox&quot; as it implies arbitrary mail and multi-message storage, suggesting it's more like a single-exchange point.</li>
+<li><strong>Relay Server Choice</strong>: The choice of relay server is typically determined by the credential authority/application (e.g., Hilton uses Hilton's relay). A common URL scheme/prefix could allow recipient apps to handle shares from any relay server. Relay server can require attestation from senders but doesn't track identity.</li>
+<li><strong>Credential Recognition</strong>: Devices recognize a share as a credential via URL query parameters (e.g., &quot;vertical&quot; type) and metadata within the encrypted provisioning information, or through universal link registration by an app.</li>
+<li><strong>Deployment Example</strong>: A request was made for a full deployment example for a specific use case (e.g., car unlock) to illustrate how all pieces fit together.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: The working group did <strong>not</strong> reach rough consensus to adopt the current draft (<code>draft-ieft-tigress-secret-transfer</code>) as a working group document. The vote was approximately 50/50.</li>
+<li><strong>Action Item</strong>: The authors are requested to re-spin the draft document, incorporating feedback from this session.</li>
+<li><strong>Action Item</strong>: The authors are strongly encouraged to work on a separate <strong>requirements document</strong> that clarifies:
+<ul>
+<li>The detailed problem statement.</li>
+<li>A clear threat model.</li>
+<li>Explicit constraints (e.g., on out-of-band channel capacity).</li>
+<li>Comparison to existing solutions (e.g., generic secure messaging).</li>
+<li>Specific use case deployment examples.</li>
+</ul>
+</li>
+<li><strong>Action Item</strong>: Chairs and the responsible AD will discuss the document strategy for incorporating requirements and problem statements.</li>
+<li><strong>Suggested Action Item</strong>: Consider renaming the &quot;mailbox&quot; concept to better reflect its function (e.g., &quot;exchange point&quot;).</li>
+<li><strong>Suggested Action Item</strong>: Explore standardization of a URL scheme/prefix to allow recipient apps to handle share links independently of the relay server's hostname.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The authors will re-spin the draft and begin work on a separate requirements document, incorporating the feedback from this session.</li>
+<li>The working group will hold another meeting in London to discuss the updated documents and progress.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="gnap.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-GNAP-20211111-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 12:00</p>
+<h1>gnap</h1>
+<h2>Summary</h2>
+<p>The gnap session focused on the latest updates to the GNAP Core Protocol (draft-ietf-gnap-core-protocol-08), including significant additions to trust, security, and privacy considerations. Discussions also covered a formal security analysis that identified potential attacks and proposed mitigations. The editors outlined their roadmap for addressing open issues, including key rotation, mandatory-to-implement features, extensions, and the future of JOSE key-proofing mechanisms. The session concluded with a presentation by Denis Pinkas, who raised several concerns with the current draft, particularly regarding Attribute-Based Access Control, trust relationships, and client instance key protection, proposing a modified model.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Logistics:</strong> The session experienced initial technical difficulties with slide sharing but eventually proceeded. The IETF Note Well and Code of Conduct were presented. Kathleen M. took minutes on Hedgedoc.</li>
+<li><strong>Core Protocol Updates (draft-ietf-gnap-core-protocol-08):</strong>
+<ul>
+<li><strong>Editors:</strong> Justin Richer, Fabian Hirschmann, Aaron Parecki.</li>
+<li><strong>Revisions:</strong> Draft-ietf-gnap-core-protocol-08 represents two full revisions since IETF 111. The Resource Server (RS) draft has not had a new revision published as changes have been minor.</li>
+<li><strong>Pull Requests/Issues:</strong> 32 PRs merged on core, 3 on RS. 55 core issues and 5 RS issues closed.</li>
+<li><strong>Editorial Changes:</strong> Numerous text consistency improvements, typo fixes, and formatting changes were applied, with significant contributions from Andreas and Florian. <code>editorconfig</code> was adopted to minimize spurious whitespace changes.</li>
+<li><strong>Functional Changes:</strong>
+<ul>
+<li><strong>Trust Relationships (Section 1.4):</strong> A new section detailing expectations between parties, using &quot;promise theory&quot; as an alternative trust model. Trust is defined as an agent's expectation that a promise will be kept, allowing for probabilistic assessment, linking to relevant security and privacy sections to avoid repetition.</li>
+<li><strong>Security Considerations (Section 12, 25+ subsections):</strong> Expansive coverage, though needing better organization. Key points include:
+<ul>
+<li>Requirement for both TLS (confidentiality) and signatures (identification).</li>
+<li>Protection of private keys.</li>
+<li>Risks of bearer tokens (no signatures).</li>
+<li>Weaknesses in crypto/random number generator algorithms.</li>
+<li>Inherent susceptibilities of front-channel redirects (phishing, session capture), combated by GNAP when used properly.</li>
+<li>Mitigation for AS mix-up attacks: <code>interaction_hash</code> in the front channel.</li>
+<li>Pre-registering keys shifts, but doesn't eliminate, trust concerns.</li>
+<li>Limitations of mutual TLS (mTLS) in solving all problems.</li>
+<li>Vulnerabilities when processing complex identity assertions (e.g., XML DSig, SAML, JOSE).</li>
+</ul>
+</li>
+<li><strong>OAUTH Security Workshop:</strong> Announced as a free, online event in late November. Justin will present GNAP core structure, Fabian on formal security analysis. Opportunity for in-depth discussion on protocol tweaks before finalization.</li>
+<li><strong>Privacy Considerations (RFC 6973 based):</strong> Addressed surveillance by clients/AS, data storage (opaque identifiers, shared references), and correlation risks from client key reuse across multiple AS/RS (recommended mitigation: use different keys).</li>
+<li><strong>Relationship to RS Draft:</strong> Security and privacy considerations are currently in the core draft. The RS draft will inherit many, but will have unique considerations (e.g., introspection's privacy trade-offs, structured tokens, PII in tokens) that still need to be elaborated.</li>
+<li><strong>Symmetric Cryptography:</strong> Allowed but restricted. GNAP's mechanisms for key <em>distribution</em> (by value) are limited to public/private keys only. Symmetric keys are only allowed to be passed by identifier. Security considerations outline safe practices (key derivation functions, key escrow services). HPKE was mentioned as a potential key derivation mechanism.</li>
+<li><strong>Subject Identifier / User Handle:</strong> The &quot;user handle&quot; concept was removed. Opaque identifiers from the Security Events WG subject identifier format are now used, simplifying the protocol without losing functionality for client-to-AS user identification.</li>
+<li><strong>Client Instance Identifier:</strong> The term &quot;handle&quot; was removed. This identifier's potential for dynamic client registration and key rotation over time will be further explored.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Formal Security Analysis (by Florian Hemmerschmidt et al.):</strong>
+<ul>
+<li><strong>Cuckoo Token Attack:</strong>
+<ul>
+<li><strong>Preconditions:</strong> Client uses the same keys with multiple AS. An attacker-controlled AS tricks the client into using a stolen, key-bound access token from the legitimate AS against a legitimate RS.</li>
+<li><strong>Proposed Mitigations:</strong>
+<ol>
+<li>Client sends AS identifier to RS (protocol change, more data, RS check consistency).</li>
+<li><strong>Client uses different keys for each AS:</strong> Breaks the attack. Recommended as a security best practice or normative text.</li>
+<li><strong>Client maintains strong binding between RS and AS:</strong> Largely a security consideration, aided by discovery mechanisms.</li>
+</ol>
+</li>
+<li><strong>Editor's Leaning:</strong> Towards implementing mitigations #2 and #3 via security considerations or normative text. Florian Hemmerschmidt confirmed the explanation.</li>
+</ul>
+</li>
+<li><strong>HTTP 307 Redirect Mechanical Attack:</strong> Known in OAuth2. POST data (potentially including credentials) can be re-posted during a 307 redirect, leading to credential leakage.
+<ul>
+<li><strong>Mitigation:</strong> Stricter rules for HTTP redirects and associated security considerations. Florian has submitted text for review.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Next Steps / Editor Proposals:</strong>
+<ul>
+<li><strong>Issue Backlog:</strong> Continue to process remaining open issues, making decisions and proposing text.</li>
+<li><strong>API Management:</strong> Define stricter semantics for what can be sent at each step of grant requests and continuation requests (e.g., client object, interaction references) to avoid unexpected corner cases.</li>
+<li><strong>Key Rotation:</strong> Develop mechanisms tied to key presentation types (e.g., HTTP sig, JOSE, mTLS). Investigate leveraging existing tools like ACME for mTLS certificate rotation (suggestion from Kathleen).</li>
+<li><strong>Mandatory to Implement (MTI):</strong> Define a baseline set of mandatory features for GNAP implementations. Debate on whether to use GNAP interoperability profiles (skepticism expressed due to potential for esoteric profiles and adoption challenges, drawing parallels to Sticks vs. MISP).</li>
+<li><strong>Extensions:</strong> Provide guidance and requirements for extending the protocol (e.g., adding new fields, defining different data types for existing fields, handling unknown extensions).</li>
+<li><strong>JOSE Key Proofing Mechanisms:</strong> Re-evaluate whether the two JOSE-based key proofing mechanisms (detached/attached JWS headers) should remain in the core draft or be moved to a separate specification. (Kathleen argued for keeping them in core for object-level security and as a differentiator from OAuth).</li>
+<li><strong>Resource Server Draft:</strong> Acknowledge significant work remains, particularly on defining a token model.</li>
+<li><strong>Implementation Status:</strong> Status is growing, and the core protocol is stabilizing, indicating a good time for further implementation and testing.</li>
+</ul>
+</li>
+<li><strong>Denis Pinkas's Concerns and Proposals (from draft-pinkas-gnap-abac):</strong>
+<ul>
+<li><strong>Attribute-Based Access Control (ABAC):</strong> Argued that GNAP currently supports Capability-Based Access Control (CBAC) but lacks explicit ABAC support. Proposed defining two fields in access tokens to distinguish rights from attributes, defining attribute types (like OpenID Connect claims), and allowing RS to request specific attribute types.</li>
+<li><strong>Resource Owner (RO) vs. End User:</strong> Noted an inconsistency in the draft's assumption that RO and end user are always the same entity, especially for automated processes.</li>
+<li><strong>Trust Relationships:</strong> Criticized the use of promise theory for trust in Section 1.4, arguing for a binary trust model and highlighting incomplete/incorrect trust relationships.</li>
+<li><strong>Client Instance and End User Authentication:</strong> Stated that the link between client instance authentication and end user authentication is undefined, as is how the AS can be confident of the legitimate user. Cited PSD2 multi-factor authentication requirements as unaddressed.</li>
+<li><strong>Insecure Model (Client Instance Key Protection):</strong> Argued that Section 12.3 is insufficient, and collaborative client attacks are possible if keys are shared. Proposed a &quot;binding user identifier&quot; (BYD) mechanism within access tokens to prevent voluntary token sharing, outlining five types with varying privacy properties for long-term and short-term accounts.</li>
+<li><strong>EU Legislation:</strong> Emphasized that GDPR, PSD2, and upcoming EU proposals for electronic attribute attestation are not adequately considered.</li>
+<li><strong>Proposed Model:</strong> A modified model supporting both attributes and capabilities, mandatory end-user authentication to the AS, clear trust relationships, BYD for collaborative attack resistance, and mTLS with ephemeral client key pairs for impersonation protection.</li>
+<li><strong>Editor Response:</strong> Fabian Hirschmann stated that most of Denis's comments have been discussed extensively on GitHub, with rationales for rejection provided, indicating they are unlikely to be included without broader working group consensus.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Cuckoo Token Attack Mitigations:</strong> Editors are leaning towards adding security considerations or normative text to recommend clients use different keys for each Authorization Server (AS) and maintain strong bindings between Resource Servers (RS) and AS.</li>
+<li><strong>HTTP 307 Redirect Attack:</strong> Editors to review Florian's submitted text and add normative discussion to address this known vulnerability.</li>
+<li><strong>Key Rotation:</strong> Editors will propose text defining key rotation mechanisms tied to key presentation types (e.g., HTTP signatures, JOSE, mTLS) and investigate the use of ACME for mTLS certificates.</li>
+<li><strong>Issue Backlog:</strong> Editors will continue processing open issues, proposing text to resolve them and initiating working group discussion.</li>
+<li><strong>JOSE Key Proofing:</strong> Discussion will be brought to the mailing list to determine whether the JOSE-based key proofing mechanisms should remain in the core draft or be separated.</li>
+<li><strong>Denis Pinkas's Proposals:</strong> Editors have previously provided rationale for rejecting many of the proposed changes, but the discussion remains open for broader working group consensus on the mailing list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The editors will continue to address the extensive issue backlog, proposing specific text and fostering discussion within the working group.</li>
+<li>Prioritize further defining API management specifics, key rotation mechanisms, Mandatory to Implement (MTI) features, and extension points.</li>
+<li>Shift focus to the Resource Server (RS) draft, particularly the token model, as the core protocol stabilizes.</li>
+<li>Encourage continued implementation and testing of the core protocol to identify further use cases and refine the specification.</li>
+<li>Engage with discussions at the upcoming OAUTH Security Workshop.</li>
+<li>Further discussions on key decisions (e.g., JOSE key proofing, MTI profiles) will be moved to the mailing list.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

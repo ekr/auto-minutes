@@ -1,0 +1,89 @@
+**Session Date/Time:** 25 Jul 2022 19:00
+
+# bess
+
+## Summary
+The BESS working group reviewed the status of its various drafts, including new RFCs published, documents in the RFC Editor's queue, and those under IESG or shepherd's review. Several drafts are nearing Working Group Last Call. Presentations covered proposals for IP payload-only transport in IP-VPNs, enhancements for MVPN/EVPN C-multicast routes, comprehensive IPv6 and IPv4 only PE designs, extensions for EVPN LSP ping, BGP EVPN IP binding synchronization, and solutions for MVPN in IPv6 infrastructure. Discussions highlighted the need for clearer problem statements in some drafts and alignment with existing work.
+
+## Key Discussion Points
+
+*   **Working Group Status:**
+    *   **Published RFCs:** Two new RFCs (9251 for IGMP MLD in EVPN, 9252 for BGP SRv6 Overlay Services).
+    *   **RFC Editor Queue:** Two documents (EVPN BoM Procedure Updates, EVPN Optimized Ingress Replication) are held, primarily due to cross-dependencies and a misreference.
+    *   **IESG Review:** AD Andrew expressed challenges with the volume of inherited drafts and requested timely responses from authors to expedite progress.
+    *   **Shepherd's Review:** Several drafts are under review, with some delays noted due to slow IPR responses. A plea was made for timely IPR engagement.
+    *   **Working Group Last Call (WGLC):** EVPN I-VPN Interworking is in WGLC with comments from IDR chairs requiring resolution. EVPN Split Horizon is ready to move forward. The BGP SD-WAN Usage draft is queued for WGLC after a deliberate hold due to AD workload.
+    *   **Document Refresh:** Authors were reminded to refresh expiring drafts (e.g., Multicast Flow DF Election). YANG models are on hold but can be revisited with author interest.
+    *   **Manav Komandur (Secretary) Updates:** "Per Flow DF Election" will progress pending IGMP Proxy RFC. "Extended EVPN Optimized IR" is ready for WGLC.
+
+*   **IP Payload Only Transport in IP-VPN (Jeffrey Zhang):**
+    *   Proposed a method to transport GTP-U over IP-VPN using a label stack (MPLS) or SRv6 with only the UDP/GTP payload, eliminating an outer IP header for bandwidth savings.
+    *   This is a generalization beyond 5G, applicable where traffic is host-to-host and packet reconstruction at transit devices is acceptable.
+    *   Signaling involves a new BGP SAFI carrying label, RD, and optional wildcarded IP/UDP information.
+    *   **Discussion:** Clarification that the solution is general, not just 5G. Queries about using Route Distinguishers/Targets in a global routing table context.
+
+*   **MVPN/EVPN C-Multicast Route Enhancement (Jeffrey Zhang):**
+    *   Presented an older draft addressing inter-AS propagation of MVPN C-multicast routes, stalled since 2019.
+    *   Highlighted its relevance to a problem also being addressed by a new draft from Huawei (Panhung).
+    *   **Discussion:** Panhung clarified that his document specifically focuses on IPv6 infrastructure scenarios. Jeffrey emphasized that both drafts aim to solve the same underlying problem with potentially different solutions.
+
+*   **IPv6 Only PE Design & IPv4 Only PE Design All SAFY (Grant M. Sincovitz):**
+    *   Reviewed four drafts covering IPv6-only and IPv4-only PE designs supporting all SAFIs.
+    *   PoC testing of IPv6-only PE design confirmed vendor support for a specific knob allowing V4 forwarding without a configured V4 address on an interface. Testing is ongoing.
+    *   Key benefits include Opex savings by reducing peering interfaces and potential Capex savings by avoiding underlay migration.
+    *   Proposed standardizing IPv4 next-hop encoding for IPv4 NLRI over IPv4 next-hop (current industry practice diverges from older RFCs) using a new IANA BGP code point.
+    *   **Discussion:** Identified some illegal SAFI/AFI combinations in the "all SAFY" drafts that need correction.
+
+*   **EVPN LSP Ping Extensions (Samir Pal):**
+    *   Proposed extensions for EVPN LSP ping, driven by three requirements: partial indexing for NLRI (wildcarding attributes), explicit control plane/data plane validation modes, and reachability checks for "liaison VRFs" (VRFs without local interfaces).
+    *   Proposed new TLVs for wildcarding, validation type, and an EVI sub-TLV.
+    *   **Discussion:** Critiques on the clarity of the problem statement and the complexity of the proposed wildcard TLV. Questions about IANA considerations and whether standard communities could suffice.
+
+*   **BGP EVPN IP Binding Sync (Samir Pal):**
+    *   Addressed the need to synchronize IP binding approvals (from DHCP/ND snooping) across distributed sites in an EVPN fabric, especially for mobile clients.
+    *   Proposed using a new extended community with EVPN RT2 (MAC/IP advertisements) to carry a "security approval" or "sync ID."
+    *   **Discussion:** Feedback highlighted the need for a clearer problem statement and questioned the security of a simple "grouping ID," suggesting that existing Route Target mechanisms might be more appropriate and granular. Also, the use of a new extended community over existing community types was questioned.
+
+*   **All DF BoM Traffic in an ES, Dampening and Back-off (Samir Pal):**
+    *   Provided an update on the draft allowing all VTEPs in an Ethernet Segment to act as a Designated Forwarder for BoM traffic (relevant for distributed firewalls).
+    *   The "Dampening and Back-off" draft was shifted to informational.
+    *   **Discussion:** Comments reiterated concerns about the DF election algorithm clashing with other drafts and unclear assumptions regarding remote PE traffic handling. Existing work (e.g., "single flow active load balancing mode" draft) was suggested as a potential alternative.
+
+*   **MVPN Used in IPv6 Infrastructure Gaps and Solutions (Panhung):**
+    *   Highlighted problems with inter-AS tunnel establishment (RFC 6514/6515) in IPv6 infrastructure due to the 4-byte `Sources` field in C-multicast routes.
+    *   Proposed using the `Global Administrative Field` of IPv6 C-multicast I-D and renaming the `Sources` field to `Root Distinguishable`.
+    *   Also addressed route explosion with co-existing IPv4/IPv6 BGP sessions, proposing selective advertisement rules based on originator IP and route type.
+    *   Requested to initiate an adoption call.
+
+*   **MVPN Fast Failover Enhancement (Panhung):**
+    *   Addressed limitations of RFC 1926's downstream PE selection when paternal status is unavailable for fast failover.
+    *   Proposed increased participation from upstream PEs, potentially mapping VRP roles to primary/standby upstream PEs. Downstream PEs would accept traffic from any candidate upstream PE.
+
+*   **EVPN VPWS over SRv6 Seamless Migration (Xihua Wu):**
+    *   Proposed a solution for migrating L2 VPN (VPWS over LDP) to EVPN VPWS over SRv6, specifically how to identify if the LDP pseudo-wire corresponds to the EVPN SRv6 pseudo-wire during migration.
+    *   Solution: A new Extended Community attribute (`L2VPN VPWS Origin IP`) to carry the original LDP source IP for comparison.
+    *   **Discussion:** The problem was acknowledged as real, but the proposed solution was not universally favored. Suggestions included enhancing the existing `evpn-vpws-seamless` draft, using IPv4 next-hops on SRv6 routes, or resurrecting older drafts for originating PE identification.
+
+## Decisions and Action Items
+
+*   **Chairs/Authors:** Resolve IDR chair comments on the EVPN I-VPN Interworking draft (currently in WGLC).
+*   **Manav Komandur:** Add "Extended EVPN Optimized IR" to the working group last call wiki list.
+*   **Authors of Expiring Drafts:** Refresh drafts (e.g., Multicast Flow DF Election) to prevent expiration.
+*   **Andrew (AD):** Requested authors to respond promptly to follow-up requests to clear the IESG review backlog.
+*   **Working Group Members/Shepherds:** Respond to IPR requests in a timely manner.
+*   **Grant M. Sincovitz:** Correct illegal SAFI/AFI combinations in the "all SAFY" drafts.
+*   **Samir Pal:**
+    *   For "EVPN LSP Ping Extensions," clarify the problem statement and review the IANA section.
+    *   For "BGP EVPN IP Binding Sync," clarify the problem statement and review the security aspects of the grouping ID.
+    *   For "All DF BoM Traffic in an ES," review the DF election algorithm point (suggested TBD) and clarify assumptions about remote PE traffic.
+*   **Panhung (Huawei):** For "MVPN Used in IPv6 Infrastructure Gaps and Solutions," solicit comments on the mailing list and initiate an adoption call.
+*   **Xihua Wu:** Engage with the authors of `draft-ietf-bess-evpn-vpws-seamless` to discuss enhancements for the migration identification problem.
+
+## Next Steps
+
+*   Continue discussions on all presented drafts on the mailing list.
+*   Chairs will initiate more Working Group Last Calls and adoption calls after this IETF.
+*   Review and provide feedback on the proposed solutions for MVPN C-multicast route enhancement, considering both Jeffrey Zhang's and Panhung's approaches.
+*   Further PoC testing and documentation for the IPv6/IPv4-only PE designs.
+*   Clarity on problem statements and proposed solutions for EVPN LSP Ping Extensions and BGP EVPN IP Binding Sync.
+*   Consolidate efforts for EVPN VPWS seamless migration solutions within the existing `draft-ietf-bess-evpn-vpws-seamless` document.

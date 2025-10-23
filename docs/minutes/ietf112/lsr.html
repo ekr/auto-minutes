@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lsr.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-LSR-20211111-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 12:00</p>
+<h1>lsr</h1>
+<h2>Summary</h2>
+<p>The lsr (Link State Routing) working group session covered the status of existing drafts, including several Yang models and SRv6 extensions, and proceeded with detailed presentations and discussions on new and updated individual drafts. Key outcomes included the immediate working group adoption of the &quot;Fast Flooding&quot; merged draft and a decision to initiate a Working Group Last Call (WGLC) for the &quot;Flood Reflection&quot; draft. Several other drafts proposing extensions for ASLA, prefix unreachable announcements, 5G edge computing, Path MTU, Flow ID label capabilities, unicast property advertisement, link bit error ratio, and stub link attributes were presented, with discussions deferred to the mailing list for further technical review and to address concerns regarding use cases, IGP appropriateness, and interoperability.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrative and Working Group Document Status</strong>:</p>
+<ul>
+<li>The chairs provided an overview of the Note Well and IPR policies.</li>
+<li>Existing RFCs (9088, 9089, 9127) and drafts (BFD Yang, OSPF/IS-IS Yang models, SRv6 encodings for IS-IS, extended attributes errata, reverse metric) were briefly reviewed. The reverse metric draft is awaiting IETF last call completion.</li>
+<li>The group was encouraged to focus on completing existing working group documents rather than taking on new work, with specific mention of the OSPFv3 extensions for SRv6 as a priority.</li>
+<li>A call was made for authors of experimental RFCs/drafts to report on deployments, but no updates were available from Wemo or Tony.</li>
+</ul>
+</li>
+<li>
+<p><strong>Fast Flooding (Les Ginsberg, Tony Li)</strong>:</p>
+<ul>
+<li>An updated, merged draft combining two previous fast flooding proposals was presented.</li>
+<li>Consensus has been reached that congestion control algorithms can be sender-side implemented without requiring all nodes to use the same algorithm. However, flow control requires TLVs for interoperability.</li>
+<li>The combined draft focuses on providing tools for implementers to experiment with different approaches.</li>
+<li>The draft introduces a new Flooding Parameters TLV with six candidate sub-TLVs and discusses receiver performance improvements.</li>
+<li>Two main algorithms (from draft-ginsberg and draft-ukraine) are described.</li>
+<li><strong>Request</strong>: Working group adoption, with an emphasis on early allocation for the tTLV code point.</li>
+</ul>
+</li>
+<li>
+<p><strong>Flood Reflection (Tony P)</strong>:</p>
+<ul>
+<li>Update on version 4, incorporating discussions and implementation/deployment experience.</li>
+<li>Clarified two deployment modes: &quot;no tunnel&quot; and &quot;L1 tunnel&quot;.</li>
+<li>Introduced tunnel type discovery based on RFC 9012 for automatic tunnel setup.</li>
+<li>Detailed changes include handling of multiple TLV instances, advertising sub-TLVs in L2 (not just L1), uniform IS-IS metric on flood reflector adjacencies, and uniform cluster ID within an IS-IS area.</li>
+<li>Implementation experience indicates expected scalability gains and non-forklift deployment.</li>
+<li>Ongoing work includes BGPLS and auto flood reflection.</li>
+<li><strong>Request</strong>: Working group last call.</li>
+<li><strong>Discussion</strong>: Questions raised about auto-setup of tunnels and a comparison to OSPF TTZ, particularly regarding tunnel usage. The chair noted that the draft had been extensively clarified.</li>
+</ul>
+</li>
+<li>
+<p><strong>Application Specific Link Attributes (ASLA) - Any Application Bit (Shraddha Hegde)</strong>:</p>
+<ul>
+<li>Proposed a new 'A' (Any Application) bit in ASLA to allow operators to advertise attributes applicable to all current and future applications, addressing perceived limitations in RFC 8919/8920.</li>
+<li>Defines precedence rules: application-specific bits take precedence over the 'A' bit.</li>
+<li><strong>Request</strong>: Further review, comments, and working group adoption.</li>
+<li><strong>Discussion</strong>: Concerns raised by Les Ginsberg and Chris Bowers about potential interoperability issues, the creation of multiple competing standards, and whether the proposed solution resolves existing issues or introduces new complexities compared to the zero-length SABM (Specific Application Bit Mask) approach. Discussions on this topic will continue on the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>Prefix Unreachable Announcement / Passive Interface (PA/PI) (Aigen Wang)</strong>:</p>
+<ul>
+<li>Presented a solution for prefix unreachable announcements using IGPs to signal node/link failures and trigger control plane switchovers.</li>
+<li>Compared this &quot;PM solution&quot; with an &quot;Event Notification&quot; solution, concluding PM is easier to implement, deploy, and debug, and utilizes existing IGP formats.</li>
+<li><strong>Request</strong>: Working group adoption.</li>
+<li><strong>Discussion</strong>: Les Ginsberg questioned whether this problem should be solved by IGPs at all, or by BGP/other mechanisms, suggesting consensus on the IGP role is needed first. Chris Bowers acknowledged the adoption request as a way to gauge working group interest but noted limited non-author support. Tony Li expressed a strong opinion against adding such functionality to IGPs, suggesting lower priority or alternative mechanisms. Discussion to continue on the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>5G Edge Computing Service Extensions for SRv6 (Linda Dunbar)</strong>:</p>
+<ul>
+<li>Proposed IGP extensions for SRv6 in 5G edge computing environments to enable load balancing across multiple anycast servers based on site cost/preference.</li>
+<li>Leverages anycast to distribute traffic, eliminate single points of failure, and handle client mobility.</li>
+<li>Introduces a new flag in Flex-Algo definitions and a new sub-TLV in OSPF to advertise aggregated site costs.</li>
+<li><strong>Discussion</strong>: Concerns raised by Shraddha Hegde and Chris Bowers about using metrics for load balancing due to potential for oscillations and the need for hysteresis. AC suggested existing OSPF mechanisms (Type 2 external routes) might achieve similar results if only aggregated metrics are used. Discussion to continue on the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>IGP Extension for Path MTU (PMTU) (Jing Guo)</strong>:</p>
+<ul>
+<li>Proposed IS-IS and OSPF extensions to advertise link MTU via new sub-TLVs to enable ingress nodes to compute path MTU for SR policies.</li>
+<li><strong>Discussion</strong>: Jeff Tantsura and Les Ginsberg expressed skepticism about the reliability of advertised MTUs in real-world deployments and suggested looking into existing code points for IS-IS. AC questioned the general utility, suggesting that in SR environments, one might just use the lowest MTU in the domain or a node-based capability. Discussion to continue on the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>Flow ID Label Capabilities (FALC) and Label Depth (FRLD) (Shaowen Ma)</strong>:</p>
+<ul>
+<li>Proposed signaling FALC and FRLD using IGP and BGP-LS, modeling after RFC 9088/9089 for Entropy Label capabilities.</li>
+<li>A one-bit FALC flag is borrowed from IS-IS prefix attribute flags (RFC 7794).</li>
+<li><strong>Discussion</strong>: Chris Bowers questioned if this capability, being for performance measurement rather than direct forwarding, is appropriate for IGP advertisement. AC and Les Ginsberg noted that this is a node property, not a prefix property, and should align with existing router capabilities advertisements rather than prefix reachability. Discussion to continue on the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>Unicast Property Advertisement (Yuanbo Li)</strong>:</p>
+<ul>
+<li>Proposed updates to OSPFv2 (RFC 7684) and OSPFv3 (RFC 8362) to introduce a new &quot;unicast flag&quot; in a variable-length prefix attribute TLV to identify prefixes as unicast.</li>
+<li><strong>Discussion</strong>: AC questioned the use case for routers needing to know if a prefix is anycast, as anycast is often designed to be transparent. Concerns were also raised by AC and Chris Bowers regarding the proposed processing rules for the flag, especially regarding backward compatibility and the interaction with existing flags, suggesting that existing flags should still be set correctly even with new advertisements. Discussion to continue on the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>Link Bit Error Ratio (LBER) (Yao Liu)</strong>:</p>
+<ul>
+<li>Proposed IS-IS extensions to advertise unidirectional link bit error ratio (LBER) via a new sub-TLV, intended to enhance cSPF or aid controllers in path computation.</li>
+<li><strong>Discussion</strong>: AC, Chris Bowers, and Randy Turner (in chat) expressed strong skepticism about the utility of LBER at the routing level. They argued that for post-FEC bit errors, a link is generally considered unusable and taken out of service, while pre-FEC errors are often expected. The consensus was that packet loss is a more relevant and useful metric for routing decisions. Discussion to continue on the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>Stub Link Attributes (Aigen Wang)</strong>:</p>
+<ul>
+<li>Proposed IS-IS and OSPF extensions to advertise stub interface/link attributes where there is no suitable existing mechanism.</li>
+<li>Proposed defining a new sub-TLV for stub link attributes and a link type for stub links.</li>
+<li><strong>Request</strong>: Working group adoption.</li>
+<li><strong>Discussion</strong>: Linda Dunbar questioned its difference from a prefix LSA and its use for aggregate costs. The chair indicated that an immediate adoption call would not be made, pending further discussion on the mailing list, particularly on whether such a mechanism is truly needed or if existing methods could suffice for identifying stub links. AC commented that the encoding and placement for its original purpose (inter-AS TE) were fine, but the need for this additional link type for TE was still questionable.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>
+<p><strong>Fast Flooding (Les Ginsberg, Tony Li)</strong>:</p>
+<ul>
+<li><strong>Decision</strong>: The merged Fast Flooding draft will proceed with immediate working group adoption.</li>
+<li><strong>Action Item</strong>: Chairs to initiate the adoption call and decide whether it will be a Standards Track or Experimental RFC.</li>
+</ul>
+</li>
+<li>
+<p><strong>Flood Reflection (Tony P)</strong>:</p>
+<ul>
+<li><strong>Decision</strong>: The Flood Reflection draft will be sent for Working Group Last Call (WGLC).</li>
+<li><strong>Action Item</strong>: Chairs to initiate the WGLC on the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>Application Specific Link Attributes (ASLA) - Any Application Bit (Shraddha Hegde)</strong>:</p>
+<ul>
+<li><strong>Action Item</strong>: Continue discussions on the mailing list, specifically addressing interoperability concerns and the interaction with existing ASLA mechanisms.</li>
+</ul>
+</li>
+<li>
+<p><strong>Prefix Unreachable Announcement / Passive Interface (PA/PI) (Aigen Wang)</strong>:</p>
+<ul>
+<li><strong>Action Item</strong>: Further discussion needed on the mailing list regarding whether this problem should be solved by IGPs and the merits of the proposed solution versus alternatives.</li>
+</ul>
+</li>
+<li>
+<p><strong>All Other Individual Drafts (5G Edge Computing, PMTU, FALC/FRLD, Unicast Property, LBER, Stub Link)</strong>:</p>
+<ul>
+<li><strong>Action Item</strong>: Continue discussions on the mailing list to address concerns raised, clarify use cases, and assess the appropriateness of proposed IGP extensions.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Working group members are encouraged to actively review and provide feedback on the Fast Flooding draft post-adoption and during the WGLC for Flood Reflection.</li>
+<li>The mailing list should be utilized for in-depth technical discussions on all other individual drafts, particularly concerning the fundamental questions raised about the scope and appropriateness of IGP extensions for specific use cases (e.g., load balancing via metrics, reliability of advertised MTUs, non-forwarding capabilities, generic anycast identification, bit error rates, stub link identification).</li>
+<li>The chairs expressed hope for a face-to-face meeting in March to facilitate more impromptu side discussions.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

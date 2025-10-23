@@ -1,0 +1,57 @@
+**Session Date/Time:** 28 Jul 2022 21:30
+
+# grow
+
+## Summary
+
+The grow working group session began with administrative announcements. The main technical agenda included an update on the status of various working group documents, a presentation and discussion on a draft defining a well-known BGP Anycast community, and an update on the BMP Yang module draft. Key discussions revolved around the utility and implications of a well-known anycast community, including trust models and community type, as well as the design and filtering capabilities of the BMP Yang module. The chairs called for mailing list discussions regarding working group adoption for both the Anycast Community and BMP Yang module drafts.
+
+## Key Discussion Points
+
+*   **Administrative Items**:
+    *   Participants were reminded of IETF Note Well obligations and the mandatory mask policy.
+    *   Blue sheets are now QR code-based; participants requested to scan.
+    *   Richard Patterson volunteered as minutes taker, Warren Kumari as Jabber scribe.
+    *   No additions were made to the agenda.
+
+*   **Working Group Document Status**:
+    *   The `grow-bmp-tlv` draft was approved for working group adoption and is now in the system as a WG document. Chairs will provide a write-up for this.
+    *   Work on NRTM version 4 was approved for working group adoption; a new renamed document is expected to be uploaded soon.
+
+*   **Well-Known BGP Anycast Community (Maximilian Wilhelm)**:
+    *   **Motivation**: To improve routing decisions for anycast prefixes. Example: A Swiss ISP wishing to prefer its own international path for general traffic but route anycast prefixes locally to optimize user latency and experience.
+    *   **Proposed Solution**: Define a well-known BGP community to denote prefixes used for anycast.
+    *   **Proposed Usage**: Operators applying the community should do so on all announcements or none, and it is recommended to use "hot potato" routing for such prefixes.
+    *   **Discussion**:
+        *   **Community Type**: Questions arose about using Large Communities or Extended Communities to include AS information or sender details, but concerns were raised about current implementation support and the difficulty of securing communities. It was noted there is no current well-known large communities registry.
+        *   **Trust Model**: Participants expressed concerns that altering local routing policy based on third-party hints requires a significant degree of trust, which might negate the "well-known" aspect, as social interaction would still be needed.
+        *   **"All or Nothing" Enforcement**: A concern was raised about the potential for inconsistency or "hygiene" issues if operators do not apply the community in an "all or nothing" fashion. It was suggested that existing route leak detection services could potentially be extended to monitor this.
+        *   **Informational vs. Policy Change**: Discussion on whether the community is purely informational or implies a request for routing policy change (e.g., hot potato routing).
+        *   **Definition of Anycast**: A suggestion was made to clarify the definition of "anycast" within the draft for IETF document purposes.
+        *   **Real-world Use Case**: An author (Freddie Kunsler) provided a real-world example of an ISP needing to filter anycast prefixes received via transit to prevent suboptimal routing for their customers.
+
+*   **BMP Yang Module Update (Camilo Cardona)**:
+    *   **Updates in the Draft**: Added active/passive connection choice, maximum segment size (MSS), keepalives (copied from TCMP module), and session security (copied from BGP draft, to be re-evaluated).
+    *   **Network Instance Support**: Added support for specifying BMP data per network instance, including an identity `vmpn` for "all network instances."
+    *   **Granular Data Specification**: The model aims for flexible and unambiguous control over what information is sent to collectors, specifying data by:
+        *   **Network Instances**: Global or specific instances, or all instances.
+        *   **Remotes**: Explicitly pre/post RIB or local RIB.
+        *   **Address Families**: Using values from the BGP Yang module.
+        *   **Peers**: Individual IP addresses or types (e.g., all external peers).
+    *   **Gaps**: Initiation delay and backoff times are noted as still to be integrated.
+    *   **Future Enhancements**: Acknowledged feedback from Jimmy Chen about the need for prefix-level filtering using a specific routing policy model, which is being processed.
+    *   **Tooling**: The author uses `pyang` and a Cisco tool for validation. Discussion around IETF Yang Doctors and collating Yang models in a Netmod GitHub repository was noted as beneficial for future contributions.
+
+## Decisions and Action Items
+
+*   The `grow-bmp-tlv` draft was **approved for working group adoption**.
+*   The NRTM version 4 draft was **approved for working group adoption**.
+*   **Action Item**: Chairs (Paolo Lucente) to write up the `grow-bmp-tlv` working group document in the next few days.
+*   **Action Item**: The draft authors of the Well-Known BGP Anycast Community are requested to clarify the definition of "anycast" within the document.
+*   **Action Item**: Camilo Cardona to make the BMP Yang module work available on GitHub.
+
+## Next Steps
+
+*   A mailing list discussion will be initiated to assess consensus for **working group adoption of the Well-Known BGP Anycast Community draft**.
+*   A mailing list discussion will be initiated to assess consensus for **working group adoption of the BMP Yang Module draft**.
+*   The working group will reconvene at IETF 115 in London.

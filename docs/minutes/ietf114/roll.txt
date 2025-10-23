@@ -1,0 +1,60 @@
+**Session Date/Time:** 26 Jul 2022 17:30
+
+# roll
+
+## Summary
+
+This session covered the status and latest updates for two key documents: `draft-ietf-roll-dao-projection` and `draft-ietf-roll-6lo-multicast-reg`. For `dao-projection`, discussions focused on clarifications regarding loop avoidance, the Sibling Information Option (SIO), and alignment with the Raw Architecture. The document is deemed stable and ready for final review before publication. For `6lo-multicast-reg`, the core discussion revolved around extending RFC 8505 for multicast and anycast registration in low-power networks, leveraging non-storing mode RPL, and addressing router reboot recovery. Collaboration with 6man and PIM working groups was highlighted for related specifications and impact assessment.
+
+## Key Discussion Points
+
+### DAO Projections (draft-ietf-roll-dao-projection)
+
+*   **Purpose:** Defines building instances within instances (overlays) for traffic engineering using RPL, forming DODAGs that act as complex paths (tracks) or direct sequences of nodes (segments).
+*   **Recent Changes:**
+    *   Incorporated extensive reviews (Lee, Michael, Dominique), resulting in numerous clarifications and rewording of terminology (e.g., legs, segments, tracks).
+    *   Removed "series" terminology.
+    *   Updated text to explicitly use `amend` for RFC 6550 where necessary.
+*   **Sibling Information Option (SIO):** Clarified its use to extend direct connectivity from 1-hop to 2-hops (via a common neighbor), which implicitly amends RFC 6550 regarding multicast.
+*   **Loop Avoidance:** Emphasized the strict precedence rules for forwarding packets along a track (direct neighbor, common neighbor via SIO, segment route, encapsulation), ensuring packets do not bounce between overlay and underlay topologies.
+    *   **Inconsistency:** Noted a slight inconsistency where forwarding via a common neighbor is allowed for tracks but not explicitly for forwarding *within* a segment, which usually implies direct hop-by-hop forwarding. This was left for future discussion.
+*   **RPL Instances as Routing Information Bases (RIBs):** Clarified that each RPL instance functions as its own RIB (VRF), with forwarding strictly confined to that instance via the RPL Option (RPI), preventing loops in multi-topology routing.
+*   **Reference to Raw Architecture:** Discussed referencing the still-in-progress (and likely informational) Raw Architecture document for terminology of "tracks." This was deemed acceptable and preferable to redefining terms.
+*   **Document Stability:** The document author (Pascal) confirmed the document has converged, with recent changes being clarifications and refinements rather than new functionalities.
+
+### 6lo Multicast and Anycast Registrations (draft-ietf-roll-6lo-multicast-reg)
+
+*   **Motivation:** Addresses the need for multicast and anycast registration in low-power IoT networks, extending RFC 8505's unicast registration to avoid the power consumption issues of MLD.
+*   **Mechanism:** Allows nodes to register their interest in multicast/anycast addresses with a router, abstracting the underlying routing (e.g., RPL, MePPo, tunnels).
+*   **Non-Storing Mode Multicast (MOD5):** Proposes leveraging tunnels built for RPL-aware leaves (RFC 9010) in non-storing mode RPL for multicast. This uses ingress replication by the root rather than building a multicast tree within RPL.
+*   **TID (Traffic ID) and Rover:**
+    *   The TID (sequence counter) is explicitly *omitted* for multicast/anycast registrations because it's designed for unicast route freshness and synchronization is not possible across multiple registrants for the same address.
+    *   The Rover (proof of ownership) is also not applicable for multicast addresses in this specification as there is no single owner, and values are not synchronized.
+*   **Router Reboot Recovery:**
+    *   **New `Registration Refresh Request` Status:** A new status code for the asynchronous Neighbor Advertisement (NA) message, allowing a rebooted router to request devices to re-register. This NA can be unicast or multicast.
+    *   **Proposed `array` (Awake Time) Option:** Discussed adding a new option to Router Advertisement (RA) messages for 6man to convey router uptime. This would allow devices to detect router reboots and proactively re-register.
+        *   **Cross-WG Discussion:** The need for this option transcends ROLL/6lo and impacts 6man. It was suggested to make it a separate 6man draft to avoid blocking this document.
+*   **INR (Informational Registry):** The document's text for registry descriptions (e.g., subregistries, registries) was reworded for clarity and consistency.
+*   **PIM Working Group Engagement:** Highlighted the need to inform the PIM WG about this work, as it replaces MLD for host-to-router signaling, potentially impacting MLD-dependent processes (e.g., snooping). Seeking feedback from PIM on any required changes or additional flags.
+
+## Decisions and Action Items
+
+*   **DAO Projections (draft-ietf-roll-dao-projection):**
+    *   **DECISION:** Pascal to publish version 28, incorporating recent feedback and clarifications.
+    *   **ACTION:** Pascal to publish `draft-ietf-roll-dao-projection-28`.
+    *   **ACTION:** Chairs to issue a shepherd call for publication once version 28 is stable and mailing list feedback is incorporated.
+*   **6lo Multicast and Anycast Registrations (draft-ietf-roll-6lo-multicast-reg):**
+    *   **DECISION:** The `array` (awake time) option for RA messages will likely be extracted into a separate 6man document to avoid delaying this draft.
+    *   **ACTION:** Pascal (via Eric) to coordinate with 6man chairs regarding the separate `array` option draft.
+    *   **ACTION:** Alvaro to engage with the PIM working group chairs to raise awareness of this document and solicit feedback on its implications for MLD-dependent processes.
+    *   **ACTION:** Pascal to add explicit clarification in the draft regarding the non-applicability of TID and Rover values for multicast/anycast registrations.
+    *   **DECISION:** Working Group Last Call for this document will be issued synchronously between the ROLL and 6lo working groups.
+    *   **ACTION:** Chairs to issue synchronized WG Last Call for `draft-ietf-roll-6lo-multicast-reg`.
+
+## Next Steps
+
+*   **DAO Projections:** Final review of version 28, then proceed to IESG submission.
+*   **6lo Multicast and Anycast Registrations:** Address the 6man RA option separation, obtain PIM WG feedback, and conduct a Working Group Last Call.
+*   **Working Group Adoption:** Form a new steering group to re-issue working group adoption for `draft-ietf-roll-root-act` and initiate review for `draft-ietf-roll-nfp`.
+*   **Expired Drafts:** Revisit `mopeds` and `capabilities` drafts which expired last November.
+*   **Multicast Discussion:** Friday's "month in the money meeting" and a subsequent BOF will discuss multicast in BAR and ROLL, indicating continued focus on this area.

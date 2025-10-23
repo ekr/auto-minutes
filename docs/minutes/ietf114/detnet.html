@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="detnet.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-DETNET-20220728-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 17:30</p>
+<h1>detnet</h1>
+<h2>Summary</h2>
+<p>The DetNet Working Group session at IETF 111 covered administrative updates, document status, and significant technical discussions on DetNet Operations, Administration, and Maintenance (OAM), and various proposals for enhanced queuing and data plane mechanisms for deterministic networking. A key theme was the exploration of solutions to provide bounded latency and jitter guarantees, particularly in large-scale or asynchronous networks, often involving new metadata or modifications to existing encapsulations. The session also initiated a discussion on multi-domain DetNet considerations.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrative &amp; Document Status</strong>:</p>
+<ul>
+<li>Reminder of IETF Note 12 and professional conduct.</li>
+<li>Instructions for hybrid meeting participation, including Meetecho polls for questions.</li>
+<li>A joint session was held with PALS and MPLS WGs on MPLS data plane evolution, relevant to DetNet.</li>
+<li>Two documents (Bounded Latency, YANG) requested publication and are in the RFC Editor Queue.</li>
+<li>The OAM Framework document is in Working Group Last Call (WGLC), closing August 3rd.</li>
+<li>An IPR call process is ongoing for a candidate working group adoption draft.</li>
+<li>The DetNet charter has been updated and approved to address enhanced requirements for queuing solutions.</li>
+<li>Working group milestones were recently updated.</li>
+<li>A liaison letter was received from ITU-T SG13 Q6; a response can be developed on the mailing list.</li>
+<li>Bi-weekly Webex meetings are available for document progression, especially OAM drafts.</li>
+</ul>
+</li>
+<li>
+<p><strong>DetNet OAM Framework (draft-ietf-detnet-oam-framework)</strong>:</p>
+<ul>
+<li>Lists general and specific requirements for DetNet OAM, including proactive, on-demand, and measurement methods.</li>
+<li>Identified active, passive, and hybrid OAM types.</li>
+<li>Active OAM uses injected test packets; passive uses SNMP/RPC/YANG; hybrid combines elements, often with minimal data packet modification for on-path telemetry.</li>
+<li>Supports unidirectional and bidirectional OAM (continuity check, packet delay, loss).</li>
+<li><strong>Two sub-layers</strong>:
+<ul>
+<li><strong>Forwarding Sub-layer</strong>: Path MTU discovery, remote defect indication (e.g., BFD), monitoring path segment OAM.</li>
+<li><strong>Service Sub-layer</strong>: Discovery and functional verification of PREOF (Packet Replication, Elimination, Ordering Functions).</li>
+</ul>
+</li>
+<li><strong>IP Data Plane</strong>: Discussed well-known mechanisms like ICMP (ping, traceroute), BFD, TWAMP Light.
+<ul>
+<li>Challenges with mapping these to specific DetNet flows due to reliance on IP/UDP ports and six-tuple identification.</li>
+<li>Proposed using DetNet in UDP encapsulation for active OAM to ensure shared fate within the UDP tunnel.</li>
+<li>Discussion on using aggregated state or new UDP tunnels via control plane for OAM, and IPv6 extension headers (e.g., Hop-by-Hop option) to tag packets for DetNet treatment, decoupling from transport ports.</li>
+</ul>
+</li>
+<li><strong>MPLS Data Plane</strong>: Proposed MPLS-in-UDP encapsulation for service sub-layer OAM, using a modified ACH word for DetNet sub-layer OAM.</li>
+</ul>
+</li>
+<li>
+<p><strong>Asynchronous Deterministic Networking Framework (draft-ietf-detnet-adn-framework)</strong>:</p>
+<ul>
+<li>Aims for latency and jitter guarantee in large-scale networks with dynamic, arbitrary input patterns, avoiding time synchronization.</li>
+<li>Highlights burst accumulation issues in DiffServ for medium/high utilization, especially with loops.</li>
+<li>Proposed solutions to mitigate burst accumulation: slotted operation, metadata-based forwarding, flow regulation (e.g., ATS, FAA, port-based FAA).</li>
+<li>Emphasized scalability by regulating flow aggregates instead of individual flows.</li>
+<li>Discussed jitter guarantee by timestamping at network boundaries and reproducing inter-arrival processes.</li>
+<li><strong>Discussion</strong>: Questions raised about flow definition, rate determination, relationship to existing bounded latency work, and coordination with IEEE standards. Mentioned the need for common metadata or changes to the data plane.</li>
+</ul>
+</li>
+<li>
+<p><strong>DetNet Enhancements for Large-Scale D-to-P Networks (draft-zhang-detnet-data-plane-enhancement)</strong>:</p>
+<ul>
+<li>Discussed the &quot;enhanced DetNet&quot; charter mandate for flow identification and packet treatment.</li>
+<li>Proposed enhanced treatment functions (flow aggregation, redundancy, service level aggregation) and multiple queuing mechanisms, deterministic paths, resource scheduling for the forwarding sub-layer.</li>
+<li>Proposed new metadata (service level, aggregated flow, redundancy, path, queuing information) and encapsulations (IPv6, SRv6, MPLS).</li>
+<li>Highlighted controller plane requirements for managing resources, distributed path calculation, and inter-domain paths.</li>
+<li><strong>Discussion</strong>: Questioned whether new controller plane considerations should be merged into the existing controller plane framework document. Clarification sought on what is new or enhanced compared to RFC 8938, suggesting some content might fit into an adopted requirements document.</li>
+</ul>
+</li>
+<li>
+<p><strong>DetNet Queuing Option for End-to-End Deterministic Latency (draft-zhang-detnet-queuing-option)</strong>:</p>
+<ul>
+<li>Focused on achieving end-to-end deterministic latency by considering queuing delay.</li>
+<li>Proposed carrying queuing information in the data plane metadata to aid forwarding and scheduling.</li>
+<li>Discussed various queuing mechanisms (TAS, CBS, CQF, ATS, ADN, Cyclic Queuing, Deadline-based Queuing).</li>
+<li>Proposed queuing information parameters: planned/required delay, delay variation, cycle info, deadline, budget.</li>
+<li>Proposed IPv6 extension solution (new IPv6 option for DetNet cycle Q information, queuing flags, sub-TLV).</li>
+<li>Proposed MPLS extension solution (additional encapsulation, Spl to carry DetNet Q info, TRE, sub-TLV).</li>
+<li><strong>Discussion</strong>: Questions about system behavior when time budget is exceeded and the readiness of specific queuing options for coding.</li>
+</ul>
+</li>
+<li>
+<p><strong>DetNet Cyclic Queuing and Forwarding (CQF) for MPLS and IP (draft-thaler-detnet-mpls-cqf)</strong>:</p>
+<ul>
+<li>A revived draft adapting TSN's CQF to DetNet, aiming for bounded latency, minimal jitter, and reduced end-device cost without strict clock synchronization.</li>
+<li>Emphasized scalability due to lack of per-flow state.</li>
+<li>Mechanism: Cyclic Queuing and Forwarding adapted from TSN.</li>
+<li>Sync based on a tag in the packet header (e.g., MPLS traffic class field).</li>
+<li>Validated on 100Gbps FPGA in a 2000 km network in China.</li>
+<li>Updates: reference to a published research paper, added pseudo-code for ingress operation (per five-tuple flow queuing into non-per-flow forwarding mechanism).</li>
+<li><strong>Discussion</strong>: Benefits of reusing existing data plane mechanisms (MPLS) for quicker deployment. Discussion on the scope for DSCP usage within a single administrative domain, noting that TSWG permission is not needed for intra-domain use.</li>
+</ul>
+</li>
+<li>
+<p><strong>DetNet CQF Enhancements for Wider Deployment in IPv6 (draft-li-detnet-cqf-enhancement)</strong>:</p>
+<ul>
+<li>Revisited fundamental CQF, noting its simplicity for latency bounds related to cycle interval and hops.</li>
+<li>Discussed requirements for wider deployment: smaller latency, larger number of hops, longer links, larger processing time variance.</li>
+<li>Identified &quot;dead time&quot; issues in fundamental two-buffer CQF that lead to low utilization with longer links/processing delays.</li>
+<li>Proposed a &quot;three-buffer&quot; CQF variant.</li>
+<li>Identified a &quot;time ambiguity window&quot; in the CQF variant.</li>
+<li>Proposed solution: packet carrying a cycle ID as metadata to help downstream nodes determine the correct buffer.</li>
+<li>Proposed IPv6 option format for cycle ID.</li>
+<li><strong>Discussion</strong>: Sought feedback on addressing ambiguity and collaborating with other working groups for IPv6 options.</li>
+</ul>
+</li>
+<li>
+<p><strong>DetNet Enhanced Queuing Based on Dynamic Queues (draft-yang-detnet-dynamic-queuing)</strong>:</p>
+<ul>
+<li>Addressed issues with existing mechanisms (CBS, ATS for high latency; CQF for time synchronization).</li>
+<li>Proposed an adaptive FIFO scheme using &quot;dynamic queues&quot; (e.g., 39 queues) with Time-to-Deadline (TDL) attributes.</li>
+<li>Packets are put into specific queues based on planned residence time and accumulated residence time.</li>
+<li>Traffic shaping and regulation at the ingress.</li>
+<li>Supports partial upgrade scenarios (mixed DetNet/legacy nodes).</li>
+<li>Benefits: No time synchronization, no individual flow state, easy upgrade, scalability, performance.</li>
+<li><strong>Discussion</strong>: Requested to move questions to the mailing list due to time constraints.</li>
+</ul>
+</li>
+<li>
+<p><strong>DetNet Bounded Latency Information Data Plane (draft-fang-detnet-bli-data-plane)</strong>:</p>
+<ul>
+<li>Identified a missing metadata for end-to-end latency in the current DetNet data plane.</li>
+<li>Proposed a new DetNet-specific metadata called Bounded Latency Information (BLI).</li>
+<li>Design principles: carried in data plane, uniform format for interoperability, accommodates different mechanisms.</li>
+<li>BLI classified into &quot;requirement&quot; and &quot;resource&quot; categories.</li>
+<li>Proposed IPv6 extension header (BRI option) and MPLS extension header (BRI extension header).</li>
+<li><strong>Discussion</strong>: Questions about the benefit of hub-by-hop vs. end-to-end options in IPv6 and behavior when a node exceeds its time budget.</li>
+</ul>
+</li>
+<li>
+<p><strong>Multi-Domain DetNet Aspects (draft-roldan-detnet-multi-domain)</strong>:</p>
+<ul>
+<li>Initial work to study and analyze the needs for multi-domain DetNet support.</li>
+<li>Domain defined as administrative and/or technology domain (e.g., wire vs. wireless).</li>
+<li>Identified high-level gaps in application, control, and network planes.</li>
+<li><strong>Application Plane</strong>: User agent awareness of multiple domains.</li>
+<li><strong>Control Plane</strong>: Inter-domain interaction for discovery, authentication, negotiation; potential PCE coordination.</li>
+<li><strong>Network Data Plane</strong>: Exchange of information, protocol translation, OAM extension, PREOF challenges across domains.</li>
+<li><strong>Discussion</strong>: Support for the work to begin in DetNet, with PALS building on it. Debate on focusing scope (intra-enterprise vs. general multi-enterprise). Chairs noted that text for multi-domain aspects could be immediately suggested for inclusion in the existing DetNet controller plane working group document.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Working Group Last Call</strong>: The OAM Framework document is in WGLC, closing on August 3rd. All are encouraged to review and comment.</li>
+<li><strong>Charter Update</strong>: The DetNet charter has been updated and approved to enable the development of queuing solutions.</li>
+<li><strong>Liaison Response</strong>: A response to the ITU-T SG13 Q6 liaison should be developed on the mailing list.</li>
+<li><strong>Requirements Document</strong>: Chairs initiated a poll to gauge interest in adopting a DetNet requirements document. Participants are urged to review the existing requirements draft and provide comments on the mailing list, including terminology suggestions.</li>
+<li><strong>Controller Plane Document</strong>: For multi-domain aspects, contributors are encouraged to suggest relevant text for immediate inclusion in the active DetNet Controller Plane Framework working group document.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Review and Comment</strong>: Provide reviews and comments on the OAM Framework document (WGLC).</li>
+<li><strong>Engage on Requirements</strong>: Actively review and provide feedback on the DetNet requirements draft, particularly regarding terminology and alignment with proposed solutions, to facilitate its working group adoption.</li>
+<li><strong>Mailing List Discussions</strong>: Continue detailed technical discussions on the various proposed queuing, data plane enhancement, and metadata drafts on the DetNet mailing list.</li>
+<li><strong>Collaboration</strong>: Explore collaboration with other working groups (e.g., TSVWG, 6MAN, MPLS) for specific encapsulations, IPv6 options, or related protocol work.</li>
+<li><strong>Multi-Domain Contributions</strong>: Submit proposed text for multi-domain considerations to the DetNet Controller Plane Framework document.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dtn.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-DTN-20220322-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 22 Mar 2022 13:30</p>
+<h1>dtn</h1>
+<h2>Summary</h2>
+<p>The DTN Working Group at IETF 113 saw significant administrative progress with the successful rechartering and publication of four new RFCs (Bundle Protocol v7, TCP Convergence Layer, Bundle Protocol Security, and Default Security Context for BPSEC). Vint Cerf delivered a keynote on the vision and activities of the Interplanetary Networking Special Interest Group (IPN SIG), highlighting DTN's critical role in space communications due to unique challenges that render traditional TCP/IP unsuitable.</p>
+<p>Technical presentations covered new charter items and ongoing work, including Bundle-in-Bundle Encapsulation (VIBE) and Quality of Service for BPv7 by Scott Burleigh, and updates on the Administrative Record Type Registry, COSE Context for BPSEC, and Bundle Version Detection by Brian Sipos. Emery Jones presented updates to the Delay Tolerant Network Management Architecture (DTNMA) and a related naming proposal, while Sarah Cerami provided a valuable live demonstration of the Asynchronous Network Management System (ANMS) implementation. The session concluded with discussions on the external use of DTN Endpoint IDs and the potential need to refresh RFC 4838. Due to a packed agenda, the chairs noted the need for an interim meeting and requested two sessions for the next IETF to accommodate the growing volume of work.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrative &amp; Charter Update</strong>:</p>
+<ul>
+<li>Chairs opened the session, reminding attendees of the IETF Note Well and logistics for the hybrid meeting.</li>
+<li>The DTN Working Group's rechartering was successfully completed and approved by the IAB.</li>
+<li>Four new RFCs have been published: RFC 9171 (Bundle Protocol v7), RFC 9172 (TCP Convergence Layer v4), RFC 9173 (Bundle Protocol Security Specification), and RFC 9174 (BPSEC Default Security Contexts). This marks a significant milestone, &quot;bookending&quot; previous work and enabling the new charter items.</li>
+</ul>
+</li>
+<li>
+<p><strong>Vint Cerf - IPN SIG &amp; DTN Vision</strong>:</p>
+<ul>
+<li>Vint Cerf, representing the Interplanetary Networking Special Interest Group (IPN SIG), announced its transition to an Interplanetary Networking Chapter of the Internet Society.</li>
+<li>The IPN SIG boasts over 800 members and has several working groups: Strategy (100-year network vision), Projects (implementation and testing), Architecture &amp; Governance (rules, jurisdiction for space operations), Library, Outreach, and Business (commercialization of space).</li>
+<li><strong>Intentions</strong>: Implement and test a terrestrial/Low Earth Orbit (LEO) DTN-based network to ensure reliability, robustness, and scalability before deep-space deployment. Focus on network management, security, configuration, and supporting useful applications (messaging, video, AI/ML). Emphasize multi-party interoperability and interworking between different BP implementations.</li>
+<li><strong>Collaborations</strong>: Active engagement with NASA DTN Working Group (ISS, LunarNet), ESA (Moonlight), Utica College, and El Modio.</li>
+<li><strong>Governance in Space</strong>: Highlighted complex questions around jurisdiction, private property, historical sites, and dispute resolution in space, referencing the Artemis Accords.</li>
+<li><strong>Public Engagement</strong>: Proposed a &quot;SETI@home&quot;-style application for public participation in terrestrial DTN testing.</li>
+<li><strong>Why DTN?</strong>: Explained that traditional TCP/IP is unsuitable for interplanetary distances due to extreme variable delays (e.g., 40-minute round-trip time to Mars) and frequent disruptions from orbital dynamics and planetary rotation. DTN's store-and-forward nature is critical to overcome these limitations.</li>
+<li><strong>Expectations from DTN WG</strong>: Continue refining protocols (including support for real-time streaming in low-latency scenarios while maintaining delay-tolerant functionality), greater focus on delay-tolerant applications, exercise and standardize naming/addressing structures (parallels with IANA and CCSDS's SENA), and consider commercialization aspects in mixed government/commercial environments.</li>
+</ul>
+</li>
+<li>
+<p><strong>Scott Burleigh - Bundle-in-Bundle Encapsulation (VIBE)</strong>:</p>
+<ul>
+<li><strong>History</strong>: VIBE originated in 2009, re-envisioned in 2013 as a Convergence Layer Protocol (CLP) rather than an application.</li>
+<li><strong>Motivation</strong>: Address limitations in BPv6 custody transfer (inaccurate RTT estimation for retransmission, fragmentation defeating custody), and enable cross-domain security (e.g., defense against traffic analysis) and reliable CL transmission over asymmetric paths.</li>
+<li><strong>Design</strong>: VIBE uses BP as a CLP. An encapsulating bundle's payload includes a transmission ID, expected ACK time, and the encapsulated bundle. Acknowledgements are aggregated in an administrative record with a disposition code and transmission ID sequences. Retransmission occurs if ACK is not received by the expected time.</li>
+<li><strong>Open Issue</strong>: Need a mechanism for sender to express expected ACK time as an interval if participating nodes lack accurate clocks.</li>
+<li><strong>Applications</strong>: Provides custodial reliability (now removed from BPv7), cross-domain security, defense against traffic analysis, transient Quality of Service (QoS) marking, critical forwarding, source path routing, and certified multicast.</li>
+<li><strong>Discussion</strong>: Question arose about whether custody transfer (CT) should be integrated with VIBE or a separate extension. Scott argued for VIBE as a CLP for reliability, but acknowledged flexibility.</li>
+</ul>
+</li>
+<li>
+<p><strong>Scott Burleigh - Quality of Service (QoS)</strong>:</p>
+<ul>
+<li><strong>Context</strong>: QoS, like custody transfer, was removed from BPv7. The question is how a Bundle Protocol Agent (BPA) should prioritize bundles for forwarding.</li>
+<li><strong>Internet QoS Review</strong>: Briefly discussed Integrated Services (InServ - poor scalability, not delay-tolerant) and Differentiated Services (DiffServ - code points, per-hop behavior, no hard guarantees, business-level non-conformance).</li>
+<li><strong>BPv6 QoS Review</strong>: Class of Service (Bulk, Standard, Expedited) was largely an &quot;honor system&quot; with limited utility. Extended Class of Service (ordinal tag, service selection flags, numeric label) also had issues.</li>
+<li><strong>Challenges</strong>: Head-of-line blocking is a significant problem in DTN due to potentially large bundle sizes, inhibiting effective QoS.</li>
+<li><strong>Proposal</strong>: Introduce a bundle processing flag for QoS handling, applicable only to bundles less than 64KB (to mitigate head-of-line blocking). Bundles with the QoS flag set to '1' would be prioritized over '0'. A QoS Extension Block could define service requests (flags, eCoS, numeric data label), with IANA managing a registry of labels. Per-hop behaviors would be node administration responsibility, without guarantees (similar to DiffServ).</li>
+<li><strong>Discussion</strong>: Zahed questioned the suitability of mimicking DiffServ, citing its deployment issues. Scott clarified DiffServ as an <em>example</em> of desired behavior, not a direct model to implement.</li>
+</ul>
+</li>
+<li>
+<p><strong>Brian Sipos - Administrative Record Type Registry</strong>:</p>
+<ul>
+<li><strong>Purpose</strong>: Update the IANA registry for administrative record types to include BPv7, aligning with existing registries for bundle/block processing flags and block types.</li>
+<li><strong>Key Update</strong>: Add the CCSDS Aggregate Custody Signal (code point 4), which was previously standardized but not explicitly registered in IANA.</li>
+<li><strong>Details</strong>: Confirmed pre-existing codepoints (1, 2, 4) and proposed reserving high-value codepoints for 32-bit values. The document primarily serves as bookkeeping.</li>
+<li><strong>Request</strong>: Working group adoption to formalize this registry update, which is necessary for future allocations (e.g., for VIBE, ACME node ID validation).</li>
+</ul>
+</li>
+<li>
+<p><strong>Brian Sipos - COSE Context for BPSEC</strong>:</p>
+<ul>
+<li><strong>Motivation</strong>: BPSEC's default security contexts are symmetric-key focused and lack features like key identifiers needed for PKI environments. For internet-facing DTN nodes and interagency interoperability, PKI is standard.</li>
+<li><strong>COSE Integration</strong>: CBOR Object Signing and Encryption (COSE) is well-suited for one-directional security and fits the existing BPSEC framework. It offers extensibility for PKI and future post-quantum cryptography algorithms.</li>
+<li><strong>Design</strong>: A single COSE context for both Bundle Integrity Block (BIB) and Bundle Confidentiality Block (BCB) with type identifiers differentiating uses. COSE allows embedding PKI information (e.g., X.509 certificates).</li>
+<li><strong>Interoperability Profile</strong>: The document defines how to embed COSE messages in BPSEC blocks and specifies an interoperability profile covering symmetric key, key wrap, and asymmetric key (PKI) behaviors, with modern PKI algorithms.</li>
+<li><strong>Benefit</strong>: Enables &quot;off-the-shelf&quot; use in existing PKI X.509 environments, leveraging established certificate authorities and infrastructure.</li>
+<li><strong>Updates Needed</strong>: Alignment with RFC 9173 encoding, further definition of processing requirements for PKI environments, and minimum COSE header contents (learning from S/MIME).</li>
+<li><strong>Request</strong>: Working group adoption, citing interest from NASA and CCSDS for interagency PKI.</li>
+</ul>
+</li>
+<li>
+<p><strong>Brian Sipos - Bundle Version Detection</strong>:</p>
+<ul>
+<li><strong>Problem</strong>: In environments processing both BPv6 and BPv7 (e.g., shared convergence layers), there's no defined way to unambiguously distinguish between the two bundle versions from a byte string. Existing tools often make brittle assumptions about BPv7 encoding offsets.</li>
+<li><strong>Goal</strong>: Provide fine-grained detection logic without requiring full bundle processing, preventing interoperability issues.</li>
+<li><strong>Proposed Mechanism</strong>:
+<ul>
+<li><strong>Logical Approach</strong>: Exploit the lack of collision between BPv6 and BPv7 encodings for unambiguous detection. A general-purpose CBOR stream decoding sequence can identify the version.</li>
+<li><strong>Optimized Algorithms</strong>: For constrained or fixed-encoding environments, more optimized methods (e.g., bit operations mimicking CBOR decoding, byte string pattern matching) could be documented (with caveats about breaking on valid but non-deterministic bundles).</li>
+</ul>
+</li>
+<li><strong>Request</strong>: Gauge interest for an informational document to provide best practices for implementers.</li>
+<li><strong>Discussion</strong>: Joshua Deaton (Marshall Space Flight Center) affirmed the need, noting their ISS implementation uses a v6-then-v7 check, and saw value in documenting this.</li>
+</ul>
+</li>
+<li>
+<p><strong>Emery Jones - DTN Management Architecture (DTNMA)</strong>:</p>
+<ul>
+<li><strong>Renaming</strong>: Document renamed from &quot;Asynchronous Management Architecture&quot; to &quot;Delay Tolerant Network Management Architecture&quot; for clarity, emphasizing its focus on challenged networks.</li>
+<li><strong>Purpose</strong>: Define the motivation, design principles, and concepts for an Operations, Administration, and Maintenance (OAM) architecture for DTNs.</li>
+<li><strong>Services</strong>: Specifies necessary services (e.g., authorized administration, accounting, error control) and desirable solution properties (asynchronous, dynamic, model-driven, hierarchically organized information).</li>
+<li><strong>Key Clarifications</strong>: Defined the need for AAA (Authorization, Authentication, Accounting), stressed the &quot;asynchronous&quot; nature (down to the transport layer), and emphasized a model-driven approach for autonomy and compression.</li>
+<li><strong>Roles</strong>: Clarified roles and responsibilities of Agents (managed elements) and Managers (controlling/reporting nodes).</li>
+<li><strong>Visualizations</strong>: Updated diagrams to illustrate asynchronous reporting, combined reports, and multiplexed management scenarios.</li>
+<li><strong>Discussion</strong>: Ed Birrane emphasized the &quot;asynchronous&quot; nature must extend to the transport layer. Joshua Deaton inquired about handling long-delayed or burst reports, suggesting policy-driven report lifetime/deletion based on storage. Rick Taylor noted that as an architectural document, it could proceed without accompanying documents.</li>
+<li><strong>Request</strong>: Working group to review the updated document for completeness and correctness to facilitate its progression.</li>
+</ul>
+</li>
+<li>
+<p><strong>Emery Jones - Naming Resources in Application Models</strong>:</p>
+<ul>
+<li><strong>New Proposal</strong>: Emery introduced a new individual document proposing a method for naming resources within application models defined for DTNMA.</li>
+<li><strong>Request</strong>: Seek working group interest.</li>
+<li><strong>Decision</strong>: Chairs deemed this within charter scope and encouraged Emery to publish it as an individual draft, garner interest on the mailing list, and prepare for a deeper dive at a future meeting.</li>
+</ul>
+</li>
+<li>
+<p><strong>Sarah Cerami - Asynchronous Network Management System (ANMS) Implementation</strong>:</p>
+<ul>
+<li><strong>Purpose</strong>: ANMS aims to operate DTN protocols alongside terrestrial networks, facilitate AMP adoption, and serve as a baseline for the AMP specification.</li>
+<li><strong>Architecture</strong>: Designed to connect to both terrestrial and space networks, provide default visualizations for mission operators, and enable command and control. Services include data management, health/status monitoring, and agent command/control via AMP. It is containerized and modular, allowing custom plugins.</li>
+<li><strong>Implementation Update</strong>: The first &quot;spiral&quot; of ANMS is complete and slated for open-source release within approximately one month, pending internal review.</li>
+<li><strong>Demonstration (via screenshots)</strong>:
+<ul>
+<li><strong>Welcome Screen</strong>: Showed different tabs for future features (Network, Alerts, System Management) and current ones (Monitor, Agents, Messaging).</li>
+<li><strong>Monitor Tab</strong>: Displayed Grafana plugins showing live data from BP agent reports (e.g., number of bundles in custody, message rate), with raw reports viewable.</li>
+<li><strong>Agents Tab</strong>: Demonstrated ability to manage agents, send commands, and automatically construct time-based rules for periodic reports (e.g., <code>ltp-agent-endpoint-report</code>, <code>bp-agent-full-report</code>). Also allows sending raw CBOR commands.</li>
+<li><strong>Messaging Tab</strong>: Provides tools to construct and parse commands, converting strings to CBOR, JSON, and UML diagrams.</li>
+</ul>
+</li>
+<li><strong>Community Engagement</strong>: Sarah expressed excitement for the open-source release to gather feedback from the community.</li>
+</ul>
+</li>
+<li>
+<p><strong>Rick Taylor - Endpoint IDs (EIDs)</strong>:</p>
+<ul>
+<li><strong>Review</strong>: EIDs are a pair of schema and content (e.g., <code>ipn</code> and <code>dtn</code> schemas defined in RFC 9171), with considerations for multiplicity (unicast, multicast).</li>
+<li><strong>Question 1: External Use of DTN Schema</strong>: Given <code>dtn</code> schema is registered in URI schemes registry, how can tools like <code>curl</code> use it (e.g., <code>curl dtn://dtn.org/service/demuxpart -F file1.txt</code>)?
+<ul>
+<li><strong>Proposal</strong>: Parse URI into a &quot;name&quot; and &quot;demux&quot; part. Resolve the &quot;name&quot; component via DNS to an IP address. Establish a TCPCLv4 session to that IP address to transmit the bundle. This allows public internet infrastructure to be used for initial bundle delivery.</li>
+<li><strong>Clarifications</strong>: This doesn't preclude non-internet BPAs, intermediate proxies/gateways, or further DTN routing (e.g., IPN addresses in the demux part) beyond the DNS-resolved endpoint.</li>
+</ul>
+</li>
+<li><strong>Question 2: IPN Schema Usage</strong>: Proposed that the <code>ipn</code> schema, being restricted (e.g., unicast only), is best used internally within autonomous DTN regions (like a &quot;landscaped address&quot;).</li>
+<li><strong>Question 3: Other EID Schemas</strong>: Confirmed that groups can define their own EID schemas by documenting them and requesting a new Bundle Protocol URI type scheme number.</li>
+<li><strong>Discussion</strong>: Due to time constraints, Rick suggested taking this topic to the mailing list and potentially an interim meeting.</li>
+</ul>
+</li>
+<li>
+<p><strong>Ed Birrane - Refresh RFC 4838</strong>:</p>
+<ul>
+<li><strong>Question</strong>: Given the significant experience gained with BPv6, the evolution to BPv7, and ongoing work in network management, security, QoS, and custody transfer, is it time to refresh RFC 4838 (Delay-Tolerant Network Architecture), published in 2007?</li>
+<li><strong>Decision</strong>: This question will be taken to the mailing list for wider discussion.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Working Group Adoption Requests</strong>: The chairs will initiate working group adoption requests for:
+<ul>
+<li>Brian Sipos's &quot;Administrative Record Type Registry&quot; document.</li>
+<li>Brian Sipos's &quot;COSE Context for BPSEC&quot; document.</li>
+<li>Emery Jones's &quot;DTN Management Architecture&quot; document.</li>
+</ul>
+</li>
+<li><strong>Individual Draft Publication</strong>: Emery Jones is encouraged to publish his &quot;Naming Resources in Application Models&quot; as an individual draft and seek interest on the mailing list.</li>
+<li><strong>Mailing List Discussions</strong>:
+<ul>
+<li>Rick Taylor will initiate discussion on Endpoint IDs (specifically the external use of DTN EIDs and the proposed DNS-based resolution) on the mailing list.</li>
+<li>Ed Birrane will initiate discussion on the mailing list regarding whether to refresh RFC 4838.</li>
+</ul>
+</li>
+<li><strong>Future Meeting Planning</strong>: The chairs will plan an interim meeting to delve deeper into various topics and will request two sessions for IETF 114 to accommodate the significant amount of work.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>All working group participants are encouraged to review the documents presented (Administrative Record Type Registry, COSE Context for BPSEC, DTN Management Architecture) and engage in discussions on the mailing list for their potential adoption.</li>
+<li>Engage in the mailing list discussions regarding the external use of DTN Endpoint IDs and the proposed refresh of RFC 4838.</li>
+<li>Look out for announcements regarding an interim meeting to continue technical discussions.</li>
+<li>Prepare for IETF 114, which is expected to feature two DTN Working Group sessions.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

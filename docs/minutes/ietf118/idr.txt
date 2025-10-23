@@ -1,0 +1,106 @@
+**Session Date/Time:** 07 Nov 2023 12:00
+
+# IDR Meeting Minutes
+
+## Summary
+
+This document summarizes the discussions and decisions made during the IDR (Inter-Domain Routing) working group meeting. The meeting covered several draft proposals related to BGP extensions for segment routing, policy scheduling, flexible path selection, inter-domain routing consistency, and security enhancements.  There was significant discussion around the deployment and security implications of several proposed extensions, particularly regarding RPKI, ROV, and potential replay attacks.
+
+## Key Discussion Points
+
+*   **Segment Routing BGP Egress Peer Engineering (Meng):** Presented a draft on SR in BGPE over layer 2 bundles, focusing on the need for BGP peering seats allocated to individual bundle member links and the advertisement of these seats in BGP-LS. New TLV defined to carry labels or indices for peer adjacency segments on L2 bundles.
+
+*   **BGP SR Policy Session Scheduling (Lee Zhang):** Presented a draft on adding shutdown time information to BGP SR policy for energy efficiency and resource utilization.  Raised questions about the consistency of encoding with existing PC RFCs for RSVP-TE and whether the controller could handle scheduling instead of protocol encoding.
+
+*   **BGP Extension for Distributing Connected Parts to Threshold Constraints of SR Policy (Channel Mobile):** Presented a draft on flexible path selection, focusing on extending BGP to distribute forwarding quality threshold and metric constraints parameters of the candidate paths.
+
+*   **Interconnecting Domains Using IBGP (Christophe Shakovich):** Presented a draft discussing options for interconnecting domains using IBGP, acknowledging the challenges and best practices.  Suggestions made to present to the BEST working group as the proposed solution is similar to Layer 3 VPN.
+
+*   **FCBGP: Securing Inter-Domain Routing (Denmark):** Presented FCBGP, a system to improve the security of inter-domain routing by authenticating BGP routing updates and validating data plane forwarding using Verifiable Routing Commitment (VRC).  Discussion focused on deployment incentives, overhead of commitment generation and validation, RPKI dependency, and potential for replay attacks.
+
+*   **BGP Extensions for Source Address Validation (Card):** Presented a draft on BGP extensions for SAV, specifically root-based SAV by tracking whether packets with the address coming from expected interface/directions. Limitations of current methods discussed.
+
+*   **BGP Community Based Attacks (Jesse Wang):** Presented on attacks on BGP Community attributes and proposed adding a new BGP attribute, Secure Community, using RPKI certificates for community origin authentication to solve the security problem.
+
+*   **Maintaining Costs of Inter Domain Routing and Forwarding (Halara):** Discussion about the need to maintain consistency between inter-domain routing and forwarding. Proposes a method to obtain and advertise deviation path with BGP.
+
+*   **FlowSpec B2 Update (Sue):** Status update on FlowSpec V2, highlighting the adoption of the TOB format and extended community actions.  Implementer feedback is being solicited to refine the features and scope of the specification.
+
+*   **BGP Flowspec for Traffic Compress Action (HuaWei):** Presented a BGP FlowSpec for Traffic Compress Action to Compress the Transmission data with traffic features between receiver and send end.
+
+*   **BGP Flowspec Extensions for Path Scheduling (HuaWei):** Presented a BGP FlowSpec extension for path scheduling to steer traffic to new paths and prevent packet loss when links are shut down.
+
+## Decisions and Action Items
+
+*   **BGP SR Policy Session Scheduling:** The authors will consider the comments about the consistency of encoding with existing PC RFCs for RSVP-TE.
+*   **Interconnecting Domains Using IBGP:** The authors will present their draft to the BEST working group. They will also include a section discussing why they do not want to do PEC and just do stock IPGP. Authors to update title to be more specific to interconnecting VPNs.
+*   **FCBGP: Securing Inter-Domain Routing:** The authors should consider presenting to the CIDROP working group. Address review comments.
+*   **BGP Extensions for Source Address Validation:** The authors will consider security implications and clarify the validation process in the draft. Authors should coordinate with the seventet working group.
+*   **BGP Community Based Attacks:** The authors will consider more complex cases and run comparisons against BGP sec. Authors should present this to CIDROP.
+*   **Maintaining Costs of Inter Domain Routing and Forwarding:** The authors should compare the proposal against BGP sec and ASPF. Authors should run it by side of ops.
+*   **FlowSpec V2 Update:** Authors will continue soliciting implementer feedback.
+
+## Next Steps
+
+*   Authors of the presented drafts will revise their documents based on the feedback received during the meeting and on the mailing list.
+*   The IDR chairs will coordinate with other working groups, such as BEST and CIDROP, as needed.
+*   The working group will continue to discuss adoption calls on Friday.
+*   IDR will have another session on Friday.
+
+
+---
+
+**Session Date/Time:** 10 Nov 2023 08:30
+
+# idr
+
+## Summary
+
+This IDR session at IETF 118 covered a range of topics, including BGP Multi Next Hop attribute, advertising SaaS performance metrics using BGP, BGP extensions for 5G edge service metadata, computing resource notification domains in the network, addressing deficiencies in RT constraints for hierarchical route reflection, multiprotocol extensions for IPv4/IPv6 coexistence, IPv4 islands over an IPv6 core (4PE), generic metric extensions, and vendor implementation reports for BGP BFD Strict Mode. A recurring theme was the potential overloading of BGP with dynamic information and the need for careful consideration of the implications.
+
+## Key Discussion Points
+
+*   **BGP Multi Next Hop Attribute:**
+    *   Discussion on whether capability negotiation is required. Concerns about operational complexity with capability negotiation.
+    *   Importance of analyzing scoping, attribute escape, and consistent incremental deployment.
+    *   Need for clarity on how the attribute behaves on a hop-by-hop basis, particularly when next hops are unresolvable.
+    *   Consistency with other mechanisms for signaling labels, such as Prefix SID and BGP-LU.
+*   **Advertising SaaS Performance Metrics Using BGP:**
+    *   Debate on whether BGP is the appropriate protocol for carrying dynamic performance metrics due to potential BGP update churn.
+    *   Consideration of whether this work overlaps with the CATS working group.
+    *   General concern about injecting dynamic information into BGP and the implications for BGP convergence properties.
+    *   Potential need for a more generic mechanism for passing compute metrics.
+*   **BGP Extensions for 5G Edge Service Metadata:**
+    *   Concerns regarding the stability of the specification before allocating a path attribute code point. Use of experimental code points was suggested for implementations.
+    *   Need to use community 7454.
+*   **Computing Resource Notification Domains in the Network:**
+    *   Discussion on how this work relates to the CATS working group and the scope of its charter.
+    *   Questioning whether existing BGPLS and community mechanisms can address the problem.
+    *   General concerns about the complexity being added to BGP.
+*   **Addressing Deficiencies in RT Constraints for Hierarchical Route Reflection:**
+    *   Existing implementations address this issue with mechanisms such as rewriting originator IDs and/or class list IDs.
+    *   Discussions around AS loop prevention compared to other loop detection mechanisms.
+*   **Multiprotocol Extensions for IPv4/IPv6 Coexistence:**
+    *   Discussion regarding the need for a mapping solution when there exist encapsulation-based solutions.
+*   **IPv4 Islands over an IPv6 Core (4PE):**
+    *   No specific discussion points.
+*   **Generic Metric Extensions:**
+    *   Discussion on different vendor implementations of the AGP TLV.
+    *   Concern on whether the continuity bit can address the issues of having differing implementations, or if a new AGB V2 needs to be defined.
+*   **Vendor Implementation Report for BGP BFD Strict Mode:**
+    *   Discussion around the behavior when remote admin enabled/disable.
+
+## Decisions and Action Items
+
+*   **BGP Multi Next Hop Attribute:**  Working group adoption call will be started next week.
+*   **Advertising SaaS Performance Metrics Using BGP & Computing Resource Notification Domains in the Network:** Authors to socialize their work within the CATS working group.
+*   **BGP Extensions for 5G Edge Service Metadata:** Author to change this draft to be in experimental status and use an experimental code point.
+*   **Addressing Deficiencies in RT Constraints for Hierarchical Route Reflection:** Authors to review the existing and new proposals to work on a converged solution.
+*   **Generic Metric Extensions:** Louis to take his question to the mailing list.
+
+## Next Steps
+
+*   Continue discussions on the mailing list for all topics.
+*   Authors to incorporate feedback from the working group into their drafts.
+*   Authors to socialize their work with other relevant working groups, particularly CATS.
+*   Working group chairs and ADs to review the scope of the CATS charter.

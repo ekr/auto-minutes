@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ohai.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-OHAI-20220323-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 23 Mar 2022 13:30</p>
+<h1>ohai Session</h1>
+<h2>Summary</h2>
+<p>The ohai session at IETF113 covered several key technical areas related to Oblivious HTTP (OHTTP). Martin Thomson provided updates on the core OHTTP draft, including discussions on proxy metadata, streaming HTTP, and anti-replay mechanisms, along with clarifying the draft's status and scope regarding discovery. Heru presented a new draft on oblivious proxy feedback for rate limiting, which sparked significant debate on its interaction with OHTTP's anonymity properties and existing HTTP rate limit headers. Finally, Tommy Pauly introduced a draft on oblivious target discovery via DNS, raising concerns about security implications, trust models, and architectural fit within the broader OHTTP ecosystem.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Proxy Information to Server (Shadow Banning):</strong>
+<ul>
+<li>Discussion centered on the type and amount of information an OHTTP proxy can provide to a server while preserving client privacy, specifically a &quot;shadow banning&quot; bit for identifying abusive clients.</li>
+<li>Some argued that strict normative language is difficult to enforce and that applications/clients should agree on a known proxy policy.</li>
+<li>A distinction was drawn between &quot;public metadata&quot; (agreed by client/proxy) and &quot;private metadata&quot; (client unaware, e.g., shadow banning bit), with calls for the latter to be strictly bounded.</li>
+<li>Concerns were raised about the potential for tracking and the danger of sharing geolocation information.</li>
+<li>It was suggested that some desired functionalities might be better addressed by generic HTTP features (e.g., new HTTP header fields).</li>
+</ul>
+</li>
+<li><strong>Streaming HTTP:</strong>
+<ul>
+<li>The current OHTTP design is suboptimal for large, streaming HTTP request/response bodies or 1xx responses.</li>
+<li>A proposed design involved multiple AEAD invocations, sending messages in chunks with internal counters and an end-of-message signal.</li>
+<li>Concerns were raised about whether this functionality is strictly necessary for OHTTP's primary use cases, with some suggesting MASQUE as a more suitable protocol for extensive streaming.</li>
+<li>Questions about potential &quot;crypto foot-guns&quot; and the complexity versus benefit were also highlighted.</li>
+</ul>
+</li>
+<li><strong>Anti-Replay Protection:</strong>
+<ul>
+<li>OHTTP, by design, does not inherently prevent a malicious proxy from replaying encapsulated requests, which could lead to unwanted multiple processing by the server.</li>
+<li>Potential solutions explored included server-side remembering of request identifiers (e.g., 16 bytes of the encapsulated key) or client-provided timestamps (e.g., HTTP Date header).</li>
+<li>The challenge of unreliable client clocks was discussed, with a proposed mechanism for servers to signal clock inaccuracies, prompting clients to retry with a server-provided timestamp.</li>
+<li>Concerns were raised about &quot;distinctive skew linkability&quot; if client clock offsets are used in a non-fuzzed manner, potentially compromising client privacy.</li>
+<li>Some suggested that replay protection might not be universally required for all OHTTP deployments and could be handled as an informational guidance or a separate, optional specification rather than a core normative requirement.</li>
+</ul>
+</li>
+<li><strong>Oblivious Proxy Feedback:</strong>
+<ul>
+<li>The draft proposes a mechanism for a target server to signal overload or malicious client behavior back to an OHTTP proxy, allowing the proxy to rate limit or ban specific clients.</li>
+<li>A new <code>OHTTP-Proxy-Feedback</code> header was proposed, intended to be stripped by the proxy before forwarding to the client, to align with existing HTTP rate limit headers while keeping the signal proxy-specific.</li>
+<li>Significant discussion revolved around whether this approach compromises the &quot;oblivious&quot; nature of the protocol by requiring the target server to infer or know that it's interacting with a proxy, and how to distinguish between legitimate and malicious volumetric traffic.</li>
+<li>Concerns were raised about the complexity of state management for proxies in volumetric attacks and the risk of the target server accidentally DDoSing the entire proxy infrastructure.</li>
+<li>The discussion drew parallels to the &quot;shadow banning&quot; debate, suggesting that a simple &quot;bad request&quot; bit from the target to the proxy might be a more aligned and simpler solution.</li>
+</ul>
+</li>
+<li><strong>Oblivious Target Discovery via DNS:</strong>
+<ul>
+<li>A draft was presented proposing the use of DNS Service Binding (SVCB/HTTPS RR types) to discover OHTTP target configurations, including HTTP paths and OHTTP configs, particularly for Oblivious DNS over HTTPS (ODoH).</li>
+<li>The draft explicitly excludes oblivious <em>proxy</em> discovery, focusing on targets that can be reached through pre-trusted proxies.</li>
+<li>Major security and privacy concerns were raised:
+<ul>
+<li><strong>Linkability:</strong> An ISP potentially providing unique target paths or configurations to individual clients, enabling linkage and undermining privacy.</li>
+<li><strong>Impersonation:</strong> If a proxy can poison DNS, it could inject synthetic OHTTP configs and impersonate arbitrary origins, effectively gaining root CA powers over the client's OHTTP traffic.</li>
+<li><strong>Dangers of Flexible Paths:</strong> The use of flexible <code>dohpath</code> parameters in SVCB was cited as problematic due to attacker control and potential interference.</li>
+</ul>
+</li>
+<li>Architectural questions were posed regarding the integration of target and proxy discovery, and how to establish a trusted relationship between a client, its proxy, and a discovered target in a secure manner.</li>
+<li>Some participants saw value in the problem being solved (enabling ISPs to offer privacy-preserving services), but emphasized the need to address the significant security concerns.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Proxy Metadata / Shadow Banning:</strong> Discussion on normative language for proxy metadata and shadow banning will continue on the associated pull request.</li>
+<li><strong>Streaming HTTP:</strong> Martin Thomson will publish a Pull Request (PR) for the proposed streaming HTTP design and circulate it on the mailing list for feedback.</li>
+<li><strong>Anti-Replay Protection:</strong> Discussion on anti-replay mechanisms will continue on the mailing list.</li>
+<li><strong>OHTTP Draft Status:</strong> The working group affirmed that the OHTTP core specification should not be considered &quot;Experimental&quot; but rather aiming for Standards Track.</li>
+<li><strong>Discovery in Core OHTTP:</strong> The working group reaffirmed that comprehensive discovery mechanisms will not be addressed in the main OHTTP draft, but may be pursued in separate drafts within the working group.</li>
+<li><strong>Oblivious Proxy Feedback Draft:</strong> The authors of the &quot;Oblivious Proxy Feedback&quot; draft (<code>draft-heru-ohai-feedback</code>) will refine the draft based on feedback, considering alignment with existing HTTP API rate limit headers and the privacy implications. Discussion on its working group fit will continue on the mailing list.</li>
+<li><strong>Oblivious Target Discovery via DNS Draft:</strong> The &quot;Oblivious Target Discovery via DNS&quot; draft (<code>draft-pauly-ohai-ohttp-target-discovery</code>) is not yet in an adoptable state. The authors will refine the problem statement and solution, with particular emphasis on addressing the raised security and privacy concerns (e.g., key ownership verification, linkability, impersonation, path validation).</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Draft Refinement:</strong> Authors of the discussed drafts (Martin Thomson, Heru, Tommy Pauly) are encouraged to revise their drafts on Github and circulate new versions on the mailing list, incorporating feedback from the session.</li>
+<li><strong>Mailing List Discussion:</strong> Continue technical discussions on <code>ohai@ietf.org</code> for the proxy metadata, streaming HTTP, anti-replay, and oblivious proxy feedback topics.</li>
+<li><strong>Virtual Interim Consideration:</strong> While no virtual interim is immediately scheduled, the co-chairs will consider scheduling a dedicated virtual interim for deeper dives into the more complex topics, particularly &quot;Oblivious Target Discovery&quot; and potentially &quot;Anti-Replay,&quot; once initial mailing list discussions have progressed.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

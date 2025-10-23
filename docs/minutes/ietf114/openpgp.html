@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="openpgp.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-OPENPGP-20220729-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 29 Jul 2022 14:00</p>
+<h1>openpgp</h1>
+<h2>Summary</h2>
+<p>The OpenPGP Working Group session at IETF 114 focused on resolving outstanding issues from the <code>draft-ietf-openpgp-rfc4880bis-06</code> working group last call (WGLC). The discussion covered various technical points including padding packet content, AEAD decryption failure handling, inclusion of GCM, use of HKDF for key binding, location of certificate-wide parameters for v5 keys, revocation key sub-packets, IANA registry policy, Argon2 text clarity, and handling problematic keys in the wild. Several decisions were made via informal polls, with confirmation to be sought on the mailing list. The session also included presentations on potential future work, specifically symmetric keys in the keyring and automatic email forwarding, to inform possible re-chartering efforts after the current draft is finalized.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Issue 132: Padding Packet Content</strong></p>
+<ul>
+<li>The current draft specifies random octets for padding.</li>
+<li>Arguments were raised for deterministic padding (to avoid covert channels) and for all-zero padding (to avoid known-plaintext attacks). Concerns about the resource cost of a new KDF for deterministic padding were noted.</li>
+<li>It was suggested that many side channels already exist in OpenPGP, making random padding not a significant additional risk.</li>
+<li>A suggestion was made to remove text claiming random padding protects against higher-level compression, as it might not.</li>
+<li><strong>Poll Result:</strong> Keep random padding as recommended in draft-06. (8:1 in favor of keeping, with the one &quot;no&quot; open to keeping if justification text is refined).</li>
+</ul>
+</li>
+<li>
+<p><strong>Issue 134: AEAD Decryption Failure Handling</strong></p>
+<ul>
+<li>The issue was whether &quot;should fail&quot; statements for AEAD decryption errors should be strengthened to &quot;must fail&quot;.</li>
+<li><strong>Poll Result:</strong> Change &quot;should fail&quot; to &quot;must fail&quot;. (15:0 in favor).</li>
+</ul>
+</li>
+<li>
+<p><strong>Issue 135: GCM Inclusion</strong></p>
+<ul>
+<li>The draft currently includes GCM as an optional AEAD method, alongside OCB (mandatory to implement) and EAX (optional).</li>
+<li>Arguments against inclusion centered on OCB being a stronger construction and potentially encouraging its use.</li>
+<li>Arguments for inclusion highlighted GCM's necessity for FIPS compliance, its presence in Web Crypto API for performance, and the general trend for the working group to specify algorithms that will be implemented regardless.</li>
+<li><strong>Poll Result:</strong> Keep GCM as an option in the specification as per draft-06. (15:0 in favor).</li>
+</ul>
+</li>
+<li>
+<p><strong>Issue 136: HKDF for Binding Keys to Modes in AEAD</strong></p>
+<ul>
+<li>The draft uses HKDF to bind keys to modes, preventing accidental key reuse across different AEAD modes.</li>
+<li>Proponents noted that this prevents downgrade/cross-grade attacks (e.g., GCM to CFB conversion attacks) and provides a &quot;belt and suspenders&quot; approach. It also enables using a salt in the SID version for per-message key derivation, useful for reply functionality without a sender certificate.</li>
+<li>The primary argument against was that HKDF is an unnecessary additional construction.</li>
+<li><strong>Poll Result:</strong> Keep HKDF for binding modes as per draft-06. (17:0 in favor).</li>
+</ul>
+</li>
+<li>
+<p><strong>Issue 137: Certificate-Wide Parameters Location (v5 keys)</strong></p>
+<ul>
+<li>For v5 keys, the draft specifies that certificate-wide parameters (e.g., algorithm preferences, expiration) should reside in sub-packets of a direct key signature on the primary key, rather than allowing them in user ID self-signatures (as in v4).</li>
+<li>The rationale for the change was predictability and simplification.</li>
+<li>Concerns were raised that this might encourage user ID-less certificates.</li>
+<li>Discussion points included the lack of evidence for widespread use of per-UID preferences in v4 and the complexity they introduce. The utility of user ID-less keys for certain use cases (e.g., non-email, catch-all addresses) was also noted.</li>
+<li><strong>Poll Result:</strong> Keep the current draft-06 text that for v5 keys, certificate-wide parameters live in a direct key signature. (8:0 in favor).</li>
+</ul>
+</li>
+<li>
+<p><strong>Issue 138: Revocation Key Sub-packet for v5 keys</strong></p>
+<ul>
+<li>The draft disallows the <code>revocation key sub-packet</code> for v5 keys, suggesting an alternate mechanism of sending an encrypted revocation signature.</li>
+<li>Arguments for disallowing it included logistical issues with fingerprint-only authorization and a lack of robust implementation support for the sub-packet.</li>
+<li>Concerns noted that the proposed escrowed revocation signature could be riskier (e.g., premature processing) and that the sub-packet is still valid for v4.</li>
+<li><strong>Poll Result:</strong> Keep the <code>revocation key sub-packet</code> disallowed for v5 keys as per draft-06. (10:0 in favor).</li>
+</ul>
+</li>
+<li>
+<p><strong>Issue 139: IANA Registry Requirements</strong></p>
+<ul>
+<li>The draft proposes changing most IANA registry requirements from &quot;RFC Required&quot; (requiring IETF consensus) to &quot;Specification Required&quot; (allowing designation by an expert). Exceptions for packet type and version remain &quot;IETF Consensus&quot;.</li>
+<li>This change is intended to reduce the burden for adding new algorithms or parameters.</li>
+<li>Strong emphasis was placed on the need for clear guidance to the designated IANA expert on what constitutes a &quot;stable reference&quot; and appropriate specifications, with COSE drafts mentioned as a good example.</li>
+<li><strong>Poll Result:</strong> Keep the changes to &quot;Specification Required&quot; while adding guidance for Designated Experts. (11:0 in favor).</li>
+</ul>
+</li>
+<li>
+<p><strong>Issue 140: Argon2 Text Clarity</strong></p>
+<ul>
+<li>Discussion focused on whether the text specifying Argon2 parameters is sufficiently clear.</li>
+<li>It was noted that two implementations (GnuPG and NIB's) interoperate, suggesting the text is &quot;not horrible,&quot; but one list member found it confusing.</li>
+<li><strong>No Poll/Decision:</strong> The working group will re-examine the text for potential improvements and seek proof of interoperability through the test suite.</li>
+</ul>
+</li>
+<li>
+<p><strong>Issue 141: Problematic Keys in the Wild (Github, OpenPGP.php)</strong></p>
+<ul>
+<li>Two types of non-conforming keys were identified: those with incorrect hash digest prefixes (checksums) in signatures (Github, OpenPGP.php) and those with malformed Multi-Precision Integers (MPIs) (Github).</li>
+<li><strong>Checksum (Hash Digest Prefix):</strong>
+<ul>
+<li>Arguments for removing it from v5 signatures included allowing simpler crypto APIs and existing lack of checks by some implementations.</li>
+<li>Arguments for keeping it cited its utility for faster rejection of invalid signatures, debugging, and heuristic reordering of mangled certificates on key servers.</li>
+<li><strong>Poll 1 (Removal for v5):</strong> Should we remove this signature problematic metadata field from v5 signatures? (5:2, remove:keep). No clear consensus.</li>
+<li><strong>Poll 2 (Mandatory Rejection):</strong> Should we state that implementations must reject signatures (v4 or v5) with incorrect signature checksums? (9:1, must:not_must). Majority in favor of mandating rejection, but concern raised about breaking existing implementations.</li>
+</ul>
+</li>
+<li><strong>Malformed MPIs:</strong>
+<ul>
+<li>Discussion centered on whether to reject signatures with malformed MPIs or to provide guidance for implementations to &quot;fix&quot; them.</li>
+<li>Arguments for &quot;fixing&quot; included that it's an implementation failure (not a crypto failure) and allows better interoperability, though concerns about potential system confusion and the complexity of fixing (especially with signed signatures/fingerprints) were raised.</li>
+<li><strong>Action Item:</strong> Daniel H volunteered to produce a merge request with proposed guidance for handling malformed MPIs.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Issue 142: Scoping Future WGLC (Focus on Diffs)</strong></p>
+<ul>
+<li>The group discussed whether to set an expectation for future WGLCs to focus reviews primarily on diffs (changes) from the previous draft version. This would aim to streamline the finalization process.</li>
+<li>While not a strict process rule, it was recognized as a community expectation that has been used successfully by other WGs (e.g., HTTP).</li>
+<li><strong>No Poll/Decision:</strong> The chairs will raise this on the mailing list when the next draft is ready for another WGLC.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> Keep random padding as recommended in <code>draft-ietf-openpgp-rfc4880bis-06</code>. Consider refining the justification text. (Poll: 8:1)</li>
+<li><strong>Decision:</strong> Change &quot;should fail&quot; statements for AEAD decryption errors to &quot;must fail&quot;. (Poll: 15:0)</li>
+<li><strong>Decision:</strong> Keep GCM as an optional AEAD method in the specification. (Poll: 15:0)</li>
+<li><strong>Decision:</strong> Keep HKDF for binding keys to modes in AEAD. (Poll: 17:0)</li>
+<li><strong>Decision:</strong> For v5 keys, retain the specification that certificate-wide parameters live in a direct key signature. (Poll: 8:0)</li>
+<li><strong>Decision:</strong> Keep the <code>revocation key sub-packet</code> disallowed for v5 keys. (Poll: 10:0)</li>
+<li><strong>Decision:</strong> Change most IANA registry requirements to &quot;Specification Required&quot; but add specific guidance for Designated Experts. (Poll: 11:0)
+<ul>
+<li><strong>Action Item:</strong> Ben Kadek and Cory will send pointers to good Designated Expert guidance texts (e.g., from COSE) to the mailing list.</li>
+</ul>
+</li>
+<li><strong>Decision:</strong> For Argon2 text clarity, the working group will review the text for potential improvements and encourage further interop testing.</li>
+<li><strong>Action Item:</strong> Daniel H volunteered to produce a merge request for handling malformed MPIs in signatures.</li>
+<li><strong>Decision:</strong> The chairs will take the minutes of these resolutions to the mailing list for confirmation.</li>
+<li><strong>Action Item:</strong> The document editor will incorporate the agreed-upon changes into <code>draft-ietf-openpgp-rfc4880bis-07</code>.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The working group chairs will circulate the summary of decisions and discussions to the mailing list for final confirmation.</li>
+<li>The document editor will prepare <code>draft-ietf-openpgp-rfc4880bis-07</code> incorporating the agreed-upon changes.</li>
+<li>Once <code>draft-ietf-openpgp-rfc4880bis-07</code> is released, the working group will consider another WGLC, potentially with an explicit request to focus review on the document's changes (diffs).</li>
+<li>Discussions regarding potential future work and re-chartering (e.g., symmetric keys in the keyring, automatic email forwarding) will proceed <em>after</em> the current crypto refresh draft is finalized, utilizing the ideas presented in this session. Daniel Kahn Gilmore and Aaron van Geffen presented specific proposals for such future work.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

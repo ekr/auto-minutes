@@ -1,0 +1,66 @@
+**Session Date/Time:** 25 Jul 2025 09:30
+
+# CBOR Working Group Meeting
+
+## Summary
+
+The CBOR Working Group met at IETF 123, chaired by Barry Leiba and Christian Amsüss, with a third chair potentially being added. The meeting covered presentations on formal verification of CBOR implementations, evaluation of CBOR PACK compression, and discussions on three key documents: CDE (Common Deterministic Encoding), PACK, and EDN literals. The primary focus was on resolving remaining technical issues in these specifications.
+
+## Key Discussion Points
+
+### EverCBOR Formal Verification Presentation (Tahina, Microsoft Research)
+- Presented EverCBOR, a formally verified CBOR implementation written in F* proof assistant
+- Provides formal guarantees including memory safety, functional correctness, non-ambiguity, and non-malleability
+- Currently supports deterministic encoding without floating point; plans to add non-deterministic CBOR and floating point support
+- Discovered inaccuracies in existing CDDL descriptions, particularly missing cuts in map groups
+- Generated interoperability testing with various protocols including CWT, EAT, and COSE
+- Plans to submit errata for missing cuts in CDDL specifications
+
+### CBOR PACK Evaluation (Martin)
+- Presented evaluation of DNS message compression using CBOR PACK with different parameter values
+- Tested various combinations of parameters A (shared reference values), B (low index straight references), and C (low index inverted references)
+- Results showed minimal differences between parameter choices, with A≥8 providing best compression
+- Recommended A=12, B=8, C=8 as good compromise values
+- Implementation added ~300 lines of code and doubled context size
+
+### Document Status Discussions
+
+#### PACK Document
+- Consensus on parameter values: A=12, B=8, C=8
+- Need for interoperability testing with integration tags
+- Technical issue identified with invalid values being replaced by tag 1100 potentially creating invalid documents when used as map keys
+- Agreement to proceed with implementation work before Working Group Last Call
+
+#### CDE (Common Deterministic Encoding) Document
+- Extensive discussion on handling NaN payloads in floating point numbers
+- Decision to maintain RFC 8949 approach as best available option
+- Added explanatory text and code for 16-bit floating point encoding
+- Disagreement on document structure and clarity of preferred serialization definitions
+- Some participants argued for normative updates to RFC 8949, but show of hands indicated rough consensus against normative changes
+
+## Decisions and Action Items
+
+### PACK Document
+- **Decision**: Adopt parameter values A=12, B=8, C=8
+- **Action**: Complete interoperability testing with integration tags over next 4-6 weeks
+- **Action**: Address technical issue with tag 1100 and invalid map keys
+
+### CDE Document  
+- **Action**: Tahina to submit errata for missing cuts in CDDL specifications in early August
+- **Action**: Merge pull request 37 regarding NaN payload handling
+- **Action**: Lawrence, Carsten, and chairs to collaborate on restructuring CDE document as applicability statement to improve clarity while maintaining RFC 8949 definitions
+
+### EverCBOR
+- **Action**: Continue testing with additional CDDL specifications from hackathon feedback
+- **Action**: Add support for recursion handling with appropriate depth bounds
+- **Action**: Implement non-deterministic CBOR and floating point support
+
+## Next Steps
+
+- Working groups will reconvene for interim call in a few weeks
+- Interoperability testing period for PACK integration tags
+- Collaborative editing session for CDE document restructuring
+- Continued development of EverCBOR capabilities
+- EDN literals discussion deferred to future meeting due to time constraints
+
+The meeting demonstrated active engagement with formal verification approaches and continued refinement of CBOR specifications based on implementation experience and testing results.

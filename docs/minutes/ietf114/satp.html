@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="satp.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-SATP-20220726-1900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 26 Jul 2022 19:00</p>
+<h1>satp</h1>
+<h2>Summary</h2>
+<p>The Secure Asset Transfer Protocol (SATP) BoF session discussed the need for an interoperable protocol to facilitate the secure and atomic transfer of digital assets between disparate networks. Presentations covered the problem statement, proposed terminology, use cases (including trade finance, logistics, and Central Bank Digital Currencies - CBDCs), and an initial protocol overview based on a 3-phase commit model. The discussion highlighted concerns regarding the clarity of the problem space, the definition of &quot;trust,&quot; whether the IETF is the appropriate venue given potential regulatory/legal implications and energy concerns around some DLTs, and the scope of the proposed charter. Polling indicated that the problem space was not yet well understood by the attendees, and the proposed charter's scope was not deemed sufficient to start a working group, though there was a slight lean towards the IETF being a suitable place for the work. Further discussion and refinement of the problem statement and scope are needed.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>BoF Purpose and IETF Logistics</strong>: Wes Hardaker opened the BoF, outlining its purpose to gauge interest in starting a working group for SATP. Standard IETF Note Well, code of conduct, and queuing procedures were reviewed. The name &quot;satp&quot; (Secure Asset Transfer Protocol) was clarified, distinguishing it from the mailing list &quot;sat&quot;.</p>
+</li>
+<li>
+<p><strong>Problem Statement and Assumptions (Thomas Hardjono)</strong>:</p>
+<ul>
+<li><strong>Terminology</strong>: Defined &quot;Network&quot; (group of nodes sharing asset state), &quot;Digital Asset&quot; (legally recognized, economic value), &quot;Gateway&quot; (authorized computer for a network), and &quot;Asset Transfer&quot; (protocol to move assets between networks).</li>
+<li><strong>Problem</strong>: An interoperable protocol to move digital assets between networks, retaining validity and enabling third-party post-transfer verification.</li>
+<li><strong>Assumptions</strong>: Networks share common semantics about data objects and validity; one or both networks are opaque; gateways are trusted by their networks; information subsets are &quot;views.&quot;</li>
+<li><strong>Gateway Model</strong>: The proposed work focuses on the protocol between two gateways (G1 and G2). How gateways interact with their internal networks (N1 and N2) is out of scope. This aligns with an autonomous systems principle.</li>
+<li><strong>Proposed Modes</strong>: Asset Transfer, Data Sharing, Asset Exchange/Swap.</li>
+<li><strong>Scope of Work</strong>: API endpoint definitions, resource identifiers, message payloads/format, message flows (using 3-phase commit, ACID properties), security, and liveliness properties.</li>
+<li><strong>Current Drafts</strong>: Architecture, Protocol, and Use Cases drafts exist.</li>
+</ul>
+</li>
+<li>
+<p><strong>Clarifying Questions on Problem Statement</strong>:</p>
+<ul>
+<li><strong>Asset Types</strong>: Digital or hybrid (e.g., digital proof of ownership for physical items), but not pure physical. Digital asset identification (e.g., ITIN numbers) is assumed to exist.</li>
+<li><strong>Voluntary vs. Involuntary Transfer</strong>: A significant point of discussion. The initial scope leans towards <em>voluntary</em> transfers, where the originator in Network 1 authorizes G1. Involuntary transfers (e.g., lawful repossession) are considered out of current scope.</li>
+<li><strong>Trust in Gateways</strong>: &quot;Trusted&quot; means authorized by the network participants to perform specific actions. The gateway obeys commands but does not act autonomously to transfer assets without authorization. The specific definition of &quot;trusted&quot; and its implications for network behavior (e.g., zero-trust systems like Bitcoin) was debated, with proponents clarifying the focus is on systems where network participants authorize the gateway.</li>
+<li><strong>Failure Modes</strong>: The 3-phase commit aims for atomicity (asset in one network, not both, not lost). Acknowledged that absolute bulletproof systems don't exist, and human intervention might be required for certain failures (e.g., network delays, gateway death).</li>
+<li><strong>&quot;Legally Recognized&quot;</strong>: Proponents acknowledge different legal definitions across jurisdictions. This was flagged as a hard problem, with suggestions to narrow the scope to cases with common agreement on legal frameworks.</li>
+<li><strong>Opaque Data Objects</strong>: The asset itself is treated as an opaque blob, with its meaning defined by the underlying networks.</li>
+</ul>
+</li>
+<li>
+<p><strong>Use Cases (Partha Das)</strong>:</p>
+<ul>
+<li><strong>Motivation</strong>: Real-world business networks are fragmented (e.g., TradeLens for logistics, Marco Polo for trade finance). This fragmentation is horizontal (similar purpose, different clientele/platforms) and vertical (different processes, interdependencies).</li>
+<li><strong>Trade Finance &amp; Logistics Example</strong>: Illustrated how SATP enables interoperability between a trade finance network (managing letters of credit) and a trade logistics network (managing bills of lading). SATP facilitates sharing a &quot;view&quot; of a bill of lading from the logistics network to the finance network, allowing for evidence of goods shipment.</li>
+<li><strong>CBDC Example</strong>: Demonstrated SATP for transferring Central Bank Digital Currency (CBDC) between wholesale and retail CBDC networks, or across different retail CBDC networks, emphasizing atomicity.</li>
+<li><strong>Differentiation</strong>: SATP aims to provide conclusive, secure, and atomic communication of asset states or transfers between networks, with network buy-in, differentiating it from existing data exchange protocols like EPCIS.</li>
+<li><strong>Network Abstraction</strong>: Emphasized that the protocol is designed to work even if one &quot;network&quot; is a monolithic database, as the gateway hides complexity.</li>
+</ul>
+</li>
+<li>
+<p><strong>Protocol Overview (Alex Zylber)</strong>:</p>
+<ul>
+<li><strong>Resource Descriptors</strong>: Proposed a new media type (<code>sat/</code>) for asset identifiers, public keys, etc. Descriptors include organization ID, gateway ID (FQDN), network/system ID (e.g., &quot;TradeLens&quot;), and a network-specific resource string.</li>
+<li><strong>Message Format</strong>: JSON-based messages exchanged between applications and gateways, containing mandatory fields like protocol version, session ID, sequence number, SAT phase, resource URL, developer URN, action/response, arguments, credential/payload/application profiles, payload hash, and message signature.</li>
+<li><strong>Message Flows</strong>:
+<ul>
+<li><strong>Transfer Initiation</strong>: Sender gateway proposes a session, receiver gateway agrees.</li>
+<li><strong>Lock Evidence Verification</strong>: Sender conveys claims of asset locking/escrow on its network, receiver validates and accepts the claims. The &quot;lock evidence blob&quot; is a key component.</li>
+<li><strong>Commitment Establishment</strong>: Sender signals readiness for commitment, receiver confirms readiness. Sender extinguishes the asset locally, receiver regenerates it, then transfer completion is signaled. This adheres to a 3-phase commit logic.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Open Discussion on BoF Questions</strong>:</p>
+<ul>
+<li><strong>Nature of Networks</strong>: Concern that the scope of &quot;out of scope&quot; for internal networks might be too broad, as the gateway-to-gateway protocol needs to understand the &quot;lock evidence blob&quot; structure provided by the networks.</li>
+<li><strong>IETF Success &amp; Deployment</strong>: Discussion on whether a standard would achieve real-world deployment. Proponents cited IBM POCs with central banks and hyperledger projects (Cactus, Weaver) as examples of current work that would adopt such a standard.</li>
+<li><strong>&quot;Rocket Upholstery&quot; Concern</strong>: A strong concern was raised that the proposed scope might be too narrow, focusing on a &quot;small piece&quot; (gateway-to-gateway) without sufficient understanding of the broader context or the involvement of end-consumers/deployers.</li>
+<li><strong>Trust and Atomicity</strong>: Reiterated that 3-phase commit aims for atomicity, but real-world failures might still require human intervention or legal frameworks.</li>
+<li><strong>Blockchain/DLT Optics</strong>: Concerns about the IETF inadvertently endorsing energy-intensive or &quot;ponzi-scheme&quot; DLTs (like proof-of-work Bitcoin). Proponents clarified their focus on <em>permissioned</em> DLTs and generic &quot;networks&quot; (including traditional databases), and that the IETF should not make value judgments on use cases, but rather on technical merit.</li>
+<li><strong>IETF as the Right Place</strong>: Arguments for IETF include its open, free, transparent process for interoperability standards. Counter-arguments questioned if IETF could effectively navigate regulatory/policy aspects or achieve broad international adoption given the existing fragmentation of standards efforts.</li>
+<li><strong>Constituency</strong>: Several attendees from companies (14 Bis, Ernst &amp; Young, Transmute, Measure.io) expressed interest in participating and acknowledged the real-world problems SATP aims to solve, indicating some constituency for the work.</li>
+<li><strong>Charter Scope</strong>: Discussion on whether the proposed scope (API endpoint definitions, resource identifiers, message flows/payloads, terminology) was appropriate. Some felt it was too small, others felt the background/context needed more detail.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<p>The BoF chairs conducted several polls to gauge the room's sentiment:</p>
+<ol>
+<li>
+<p><strong>Is the problem space well understood?</strong></p>
+<ul>
+<li>Hands Raised (Yes): 11</li>
+<li>Hands Not Raised (No): 35</li>
+<li><strong>Outcome</strong>: The problem space is not yet well understood by the attendees.</li>
+</ul>
+</li>
+<li>
+<p><strong>Is the IETF the right standards body to take on this work?</strong></p>
+<ul>
+<li>Hands Raised (Yes): 25</li>
+<li>Hands Not Raised (No): 19</li>
+<li><strong>Outcome</strong>: A slight majority believes the IETF might be the right place for this work.</li>
+</ul>
+</li>
+<li>
+<p><strong>Is the scope of the proposed charter sufficient to start a working group?</strong></p>
+<ul>
+<li>Hands Raised (Yes): 13</li>
+<li>Hands Not Raised (No): 32</li>
+<li><strong>Outcome</strong>: The proposed charter's scope is not considered sufficient to start a working group.</li>
+</ul>
+</li>
+</ol>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Further Discussion</strong>: Continue discussions on the mailing list (mailman-sat) to address the feedback received.</li>
+<li><strong>Problem Statement and Scope Refinement</strong>: The proponents are encouraged to refine the problem statement and proposed charter scope, taking into account the concerns raised, particularly around clarity, the definition of trust, the inclusion/exclusion of involuntary transfers, and the interaction with underlying networks.</li>
+<li><strong>Potential for Another BoF</strong>: Based on further refinement and community engagement, another BoF might be considered.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

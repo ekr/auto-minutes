@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dance.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-DANCE-20211112-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 12 Nov 2021 12:00</p>
+<h1>dance</h1>
+<h2>Summary</h2>
+<p>The inaugural dance (DANE Authentication for IoT Service Hardening) working group meeting focused on establishing the group's direction, reviewing potential use cases for extending DANE to TLS client authentication, and discussing the initial architecture document and proposed solution drafts. Presentations covered a range of applications from securing DNS infrastructure and EAP-TLS for network access to device-to-cloud communications for IoT and autonomous vehicles. The discussion highlighted both the potential benefits of DANE for simplified, scalable PKI-based identity and raised important considerations regarding privacy, scalability, and implementation complexity for resource-constrained devices. The group expressed consensus to adopt two existing solution drafts as starting points for protocol development.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Introduction and Logistics</strong>:</p>
+<ul>
+<li>Chairs: Wes Hardaker, Paul Wooters.</li>
+<li>Note-takers: Tim, David Lawrence (backup).</li>
+<li>Reminder of IETF processes, policies, and code of conduct.</li>
+<li>Working Group purpose: Extend DANE to encompass TLS client authentication, starting with certificate-based authentication.</li>
+<li>Three drafts were presented for discussion.</li>
+</ul>
+</li>
+<li>
+<p><strong>Use Cases for DANE Client Authentication (Bill Sommerfeld)</strong>:</p>
+<ul>
+<li><strong>Securing DNS Infrastructure</strong>: Using DANE to secure DNS, addressing vulnerabilities of CA certificates and limitations of client-side DNSSEC validation.</li>
+<li><strong>Split Horizon DNS</strong>: Supporting split horizon for remote workers without relying on VPN authentication, using TLS client authentication for authenticated DNS queries.</li>
+<li><strong>Closed Community Recursive Resolvers</strong>: Authenticating clients for resolvers not intended for public access.</li>
+<li><strong>Recursive-to-Authoritative Authentication</strong>: Replacing IP-based prioritization and manual IP list management with domain-name-based authentication using client certificates.</li>
+<li><strong>DNS Zone Transfer</strong>: Replacing shared-secret TSIG with TLS for securing XFR and zone signing processes, which currently suffer from key management issues.</li>
+<li><strong>DNS Zone Authorship to Signer</strong>: Securing the transport of unsigned zone data from authoring machines to the DNSSEC signer.</li>
+<li><strong>Discussion on Use Cases</strong>:
+<ul>
+<li>Victor asked for clarification on DANE TLSA record maintenance (ensuring freshness).</li>
+<li>DKG questioned if client authentication is the <em>sole</em> solution for these problems, suggesting the working group consider non-client authentication mechanisms, especially for closed community resolvers, to avoid tying DNS queries to individual identities. Bill clarified that &quot;role authentication&quot; doesn't necessitate &quot;individual authentication.&quot;</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Device-to-Cloud Use Case (Ashish Singh)</strong>:</p>
+<ul>
+<li><strong>Problem</strong>: PKI-based identity is expensive, complex to manage at scale for IoT, and has issues with naming collisions and cross-organizational trust.</li>
+<li><strong>DANE Solution</strong>: Provides accessible, public key-based identity leveraging DNS, simplifying management and cross-org use.</li>
+<li><strong>Anti-Abuse Considerations</strong>: Performing DNS lookups during the TLS handshake could be vulnerable to slow loris attacks. Proposed alternative: <strong>TLS cooperative client authentication</strong> where the load balancer authenticates the certificate, and the DANE ID is passed via HTTP headers for the application to perform the DNS lookup and authorization.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Ben suggested the client should ship a complete DANE signature chain to the server to eliminate server-side network operations for validation. Victor proposed this could be an optional feature to allow for freshness.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>EAP-TLS for Network Access Use Case (Ashish Singh)</strong>:</p>
+<ul>
+<li><strong>Problem</strong>: EAP-TLS is prohibitively expensive for small organizations due to PKI operation costs; identity is siloed to organizations.</li>
+<li><strong>DANE Solution</strong>: Enables a single device identity usable across different networks/providers, quick revocation (DNS TTL), and manufacturer-provided identities, simplifying network onboarding.</li>
+<li><strong>Example</strong>: Manufacturers place device public keys in DNS, implementer configures network access lists with DNS names, devices use their DANE-authenticated certificates.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Daniel raised privacy concerns about a client presenting a single identity across all networks. Ashish acknowledged this and suggested multiple identities or focusing on IoT where devices might have a single, manufacturer-issued identity due to resource constraints.</li>
+<li>Victor expressed skepticism about the long-term stability of vendor-issued credentials (e.g., if a vendor goes out of business).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>DANCE Architecture (Ashish Singh)</strong>:</p>
+<ul>
+<li><strong>Core Problem</strong>: Traditional PKI's expense, operational burden, and cross-organizational limitations make it unsuitable for broad IoT adoption.</li>
+<li><strong>DANE as Solution</strong>: Binds PKI namespace to DNS, allowing global recognition, public key lookup by name, simplifying device onboarding and application access.</li>
+<li><strong>Autonomous Car Example</strong>: Illustrated a car using a single DANE identity for EAP-TLS (network access), mutual TLS (API upload), and object security (JWS for geofence compliance, verifiable via DANE lookup).</li>
+<li><strong>Possible Protocol Use Cases (beyond initial charter)</strong>: StartTLS, EAP-TLS, HTTPS, MQTTS, SIP, WebRTC, LoRaWAN, JOSE/COSE, XMPP, SSH.</li>
+<li><strong>Security Considerations</strong>: DANE identifiers aid anti-abuse efforts. Recommends DNS over TLS for integrity, stub resolver DNS validation, and performing DNS lookup only for allowed client names for availability.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Schuman requested Victor to elaborate on the SMTP client (MTA-to-MTA) use case, emphasizing the need for trusted domain-based reputation and transport security.</li>
+<li>Victor expanded on a &quot;federation story&quot; using DANE to bootstrap cross-realm Kerberos, allowing KDCs to authenticate each other for internet-scale Kerberos meshes, and the potential for anonymous credentials or organization-level identity masking.</li>
+<li>Paul inquired about fallback solutions for when a client identity DNS zone is offline. Ashish suggested caching strategies or embedding DNS chain directly in the TLS handshake. Victor suggested using DANE for initial enrollment, then obtaining bilateral credentials for future interactions.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Existing Solution Documents (Schuman Sen)</strong>:</p>
+<ul>
+<li><strong>Drafts</strong>: &quot;DANE Client Authentication&quot; and &quot;TLS Extension for DANE Client ID.&quot;</li>
+<li><strong>History</strong>: Originally presented in 2015 at IETF 93; targets IoT device authentication and SMTP transport security.</li>
+<li><strong>Protocol Sketch</strong>: TLS client has a DNS domain name identity, public/private key, certificate, and a corresponding DANE TLSA record. Server requests client cert, client sends cert with a <code>dane_client_id</code> extension. Server validates by looking up the TLSA record and matching the client's public key.</li>
+<li><strong>TLS Extension for <code>dane_client_id</code></strong>:
+<ul>
+<li>Signals client support for DANE authentication (empty extension).</li>
+<li>Conveys client's DNS identity, especially for raw public key authentication or when a certificate has multiple identities.</li>
+<li><strong>Privacy</strong>: In TLS 1.3, this extension is encrypted. In TLS 1.2, it would be sent in the ClientHello, potentially leaking identity.</li>
+</ul>
+</li>
+<li><strong>TLSA Record Format</strong>: Proposed two formats: service-specific (<code>_service._app.client.example</code>) and IoT device identity (<code>device.example._device.org.example</code>).</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Question on making TLS 1.3 mandatory due to privacy concerns in TLS 1.2. Schuman noted this depends on the target deployment environment (greenfield vs. legacy).</li>
+<li>DKG clarified that TLS extensions are typically request-response; if the client doesn't offer <code>dane_client_id</code> in ClientHello, the server can't respond with it. He also questioned the necessity of the extension if the server can extract the identity from the certificate, suggesting the certificate itself could signal DANE support as an optimization for mixed-mode clients.</li>
+<li>Ben reiterated that shipping a full DANE chain isn't a significant burden for IoT devices as it's a static block, though Victor clarified that RRSIG TTLs require periodic refreshing (every few hours for typical DNSSEC practices).</li>
+<li>Victor suggested embedding DANE signaling within existing certificate fields (e.g., acceptable CA names list from server, or OID in client cert subject DN) instead of a TLS extension. This would require defining OIDs.</li>
+<li>Ollie (via Jabber) stated that the namespace discussion needs to ensure a tree structure, not a flat namespace.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: The working group expressed consensus (22 &quot;for&quot;, 1 &quot;against&quot; out of 23 participants) to adopt &quot;DANE Client Authentication&quot; and &quot;TLS Extension for DANE Client ID&quot; as working group documents.</li>
+<li><strong>Action Item (Chairs)</strong>: Initiate the Working Group Last Call process for the adoption of the two solution drafts.</li>
+<li><strong>Action Item (All)</strong>: Review the adopted documents and provide feedback on the mailing list for any issues or proposed enhancements.</li>
+<li><strong>Action Item (Victor)</strong>: Draft an example of how DANE signaling could be embedded into existing certificate fields (e.g., X.509 subject DN) and share it on the mailing list.</li>
+<li><strong>Action Item (Ollie)</strong>: Elaborate on the &quot;tree vs. flat namespace&quot; discussion for DANE client identities on the mailing list.</li>
+<li><strong>Action Item (Ashish Singh)</strong>: Consider incorporating discussion on fallback solutions for offline client identity zones into the architecture document.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The working group will proceed with the adoption process for &quot;DANE Client Authentication&quot; and &quot;TLS Extension for DANE Client ID.&quot;</li>
+<li>Continue refining the architecture document, with a particular focus on the naming of entities and alignment with IETF terminology.</li>
+<li>Further discussions on the mailing list are expected regarding:
+<ul>
+<li>The privacy implications of DANE client authentication in TLS 1.2 vs. TLS 1.3 and potential solutions.</li>
+<li>The necessity and design of the TLS extension for <code>dane_client_id</code> versus embedding signaling in certificates.</li>
+<li>The feasibility and benefits of clients shipping a full DANE chain (including RRSIGs) to servers.</li>
+<li>Addressing the proper structure for the DANE client identity namespace.</li>
+</ul>
+</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

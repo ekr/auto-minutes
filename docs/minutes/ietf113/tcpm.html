@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="tcpm.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-TCPM-20220323-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 23 Mar 2022 13:30</p>
+<h1>tcpm</h1>
+<h2>Summary</h2>
+<p>The tcpm working group meeting covered updates on existing working group documents, presentations on documents nearing completion (High Start++, CUBIC, Accurate ECN), and initial discussions for several new or non-working group documents (TCP ACK Rate Request, MPTCP Robust Session Establishment, TCPLS). A significant portion of the discussion focused on the readiness of CUBIC (8312bis) for Proposed Standard status, with strong working group sentiment in favor despite some concerns about the historical deployment process. The working group also saw a change in its chairing team, with Michael stepping down and Ian joining.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Personnel Updates:</strong> Michael stepped down as co-chair, and Ian joined as a new co-chair.</li>
+<li><strong>Working Group Document Status:</strong>
+<ul>
+<li><strong>Ao Test Vector:</strong> RFC in EXAQ (expected soon).</li>
+<li><strong>Young TCP:</strong> Under IESG review.</li>
+<li><strong>793bis:</strong> Under IESG evaluation.</li>
+<li><strong>8312bis (CUBIC):</strong> Discussed for Proposed Standard readiness.</li>
+<li><strong>High Start++:</strong> Discussed for Working Group Last Call (WGLC) readiness.</li>
+<li><strong>Accurate ECN:</strong> Discussed for WGLC readiness, dependent on remaining open items.</li>
+<li><strong>Generalized ECN:</strong> On hold due to dependency on Accurate ECN. Discussion re-initiated to proceed to WGLC.</li>
+<li><strong>IDO Draft:</strong> Lacks feedback; chairs requested specific reviewers and implementation experience. Jonathan Hoyland volunteered to review.</li>
+<li><strong>6937bis:</strong> Inactive, but authors plan to publish a new version soon.</li>
+</ul>
+</li>
+<li><strong>TCP Option Extension:</strong> Discussion on how to proceed with proposals for extending TCP option space, including Joe Touch's specific draft. Consensus leaned towards working group adoption rather than an independent stream, acknowledging the fundamental nature of option extensions for TCP.</li>
+<li><strong>High Start++ (draft-ietf-tcpm-hystartplusplus):</strong>
+<ul>
+<li><strong>Problem:</strong> Slow start overshoot causing packet loss.</li>
+<li><strong>Solution (v04):</strong> Uses delay increases to detect queue filling and exit slow start early. Includes a &quot;conservative slow start&quot; (CSS) phase (5 rounds) to detect and recover from spurious exits due to jitter. Resumes High Start++ if the exit was spurious.</li>
+<li><strong>Updates:</strong> Addressed all outstanding reviews, removed dependency on <code>low_ss_thresh</code> (simplifying logic).</li>
+<li><strong>Implementations:</strong> Three known production implementations (Windows TCP CUBIC, Cloudflare's QUIC library Quiche, FreeBSD TCP CUBIC).</li>
+<li><strong>WG Consensus:</strong> Stable and seemingly ready for WGLC.</li>
+</ul>
+</li>
+<li><strong>CUBIC (8312bis) (draft-ietf-tcpm-rfc8312bis):</strong>
+<ul>
+<li><strong>Updates (v04):</strong> Clarified handling of spurious congestion events (timeouts, loss detection via ACKs), meaning of application-limited, and justification for using RFC7661 (pipe-back value based on acknowledged bytes).</li>
+<li><strong>Main Discussion:</strong> Whether to publish as Proposed Standard (PS) or Experimental (Exp).
+<ul>
+<li>Concerns raised by Marco and Lars Eggert about CUBIC not following the established IETF process for new congestion control algorithms, which typically involves thorough evaluation before standardization.</li>
+<li>Counter-arguments emphasized CUBIC's widespread deployment and ubiquitous use on the internet, suggesting it should be standardized as it reflects current reality.</li>
+<li>A poll indicated strong working group support for Proposed Standard (28 votes) over Experimental (1-2 votes).</li>
+</ul>
+</li>
+<li><strong>Action:</strong> Continued discussion on potentially adding text acknowledging the deviation from standard process.</li>
+</ul>
+</li>
+<li><strong>Accurate ECN (draft-ietf-tcpm-accurate-ecn):</strong>
+<ul>
+<li><strong>Updates (v18):</strong> Three recent updates. Discussion on handling ECN congestion feedback when the sender is not sending ECN-capable packets (e.g., due to middlebox mangling, broken receiver). Normative text changes (<code>must</code>/<code>should</code>/<code>may</code> replaced with non-normative phrasing where appropriate). Increased <code>ce_pkts_before_ce_feedback</code> to 7.</li>
+<li><strong>Upcoming Changes:</strong> Discussion about whether to update RFC3449 (Network Path Asymmetry) or simply outline the problem. Proposal to prioritize implementing <em>sending</em> Accurate ECN options over <em>receiving</em> them, due to implementation complexity.</li>
+<li><strong>Feedback:</strong> Jonathan Hoyland noted the proposed change on sender/receiver priority might contradict the interoperability principle. Gory Ferrand raised concerns about &quot;strongly recommended&quot; language.</li>
+</ul>
+</li>
+<li><strong>TCP ACK Rate Request (draft-gomez-tcpm-accurate-ack-request-opt):</strong>
+<ul>
+<li><strong>Motivation:</strong> Address suboptimal performance from delayed ACKs in large/small congestion windows and asymmetric paths.</li>
+<li><strong>Proposal (v03):</strong> New 5-byte TCP option with a 6-bit <code>R</code> field (ACK rate requested) and a reserved <code>V</code> bit. <code>R=1</code> means immediate ACK.</li>
+<li><strong>Encoding:</strong> Two options for <code>R</code> field encoding (binary vs. mantissa/exponent). Binary encoding up to 63, mantissa/exponent up to 124 (with different granularity).</li>
+<li><strong>Behavior:</strong> Receiver &quot;SHOULD&quot; (not MUST) satisfy the request. Support for the option can be announced in SYN/SYN-ACK (though the SYN-ACK response is not reliably delivered). Re-transmissions not required to carry the option.</li>
+<li><strong>Removed:</strong> The &quot;ignore order&quot; feature due to unclear benefit.</li>
+<li><strong>Feedback:</strong> Discussion on the appropriate maximum value for <code>R</code> and its safety implications; concerns about announcing support in SYN-ACK due to unreliability.</li>
+</ul>
+</li>
+<li><strong>MPTCP Robust Session Establishment (draft-peng-mptcp-robust-session-establishment):</strong>
+<ul>
+<li><strong>Problem:</strong> Connection setup failures due to default paths with unknown characteristics (e.g., bad Wi-Fi).</li>
+<li><strong>Solution:</strong> Extensions to MPTCP and MPTCPv1 to provide more robust session establishment, including timer-based re-attempts, simultaneous multipath connection setup (using SYN, ECN, IPS).</li>
+<li><strong>Call for Adoption:</strong> Authors requested working group adoption.</li>
+<li><strong>Chairs' Feedback:</strong> Need more broad support, operational experience, or solid test results beyond current demonstrations to convince the working group for adoption. IPR clarity was also requested.</li>
+</ul>
+</li>
+<li><strong>TCPLS Modern Transport Services (draft-gomez-tcpls):</strong>
+<ul>
+<li><strong>New Draft (First Presentation):</strong> Proposes new transport services by bringing TCP and TLS closer.</li>
+<li><strong>Motivation:</strong> Learnings from MPTCP (backward compatibility, middlebox interference) and QUIC (UDP-based, TLS for header security, user-space implementation). Leveraging TLS ubiquity and TCP support.</li>
+<li><strong>Services:</strong> Stream multiplexing (like HTTP/2), connection migration and failover, multi-path by scheduling at the TLS record level. Aims for efficiency over HTTP/2, TLS, MPTCP due to combined design.</li>
+<li><strong>Protocol:</strong> Uses a new TLS extension to indicate TCPLS support. Introduces a framing layer (TCPLS frames) inside TLS application data records for streams. Manages multiple TCP connections within a single TCPLS session. Modifies the TLS IV nonce construction to incorporate a connection ID for shared TLS session state across multiple TCP connections. Introduces TCPLS acknowledgements for failover.</li>
+<li><strong>Implementation:</strong> Prototype in C (2.5k lines) built on PicoTLS, implementing stream multiplexing, failover, and multipath.</li>
+<li><strong>Feedback:</strong> Questioned whether this is within the scope of tcpm or more suitable for the TLS working group. Concerns about inventing new nonce derivation without formal cryptographic analysis.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Generalized ECN:</strong> Richard will initiate a mailing list discussion to assess readiness for Working Group Last Call.</li>
+<li><strong>IDO Draft:</strong> Jonathan Hoyland committed to reviewing the draft. Chairs may contact others for additional review and request implementation experience from the mailing list.</li>
+<li><strong>High Start++:</strong> Chairs will confirm Working Group Last Call readiness on the mailing list.</li>
+<li><strong>CUBIC (8312bis):</strong> Chairs will further discuss the path forward, taking into account the strong working group sentiment for Proposed Standard and the suggestion to add text addressing the historical deployment process.</li>
+<li><strong>Accurate ECN:</strong> Discussion to continue on the mailing list. Bob will update the &quot;strongly recommended&quot; normative text to &quot;recommended.&quot;</li>
+<li><strong>TCP ACK Rate Request:</strong> Authors to continue discussion on the mailing list and update the draft based on feedback, particularly regarding the <code>R</code> field encoding and safety.</li>
+<li><strong>MPTCP Robust Session Establishment:</strong> Authors are encouraged to provide more broad support, operational experience, or solid test results, and clarify IPRs to aid the chairs in considering adoption.</li>
+<li><strong>TCPLS:</strong> Discussion on the draft's scope and relevance will continue on the tcpm mailing list, with a suggestion for engagement with the TLS working group.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Working Group Last Call (WGLC) consideration for High Start++ and Accurate ECN (pending resolution of open issues).</li>
+<li>Continued discussion on CUBIC (8312bis) to finalize its status as Proposed Standard.</li>
+<li>Further development and feedback for TCP ACK Rate Request.</li>
+<li>Authors of MPTCP Robust Session Establishment to gather more evidence for working group adoption.</li>
+<li>Continued discussion on the TCPLS draft, specifically its scope and appropriate working group alignment.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

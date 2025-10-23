@@ -1,0 +1,67 @@
+**Session Date/Time:** 21 Mar 2022 13:30
+
+# lake
+
+## Summary
+
+The LAKE session at IETF 113 focused primarily on the status of the AD HOC protocol, including reports from implementers, progress on formal security analyses (both computational and symbolic models), and updates to the core protocol drafts. Key discussions revolved around implementation experiences on constrained devices, performance benchmarks, and the identification of potential areas for strengthening the protocol's security guarantees in various threat models. Decisions were made regarding the next steps for draft progression, particularly in light of ongoing security analyses.
+
+## Key Discussion Points
+
+*   **Working Group Status:** The LAKE Traces draft was adopted, and the AD HOC specification (v12) was declared ready for formal analysis. An article was published in IEEE Computer Magazine inviting academic scrutiny of the protocol. The AD HOC specification has been frozen in the data tracker since IETF 112 to allow for analysis, but development continues on an editor's copy (v13) in GitHub. The milestone to ship the document to the ISG by March 2022 is likely to be pushed back due to ongoing vetting.
+*   **Hackathon Report:** A recent hackathon focused on developing and testing a minimal, verifiable Rust implementation of AD HOC (editor's copy v13) for microcontrollers, emphasizing low size and static Diffie-Hellman. Successful interoperability testing was conducted between the Rust initiator and an Eclipse Californium responder, confirming a 45-byte Message 2 and consistent master secret derivation. The working group now has nine independent AD HOC implementations.
+*   **Developer Feedback (Inria - Francisco):**
+    *   Experiences implementing AD HOC (draft 05) on constrained nRF52 BLE devices for a privacy-focused research project (RIOTFP).
+    *   A C implementation (`ad-hoc-c`) was developed, utilizing `nano-cbor`, `tinycrypt`, and `Ed25519`.
+    *   Benchmarks (software-only crypto on Cortex M0+/M4) showed ROM usage around 9-10KB and RAM around 4KB (highly buffer-dependent). Handshake times were significant, up to 20 seconds on M0+ for signature-based methods, primarily due to cryptographic operations.
+    *   Feedback included the need for better COSY abstraction libraries, asynchronous crypto APIs to manage timeouts, and clearer guidance on credential handling. Chacha20-Poly1305 was suggested as a preferred cipher suite for constrained environments due to smaller size and simpler implementation compared to AES-CCM.
+    *   A correction was noted: mbedTLS *does* support AES-GCM, and Ed25519 support is in development for mbedTLS.
+*   **Developer Feedback (Assa Abloy - Marek):**
+    *   Experiences with AD HOC (draft 12) as part of a modular IoT stack for device-to-cloud/mobile/device communication, using COAP, OSCORE, and X.509 certificates.
+    *   Implemented a single C library (`micro-oscore-micro-ad-hoc`) wrapped for various platforms (embedded, iOS, Node.js), utilizing hardware-accelerated mbedTLS on nRF52840.
+    *   Performance was significantly better with hardware acceleration: a full AD HOC handshake (Method 0, Cipher Suite 2, P-256, X.509 validation) over BLE GATT took approximately 180ms on nRF52840, within a total operation time of 600-800ms for full connection setup.
+    *   Future plans include building a COAP/HTTP proxy and contributing to test vector generation.
+*   **Implementation Security Update (Malicious):**
+    *   Presented work on a formally verifiable Rust implementation of AD HOC using Inria's HackSpec framework, aiming for provable correctness, memory safety, and side-channel resistance on microcontrollers.
+    *   Challenges include HackSpec's reliance on the Rust standard library (preventing `no_std` compilation for embedded targets) and poor library support for elliptic curve point compression.
+    *   A minimal AD HOC initiator (static-static, 45-byte Message 2) implementation in `no_std` Rust successfully interoperates with existing backends, without external libraries for CBOR/COSY.
+    *   An open question was raised about ensuring the formal model accurately reflects the RFC specification.
+*   **Computational Analysis (Baptiste):**
+    *   Outlined the approach to prove AD HOC security in the computational model, considering constrained environments that use 64-bit MACs and 128-bit elliptic curves (specifically Cipher Suites 0 and 2).
+    *   Goals include proving key privacy (forward security, implicit authentication), mutual authentication (explicit authentication), and identity protection.
+    *   A key point of study is whether 128-bit security can be achieved after the exchange of a few application messages, given that handshake MACs are 64-bit.
+    *   Discussion with Scott raised concerns that properties of AEAD schemes like GCM/CCM might limit security to 64-bit, even with subsequent messages, if an initial forgery is successful. This needs further investigation.
+    *   The definition of the "session key" for formal analysis (e.g., `prk4x3m`) requires clarification.
+    *   Expected timeline for concluding this analysis is approximately two months.
+*   **Symbolic Analysis (Charlie):**
+    *   Presented findings from symbolic analysis using the Tamarin prover, modeling AD HOC's four authentication methods and capturing subtle cryptographic primitive behaviors.
+    *   The protocol provides expected security properties in reasonable threat models. However, in stronger attacker models, several potential weaknesses were identified, prompting proposed improvements:
+        1.  **Clarify Final Key:** `prk4x3m` as a session key offers weaker properties. A final key derivation step tying PRK and the transcript would strengthen guarantees.
+        2.  **Retransmission Misuse:** Retransmitting a randomized Message 3 (if state is simply recomputed) can lead to reusing the same AEAD key/IV for different messages, breaking AEAD security. The proposal is to retransmit *exactly* the same message.
+        3.  **TEE Weakness in Static Auth:** In static authentication, the MAC key and session key are identical. If a TEE device is compromised (leaking session key), the MAC key is also leaked, allowing an attacker to forge MACs. This is not an issue with Method 0 (signatures).
+        4.  **Future Resilience:** Against potential future hash collisions (e.g., SHA-256) or identity element attacks, checking for low-order groups and strict type-checking of received data (e.g., cipher suite arrays) can mitigate risks.
+    *   The analysis model will be kept updated with draft evolutions.
+
+## Decisions and Action Items
+
+*   **Decision:** The LAKE Traces draft has been adopted.
+*   **Decision:** The AD HOC specification (v12) has been declared ready for formal analysis.
+*   **Decision (Compliance Requirements):** Implementations *must* support Cipher Suite 2 and 3, unless an application profile specifies otherwise.
+*   **Decision (Compliance Requirements):** Implementations *must* be able to parse padded messages (referring to the receiving side).
+*   **Action Item (Francisco):** Update slide in Developer Feedback 1 to correctly reflect mbedTLS support for AES-GCM.
+*   **Action Item (Authors):** Convert Charlie's symbolic analysis remarks into GitHub issues for detailed discussion on the mailing list and GitHub.
+*   **Action Item (Working Group Chairs/Authors):** Clarify the definition of "session key" (e.g., `prk4x3m`) for formal analysis on the mailing list.
+*   **Action Item (Marek, ETH Zurich):** Coordinate with LAKE chairs regarding ongoing computational analysis work to ensure synchronization.
+*   **Action Item (Charlie):** Keep the working group chairs informed of any publications resulting from the symbolic analysis work.
+*   **Action Item (Authors):** Schedule a breakout meeting this week to structure and organize test vectors, particularly in JSON format, with Marek's assistance.
+*   **Action Item (Working Group Chairs):** Coordinate directly with the various security analysis teams (Baptiste, Charlie, Marek, Malicious) to understand the impact of submitting a new draft version (v13) on their ongoing work. A decision will then be announced on the mailing list.
+*   **Action Item (Working Group Chairs):** If necessary, to prevent draft expiry by April 23rd and avoid sending a wrong signal, consider resubmitting draft v12 as draft v13 without changes, in coordination with the analysis teams.
+
+## Next Steps
+
+*   **Draft Progression:** Submit new versions of the AD HOC (v13) and LAKE Traces (v01) drafts from their respective GitHub master branches to the data tracker, as all previous issues have been addressed.
+*   **Address New Feedback:** Incorporate and address the review comments and findings from the hackathon and the detailed security analyses presented during this meeting.
+*   **Working Group Last Call:** Target Working Group Last Call for the drafts once all feedback and new issues have been sufficiently addressed.
+*   **Formal Analysis Coordination:** Continue close coordination with all involved security analysis teams to integrate their feedback and ensure the protocol is thoroughly vetted.
+*   **Implementation Development:** Complete the port of the verifiable Rust implementation to target embedded boards (TI CC2538, Nordic) and publish it as a Rust crate. Use the formal model to generate formally vetted code.
+*   **Test Vector Development:** Further develop and structure test vectors, especially for JSON format, through a scheduled breakout meeting.

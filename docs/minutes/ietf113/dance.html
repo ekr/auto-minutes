@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dance.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-DANCE-20220325-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Mar 2022 09:00</p>
+<h1>DANCE Meeting Minutes</h1>
+<h2>Summary</h2>
+<p>The DANCE Working Group held its second meeting. Key updates included a presentation on a hackathon implementation of the DANE client authentication and TLS client ID extension drafts, which have now been formally adopted as Working Group documents. Significant discussion revolved around the architecture document, leading to a decision to issue a Call for Adoption for it to facilitate collaborative work.</p>
+<h2>Key Discussion Points</h2>
+<h3>Hackathon Implementation Results (Presented by Gay Bartomina, Ethnik)</h3>
+<ul>
+<li><strong>Implemented Drafts</strong>: <code>draft-ietf-dance-dane-client-auth</code> (DANE Authentication) and <code>draft-ietf-dance-tls-client-id</code> (TLS Extension for Client ID).</li>
+<li><strong>Implementation Details</strong>:
+<ul>
+<li>Based on an existing DANE library (by Schuman).</li>
+<li>Developed a testing environment for mutual TLS authentication.</li>
+<li>TLS extension implemented for both TLS 1.2 and 1.3, requiring a fork of the GoLang TLS library due to limited extension APIs.</li>
+<li>Fall-back to Subject Alternative Name (SAN) if client ID not in extension, but extension presence is still required.</li>
+<li>Support for authorization rules based on client ID.</li>
+</ul>
+</li>
+<li><strong>TLS Extension Flow Discussion</strong>:
+<ul>
+<li>Confusion regarding client ID extension flow between TLS 1.2 (ClientHello/ServerHello) and TLS 1.3 (CertificateRequest/Certificate message).</li>
+<li><strong>Schuman's Clarification</strong>: TLS 1.2 lacks privacy for the extension (sent in ClientHello). TLS 1.3 can encrypt it as part of the Certificate message, which comes after the server's CertificateRequest. This difference is due to privacy concerns and TLS 1.2 limitations.</li>
+<li><strong>Hannes' Suggestion</strong>: Consider sending an empty extension in TLS 1.3 ClientHello to signal support to the server early, even if the actual data is sent later in the Certificate message. Schuman noted this was an original rationale for an SMTP use case to handle broken TLS stacks.</li>
+</ul>
+</li>
+<li><strong>LoRaWAN IoT Use Case</strong>:
+<ul>
+<li>Focus on mutual authentication in the IP space (Network Server &lt;-&gt; Join Server/Application Server).</li>
+<li>Acknowledged challenges for end-to-end security on highly constrained IoT devices (e.g., LoRaWAN packet size limit of 52 bytes vs. 146 bytes for a compressed certificate) making asymmetric keys or certificates impractical at the radio frequency layer currently.</li>
+<li>Leverages a private PKI for mutual authentication between servers.</li>
+<li>DANE is used by anchoring trust via TLSA records in existing DNS zones that already contain per-device/network server records for service discovery, minimizing additional friction.</li>
+</ul>
+</li>
+<li><strong>Go TLS Library</strong>: The implementation required forking the GoLang TLS library due to a lack of APIs for implementing new extensions. It was suggested to engage with Go developers to discuss adding such APIs or contributing the extension directly.</li>
+</ul>
+<h3>Protocol Documents Status (Presented by Schuman Oon, Editor)</h3>
+<ul>
+<li><strong>Adoption</strong>: <code>draft-ietf-dance-dane-client-auth</code> and <code>draft-ietf-dance-tls-client-id</code> were formally adopted as Working Group documents. The dash-00 versions were published.</li>
+<li><strong>Key Change in <code>draft-ietf-dance-tls-client-id</code></strong>:
+<ul>
+<li>Clarified that in TLS 1.3, the server <em>must</em> send the client ID extension in its CertificateRequest message if the client is to send it in its Certificate message. It is not optional for the server to send this request if it expects the client to provide the extension. This aligns with RFC 8446, Section 4.2.4.</li>
+</ul>
+</li>
+<li><strong>Introduction of <code>dane-client-auth</code></strong>: Michael Richardson's feedback about the introduction being &quot;weak&quot; was noted. The architecture document is expected to provide more context and use cases, which should address this.</li>
+<li><strong>Next Steps for Protocol Documents</strong>: Seek feedback on anything missing, needs clarification, or expansion. The open question regarding sending an empty extension in TLS 1.3 ClientHello for signaling remains.</li>
+</ul>
+<h3>Architecture Document Status (Presented by Olle E. Johansson, Author)</h3>
+<ul>
+<li><strong>Current State</strong>: The document is an individual draft, described as a &quot;collection of thoughts, ideas, and a lot of empty pointers.&quot;</li>
+<li><strong>Scope Discussion</strong>:
+<ul>
+<li>Previous discussions (November) suggested slimming down the architecture document to a more &quot;classical&quot; architectural overview.</li>
+<li>It should include &quot;dancing rules&quot; – guidance and requirements for implementers wishing to write documents for specific areas (e.g., SIP, WebRTC, IoT).</li>
+<li>Detailed IoT usage descriptions currently in the architecture document might be better suited for a separate implementation document.</li>
+</ul>
+</li>
+<li><strong>Editor Availability</strong>: Ashis has limited capability to continue editing, and additional editors would be beneficial, especially given the document's size.</li>
+<li><strong>Call for Adoption</strong>: Hannes requested clarity on whether the WG intends to adopt the architecture document to facilitate progress. Barry Leiba emphasized that documents don't need to be &quot;substantially ready&quot; for adoption; the WG can work on it once adopted.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: <code>draft-ietf-dance-dane-client-auth</code> and <code>draft-ietf-dance-tls-client-id</code> are formally adopted as DANCE Working Group documents.</li>
+<li><strong>Decision</strong>: The Working Group will issue a Call for Adoption for the architecture document (<code>draft-ietf-dance-architecture</code>) next week.</li>
+<li><strong>Action Item</strong>: Chairs (Wes and Joey) to issue a Call for Adoption for <code>draft-ietf-dance-architecture</code> to the mailing list.</li>
+<li><strong>Action Item</strong>: Working Group members to review the updated protocol documents, particularly the TLS 1.3 extension flow, and discuss the possibility of signaling support via an empty extension in ClientHello.</li>
+<li><strong>Action Item</strong>: Working Group members interested in contributing as editors for the architecture document should contact the chairs.</li>
+<li><strong>Action Item</strong>: Encourage more active discussion and early review/feedback on all adopted drafts on the mailing list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Formally adopt the architecture document as a Working Group item.</li>
+<li>Begin collaborative work on refining the architecture document's scope and content.</li>
+<li>The chairs will likely schedule future DANCE meetings for a one-hour slot unless substantial content or discussion warrants a longer session.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

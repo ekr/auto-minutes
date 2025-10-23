@@ -1,0 +1,70 @@
+**Session Date/Time:** 09 Nov 2022 13:00
+
+# ohai
+
+## Summary
+
+The ohai working group session covered updates on several drafts, including OHTTP Discovery, Oblivious Relay Feedback, and Unreliable OHTTP Extensions. Key discussions revolved around clarifying media types for DNS over OHTTP, addressing privacy concerns in relay rate-limiting feedback, and exploring simplified OHTTP usage for submission-only services. A significant outcome was the consensus to move the Key Consistency for OHTTP draft to the Privacy Pass working group for future development.
+
+## Key Discussion Points
+
+*   **OHTTP Discovery (Tommy Pauly)**
+    *   **Recap**: Presented the newly adopted draft for bootstrapping OHTTP Gateway use via DNS SVCB/HTTPS records. It defines a DNS parameter (`oblivious`), a well-known URI (`/.well-known/oblivious-gateway`), and a key configuration lookup method (GET with `Accept: application/ohttp-keys`). The goal is to strictly bind the discovered Gateway to the Target for trust evaluation.
+    *   **Open Issue: SVCB Parameter Name (`oblivious` vs. `ohttp`)**: A proposal to change the parameter name from `oblivious` to `ohttp` for specificity was discussed. Ben Schwartz suggested parking this decision, as `oblivious` might be applicable as a broader cross-transport flag (e.g., affecting DNS cookie usage) if not strictly HTTP-specific. General sentiment leaned towards `ohttp` for clarity, but no immediate decision was made.
+    *   **Open Issue: Media Type for DNS over Oblivious HTTP (DOH)**: Clarification was sought for the media types used when OHTTP discovery is applied to DNS over HTTP (DOH).
+        *   **Discussion**: The consensus was that the OHTTP Gateway and Target should use standard HTTP media types (`application/bhttp` for the OHTTP encapsulation and regular DOH for the target). This approach simplifies implementation, allowing an unmodified DOH server to act as the target behind a generic OHTTP Gateway. This explicitly avoids introducing new media types for directly wrapping raw DNS messages within OHTTP, which would add complexity. This specific use case was dubbed "DOH over OHTTP" (DooH).
+    *   **Open Issue: Trusting Resolver in DDR Context**: For resolvers discovered via DNS Resolver Discovery (DDR, e.g., `dns.resolve.arpa`), the client needs to validate the target resolver's IP address against its certificate.
+        *   **Discussion**: It was proposed that the client perform a direct or proxied connection to the target to validate its certificate *before* initiating oblivious requests. Martin Thompson suggested that normative language for this might be better placed in the DDR draft, with a note in the OHTTP Discovery document.
+
+*   **Oblivious Relay Feedback (Thiru)**
+    *   **Recap**: Presented updates to the draft allowing a target service to send rate-limiting feedback to an oblivious relay using HTTP API working group's service parameters. The aim is to prevent a target from rate-limiting all clients due to a few malicious ones.
+    *   **Open Issue: Abuse for De-anonymization**: The primary concern raised in previous meetings was that client-specific rate-limiting signals could be abused by the target to de-anonymize clients by partitioning anonymity sets.
+        *   **Proposed Mitigations**: The draft introduced prerequisites for relay action (e.g., large number of clients, large number of benign clients, no immediate rate-limiting of offending clients unless a high percentage of requests are malicious, reliance on OHTTP's delay mechanism).
+        *   **Discussion**: Ben Schwartz and Eckert raised strong concerns about the effectiveness of these mitigations. Ben argued that even partitioning a small percentage of users is a privacy leak. Eckert highlighted the difficulty of threat modeling for timing correlations and suggested that the proposed state machine for relays might be too easily bypassed by a malicious client (e.g., by sending benign requests alongside malicious ones). He recommended dropping client-targeted rate-limiting and focusing on an informational draft about good general practices for relay-side rate limiting to minimize information leakage. Richard Barnes questioned how "malicious" requests would be verified by the relay.
+        *   **Outcome**: More clarity on the threat model and a stronger argument for the anonymity guarantees of the proposed mitigations are needed.
+
+*   **Unreliable OHTTP Extensions (Ralph Giles)**
+    *   **Motivation**: Proposed an extension to OHTTP for "unreliable delivery" for submission-only services (e.g., telemetry, the Star protocol). The goal is to simplify Gateway implementation by removing the requirement for it to return an encrypted OHTTP response to the client. This reduces the security surface and code complexity, as the Gateway doesn't need to provision or manage keys for responses.
+    *   **Proposal**: The Gateway would respond with `202 Accepted` and an empty body. The client would opt into this behavior by sending an `Accept: application/ohttp-ack` header. This could also enable greater message buffering/shuffling by the relay for improved traffic analysis defense.
+    *   **Discussion**:
+        *   Ted Hardy expressed strong reservations about the HTTP semantics, viewing the use of `202` and `Accept` headers as unconventional and potentially a misuse of HTTP. He suggested that if this is a generic "oblivious submission service," it might be better addressed as a new deliverable or, if it's a generic HTTP submission service, in the HTTP Working Group.
+        *   Tommy Pauly saw value in the "no response" OHTTP use case for metrics collection, suggesting it fits within ohai but acknowledging that HTTP spelling details need refinement. He proposed renaming the draft to something like "submission-only OHTTP."
+        *   Eckert was skeptical about the claimed security benefits versus simply simplifying implementation. He argued that HTTP is inherently a request/response protocol, and changing this fundamental property alters the threat model (e.g., enabling relay-side client gagging, no client feedback on errors).
+        *   Ben Schwartz found the batching/delay for privacy compelling but agreed that this represents a deep HTTP-level change potentially applicable beyond OHTTP.
+        *   David Schinazi explored alternatives to address the cryptographic problem on the Gateway without breaking the response flow, but acknowledged that such alternatives might compromise the encrypted tunnel.
+        *   **Outcome**: While the use case for simpler, submission-only OHTTP has some interest, there is significant concern regarding the proposed HTTP semantics and the potential implications for the OHTTP threat model. Further work is needed to refine the approach and clarify its scope (OHTTP-specific vs. broader HTTP).
+
+*   **Key Consistency for OHTTP (Ben Schwartz)**
+    *   **Recap**: Presented updates to the `key-consistency` draft (re-titled, less normative language, generalized to include Privacy Pass context). The draft proposes a method for clients to fetch an HTTP resource (e.g., an OHTTP key configuration) with guarantees of consistency and authenticity among users of a trusted proxy. The current design reuses HTTP caching rules (`If-Match`, `immutable`) with specific interpretations.
+    *   **Challenges**: Acknowledged "sharp edges" due to specific interpretations of HTTP caching and a potential "Thundering Herd" effect during key rotation due to the lack of built-in support for gradual updates in HTTP caching logic.
+    *   **Alternatives Considered**: Bespoke consistency logic at the proxy, or signing the key configuration object (which simplifies the network flow but adds complexity to setup and key rotation).
+    *   **Discussion**:
+        *   Martin Thompson and Tommy Pauly strongly recommended moving this draft and its future discussion to the Privacy Pass working group, where a `key-consistency` draft has already been adopted. They viewed the proposal as a technique rather than new protocol work fundamental to ohai.
+        *   Eckert expressed concern about the reliability of HTTP caches behaving as desired and the implications of `If-Match` complexities. He also reiterated his view that signing the key by the Gateway's certificate is likely necessary for robust fraud detection and reputation management, similar to Certificate Transparency (CT).
+        *   Richard Barnes suggested the concept of "HTTP resource consistency" might be broader than just key consistency and could apply to other web resources.
+        *   Eric Nygren agreed on moving the draft to Privacy Pass and noted that the problem is inherently difficult. He suggested that having multiple solutions (e.g., a simpler one for less latency-sensitive use cases, and a more complex one for high-volume scenarios) might be acceptable.
+    *   **Outcome**: There was clear consensus to transition this draft and all future discussions to the Privacy Pass working group.
+
+## Decisions and Action Items
+
+*   **OHTTP Discovery (Tommy Pauly)**
+    *   **Decision**: For DNS over Oblivious HTTP (DooH), the OHTTP Gateway and Target SHALL use standard HTTP media types (`application/bhttp` for OHTTP encapsulation, standard DOH for target). This explicitly means avoiding direct raw DNS message wrapping within OHTTP.
+    *   **Action**: Tommy Pauly to revise the OHTTP Discovery draft to reflect this clarification.
+    *   **Decision**: The discussion and decision regarding the SVCB parameter name (`oblivious` vs. `ohttp`) are postponed pending further analysis of its scope (cross-transport vs. HTTP-specific).
+
+*   **Oblivious Relay Feedback (Thiru)**
+    *   **Decision**: Further work is required to clarify the threat model and provide stronger evidence that the proposed mitigations effectively preserve client anonymity, especially for client-specific rate-limiting signals.
+    *   **Action**: Thiru to refine the draft, focusing on a more robust threat model and considering alternatives, such as an informational draft on general best practices for relay rate limiting.
+
+*   **Unreliable OHTTP Extensions (Ralph Giles)**
+    *   **Decision**: The use case for simplified, submission-only OHTTP has some interest, but significant open questions remain regarding its HTTP semantics and its fundamental fit within the OHTTP working group versus the HTTP Working Group. No adoption decision at this time.
+    *   **Action**: Ralph Giles to consider the feedback, particularly regarding HTTP semantic correctness, the clarity of the threat model, and whether the core problem is OHTTP-specific or a broader HTTP challenge.
+
+*   **Key Consistency for OHTTP (Ben Schwartz)**
+    *   **Decision**: Future discussion and development of this draft will be transferred to the Privacy Pass working group, in alignment with the adoption of the `key-consistency` draft in that group.
+    *   **Action**: Ben Schwartz to facilitate the transition of the draft to the Privacy Pass working group.
+
+## Next Steps
+
+*   Chairs will follow up with authors on the defined action items.
+*   Participants interested in Key Consistency are encouraged to follow discussions within the Privacy Pass working group.

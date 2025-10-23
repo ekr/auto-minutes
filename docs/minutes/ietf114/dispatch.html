@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dispatch.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-DISPATCH-20220725-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 14:00</p>
+<h1>dispatch</h1>
+<h2>Summary</h2>
+<p>The dispatch session reviewed five draft proposals: Binary Application Record Encoding (BARE), Transparently Decrypting URIs, Privacy Considerations for Web Feed Readers, New UUID Formats, and Discarding Priority of RTP Video Packets. The discussion aimed to determine if these proposals should progress within the IETF and, if so, in what form. Outcomes ranged from forming a non-working group mailing list for privacy in web feeds, to seeking a working group charter for new UUID formats, and requesting more detailed drafts for BARE and Transparently Decrypting URIs before further dispatch. The session also included an ART Area update, which highlighted the need for volunteers in various IETF roles and the folding of the Internationalization Directorate into the ART area. A preview of the &quot;Spin&quot; draft was also provided, with an invitation for further discussion at a MIMI BoF.</p>
+<h2>Key Discussion Points</h2>
+<h3>Administrative and Logistics</h3>
+<ul>
+<li><strong>Co-Chair Update</strong>: Kirsten joined virtually, Murray was present in person. Patrick McManus was thanked for his service as co-chair, replaced by Peng Shuping.</li>
+<li><strong>Note Well</strong>: Reminder of IETF policies, code of conduct, and anti-harassment procedures.</li>
+<li><strong>Hybrid Meeting Participation</strong>: Instructions for joining MeetEcho (for blue sheets and queue management). Issues with MeetEcho login were reported and managed manually.</li>
+<li><strong>Session Recording</strong>: The session was recorded and would be published on YouTube.</li>
+<li><strong>Agenda Bash</strong>: Jonathan Rosenberg requested time to discuss his &quot;spin&quot; draft (not on the agenda) and announced a MIMI BoF side meeting later in the day for this topic.</li>
+</ul>
+<h3>Binary Application Record Encoding (BARE) - <em>Jury Lasak</em></h3>
+<ul>
+<li><strong>Introduction</strong>: BARE is a binary message encoding designed for concise messages, a well-defined schema, broad compatibility, and simple implementation, targeting IoT and web services.</li>
+<li><strong>Comparison to CBOR</strong>: The presenter highlighted BARE's concise messages without a built-in schema, in contrast to CBOR which was presented as carrying schema information due to its JSON legacy. Paul Hoffman (CBOR co-author) strongly disputed the CBOR measurements, stating CBOR does not have a built-in schema and the comparison showed significant errors.</li>
+<li><strong>Schema Language</strong>: A request for clarification on schema language feedback went unanswered.</li>
+<li><strong>Measurements</strong>: Initial tests showed BARE as smaller than CBOR and JSON, but these were challenged due to the methodology for CBOR.</li>
+<li><strong>Comparison to Other Protocols</strong>: BARE was presented as a standardized alternative to non-standardized protocols like Avro, Protobuf, Cap'n Proto, Thrift, and FlatBuffers, emphasizing its simplicity, octet alignment, and ejectiveness.</li>
+<li><strong>Future Extensions &amp; Date/Time</strong>: Unions were proposed for future message versions, and no special data type was included for date/time, recommending timestamps or unsigned integers.</li>
+<li><strong>Dispatch Discussion</strong>:
+<ul>
+<li><strong>Richard Barnes</strong>: Suggested a small, focused working group to standardize something similar to TLS encoding, potentially extending it, due to its repeated need.</li>
+<li><strong>Eric Rescorla</strong>: Expressed concern over standardizing <em>yet another</em> serialization format without strong evidence of market desire beyond a single implementer (SourceHut).</li>
+<li><strong>Colin Jennings</strong>: Supported standardizing <em>something</em> similar to avoid repeated ad-hoc implementations in IETF protocols (TLS, MLS, etc.), regardless of whether it was BARE or another proposal.</li>
+<li><strong>Barry Leiba</strong>: Stressed the high overhead of standardization and the need for demonstrated adoption. Suggested discussing in the CBOR working group and cautioned against AD sponsorship.</li>
+<li><strong>John Klensin</strong>: Highlighted the interoperability challenges with multiple serialization formats. Questioned the necessity of compression arguments given modern bandwidth. Suggested an IRTF/ART area design team to unify formats.</li>
+<li><strong>David Skenazi</strong>: Reiterated the need for market interest from multiple vendors, not just one company, as companies often create their own formats (e.g., Protobuf) for specific needs and control.</li>
+</ul>
+</li>
+</ul>
+<h3>Transparently Decrypting URIs - <em>Bron Gondwana</em></h3>
+<ul>
+<li><strong>Problem</strong>: Need to send encrypted files between parties A and B via a third-party file store (C) such that C cannot see the plaintext. The URI for B should contain a decryption key, but this key should not be sent to C.</li>
+<li><strong>Motivation</strong>: Large file attachments for email, replacing current ad-hoc methods.</li>
+<li><strong>Proposed Approach</strong>: Embedding a decryption key within the URI for local decryption after download.</li>
+<li><strong>Dispatch Discussion</strong>:
+<ul>
+<li><strong>Ted Hardy</strong>: Raised concerns about multi-party scenarios (C, D, E...) and potential key leakage. Suggested separating the key into a different URI (e.g., data URI) and requested a draft detailing security properties.</li>
+<li><strong>John Levine</strong>: Acknowledged this as an old problem (e.g., <code>message/external-body</code> in MIME) but supported the idea of standardizing a URI-based solution to avoid custom formats in every protocol.</li>
+<li><strong>Eric Rescorla</strong>: Generally supported the work, not overly concerned about the security properties as they would be similar to sending raw files. Suggested HTTP WG or a new, small WG.</li>
+<li><strong>Mark Nottingham</strong>: Cautioned against over-engineering. Suggested using fragment identifiers for keys not sent to the server. Offered to help refine the draft to clearly describe security properties.</li>
+</ul>
+</li>
+</ul>
+<h3>Privacy Considerations for Web Feed Readers - <em>Mark Nottingham</em></h3>
+<ul>
+<li><strong>Premise</strong>: Web feeds (RSS/Atom) remain a &quot;latent platform&quot; with a vibrant ecosystem of consumers and producers, contrary to popular belief. They offer unique properties (e.g., less advertising-driven).</li>
+<li><strong>Draft Goal</strong>: To define privacy considerations for feed readers (user agents) regarding requests and content handling, aiming to improve and protect this platform.</li>
+<li><strong>Dispatch Discussion</strong>: Mark suggested it was too early for dispatch but sought feedback and support for creating a mailing list. Paul Hoffman expressed strong support for a mailing list to discuss privacy issues across formats.</li>
+</ul>
+<h3>New UUID Formats (v6, v7, v8) - <em>Lucas Pardue</em></h3>
+<ul>
+<li><strong>Problem with RFC 4122</strong>: UUIDv1's timestamp poor for database locality (due to bit swizzling and Gregorian epoch), security concerns (MAC addresses), and lack of clarity (endianness, storage vs. generation).</li>
+<li><strong>UUIDv6</strong>: Standardizes an existing practice of using UUIDv1's time component without bit swizzling, improving database locality.</li>
+<li><strong>UUIDv7</strong>: Introduces a new time-based UUID using the well-known Unix epoch (48-bit, millisecond precision) with random suffix, designed for widespread implementation and broad use cases.</li>
+<li><strong>UUIDv8</strong>: Provides a flexible, user-defined format for custom or experimental UUIDs.</li>
+<li><strong>Max UUID</strong>: Defines the maximum UUID value (all bits set to one) for library implementers.</li>
+<li><strong>Guidance</strong>: The draft provides extensive guidance on UUID generation, storage, security considerations, and best practices.</li>
+<li><strong>Dispatch Discussion</strong>:
+<ul>
+<li><strong>David Skenazi</strong>: Strong support for publishing, citing the thorough work. Suggested AD sponsorship or a small, tightly scoped working group.</li>
+<li><strong>Colin Jennings</strong>: Supported a working group for the long-term &quot;care and feeding&quot; of UUID standards, including maintaining existing RFCs due to numerous errata.</li>
+<li><strong>Alyssa Cooper</strong>: Noted RFC 4122 was AD-sponsored and suggested learning from that experience (implying a WG might be better).</li>
+<li><strong>Eric Rescorla</strong>: Found the argument compelling and supported AD sponsorship for the already completed work, or a very fast working group.</li>
+<li><strong>Murray Kucherawy (AD)</strong>: Indicated a working group was likely the preferred path and called for volunteers to help develop a charter. Discussion ensued about whether the WG's scope should be limited to this draft or cover general UUID maintenance.</li>
+</ul>
+</li>
+</ul>
+<h3>Discarding Priority of RTP Video Packets - <em>Lei Geng</em></h3>
+<ul>
+<li><strong>Problem</strong>: In RTP over UDP, there's no delivery guarantee. Prioritizing packet discarding during congestion based on payload importance could improve user experience. Intermediate routers lack media awareness.</li>
+<li><strong>Codec-Specific Priority</strong>: Various video codecs (H.264, SVC, H.265, H.266) include priority indicators (NRI, TID, Layer ID, Priority ID) in their RTP headers.</li>
+<li><strong>Proposed Solution</strong>: Map these codec-specific priority indicators to the DSCP field in IP headers, set by the source or a Media-Aware Network Element (MANE) at the network edge.</li>
+<li><strong>Challenges</strong>: RFC 7657 warns against reordering issues with varied DSCP for a single 5-tuple. AF classes offer limited drop precedence. UDP's reordering insensitivity may not apply to protocols like QUIC.</li>
+<li><strong>Dispatch Discussion</strong>:
+<ul>
+<li><strong>Mo Zanaty</strong>: Mentioned the &quot;Video Frame Marking&quot; draft in AVT Core, which standardizes codec-agnostic priority in an RTP header extension. Suggested leveraging this existing work and separating priority identification from the contentious DSCP mapping. Also, advised considering Layer 2/mobile network prioritization, as DSCP alone might not provide end-to-end benefits.</li>
+<li><strong>Pete</strong>: Suggested AVT Core as the primary destination for the document, with TSVWG handling DSCP-specific aspects.</li>
+<li><strong>Magnus Westerlund</strong>: Agreed on AVT Core. Emphasized the need to clarify the application use case (e.g., IPTV vs. interactive conferencing), noting that blind prioritization across multiple streams can be sub-optimal.</li>
+<li><strong>Mira</strong>: Suggested concrete data proving performance improvements, as adaptive streaming and ECN might mitigate congestion shortfalls.</li>
+<li><strong>Thomas Eckart</strong>: Stressed the value, citing historical data that losing reference frames causes significant blackouts (e.g., 5 seconds) compared to non-reference frames, even with ECN.</li>
+<li><strong>Jonathan Lennox</strong>: As an AVT Core chair, confirmed the work is in scope for AVT Core. Reiterated the importance of the use case (set-top box streaming vs. interactive video conferencing) in assessing applicability.</li>
+</ul>
+</li>
+</ul>
+<h3>ART Area Update - <em>Murray Kucherawy (AD)</em></h3>
+<ul>
+<li><strong>Meetings of Interest</strong>: Tigris WG, MIMI BoF, and other standard ART area meetings.</li>
+<li><strong>Errata</strong>: Over 100 unprocessed errata exist in the ART area. A call was made for working group chairs and document authors to help process these.</li>
+<li><strong>Volunteer Roles</strong>: A general call for volunteers for IETF roles, including working group chairs, IANA media type reviewers, document shepherds, working group secretaries, and ART Area Review Team (ARTART) members. Barry Lieber, ARTART coordinator, is actively seeking new reviewers.</li>
+<li><strong>Internationalization Directorate</strong>: The I18N directorate has been folded into the ART area. A joint breakfast meeting was scheduled for Wednesday.</li>
+</ul>
+<h3>AOB / Spin Draft Preview - <em>Jonathan Rosenberg</em></h3>
+<ul>
+<li><strong>Problem</strong>: Lack of app-to-app interoperability for voice, video, and messaging (e.g., Skype-Facetime, Wire-Signal).</li>
+<li><strong>Context</strong>: Driven by European Digital Markets Act.</li>
+<li><strong>Spin Draft</strong>: Explores solutions for modern interoperability.</li>
+<li><strong>Next Discussion</strong>: MIMI BoF, today 4 PM Philadelphia South. Remote participation available. Jonathan specifically requested engagement from large implementers (Google, Apple, etc.).</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>
+<p><strong>Binary Application Record Encoding (BARE)</strong>:</p>
+<ul>
+<li><strong>Decision</strong>: No immediate dispatch to a working group. The proposal needs to demonstrate wider applicability and support beyond a single implementer.</li>
+<li><strong>Action Item</strong>: Presenter to seek broader community interest and refine the proposal based on feedback, especially regarding comparison methodology with existing standards like CBOR.</li>
+</ul>
+</li>
+<li>
+<p><strong>Transparently Decrypting URIs</strong>:</p>
+<ul>
+<li><strong>Decision</strong>: The problem is deemed worthy of IETF attention.</li>
+<li><strong>Action Item</strong>: Presenter (Bron Gondwana) to develop a more detailed draft, clarifying the scope of the problem and explicitly defining the security properties and considerations, to inform the appropriate working group placement (e.g., MIME, HTTP, new WG).</li>
+</ul>
+</li>
+<li>
+<p><strong>Privacy Considerations for Web Feed Readers</strong>:</p>
+<ul>
+<li><strong>Decision</strong>: Create a non-working group mailing list for further discussion on this topic.</li>
+<li><strong>Action Item</strong>: Mark Nottingham and co-chairs to set up the mailing list.</li>
+</ul>
+</li>
+<li>
+<p><strong>New UUID Formats (v6, v7, v8)</strong>:</p>
+<ul>
+<li><strong>Decision</strong>: The work should progress within the IETF.</li>
+<li><strong>Action Item</strong>: Murray Kucherawy (AD) will seek volunteers from the community to develop a working group charter. The charter discussion will include defining the scope (e.g., focused on this draft vs. a broader &quot;care and feeding&quot; mandate for UUIDs).</li>
+</ul>
+</li>
+<li>
+<p><strong>Discarding Priority of RTP Video Packets</strong>:</p>
+<ul>
+<li><strong>Decision</strong>: The work needs further refinement before dispatch.</li>
+<li><strong>Action Item</strong>: Presenter (Lei Geng) to clarify the specific use cases and clearly demonstrate performance gains. Once updated, the draft should be taken to the AVT Core working group for RTP-specific aspects and the TSVWG for DSCP-specific mapping aspects.</li>
+</ul>
+</li>
+<li>
+<p><strong>ART Area Errata</strong>:</p>
+<ul>
+<li><strong>Action Item</strong>: Working Group Chairs and document authors are encouraged to help process outstanding errata.</li>
+</ul>
+</li>
+<li>
+<p><strong>IETF Volunteer Roles</strong>:</p>
+<ul>
+<li><strong>Action Item</strong>: The IETF community is encouraged to volunteer for roles such as working group chairs, IANA media type reviewers, document shepherds, working group secretaries, and ART Area Review Team members. Interested individuals should contact their ADs or Barry Lieber (ARTART coordinator).</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Presenters</strong>: Incorporate feedback, provide additional details, and seek broader support as indicated in the decisions.</li>
+<li><strong>ADs</strong>: Work with the community to establish a mailing list for web feed privacy and draft a charter for a UUID working group.</li>
+<li><strong>Community</strong>: Engage in the new mailing list, consider volunteering for IETF roles, and participate in discussions on ongoing work.</li>
+<li><strong>MIMI BoF</strong>: Interested parties encouraged to attend the MIMI BoF to discuss the &quot;Spin&quot; draft.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

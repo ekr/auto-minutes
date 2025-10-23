@@ -1,0 +1,81 @@
+**Session Date/Time:** 09 Nov 2021 16:00
+
+# 6man Session
+
+## Summary
+
+The 6man session covered a range of topics, including document status updates, an upcoming joint session with v6ops on hop-by-hop options, and significant discussions on Segment Routing (SRv6) SIDs and an update on the Alternate Marking method. Several new individual Internet Drafts were presented, leading to initial discussions and working group polls for potential adoption. Key outcomes include an action item for a new draft on SRv6 SID semantics and a decision to continue discussions on several new proposals on the mailing list due to mixed or low interest for immediate working group adoption.
+
+## Key Discussion Points
+
+*   **Administrative:**
+    *   The "Note Well" was reiterated.
+    *   Shuping and Barbara were thanked for taking minutes; no official Jabber scribe was deemed necessary.
+    *   Speakers were encouraged to advance their own slides from pre-uploaded decks.
+*   **Joint Session with v6ops (Friday):**
+    *   A joint session with v6ops is scheduled to discuss hop-by-hop options.
+    *   The rationale is that both working groups have drafts pertaining to hop-by-hop options, and a joint session could foster broader discussion and participation.
+    *   The agenda will cover requirements, solution drafts, short talks on new hop option proposals, and a general discussion on improving hop options.
+*   **Document Status:**
+    *   **RFC 9131 (Gratuitous Neighbor Discovery)** was published, notable as the first document to go through the GitHub-based RFC Editor review process. Authors reported a positive experience.
+    *   No documents are currently in the RFC Editor queue.
+    *   Three documents were submitted to the IESG:
+        *   **Minimum Path MTU Option:** Currently in AD evaluation.
+        *   **Alternate Marking Method:** Has undergone significant updates based on IESG discussions and will be discussed in more detail.
+        *   **SRv6 uSID:** Has been in "Revised-ID" since June 2nd with three IESG Discusses; authors are expected to submit an update soon.
+    *   The "Hop-by-Hop behavior" document (draft-hinden-6man-hbh-processing) is awaiting a call for adoption, which will be discussed during the joint v6ops session.
+*   **SIDs and IPv6 Addressing (SRv6 Compression Discussion):**
+    *   This section addressed inquiries from the Spring WG regarding compressed SID behavior and SRv6 addressing in general.
+    *   Two primary issues were identified:
+        1.  Lack of clarity regarding SID semantic requirements in various circumstances.
+        2.  The semantic definition of `SegmentsLeft` in the SRH header may need updating as it no longer strictly maps to 128-bit IPv6 addresses.
+    *   Operational concerns raised included the implications of SRH-less packets and potential mechanisms for SRv6 domains to "fail closed."
+    *   **Decision:** Suresh Krishnan volunteered to lead a new draft to address these issues, with potential co-authors. The draft aims to clarify how SIDs deviate from classic IPv6 addresses, their assignment (interface vs. node), usage for Neighbor Discovery, behavior for SR-unaware nodes, appearance in the source address field, error handling, and the potential need for a separate IPv6 address space for SIDs.
+    *   **Action Item:** Suresh Krishnan aims to have a 00 version of the draft out by the end of the year for working group comments.
+*   **IPv6 Application of the Alternate Marking Method (Draft Update):**
+    *   Giuseppe Piro provided an update on `draft-ietf-6man-ipv6-alt-mark` (currently in IESG evaluation) following multiple IESG comments.
+    *   Key changes include:
+        *   Improved clarification on the "controller domain" as a must-have precondition for alternate marking deployment, mitigating several security concerns.
+        *   New subsection defining "measurement domain" usage scenarios, including user equipment (UE) or Customer Premises Equipment (CPE) as starting/ending nodes.
+        *   Clarification that the Flow Monitoring Identification field must be used for measurement domain flow identification, ideally in combination with source and destination addresses to reduce collision probability (20 bits yield 145 flows for 1% collision chance, but over 1 million with centralized control).
+        *   Revised and improved security considerations, leveraging the controller domain concept to address concerns like intentional alteration, resource consumption by external packets, information leakage, and use as a covert channel. It also noted the need for IPsec/VPNs for inter-domain links in multi-administrative domain deployments.
+    *   A remaining point of discussion with the IESG is the informative reference to experimental RFCs 8321 and 8889, and whether they need to be elevated to Standard Track or if detailed descriptions within the draft suffice. The chairs will follow up with the AD.
+*   **New Internet Drafts Presentations:**
+    *   **Carrying VTN Identifier in IPv6 Extension Header (`draft-gong-6man-ipv6-vtn-id`)**
+        *   Proposes a new option type in the Hop-by-Hop Extension Header to carry a 4-octet Virtual Underlying Network (VTN) Identifier. This identifier matches the 3GPP 5G network slice identifier and is used to steer packets to allocated network resources.
+        *   Updates clarified that the VTN Resource ID determines local resource allocation, not the forwarding path directly.
+        *   Authors requested working group adoption.
+        *   **Working Group Poll:** 11 interested, 30 not interested. (Low interest for adoption).
+    *   **ICMPv6 Extensions for IOM Capabilities Discovery (`draft-liu-6man-icmpv6-iom-capabilities`)**
+        *   Proposes new ICMPv6 echo request/reply messages to discover In-situ OAM (IOM) capabilities in IPv6 networks, acting as a companion document to `draft-ietf-ippm-iom-capabilities` (an IPPM WG adopted draft).
+        *   Requests new IANA ICMPv6 type numbers and defines several ICMPv6 objects for various IOM capabilities.
+        *   Security measures proposed include IPsec (AH/ESP), network operator policies for restricted access/rate limiting.
+        *   Discussion points: Concerns about IPsec deployment complexity for a full mesh, DDoS attacks, and whether messages could be hop-by-hop or just end-to-end (clarified hop-by-hop is possible). The potential size of reply messages exceeding MTU limits was also raised.
+        *   **Decision:** Needs more discussion, especially collaboration with the IPPM working group.
+    *   **Improving IPv6 ND Robustness (`draft-chaparadza-6man-nd-robustness`)**
+        *   Addresses issues related to "flash numbering" (router reloads, uplink changes) as well as new scenarios like router replacement and abrupt configuration changes (e.g., VLAN changes, prefix changes).
+        *   Focuses solely on first-hop Neighbor Discovery problems, not inter-router routing.
+        *   Proposes multiple modifications to the ND protocol and changes to host requirements (e.g., deprecating prefixes instead of default routers on uplink loss for multi-hop multi-prefix environments).
+        *   Discussion: Some confusion and debate about whether existing mechanisms like RFC 8028 (Default Address Selection for IPv6) rule 55 already address many of these problems, or if specific ND protocol changes are indeed necessary.
+        *   **Decision:** Continue discussion on the mailing list to build consensus on the problem statement before diving deep into solutions.
+    *   **IPv6 Fragment Retransmission (`draft-templin-6man-frag-retrans`)**
+        *   Motivated by applications that perform better with packets larger than the Path MTU (e.g., NFS, LTP, Quick, IPv6 tunnels), but suffer from retransmission storms when fragments are lost.
+        *   Proposes updating RFC 8200's Fragment Header by using the 8-bit reserved field for a 6-bit ordinal, a reserved bit, and an ARQ-supported bit.
+        *   A new ICMPv6 Fragmentation Report (Frag Rep) message would allow destinations to request retransmission of missing fragments.
+        *   Also proposed "soft Packet Too Big" messages for lossless PMTU discovery, particularly for IPv6 tunnels traversing IPv4 networks. An additional integrity check was also deemed necessary for fragments traversing IPv4.
+        *   Discussion: Concerns about the interaction with transport layer retransmissions and the complexity introduced by IP layer ARQ. Suggestion to potentially separate "soft PTB" mechanisms.
+        *   **Working Group Poll:** 12 interested, 24 not interested. (Low interest for adoption).
+
+## Decisions and Action Items
+
+*   **Action Item:** Suresh Krishnan will lead a new individual draft addressing SRv6 SID semantics, `SegmentsLeft` definition, operational concerns, and related IPv6 addressing issues. The first version (00) is targeted for late December.
+*   **Decision:** The working group will not pursue immediate adoption of `draft-gong-6man-ipv6-vtn-id` (Carrying VTN Identifier) due to low interest in the poll. Chairs will follow up.
+*   **Decision:** The working group will not pursue immediate adoption of `draft-templin-6man-frag-retrans` (IPv6 Fragment Retransmission) due to low interest in the poll. Chairs will follow up.
+*   **Decision:** `draft-liu-6man-icmpv6-iom-capabilities` (ICMPv6 Extensions for IOM Capabilities Discovery) requires further discussion on the mailing list, with particular attention to collaboration with the IPPM working group and addressing security concerns.
+*   **Decision:** `draft-chaparadza-6man-nd-robustness` (Improving IPv6 ND Robustness) requires further discussion on the mailing list, focusing initially on building consensus around the exact problem statement that needs solving.
+
+## Next Steps
+
+*   Chairs to communicate with the authors of drafts with low working group adoption interest.
+*   Continue technical discussions on the mailing list for the ICMPv6 IOM and ND Robustness drafts.
+*   Attend the joint 6man/v6ops session on Friday to discuss hop-by-hop options.

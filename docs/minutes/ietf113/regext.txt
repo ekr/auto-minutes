@@ -1,0 +1,68 @@
+**Session Date/Time:** 22 Mar 2022 12:00
+
+# regext
+
+## Summary
+The regext working group session provided updates on several in-progress drafts, discussed recently published RFCs, and introduced a new proposal for EPP over HTTP. A significant portion of the meeting was dedicated to the Registration Data Dictionary draft, which was adopted as a working group item and received extensive feedback on its scope, definitions, and technical approach. Calls for Working Group Last Call (WGLC) were announced for several drafts, and a request for adoption was made for the new EPP over HTTP proposal.
+
+## Key Discussion Points
+
+*   **Administrative Items:**
+    *   The IETF Note Well and Code of Conduct were presented.
+    *   The working group reiterated its policy of requiring a non-author/chair/AD Document Shepherd from the start of a document's adoption, rather than at the end.
+*   **Recently Published RFCs:**
+    *   RFC 9154: Secure Authorization of Information for Transfer (SAIT)
+    *   RFC 9167: Original Registry Maintenance Notification for EPP (RRMNEPP)
+*   **Work in Progress - Status Updates:**
+    *   **Finding the Authority, the Registration Data for the RDAP Service (RFC 9154 elevation):** The document is in the RFC Editor queue and is expected to be published within days or a week.
+    *   **Use of Internationalized Email Addresses in the EPP Protocol (draft-ietf-regext-epp-international-email):** This document passed Working Group Last Call (WGLC), but due to minor changes, the Document Shepherd needs to confirm on the mailing list that no material changes were made and complete their write-up before submission to the IESG. The chairs will follow up with the shepherd.
+    *   **Simple Registration Reporting (draft-ietf-regext-simple-registration-reporting):** This document is considered ready for WGLC, and a request will be made on the mailing list after IETF.
+    *   **Reverse Search Capabilities (draft-ietf-regext-rdap-reverse-search):** The document has been updated to include the .it RDAP web client implementation status. The query model was extended for reverse search based on any relationship between RDAP object classes, and the "role" path segment was changed to a query parameter. The document is considered ready for WGLC, and a request will be made on the mailing list after IETF. The Document Shepherd (Tom) is aware of privacy considerations.
+    *   **Federated Authentication using OpenID (draft-ietf-regext-rdap-openid-federation):** The document has undergone extensive changes, shifting from client-side to server-side token management, making it more aligned with OpenID/OAuth implementation in web services. A few minor changes are pending, after which it will be ready for WGLC. Authors requested review of the proposed IANA registry of query purposes.
+    *   **JSContact (draft-ietf-regext-rdap-jscontact):** Only editorial changes have been made since the last meeting. This draft has two normative references to other JSContact drafts (not in regext WG). WGLC can proceed, but publication will be coordinated with the external JSContact drafts, expected around July. Rick Wilhelm noted that the ICANN RDAP Working Group is working on modifying the ICANN RDAP Profile to allow, but not require, the use of JSContact in RDAP responses.
+    *   **Direct Fields in the RDAP Response (draft-ietf-regext-rdap-direct-fields):** The authors were not present, and this document remains a work in progress, not yet ready for WGLC.
+    *   **Registration Data Dictionary (draft-ietf-regext-data-dictionary):**
+        *   The draft was accepted as a working group item after IETF 112. A GitHub repository was created for feedback.
+        *   **Key Changes:** The abstract was updated to clarify that the draft does not set policy. Definitions were revised to remove normative references to the EPP specification. A note was added emphasizing expected local interpretation for legal issues. Policy-sensitive definitions and ambiguous format fields (e.g., date, name, address) were marked "to be determined" (TBD). The title was changed to "Registration Data Dictionary," and EPP references were removed from normative to informative.
+        *   **Discussion & Feedback:**
+            *   Concerns were raised about the document potentially implying policy decisions, especially by defining elements that could be used to argue for their mandatory collection. Authors emphasized the intent to provide neutral, common terminology without influencing substantive policy.
+            *   A suggestion was made to remove syntax definitions from the draft and focus solely on semantic definitions to avoid inconsistencies with existing protocols.
+            *   For internationalized labels (A-label vs. U-label), it was noted that both might be necessary due to varying policy application levels.
+            *   The document's IANA considerations should clarify that new data elements are for the *entire registration system* (not just DNS) and potentially for address registrations.
+            *   Feedback included incorporating data elements from other relevant RFCs (e.g., data escrow), ensuring consistent naming conventions for data elements (e.g., abbreviations, casing).
+            *   A suggestion was made to include guidance for implementers to seek legal advice if definitions conflict with local law, contracts, or policy.
+            *   The concept of versioning for definitions in an IANA registry was discussed, with Michelle from IANA confirming that some examples of versioning exist in other IANA registries.
+            *   Registrar representatives expressed concern that the mere presence of defined fields could pressure registrars to collect or provide certain data, advocating for careful consideration of which fields are included.
+            *   It was suggested that RDAP could be a useful starting point for identifying data elements, as it covers structures for both DNS and RIR registries.
+*   **New Work - EPP over HTTP (draft-mario-regext-epp-over-http):**
+    *   This joint proposal from dot.it and dot.pl aims to define rules for implementing EPP over HTTP, leveraging HTTP's loose coupling, client-server model, development simplicity, performance, and Layer 7 load balancing capabilities.
+    *   **Proposed Mechanism:** Clients use HTTP POST for EPP commands; servers return EPP responses in the HTTP response body with a Content-Length header. A clear separation between application (EPP) and transport (HTTP) levels is maintained. HTTP 200 is used for both successful and unsuccessful EPP requests, with EPP error codes signaling EPP command failures.
+    *   **Session Management:** EPP sessions are implemented using RFC 6265 cookies. A `Set-Cookie` response after an EPP login command establishes a session ID, which the client uses in subsequent requests. Logout commands invalidate sessions; servers can also terminate inactive sessions. The EPP Hello command can be issued outside a session.
+    *   **Implementations & Security:** Two stable, live implementations have been in use for over a decade. HTTP over TLS is required for security. Additional measures like client X.509 certificates and control over simultaneous sessions are recommended.
+    *   **Feedback:**
+        *   Suggestions for the title included "EPP over HTTPS," with a reference to the security working group for TLS version and cipher recommendations. The document should also consider implications for HTTP/3 and its multiple streams.
+        *   Concern was raised that the draft makes IP-based access control and mutual TLS optional, which is a regression from their mandatory status in current EPP over TCP/TLS specifications. This difference in security profile should be noted.
+        *   Strong opposition to using cookies for session management was voiced, citing unnecessary complexity (e.g., stale cookies) without clear benefits over stateless or other session mechanisms. The author defended the use of cookies as a standard HTTP session management approach, handled by common libraries.
+
+## Decisions and Action Items
+
+*   **Decision:** The working group will proceed with Working Group Last Call (WGLC) for the following drafts as they become ready:
+    *   `draft-ietf-regext-epp-international-email`
+    *   `draft-ietf-regext-simple-registration-reporting`
+    *   `draft-ietf-regext-rdap-reverse-search`
+    *   `draft-ietf-regext-rdap-openid-federation`
+    *   `draft-ietf-regext-rdap-jscontact` (publication coordinated with external JSContact drafts)
+*   **Action Item (Chairs):** Follow up with Jody for the Document Shepherd write-up for `draft-ietf-regext-epp-international-email`.
+*   **Action Item (Working Group):** Seek a volunteer to serve as Document Shepherd for `draft-ietf-regext-data-dictionary`.
+*   **Action Item (Authors - `draft-ietf-regext-data-dictionary`):** Address feedback regarding syntax definitions, consistent naming conventions, inclusion of data elements from other RFCs, clarifying IANA considerations, and considering advice on legal conflicts and definition versioning.
+*   **Action Item (Authors - `draft-mario-regext-epp-over-http`):** Continue discussion on the mailing list, addressing feedback on the document's title, TLS version/cipher references, HTTP/3 implications, explicit noting of security profile differences compared to EPP/TLS, and further justification for cookie-based session management as part of the adoption request.
+*   **Action Item (IANA - Michelle):** Provide examples of versioning in IANA registries.
+
+## Next Steps
+
+*   The chairs will initiate WGLC for `draft-ietf-regext-simple-registration-reporting` and `draft-ietf-regext-rdap-reverse-search` on the mailing list following the IETF meeting.
+*   Authors of `draft-ietf-regext-rdap-openid-federation` will make minor updates and then prepare for WGLC.
+*   The request for adoption of `draft-mario-regext-epp-over-http` will be taken to the mailing list for further discussion and resolution of feedback.
+*   The working group will seek a Document Shepherd for `draft-ietf-regext-data-dictionary` to help move it forward, addressing the extensive feedback received.
+*   Discussions on all documents will continue on the regext mailing list.
+*   The next IETF meeting will be in Philadelphia.

@@ -1,0 +1,52 @@
+**Session Date/Time:** 25 Jul 2022 17:30
+
+# sedate
+
+## Summary
+
+The sedate working group met to review the progress on its draft, primarily focusing on resolving a long-standing ambiguity concerning the interpretation of the 'Z' (Zulu) suffix in RFC 3339 timestamps when combined with time zone hints. The group also received an update on the liaison with ISO TC154. A key decision was made to clarify the `Z` semantics within the sedate draft to align with widespread implementation practices, rather than a strict RFC 3339 interpretation, and to include comprehensive explanatory text.
+
+## Key Discussion Points
+
+*   **Administrative**: The session began with standard IETF notewell, participation guidelines for in-person and remote attendees, mask mandate reminders, and confirmation of Zulip for notes. The agenda was quickly approved without objection.
+*   **Draft Progress (Carsten Bormann)**:
+    *   **Version 4**: Introduced offset time zone syntax, allowing hints with both time zone names and numeric offsets.
+    *   **Version 5**: Added a "critical flag" to identify non-hint information, included an example for extending the format (using CLDR calendar format), and proposed "Internet Extended Date Type Format" as the document name.
+    *   The draft is considered largely complete, pending editorial adjustments to ABNF and clarity on the calendar format.
+*   **Issue 17: Time Zone Conflict Resolution**:
+    *   This "elephant in the room" addresses conflicts between the UTC-referenced timestamp and a time zone hint (e.g., `Europe/Paris`).
+    *   The group agreed that the timestamp's semantic information (UTC reference) is always relevant, and the purpose of the draft is to identify such conflicts and enable recipients to resolve them (e.g., by prompting a user).
+*   **RFC 3339 `Z` Semantics and Implementation Deviation**:
+    *   **Problem**: RFC 3339 defines `Z` (Zulu) as a synonym for `+00:00`, meaning a known UTC offset. However, it also defines `-00:00` for an unknown offset to local time. ISO 8601, which 3339 profiles, does not seem to provide for `-00:00`.
+    *   **Real-world Implementations**: A survey by Justin Grant (pull request 19) showed that many platform libraries (e.g., JavaScript Temporal project) interpret `Z` as meaning "no time zone offset implied" (similar to RFC 3339's `-00:00`), while `+00:00` is used for a known offset. This is seen as a "willful deviation" but reflects a natural choice for compatibility and brevity.
+    *   **Impact**: This deviation increases confusion when combining timestamps with time zone hints, as the implicit meaning of `Z` varies.
+    *   **Proposal**: The sedate draft should define `Z` as a "null value," implying the exact offset was unknown, and defer to the suffix (time zone hint) for local time interpretation. `+00:00` would be used for explicitly defining a UTC offset.
+    *   **Backward Compatibility**: Discussion ensued on whether this constitutes "demolishing" RFC 3339. The general consensus, supported by the Area Director, was that it's a clarification of previously ambiguous or poorly defined behavior in the context of extended time zones, reflecting 20 years of implementation experience, rather than a breaking change. It aims to make standards compatible again.
+    *   **Need for Clarity**: Participants stressed the need for comprehensive examples, clear explanatory text, and historical context within the sedate document to justify this approach and guide implementers.
+*   **Liaison Update (Mike Ksar)**:
+    *   ISO TC154 approved the liaison in April 2022.
+    *   TC154 has had meetings, some focused on vocabulary (ISO 34000), others on 8601 work.
+    *   A notable complication arose regarding "2400" as a deadline in German legal contracts, an outlier to the typical non-inclusive end-of-period definitions in 8601.
+    *   **Document Access Issues**: Mike is still struggling to obtain a working copy of the ISO 8601 document due to ISO's paywall model, hindering his ability to assess potential syntax clashes with sedate's proposed extensions (e.g., using `[`).
+
+## Decisions and Action Items
+
+*   **Decision**: Within the `sedate` draft, the interpretation of `Z` (Zulu) in timestamps will be clarified to signify an unknown or unspecified time zone offset. When `Z` is present, the time zone hint (suffix) provided in the extended format will be authoritative for local time interpretation, while the instant itself remains UTC-referenced. This approach aims to align the specification with widespread real-world implementation practices.
+*   **Action Item (Editor - Carsten Bormann)**: Create a pull request to incorporate the following into the draft:
+    *   A section that updates the interpretation of RFC 3339's `Z` semantics, explicitly stating that it aligns with common implementation practice (treating `Z` more like an "unknown offset" rather than strictly `+00:00`).
+    *   Guidance that using `-00:00` may lead to less interoperability.
+    *   Clear examples and interpretive text demonstrating how conflicts between `Z` and time zone hints are resolved (i.e., the hint takes precedence for local time display).
+    *   Contextual information and historical background explaining the deviation from a strict RFC 3339 interpretation and the justification for this clarification.
+    *   Address `must`/`should`/`may` for various options.
+*   **Action Item (Liaison - Mike Ksar)**: Continue efforts to obtain the working documents from ISO TC154.
+*   **Action Item (Chair)**: Reach out to the IAB's liaison coordinator to assist Mike Ksar in obtaining ISO working documents.
+*   **Action Item (Working Group)**: Actively review the updated draft version once published, focusing on the clarity of `Z` semantics and conflict resolution.
+*   **Decision**: An interim meeting *may* be considered to accelerate progress if deemed necessary after the editorial work, otherwise, asynchronous work via the mailing list will continue.
+
+## Next Steps
+
+*   The editor (Carsten Bormann) will prepare the next version of the draft incorporating the decisions on `Z` semantics, examples, and explanatory text.
+*   Working group members are encouraged to conduct thorough reviews of the upcoming draft, especially regarding the new text on `Z` interpretation.
+*   The liaison (Mike Ksar) will continue efforts to engage with ISO TC154 to acquire their working documents and seek a commitment that ISO will not use square bracket characters (`[`, `]`) in their future 8601 formats, to prevent syntactic clashes with `sedate` extensions.
+*   Further discussions on the precise normative language (`must`, `should`, `may`) will continue on the mailing list.
+*   A decision on scheduling an interim meeting will be made once the editorial changes are nearing completion (estimated within a couple of weeks).

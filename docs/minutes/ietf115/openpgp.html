@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="openpgp.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-OPENPGP-20221108-1300">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2022 13:00</p>
+<h1>openpgp</h1>
+<h2>Summary</h2>
+<p>The openpgp working group meeting focused primarily on resolving outstanding issues from the Working Group Last Call (WGLC) for <code>draft-ietf-openpgp-crypto-refresh-07</code>. Key discussions included addressing conflicts with <code>draft-kook</code> regarding version numbers, determining the appropriate length for signature salts, handling potential aliasing between V3 and V5 signatures, and the role of context parameters in encryption and signatures. Decisions were made to adjust version numbers to avoid <code>draft-kook</code> conflicts and to link salt length to hash collision resistance. The meeting also touched upon IANA registry update policies and concluded with a brief, unchartered presentation on Post-Quantum (PQ) OpenPGP considerations.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Last Call (WGLC) for <code>draft-ietf-openpgp-crypto-refresh-07</code></strong></p>
+<ul>
+<li>The draft <code>draft-ietf-openpgp-crypto-refresh-07</code> is the basis for ongoing work.</li>
+<li>A significant need for more in-depth reviews of the document was highlighted.</li>
+<li><strong>Action Item</strong>: Rick van Rein, Robin, and Jonathan Hamill volunteered to provide reviews in the coming weeks. The co-chairs committed to setting a new WGLC deadline to encourage these reviews.</li>
+</ul>
+</li>
+<li>
+<p><strong>Conflict with <code>draft-kook</code> (RFC 4880bis)</strong></p>
+<ul>
+<li><code>draft-kook</code> (an individual draft) uses version 5 for new public key and signature formats, which conflicts with <code>crypto-refresh</code>'s use of version 5 for similar concepts.</li>
+<li>The design team had already deconflicted other code points, but V5 key and signature formats remained a direct conflict.</li>
+<li><strong>Discussion</strong>: Concerns about process, operational issues from conflicting deployments, and the difficulty of coordination with the <code>draft-kook</code> author. There was a general consensus from a previous list discussion to avoid conflict where feasible.</li>
+<li><strong>Proposal</strong>: Move the <code>crypto-refresh</code> draft's version numbers for new public key format, signature format, one-pass signatures, and PKESK from V5 to V6. The SCI PD V2 would remain V2.</li>
+<li><strong>Decision</strong>: A poll showed strong consensus (12-13 raised hands, 0 not raised) to move these version numbers to V6.</li>
+<li><strong>Action Item</strong>: Co-chair Stephen Farrell will reach out to Werner Koch (author of <code>draft-kook</code>) to inquire about potential changes to his V5 definitions, acknowledging that this process will have a termination date.</li>
+</ul>
+</li>
+<li>
+<p><strong>Signature Salt Length for Post-Quantum Readiness</strong></p>
+<ul>
+<li><strong>Issue</strong>: Current V5 signatures use a fixed 16-octet salt. Aaron suggested increasing this, possibly making it variable, in preparation for Post-Quantum (PQ) signing schemes which may require larger salts.</li>
+<li><strong>Discussion</strong>: Comparison of PQ algorithms (Dilithium, Falcon, Sphinx+), their internal salt/randomization mechanisms, and OpenPGP's one-pass signature framing. The goal is to avoid collisions and match security levels.</li>
+<li><strong>Proposal (Aaron)</strong>: Tie the signature salt length to the collision resistance size of the hash algorithm used (e.g., 16 octets for SHA-256, 32 octets for SHA-512).</li>
+<li><strong>Decision</strong>: A poll showed strong consensus (15 raised hands, 1 not raised) for Aaron's proposal to make the salt length match the hash function's collision resistance.</li>
+<li><strong>Action Item</strong>: Paul W. volunteered to create a merge request for this change.</li>
+</ul>
+</li>
+<li>
+<p><strong>V3 Signature Aliasing Prevention</strong></p>
+<ul>
+<li><strong>Issue</strong>: Demi-Marie OpenHour identified that a V5 signature over a message less than 4GB could be transformed into a valid V3 signature over subtly different data, potentially confusing implementations that still validate V3.</li>
+<li><strong>Discussion</strong>: <code>crypto-refresh</code> mandates that V3 signatures <em>must not</em> be validated due to known insecurities. The proposed change to the V5 trailer calculation is minor.</li>
+<li><strong>Proposal</strong>: Change the ordering of octets in the V5 signature trailer to prevent aliasing with V3 signatures.</li>
+<li><strong>Decision</strong>: A poll showed a weaker consensus (8 raised hands, 2 not raised) to make the change, with the caveat that new information on the list could lead to reconsideration.</li>
+<li><strong>Action Item</strong>: A volunteer is needed to create a merge request for this change.</li>
+</ul>
+</li>
+<li>
+<p><strong>Context Parameters for Encryption and Signatures</strong></p>
+<ul>
+<li><strong>Issue</strong>: Daniel Heavens proposed adding a context parameter to encryption and signatures to prevent their misuse or transplantation into unintended applications/contexts (e.g., an email signature validating in a backup application).</li>
+<li><strong>Discussion</strong>: Benefits for new applications, challenges in defining a universal context for existing uses like email, and the overhead of establishing an IANA registry for context IDs.</li>
+<li><strong>Decision</strong>: The working group decided to postpone detailed work on context parameters to future re-chartered work. A null context could be defined in <code>crypto-refresh</code> for now, allowing for later definition of specific contexts.</li>
+</ul>
+</li>
+<li>
+<p><strong>X-Only Representation for ECC Public Keys</strong></p>
+<ul>
+<li><strong>Issue</strong>: A proposal by Andrea Gypsov suggested moving from SEC1 representation to a more compact X-only representation for EC-DH and ECDSA public keys in V5 (or V6) to save space.</li>
+<li><strong>Discussion</strong>: The change would lead to format differences between V4 and V5 keys for these algorithms. Concerns were raised about maintaining consistency with V4 and the lack of significant bandwidth advantage for X-only over SEC1 for elliptic curve keys.</li>
+<li><strong>Decision</strong>: A poll showed strong consensus (0 raised hands, 9 not raised) to retain the SEC1 representation for V5 (or V6) EC-DH and ECDSA public keys.</li>
+</ul>
+</li>
+<li>
+<p><strong>IANA Registry Updates and Designated Experts</strong></p>
+<ul>
+<li><strong>Status</strong>: <code>crypto-refresh</code> will change most IANA registries to &quot;Specification Required,&quot; meaning a Designated Expert (DE) will approve new entries. Version numbers and packet types will remain &quot;RFC Required.&quot;</li>
+<li><strong>Discussion</strong>: The need for clear guidance for the DE was emphasized. Principles for guidance include ensuring specifications are open, stable, and likely to foster interoperability (e.g., not relying on ephemeral web pages or academic papers lacking implementation details). The ISG appoints DEs, but working group input on desirable qualities is crucial.</li>
+<li><strong>Decision</strong>: The chairs will draft text for the IANA considerations section of the <code>crypto-refresh</code> document, providing guidance to the Designated Expert based on the principles of openness, stability, and fostering interoperability, with reference to existing IANA Cozy/COSE registries for examples.</li>
+<li><strong>Action Item</strong>: Co-chairs Stephen Farrell and TKG to draft the IANA guidance text.</li>
+</ul>
+</li>
+<li>
+<p><strong>Post-Quantum OpenPGP (Brief Introduction)</strong></p>
+<ul>
+<li>Aaron presented a brief overview of preliminary, unchartered work on Post-Quantum (PQ) OpenPGP.</li>
+<li><strong>Design Criteria</strong>: Composite multi-algorithm (Kyber, Dilithium), standalone Sphinx+, backward compatibility (via dual certificates for V4 legacy and V5/V6 PQ), and support for multiple signatures. Use of actual <code>X25519</code>/<code>X448</code> and <code>Ed25519</code>.</li>
+<li><strong>Algorithms</strong>: Kyber (KEM), Dilithium (signature), Sphinx+ (signature), with SHA-3/Shake as hash functions.</li>
+<li><strong>Challenges</strong>: Adapting PQ schemes (which often expect full message input) to OpenPGP's streaming model; handling multiple signatures by clients (which often only parse the first); internal PQ algorithm specifics (e.g., Dilithium's public key prefixing).</li>
+<li><strong>Next Steps</strong>: Waiting for NIST's Kyber intellectual property release, publishing a draft, developing experimental Go/OpenLPS/RMP implementations, and improving testing suites.</li>
+<li>A side meeting was announced for further discussion on this topic.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: Move the version numbers for new public key format, signature format, one-pass signatures, and PKESK in <code>draft-ietf-openpgp-crypto-refresh</code> from V5 to V6 to avoid conflict with <code>draft-kook</code>.
+<ul>
+<li><strong>Action Item</strong>: Co-chair Stephen Farrell to reach out to Werner Koch regarding <code>draft-kook</code>'s V5 usage.</li>
+</ul>
+</li>
+<li><strong>Decision</strong>: The signature salt length will be tied to the collision resistance size of the hash function used (e.g., 16 octets for SHA-256 equivalent security, 32 octets for SHA-512 equivalent).
+<ul>
+<li><strong>Action Item</strong>: Paul W. to create a merge request for this change.</li>
+</ul>
+</li>
+<li><strong>Decision</strong>: Change the V5 signature trailer octet ordering to prevent aliasing with V3 signatures, pending any new information on the mailing list.
+<ul>
+<li><strong>Action Item</strong>: A volunteer is needed to create a merge request for this change.</li>
+</ul>
+</li>
+<li><strong>Decision</strong>: Postpone the definition and implementation of context parameters for encryption and signatures to future re-chartered work.</li>
+<li><strong>Decision</strong>: Retain the SEC1 representation for EC-DH and ECDSA public keys in V5/V6, not moving to X-only representation.</li>
+<li><strong>Decision</strong>: Chairs will draft IANA guidance text for Designated Experts, focusing on openness, stability, and fostering interoperability, drawing examples from IANA Cozy/COSE registries.
+<ul>
+<li><strong>Action Item</strong>: Co-chairs Stephen Farrell and TKG to draft the IANA guidance text.</li>
+</ul>
+</li>
+<li><strong>Action Item</strong>: Rick van Rein, Robin, and Jonathan Hamill volunteered to review <code>draft-ietf-openpgp-crypto-refresh-07</code>.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The Working Group Last Call for <code>draft-ietf-openpgp-crypto-refresh-07</code> will be extended. Co-chairs will announce a new deadline to facilitate the committed reviews.</li>
+<li>Following the completion of the <code>crypto-refresh</code> WGLC and publication request, an interim meeting will be scheduled to discuss potential re-chartering for Post-Quantum OpenPGP work.</li>
+<li>Aaron's Post-Quantum OpenPGP work will continue with experimental implementations and draft publication, with further discussion in a separate side meeting at IETF 118.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

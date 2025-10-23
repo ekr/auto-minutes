@@ -1,0 +1,213 @@
+**Session Date/Time:** 10 Nov 2021 12:00
+
+# idr
+
+## Summary
+The idr working group session for IETF 112 covered a range of topics including administrative updates, recent RFC publications, adopted drafts, and documents in the IESG/IETF Last Call pipeline. Several interim meetings were summarized. Key discussions revolved around the BGP YANG module, coordination of BGP multicast work across multiple working groups, and a series of presentations on BGP extensions for SR policies, BIER TE, ISIS Flood Reflectors, and link bandwidth extended communities. A significant part of the session was dedicated to a meta-discussion on improving cross-working group coordination for overlapping technical work.
+
+## Key Discussion Points
+
+*   **Administrative Updates**
+    *   Attendees were reminded of the IETF Note Well, Code of Conduct, and Anti-Harassment Policy. Emphasis was placed on respectful conduct, clear communication, good logic, and engineering judgment.
+*   **Recent Publications**
+    *   **RFCs Published:** BGP-LS Segment Routing extensions (egress peer engineering, extended attribute groups), Optimal Reflection, Flowspec guidelines (relaxed address verification).
+    *   **Routing WG Publication:** IETF YANG Policy Module (relevant for BGP YANG).
+*   **Recently Adopted Work**
+    *   `draft-ietf-idr-flowspec-srv6` (under Flowspec v2 umbrella).
+    *   `draft-ietf-idr-bgp-ls-service-segments`.
+*   **Documents in Publication Pipeline**
+    *   `draft-ietf-idr-bgp-open-policy`: Submitted to IESG for publication, working through IETF last call comments.
+    *   `draft-ietf-idr-bgp-ls-rfc7752bis`: Responding to shepherd comments, iterating during IETF week.
+    *   `draft-ietf-idr-srte-policy-module`: Waiting for shepherd write-up.
+    *   `draft-ietf-idr-flowspec-rpd`: Finished WG last call, waiting on consensus call write-up.
+    *   `draft-ietf-idr-bgp-extended-communities-registry`: Finished IETF last call, pending publication.
+*   **Interim Meetings Summary**
+    *   **Flowspec v2 (Sept 27):** Discussed functional contents, incremental deployment, SRv6 presentation. Next step: first revision of doc and mailing list discussion.
+    *   **BGP Classful Transport (BCT) / Color-aware Routing (CAR):** Cancelled due to author conflicts, rescheduling pending.
+    *   **Autoconfiguration:** Reviewed design team requirements, Robert Brescia presented on IXP auto-discovery (not data center specific but extended context), Randy Bush presented L3DL proposal review, Shiva updated `draft-minto` (non-auto-discovery), Aishwaren reviewed EPNRF. Next step: protocol selection discussion, potential additional interims.
+*   **Upcoming Interims:** Scheduled for December 6th, December 13th, with a possible November 30th option. Topics: BCT/CAR, Flowspec v2, Autoconf, and general work advancement.
+*   **BGP YANG Module Status (`draft-ietf-idr-bgp-yang`)**
+    *   Advancement since IETF 111. Authors aim for functional completion by year-end.
+    *   Leverages Routing Config and Policy modules, provides fundamentals for VPN models.
+    *   **Call for impartial reviewers** as many contributors have become chairs.
+*   **BGP Multicast Work Coordination**
+    *   Significant overlap observed across BESS, IDR, Beer, Spring, and PIM working groups.
+    *   Chairs (BESS, IDR, ADs) are in communication to coordinate review and adoption. Cross-WG review is minimal, specific WG adoption to be determined. Spring WG is not chartered for multicast or BGP modification.
+*   **SR Policy Extensions for IFIT (`draft-ietf-idr-bgp-sr-policy-ifit`)**
+    *   **Purpose:** Complement `draft-ietf-idr-segment-routing-policy` to distribute IFIT information, enabling data plane telemetry automatically.
+    *   **Updates:** Specify application to a controlled domain (RFC8799), improved security considerations.
+    *   **Encoding:** IFIT attributes encoded as sub-TLVs at the candidate path level (5 sub-TLVs for in-band OAM, for Alternate Marking).
+    *   **Discussion:** No questions raised.
+*   **BGP SR Policy Extension for Template (`draft-ietf-idr-bgp-sr-policy-template`)**
+    *   **Proposal:** Use templates to group features (e.g., primary/backup, BFD intervals, statistics) for SR policy candidate paths, identified by a `template-id`. Templates are configured locally on head-end routers, and the controller distributes policies with the `template-id`.
+    *   **Benefits:** Features meaningful only to controller/head-end, avoid frequent BGP protocol changes, simplify configuration and improve maintainability.
+    *   **Discussion:** Strong concerns raised:
+        *   **Srihari:** How are template IDs coordinated globally? Potential for conflicts.
+        *   **Andrew:** Reflection scenarios would require global synchronization of templates, otherwise reflection breaks.
+        *   **AC & Shraddha:** Policy already has abstraction; templates and management platforms are used for this. No perceived advantage of pushing this into the protocol; seen as a "bad idea" due to complexity and potential for issues.
+*   **BGP Extensions for SR-MPLS Entropy Label Position (`draft-ietf-idr-bgp-sr-el-position`)**
+    *   **Problem:** Determining optimal entropy label (ELI/ELO) position in SR-MPLS networks (RFC8662), especially in inter-domain scenarios, is complex. Centralized controller computation is beneficial.
+    *   **Proposal:** BGP extensions to indicate entropy label position in the segment list when distributing SR policy candidate paths. An `I` flag in the segment-list sub-TLV indicates presence of ELI/ELO pairs.
+    *   **Updates:** Clarified controller's role in computing paths and label placement, follows RFC8662 considerations, ingress node calculates label values.
+    *   **Discussion:** No questions raised.
+*   **BGP Extensions for SR Policy for Path Protection (`draft-ietf-idr-bgp-sr-protection`)**
+    *   **Problem:** Need for flexible segment list protection beyond full candidate path invalidation, allowing protection for individual segment lists within a candidate path (e.g., load balancing with backup for one leg). Existing PCE work for backup segment lists.
+    *   **Proposal:** BGP extensions for SR policy to provide path protection using segment lists. A `B` flag in segment-list sub-TLV indicates a backup path. `Identifier` sub-TLV with `Protection` TLV carries protection relationships. Also proposes `S` (admin shut) and `B` (backup) flags in BGP-LS.
+    *   **Discussion:**
+        *   **Ketan:** The proposal changes SR policy architecture semantics from load-balancing (ECMP) to active/backup. Suggested this should first be reviewed and updated in the Spring WG.
+*   **Point-to-Multipoint (P2MP) Policy (`draft-ietf-idr-p2mp-sr-policy`)**
+    *   **Overview:** Part of a suite of drafts (replication segment, P2MP policy, MPBGP/EVPN/SR P2MP, YANG, PCE, PING). Uses candidate paths, path instances for global optimization, replication SIDs for replication points.
+    *   **Changes:** Single NLRI with three route types: P2MP Policy (for candidate paths), Binding SID (ingress label for replication segments), OIF Route Type (individual outgoing interfaces). This mimics unicast SR policy for uniform handling.
+    *   **Discussion:**
+        *   **Jeffrey Jung:** Noted other BGP-based methods for P2MP SR policy setup are not listed.
+*   **BGP for BIER TE Paths (`draft-wang-idr-bier-te-path`)**
+    *   **Proposal:** Extend BGP to distribute BIER TE paths to ingress nodes. Two options:
+        1.  Define new tunnel type for BIER TE under PMSI Tunnel Attribute (type 22). Includes Path ID (subdomain, BFR ID, tunnel ID, path number) and explicit path TLV.
+        2.  Define new type under Tunnel Encapsulation Attribute. Includes Path ID, explicit path TLV, and path name TLV.
+    *   **Discussion:**
+        *   **Jeffrey Jung:** Asked for clarification on which option to pursue and the use case/working group.
+        *   **Sue Hares:** Emphasized focusing on technical questions. Documents modifying tunnel encapsulation or multicast functionality likely require review/approval by both BESS and IDR.
+*   **Cross-Working Group Coordination (General Discussion)**
+    *   **Problem:** Ongoing issue with overlapping work (e.g., multicast, P2MP, SR policy) across BESS, IDR, Spring, PCE, PIM, Beer. Lack of a consistent, effective coordination mechanism.
+    *   **Alvaro Retana (AD):** Acknowledged the growing problem and the lack of a "silver bullet." Suggested ideas like wikis and review teams, but noted the challenge of ensuring all authors/participants are aware. Emphasized the need for robust review across multiple groups if multiple solutions are pursued. Requested ideas from participants on how to improve coordination.
+    *   **Haomian Zheng:** Shared current practice of updating all WGs with a common slide on technology status, with PIM taking the lead on multicast tech, and other WGs handling policy downloads.
+    *   **Jeff Tantsura:** Noted no current IETF process governs such large-scale coordination. Suggested establishing a group of interested parties and a common place to document progress (wikis).
+*   **BGP-LS Extensions for ISIS Flood Reflectors (`draft-ietf-idr-bgpls-isis-fr`)**
+    *   **Problem:** Flat single-area IGPs (like ISIS Level 2) have scaling pitfalls (flooding, state, convergence).
+    *   **Solution:** ISIS Flood Reflection (based on existing LSR WG work) splits Level 2 into multiple flooding domains by using flood reflectors and clients, leveraging Level 1 for transit. This reduces adjacencies, LSDB size, flooding, and SPF computations.
+    *   **Proposal:** Requesting BGP-LS TLVs for node, link, and prefix attributes to convey flood reflection topology information to controllers.
+    *   **Discussion:** Confirmed that separate BGP-LS documents for LSR features are acceptable and non-controversial. No questions raised.
+*   **Extensions for Link Bandwidth Extended Communities (`draft-li-idr-bandwidth-ec-extension`)**
+    *   **Problem:** Current BGP Link Bandwidth Extended Community uses floating-point encoding (RFC5575), leading to precision loss and interoperability issues (e.g., 65566 kbps converted to 65560 kbps).
+    *   **Proposal:** Use standard units (e.g., bps, Kbps, Mbps, Gbps) and unsigned integers to accurately represent bandwidth values.
+    *   **Discussion:**
+        *   **AC & Jeff:** Acknowledged issues with floating-point (low precision, comparison difficulties, naive implementations using decimal).
+        *   **Challenges:** Changing existing, widely deployed mechanisms is difficult. Proposed new units might lead to complexity, ambiguity (powers of 10 vs. 2), and overlapping semantics for generic community code.
+        *   **AC:** Suggested a single 64-bit bits-per-second unit across all routing area protocols if a "flag day" change were possible, to avoid unit conversions.
+        *   **Andre:** Highlighted issues from BESS WG where normalization to a single unit (e.g., Mbps) was considered to avoid problematic overlaps.
+        *   **Conclusion:** Good conversation starter; the issue of link bandwidth encoding is recurring across WGs.
+
+## Decisions and Action Items
+
+*   **BGP YANG Module:** Authors to push for functional completion by year-end; Working Group Chairs will seek impartial reviewers.
+*   **BGP Multicast Work:** BESS and IDR chairs (with ADs) to continue coordination discussions for cross-WG review and adoption.
+*   **SR Policy for Path Protection:** Ketan to initiate discussion on the Spring mailing list regarding SR policy architecture semantics change.
+*   **Cross-Working Group Coordination (General):** ADs and Chairs to collaborate on finding better coordination mechanisms, potentially involving a wiki on the IDR site. Participants encouraged to provide ideas to ADs/Chairs.
+*   **BGP for BIER TE Paths:** Authors to engage in mailing list discussion to select between the two proposed options.
+
+## Next Steps
+
+*   **Flowspec v2:** Complete first revision of the document and resume discussion on the mailing list.
+*   **Autoconfiguration:** Begin protocol selection discussion; additional interims may be scheduled.
+*   **Interim Meetings:** Coordinate with document authors for acceptable dates for planned interims on BCT/CAR, Flowspec v2, and Autoconfiguration in late November/December.
+*   **BGP SR Policy Extension for Template:** Continue discussion on the mailing list given the significant concerns raised.
+*   **P2MP Policy:** Continue to track and seek adoption.
+*   **BGP-LS Extensions for ISIS Flood Reflectors:** Seek working group adoption.
+*   **Link Bandwidth Extended Communities:** Continue discussion on the mailing list to refine the proposal and address concerns regarding existing standards, units, and interoperability.
+*   **Next Scheduled Session:** Tomorrow (Tuesday) for the third session of the day.
+
+---
+
+**Session Date/Time:** 11 Nov 2021 16:00
+
+# idr
+
+## Summary
+The IDR session covered a range of BGP extensions and operational challenges. Key discussions included a PCEP-based solution for traffic engineering, updates on BGP Flow Specification v2, clarifications for BGP Dynamic Capabilities, the potential for BGP multi-sessions over Quick for improved resilience, BGP-driven metadata for 5G edge computing, and a proposal to revise BGP error handling which sparked significant debate on operational safety. Cross-working group collaboration, particularly with PCE and DetNet, was a recurring theme.
+
+## Key Discussion Points
+
+*   **PSAP (Path Segment-based Application Path) for Inter-Network TE** (Agent)
+    *   **Motivation:** To provide traffic engineering in inter-network environments using BGP sessions controlled by PCEP.
+    *   **Solution Overview:**
+        1.  Build multiple BGP sessions between edge routers (e.g., R1 and R7).
+        2.  PC (PCEP controller) sends `PDP information object` to edge routers to establish these multi-BGP sessions with QoS, peer, and tunnel information.
+        3.  PC sends `Explicit Peer Route object` to intermediate edge routers to explicitly define BGP next-hop paths (e.g., R1-R6-R8-R5-R7) including root priority.
+        4.  PC sends `Peer Prefix Advertisement object` to edge routers to advertise different prefixes via the different BGP sessions, ensuring traffic differentiation for QoS.
+    *   **Outcome:** Achieves normal and priority traffic on different paths, meeting QoS requirements.
+    *   **Discussion:** The work requires collaboration between the IDR and PCE working groups.
+
+*   **Flow Specification Version 2 (FSv2)** (Donald)
+    *   **Motivation:** Address limitations in BGP Flow Specification Version 1 (RFCs 5575, 8955, 8956), including lack of consistent TLV encoding, difficulty with extensibility, absence of filter/action ordering, and unclear peer interaction.
+    *   **Solution:** FSv2 uses a new SAFI and introduces significant improvements.
+    *   **Draft Status (v03):** Substantially expanded, with improved material on ordering (between FSv1 and FSv2 rules), more control over failure treatment in action chains, expanded validation (routing, cryptographic), and a new manageability section.
+    *   **Discussion:** The comprehensive nature of FSv2 was highlighted, with an urgent call for operator and developer review and comments.
+
+*   **Dynamic Capabilities for BGP** (Nk)
+    *   **Motivation:** Enable dynamic revision of BGP capabilities without session reset, building on existing implementations for AFIs/SAFIs and Graceful Restart (GR).
+    *   **Recent Updates (v16):**
+        *   **Multiple Instance Capability:** Clarified that each instance (e.g., AFI/SAFI) is revised individually due to historical 4-byte capability length.
+        *   **Single Instance Capability:** Clarified that the entire capability is replaced, and removal is indicated by setting the length field to zero.
+        *   **Capability Selection:** Implementers/operators decide which capabilities to support dynamically based on complexity and use case.
+    *   **Discussion:**
+        *   Dynamic revision is only possible for capabilities explicitly advertised as dynamically revisable by *both* peers in the OPEN message.
+        *   Some capabilities (e.g., Add Paths) may still not be safe to renegotiate. A suggestion was made for a parallel capability to explicitly list renegotiable items.
+        *   The chairs requested implementation reports to aid IANA early allocation for a newly identified error code conflict.
+        *   It was suggested to add text to the draft outlining easiest use cases (e.g., AFIs/SAFIs, GR) to encourage adoption.
+
+*   **Multi-session for BGP over Quick** (Yinzhan)
+    *   **Motivation:**
+        1.  Malformed messages or errors in one BGP AFI/SAFI often lead to the termination of the entire TCP BGP session, impacting all other services.
+        2.  Consolidating all services into a single BGP TCP connection can lead to control plane resource contention.
+    *   **Solution:** Leverage Quick (RFC 9000), a UDP-based, multiplexed, and secure transport protocol. Quick connections carry multiple independent streams, each with its own flow control.
+    *   **Mechanism:** One Quick connection can support multiple BGP sessions, with each session operating independently over a Quick stream (e.g., one stream per AFI/SAFI). Errors in one stream/session would not affect others.
+    *   **Error Handling:** Introduces new error sub-codes for multi-session conflicts, capability mismatches, and network layer protocol mismatches in OPEN messages.
+    *   **Discussion:**
+        *   While existing BGP error handling could disable specific AFIs/SAFIs, Quick's stream model potentially offers a cleaner separation and improved resilience.
+        *   Quick's Layer 5 session model might help BGP handle some malformed NLRI errors more gracefully, as packet boundaries could be more reliably identified compared to a raw TCP stream.
+
+*   **5G Edge Computing Application Metadata** (Linda)
+    *   **Motivation:** In 5G edge computing, application layer load balancing (e.g., via local DNS) may not account for actual network conditions (router load/stress), leading to suboptimal server selection for low-latency services.
+    *   **Proposal:** Propagate network-specific attributes (e.g., cost) via BGP to ingress routers.
+    *   **Mechanism:** Associate "site cost" with tunneling capabilities. Egress routers advertise prefixes along with tunnel types and an additional cost to reach that prefix. Ingress routers can then compute paths based on prefix, tunnel, and cost.
+    *   **Optimization:** Route constraint distribution (e.g., based on application server ID) can limit the flooding of these metrics to interested ingress routers.
+    *   **Discussion:**
+        *   A debate on whether this problem is best solved at the application layer or network layer. Application developers argue for app-layer solutions, but those have limitations (e.g., slow load balancer deployment).
+        *   The draft's assumption of small, localized networks near the 5G core was noted.
+        *   Concern about potential chattiness of BGP updates; the author clarified that cost changes would occur on the order of hours or days, not minutes, to prevent oscillation.
+        *   The complexity of maintaining "sticky" server connections when UEs move was raised as a significant challenge that app-layer solutions currently address.
+
+*   **Revised Error Handling for BGP Messages** (Hypo)
+    *   **Motivation:** Existing BGP error handling (RFC 4271, 7606) can be too strict, leading to unstable sessions (repeated resets) when malformed messages are encountered.
+    *   **Proposals:** Reduce the impact of errors by allowing more graceful handling, clarifying ambiguous definitions, and loosening strictness in specific scenarios.
+        *   **MP_REACH/MP_UNREACH:** Discarding error prefixes while keeping correct ones, processing the last/first of multiple attributes, ignoring current messages for NLRI errors.
+        *   **Address Validation:** Clarifying handling of zero BGP IDs (Aggregator, Originator ID) and validation of IP addresses in Network attributes.
+        *   **SRv6 Precedence (RFC 8669):** Withdrawing routes if the attribute is incorrect.
+    *   **Discussion:**
+        *   **Strong Counterarguments:** Many participants (Nk, Jeff, Kev) emphasized that partial parsing or discarding parts of BGP updates, especially NLRI, is fundamentally dangerous due to BGP's incremental nature. This can lead to stale routing information and black holes, particularly for Internet routes. RFC 7606's "treat-as-withdraw" relies on *successful full parsing* of the NLRI field.
+        *   **Operational Safety:** While a "best effort" approach might seem appealing for network stability, it risks leaving the network in a logically inconsistent or broken state. The original strictness was chosen for operational safety, especially for the global Internet.
+        *   **Specific Cases:**
+            *   Next-hop validation might be an area for potential, focused improvement.
+            *   Making zero BGP IDs invalid now could cause backward compatibility issues.
+            *   For specific closed environments (e.g., data centers) or certain AFIs/SAFIs (like Long-Lived Graceful Restart for non-Internet routes), a "partially broken but up" session might be preferred over a reset, but this is not suitable for general Internet use.
+        *   The consensus was to continue discussion on the mailing list, focusing on clarifying specific edge cases within 7606 rather than a wholesale revision that could compromise operational integrity.
+
+*   **Flow Specifications for DetNet Flow Mapping** (Quan)
+    *   **Motivation:** DetNet requires robust flow mapping between TSN streams and DetNet flows at boundary nodes, including one-to-one and N-to-1 aggregation.
+    *   **Proposal:** Extend BGP Flow Specification to provide control plane functionality for this mapping.
+    *   **Mechanism:** Proposes new FlowSpec types: `MAC Service Data NLRI` for TSN traffic filtering and `DetNet Flow NLRI` for DetNet MPLS flows, along with new extended communities (`Sequence Action Extended Community`, `TSN Action Extended Community`) to map matched packets to specific flows or TSN streams and associated parameters.
+    *   **Discussion:** This work was noted as important but was advised to align with and contribute to the ongoing Flow Specification Version 2 efforts, as current FlowSpec v1 is not extensible for new capabilities.
+
+## Decisions and Action Items
+
+*   **PSAP (Agent):**
+    *   **ACTION:** Add the draft to the cross-working group wiki for tracking between IDR and PCE.
+    *   **ACTION:** Schedule a shared Working Group Last Call with PCE, including chair review.
+    *   **ACTION:** Continue to welcome comments on the IDR mailing list.
+*   **Dynamic Capabilities (Nk):**
+    *   **ACTION:** Work with chairs for early IANA allocation for the new error code to resolve conflict with Enhanced Route Refresh.
+    *   **ACTION:** Implementers are requested to provide implementation reports (via the IDR wiki) detailing which capabilities they support, to facilitate IANA allocation.
+    *   **ACTION:** Consider adding an appendix to the draft documenting the evolution and significant changes (e.g., from v4 to v5) for better interoperability and clarity.
+    *   **ACTION:** Consider adding text to the draft highlighting easy use cases (e.g., AFIs/SAFIs, GR) to guide implementers.
+*   **Flow Specification Version 2 (Donald):**
+    *   **ACTION:** Attendees are urged to review the current draft (v03) and provide comments, particularly operators and developers.
+    *   **ACTION:** An IDR virtual meeting is scheduled for December 13th to discuss FSv2 in detail.
+*   **Flow Specifications for DetNet Flow Mapping (Quan):**
+    *   **ACTION:** The author will update the proposed FlowSpec extensions to align with and integrate into the Flow Specification Version 2 efforts.
+
+## Next Steps
+
+*   **All Drafts:** Authors will continue to refine their drafts based on feedback received during the session and on the mailing list.
+*   **Mailing List Discussion:** Continue detailed technical discussions for Revised Error Handling and 5G Edge Computing App Metadata on the IDR mailing list.
+*   **Cross-WG Coordination:** Maintain close coordination for drafts involving multiple working groups (e.g., PSAP with PCE, DetNet FlowSpec with FSv2, 5G Edge Computing with LS&R and Six-Man).
+*   **Implementation Reports:** Implementers of Dynamic Capabilities are encouraged to submit their reports to the IDR chairs and mailing list.

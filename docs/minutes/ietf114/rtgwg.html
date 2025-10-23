@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="rtgwg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-RTGWG-20220728-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 14:00</p>
+<h1>rtgwg Session Minutes - IETF 114</h1>
+<h2>Summary</h2>
+<p>The rtgwg session at IETF 114 featured updates on several working group documents, including VRRPv3 Bis and the QoS YANG Model, as well as presentations on emerging topics such as Network to Cloud routing challenges, Destination Source Routing, a framework for evaluating routing protocols, SRv6 multi-home egress and midpoint protection, SRv6 for computing resource interconnect, and requirements for satellite constellations in the Internet. Key discussions revolved around adopting inclusive language in VRRP, simplifying YANG models, the re-adoption of destination source routing, and various protection and optimization mechanisms for SRv6 in cloud and edge scenarios. A research presentation on a routing protocol evaluation framework generated significant interest. Due to time constraints, one presentation was deferred to an upcoming interim meeting.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>VRRPv3 Bis (Alain Lindem):</strong></p>
+<ul>
+<li><strong>Motivation:</strong> Update RFC 5798 to incorporate NIST inclusive language standards, replacing terms like &quot;master&quot; with &quot;active&quot; and &quot;black hole&quot; with &quot;advertising reachability yet dropping packets.&quot;</li>
+<li><strong>Changes:</strong> Migration to XML RFCv3, fixing errata in finite state machines, extensive editorial changes for readability and consistency.</li>
+<li><strong>Technical Updates:</strong> Recommended &quot;active&quot; and &quot;standby&quot; devices accept unsolicited neighbor advertisements for IPv6 (RFC 9131 alignment), validation on maximum interval for received VRRP packets (log mismatch, no discard for backward compatibility), removal of obsolete FDDIToken Ring/ATM-LAN dependencies, beefed-up security and IANA sections.</li>
+<li><strong>Discussion:</strong> Appreciation for comprehensive review; clarification that moving to Internet Standard does not strictly require an implementation report but a pervasive implementation must be documented, and technical changes should be minimal.</li>
+</ul>
+</li>
+<li>
+<p><strong>Network to Cloud (Yunjin Chi):</strong></p>
+<ul>
+<li><strong>Problem Statement:</strong> Addressing routing-related challenges in connecting enterprise networks to cloud environments, especially with increasing multi-party peering and hybrid cloud deployments.</li>
+<li><strong>New Problems/Gaps:</strong> BGP configuration mismatches in multi-peer cloud gateways, efficient notification for ingress routers during large-scale site degradation/failure, challenges with instances in multiple close proximity locations (5G edge), source IP address variations from UE mobility, varying NAT functions across different cloud providers, dynamic discovery of optimal instance locations, and DNS interactions across cloud boundaries (client-side caching, on-prem DNS redirection).</li>
+<li><strong>Request:</strong> Further review for the problem statement and gap analysis drafts, with an aim for Working Group Last Call.</li>
+<li><strong>Discussion:</strong> Suggestion to maintain these documents as <em>working documents</em> to allow ongoing updates as solutions evolve.</li>
+</ul>
+</li>
+<li>
+<p><strong>QoS YANG Model (Asim Chaudhry):</strong></p>
+<ul>
+<li><strong>Updates:</strong> Reduced feature statements from 19 to 5, simplified model structure by combining QoS policy, classifier, and target into a single <code>traffic-policy</code> module.</li>
+<li><strong>New Feature:</strong> Inclusion of an <em>operational model</em> with QoS interface statistics (per-direction, tagged/untagged counters) augmented to <code>ietf-interface</code>.</li>
+<li><strong>Design:</strong> The <code>traffic-policy</code> module serves as a base, allowing for easy creation of new policy modules (e.g., DiffServ, Queue).</li>
+<li><strong>Next Steps:</strong> Continue addressing YANG doctor comments.</li>
+</ul>
+</li>
+<li>
+<p><strong>Destination Source Routing (Jen Linkova):</strong></p>
+<ul>
+<li><strong>Objective:</strong> Revive a previous draft to define a behavior for IPv6 routers to consider source addresses in routing decisions, in addition to destination addresses.</li>
+<li><strong>Use Cases:</strong> Improved IPv6 multi-homing for enterprises (avoiding NAT), traffic engineering, and network segmentation (e.g., &quot;walled gardens&quot;).</li>
+<li><strong>Proposed Behavior:</strong> Routers first select routes based on the most specific destination, then from that subset, select based on the most specific source. A 0/0 source prefix would behave like no source consideration.</li>
+<li><strong>Request:</strong> Working Group re-adoption call.</li>
+<li><strong>Discussion:</strong> Supported for re-adoption, with a note to consider &quot;semantic routing&quot; implications, routing overhead, and convergence. Hardware vendor feedback indicated &quot;doable&quot; depending on the specific hardware. Clarification that destination takes precedence over source in the lookup process.</li>
+</ul>
+</li>
+<li>
+<p><strong>UCB: Framework for Evaluating Performance of Routing Protocols (Tommaso Cucinotta):</strong></p>
+<ul>
+<li><strong>Problem:</strong> Lack of standard testing procedures for heterogeneous routing protocol implementations in complex data center networks (fat-tree topologies).</li>
+<li><strong>Methodology:</strong> Black-box approach, evaluating behavior (not hardware-dependent performance) across failure and recovery scenarios. Introduces novel metrics: <strong>Locality</strong> (blast radius of an event based on packet propagation distance) and <strong>Rounds</strong> (number of state changes for convergence, derived from a &quot;Node State Graph&quot; showing node synchronization).</li>
+<li><strong>Framework (Sibila):</strong> Container-based network emulator (Katakana) for automated, repeatable tests.</li>
+<li><strong>Findings (FRR BGP):</strong> Stable messaging load and rounds for convergence, effective blast radius limitation.</li>
+<li><strong>Use Cases:</strong> Protocol analysis, prototype development (e.g., RIFT negative disaggregation), flooding reduction algorithm comparison.</li>
+<li><strong>Discussion:</strong> Highly praised by industry experts for its potential to formally observe distributed systems and contribute to proofs of correctness for routing protocols.</li>
+</ul>
+</li>
+<li>
+<p><strong>SRv6 Multi-home Egress Protection (Ben Ying):</strong></p>
+<ul>
+<li><strong>Problem:</strong> Fast failure protection for multi-home egress scenarios in SRv6 networks.</li>
+<li><strong>Solution:</strong> Extends SRv6 Segment Routing Header (SRH) with a 'B' flag and carries a backup egress SID in the SRH last entry. The penultimate endpoint, upon detecting egress node unreachability, switches the packet's destination address to the backup SID if the 'B' flag is set.</li>
+<li><strong>Performance:</strong> Prototype testing with vendors indicated protection switching performance below 50ms.</li>
+</ul>
+</li>
+<li>
+<p><strong>SRv6 Midpoint Protection (Shuai Zhao):</strong></p>
+<ul>
+<li><strong>Problem:</strong> SRv6 Topology Independent Fast Reroute (TFA) does not cover SRv6 policy endpoint failures.</li>
+<li><strong>Solution:</strong> A &quot;progressive forwarding node&quot; (midpoint) replaces a failing SRv6 endpoint by performing the endpoint function and forwarding to the next segment.</li>
+<li><strong>Refinement:</strong> Modified to restrict midpoint protection <em>only</em> to SRv6 endpoint nodes to avoid modifying the SRH by intermediate &quot;chance nodes&quot;, which is against RFC 8754.</li>
+</ul>
+</li>
+<li>
+<p><strong>SRv6 as Computing Resources Interconnecting Protocol (Fangning Li):</strong></p>
+<ul>
+<li><strong>Vision:</strong> Unify IP network protocols using SRv6 to interconnect central, edge, and private clouds, providing differentiated and deterministic services for various workloads.</li>
+<li><strong>Use Cases/Challenges:</strong> Differentiated service provisioning (path calculation), bandwidth isolation (network/hard slices), cross-domain scheduling (exposing PSIDs to applications), integrating connection and computing services (SRv6-enabled firewalls in SID list), application awareness, OAM for user experience, and addressing SRv6 header overheads (compression needed for many hops/small packets).</li>
+<li><strong>Discussion:</strong> Queries about connection to &quot;compute-aware networking&quot; initiatives, and clarification on the problem statement beyond best-effort services (i.e., assured service quality needs beyond basic provisioning).</li>
+</ul>
+</li>
+<li>
+<p><strong>Problem and Requirements of Satellite Constellation for Internet (Kenji Ota):</strong></p>
+<ul>
+<li><strong>Background:</strong> 3GPP is exploring 5G using satellites for backhaul and access networks.</li>
+<li><strong>Challenge:</strong> Extreme dynamics of Low Earth Orbit (LEO) satellites, posing significant challenges for Layer 3 routing protocols (IGP/BGP mutual advertisement, link quality/cost changes). Timing constraints for wireless access are also significant.</li>
+<li><strong>Need:</strong> Standardized work in IETF to integrate cellular networks with satellite networks.</li>
+<li><strong>Discussion:</strong> Clarified the conceptual nature of routing diagrams; interworking between <em>different</em> satellite networks is not currently expected, but each satellite network must interwork with the internet.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Network to Cloud Problem Statement:</strong> Authors will solicit more reviews for the two drafts. WG is encouraged to review.</li>
+<li><strong>VRRPv3 Bis:</strong> Alain Lindem will seek additional reviews and then push for a working group last call. Alain will review the document line-by-line with Aditya Dogra.</li>
+<li><strong>QoS YANG Model:</strong> Asim Chaudhry will continue to address remaining YANG doctor comments.</li>
+<li><strong>Destination Source Routing:</strong> Jen Linkova requested a working group re-adoption call. This will likely be pursued on the mailing list.</li>
+<li><strong>UCB Framework:</strong> Tommaso Cucinotta will be encouraged to continue this work and provide updates. Adrian Farrel requested sharing links to the paper/resources on the mailing list.</li>
+<li><strong>SRv6 Multi-home Egress Protection:</strong> No explicit action item, but continued review is implied.</li>
+<li><strong>SRv6 Midpoint Protection:</strong> The authors request to move this document forward, indicating they believe all comments are resolved.</li>
+<li><strong>SRv6 as Computing Resources Interconnecting Protocol:</strong> Authors will solicit comments and refine the draft.</li>
+<li><strong>Satellite Constellation Requirements:</strong> Authors welcome comments and contributions.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Interim Meetings:</strong> Co-chairs plan to schedule at least one, possibly more, interim meetings in September to cover pending topics and presentations that ran out of time (specifically, the last presentation on &quot;Computing-Aware Service Function Chaining Use Cases&quot; and possibly further discussion on the SRv6 midpoint protection question).</li>
+<li><strong>Mailing List Discussions:</strong> Continued technical discussions are encouraged on the mailing list for several drafts, particularly for Destination Source Routing (re-adoption), Network to Cloud (problem statements), and the research work on routing protocol evaluation.</li>
+<li><strong>Document Reviews:</strong> Working group members are encouraged to review the updated and revived drafts, especially VRRPv3 Bis and Destination Source Routing.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

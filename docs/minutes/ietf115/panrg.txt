@@ -1,0 +1,124 @@
+**Session Date/Time:** 10 Nov 2022 09:30
+
+# panrg Meeting Minutes
+
+## Summary
+
+The panrg session featured updates on the Scion architecture's integration into the IETF process, a thought-provoking presentation on rethinking IPv6 addressing to leverage its vast address space for enhanced network capabilities and end-host services, and a two-part deep dive into "Bottleneck Structures" as a framework for network optimization under both full and partial information. The session concluded with a proposal for an "IPv6 Database as a Service" (DB-aaS) framework for fine-grained network service provisioning.
+
+## Key Discussion Points
+
+### Housekeeping
+
+*   The IETF Notewell was displayed and acknowledged.
+*   In-person attendees were encouraged to use Mitekoku for questions to facilitate queue management. Remote participants were asked to mute unless speaking.
+*   Anna was thanked for volunteering to be the minute taker.
+
+### Scion Update
+
+*   **Background**: Following an IETF 113 side meeting and Routing Area presentation, Scion work was brought to panrg to componentize the architecture for potential IETF work.
+*   **Current Status**: Three drafts (Overview, Component Analysis) formed the basis of discussion. Component analysis identified three key areas: Control Plane PKI, Control Plane, and Data Plane.
+*   **Decision**: Existing Scion documentation is being brought into Internet Drafts for publication on the Independent Submission Stream (ISC RFCs), primarily as "ETH's implementation of Scion."
+*   **panrg's Role**: panrg will continue to serve as a discussion forum for Scion-related topics. A report on next steps in research is expected at a future IETF meeting (Yokohama).
+*   **Future Research**: The chair noted a personal interest in path discovery and dissemination within Scion.
+*   **Interims**: No immediate interim meetings are planned; the Scion team has work to do on the drafts.
+
+### Rethinking IPv6 Addressing
+
+*   **Problem Statement**: Current IPv6 usage often mimics IPv4's "one IP per interface" model, despite IPv6's vast address space. This position paper explores how to leverage this address space for new possibilities.
+*   **Opportunities**: Enhanced privacy, better load balancing, advanced segment routing, differentiated services, and multicast.
+*   **Multi-homing**:
+    *   IPv4 multi-homing via BGP for stub ASes generates significant overhead.
+    *   IPv6 proposes a different approach: an enterprise receives provider-aggregated prefixes from each provider. Devices get an IP from each prefix, allowing them to choose a provider or use multipath transport. This avoids BGP strain.
+    *   **Multipath Transport Protocols**: Essential for leveraging multiple addresses. The presentation highlighted SCTP (ongoing work), MPTCP (RFCv1, deployed in Linux/Apple), QUIC (V1 has connection migration, server preferred address; multi-path QUIC is an ongoing effort).
+    *   An extension for QUIC V1 was proposed to allow servers to advertise additional addresses for multi-homing.
+*   **Privacy**:
+    *   Temporary addresses (RFC 8981) could benefit from multipath for quicker flow migration when an address expires.
+    *   Choi Opera (moving target defense for servers using cryptographically determined temporary IPs) could use multipath to migrate client flows, keeping servers "hidden."
+*   **Load Balancing**:
+    *   Proposed "one IP per CPU core" for multi-core servers. Clients select a server IP via DNS, offloading initial load balancing. NICs then use IP to direct to core.
+    *   Multipath transport can further balance by migrating flows between cores if a core becomes overloaded.
+*   **Segment Routing**: Combining IPv6 prefixes with SR domains allows routing traffic through service chains based on destination IP.
+*   **Discussion**:
+    *   Chairs noted that IPv6 hosts already have multiple addresses (link-local, privacy). Raised concerns about scalability for network devices (caches, routing tables) if every client has many routable addresses, suggesting this could necessitate significant hardware upgrades. Asked about practical testing of fallback/switchover speeds.
+    *   The presenter acknowledged early-stage experimentation and the need to investigate practical drawbacks and OS handling.
+    *   A question was raised about revising the IPv6 addressing model itself, not just use cases. The presenter indicated their focus is more on transport protocols and experimentation but welcomed further discussion.
+    *   The importance of looking at identifier/locator split and network layer naming architecture in conjunction with transport protocols was highlighted.
+    *   It was suggested that adopting /64 per host would be necessary if applications were to use IPv6 addresses instead of ports, to avoid network limitations. The V6Ops mailing list was recommended for further engagement.
+
+### Bottleneck Structures
+
+**Part 1: Basics, Interaction, Use Cases, and Production Deployments**
+
+*   **Core Idea**: Beyond the bottleneck *link* (Jacobson '88), there's a "bottleneck structure" – a deeper, system-wide representation of network performance.
+*   **Representation**: A directed graph where white vertices are links and colored vertices are flows.
+    *   Directed edge from Link to Flow: Flow is bottlenecked at that link.
+    *   Bidirectional edge between Link and Flow: Flow traverses that link (and is bottlenecked there).
+*   **Insights**:
+    *   **Propagation Limits**: Qualitatively shows how perturbations (e.g., change in link capacity or flow rate) propagate through the network, affecting only specific, connected flows/links.
+    *   **Quantification**: Bottleneck structures are "computational graphs," enabling fast and accurate computation of derivatives. This allows quantifying the impact of perturbations (e.g., change in link capacity by X magnitude affecting throughput of flow Y).
+    *   **Optimization Framework**: Can be used to optimize communication systems by computing gradients.
+*   **Example**: In a network, removing a low-bandwidth but "strategic" flow (traversing core links) can lead to a greater increase in total network throughput than removing a "heavy-hitter" flow that is not strategic.
+*   **Perturbations Supported**: Flow routing, traffic shaping, link capacity upgrades/fluctuations, scheduling, job mapping (e.g., neural network placement).
+*   **Use Cases**: Network design, traffic engineering, AI applications, 5G resource allocation, performance prediction, network modeling, slicing, routing, congestion control, capacity planning, data center design.
+*   **Application (Google B4 Network)**: Demonstrated how bottleneck structures can identify strategic links (at the "root" of the graph) and inform optimal path selection for applications (e.g., large data transfers). It can help choose non-shortest paths that offer higher throughput and manage SLA compliance by predicting ripple effects.
+*   **Production Deployments**: Currently being used in the National Research Platform (NRP) and ESnet for capacity planning and traffic engineering.
+*   **Discussion**:
+    *   The bidirectional nature of edges when a flow is bottlenecked at a link was clarified.
+    *   It was noted that the work shares conceptual space with ICCRG (Internet Congestion Control Research Group), particularly regarding congestion control and planning.
+    *   Interest was expressed in how this mathematical tool could be tied to signaling in an internetwork context, with an expectation that the second part of the presentation would address partial knowledge.
+
+**Part 2: Computing Bottleneck Structures under Partial Information**
+
+*   **Problem**: Real-world networks consist of Autonomous Systems (ASes), each with only partial knowledge of the global network.
+*   **Goal**: Each AS should be able to compute its correct "bottleneck substructure" (the portion of the global BS relevant to it).
+*   **Proposed Distributed Protocol**:
+    *   **Convergence**: Achieved by ASes sharing *one scalar metric per path* with their neighbors. This is sufficient to ensure convergence to the correct local bottleneck substructures.
+    *   **Scalability**: Focuses on "Path-Grading Graphs" (per path) rather than "Flow-Grading Graphs" (per flow) for efficiency (fewer paths than flows). Requires only per-path state.
+    *   **Privacy**: Shares only a scalar metric per path, not detailed flow information or full topology, which could be beneficial for AS privacy (though subject to discussion).
+    *   **Mechanism**: Each AS iteratively computes its local bottleneck substructure. It exchanges "Path Metric Announcement" messages with neighbors. Upon receiving a neighbor's path metric, it takes the minimum (as the bottleneck is always the minimum constraint). If the local computation doesn't agree with the received metrics, the AS models the external bottleneck by adding a "virtual link" with a capacity equal to the neighbor's path metric and re-computes until agreement is reached.
+    *   **Convergence Time**: The convergence complexity is solely dependent on the structure of the bottleneck graph, not on how ASes partition the network.
+*   **Discussion**:
+    *   **AS Secrecy/Candor**: Concern was raised whether ASes would be willing to reveal bottleneck information. The presenter clarified that the protocol allows an AS to know if *it* is the bottleneck, or if it's *somewhere else*, without necessarily revealing where the bottleneck is to others. An AS could choose to reveal more for SLA management but is not forced to.
+    *   **Dynamic Metrics and Oscillations**: Questioned how dynamic bottleneck information would be used for routing without causing oscillations. The presenter stated that the framework is for *computing* optimal decisions (e.g., where to place a flow) and *predicting* outcomes, rather than dynamically adjusting live routing, which is a different problem.
+    *   **Scalability (AS Abstraction)**: Brian Trammel noted that while convergence depends on the BS structure, the complexity of the substructures within ASes could still be problematic. He asked if ASes could abstract or "collapse" their internal complexity (similar to Scion's approach). The presenter confirmed that the protocol handles this abstraction implicitly by modeling external ASes as virtual nodes with associated path metrics, providing a simplified view.
+
+### IPv6 Database as a Service (DB-aaS)
+
+*   **Motivation**: Conventional networks provide basic connectivity, but modern applications demand differentiated, fine-grained services (e.g., specific latency, bandwidth). Current networks often conceal capabilities, leading to suboptimal resource utilization.
+*   **Existing Approaches Limitations**:
+    *   SFN (Service Function Network): Reactive, relies on traffic detection, can cause waste by switching to standby paths.
+    *   Network Slicing: Configures priorities but still within existing network structures.
+    *   Dedicated Lines: Costly, long deployment times.
+*   **Proposal**: An "IPv6 Database as a Service" (DB-aaS) framework, aligning with "Network-as-a-Service" (NaaS).
+*   **Framework Components**:
+    *   **Network Controller**: Collects network running status and assets. Extracts key attributes of network functions (e.g., `V-link` for Layer 2, `V-tunnel` for Layer 3, node descriptors, max resolvable link bandwidths).
+    *   **Distributed Database**: Stores abstracted capabilities using a key-value scheme. Employs a subscribe/publish mechanism with strong consistency for efficient information advertisement.
+    *   **Abstraction Model**:
+        *   `V-link` and `V-tunnel`: Substitute for original links/tunnels, providing unique logical topologies for different applications/clouds.
+        *   Logical IDs: Globally unique IDs for V-links/V-tunnels.
+        *   Resource Allocation: `Max Resolvable Link Bandwidth` for V-links is allocated exclusively to clients sharing physical links, preventing interference.
+    *   **Service Provisioning**: Cloud controllers/super orchestrators subscribe to database updates. With knowledge of network capabilities, they perform path calculations, orchestrate services, and bind them with specific policies. Degradation can be reflected and learned.
+*   **Comparison to ALTO**:
+    *   **Similarities**: Accessibility, standardized API.
+    *   **Differences**: DB-aaS aims for *more exposed and diversified* network capability abstraction, leading to *finer granularity* services. ALTO provides guidance for application endpoint selection, treating the network as a "black box," whereas DB-aaS focuses on exposing network capabilities directly for traffic steering and orchestration.
+*   **Future Work**: Expand to other services (topology, security, deterministic QoS), consider safety and service affinity issues.
+*   **Discussion**:
+    *   Sabine (ALTO WG) highlighted ALTO's off-path guidance for applications versus DB-aaS's direct network layer traffic steering. Encouraged looking into ALTO's work on integrating compute information.
+
+## Decisions and Action Items
+
+*   **Scion Drafts**: The Scion drafts will proceed towards publication on the Independent Submission Stream as "ETH's implementation of Scion."
+*   **Scion Interims**: No immediate panrg interim meetings are planned for Scion, as the team focuses on draft development.
+*   **IPv6 Addressing**: Presenters encouraged to engage with the V6Ops working group for operational feedback and scalability concerns.
+*   **Bottleneck Structures**: Presenters encouraged to engage with the ICCRG (Internet Congestion Control Research Group) for further discussion on optimality computation and congestion control applications.
+*   **DB-aaS**: Presenters encouraged to investigate the ALTO working group's efforts, especially regarding the integration of compute information, to potentially align or inform their approach.
+
+## Next Steps
+
+*   The Scion team will continue work on their Internet Drafts for publication.
+*   Further research and experimentation are needed on the practical deployment and operational implications of advanced IPv6 addressing schemes.
+*   Continued exploration of Bottleneck Structures, particularly in the context of partial information and distributed systems, will inform future network optimization strategies.
+*   The DB-aaS proposal will explore expanding its framework to other network services and considering safety/security implications.
+*   Engagement between these research topics and relevant IETF Working Groups (e.g., V6Ops, ICCRG, ALTO) is encouraged.
+*   The panrg will reconvene in Yokohama for future discussions.

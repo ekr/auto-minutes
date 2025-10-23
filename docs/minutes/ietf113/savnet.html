@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="savnet.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-SAVNET-20220324-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 24 Mar 2022 09:00</p>
+<h1>savnet</h1>
+<h2>Summary</h2>
+<p>This session was an exploratory Birds of a Feather (BoF) to discuss the problem of Source Address Validation (SAV) within and between Autonomous Systems (ASes) and to gauge community interest in developing new technical solutions. The discussion highlighted the limitations of existing node-level SAV mechanisms, such as various forms of uRPF, which often lead to either improper packet blocking (due to asymmetric routing or complex BGP policies) or improper packet permitting (allowing spoofed traffic within customer cones). Two potential network-level solution directions, DSAV and ISAV, were presented, aiming to overcome these limitations by establishing more accurate SAV tables or cryptographic packet tags, respectively. While community interest in addressing the problem was clear, it was decided that more discussion is needed before considering a Working Group.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Limitations of Existing SAV Mechanisms</strong>:</p>
+<ul>
+<li><strong>uRPF (Strict, Feasible, Loose)</strong>: Prone to improper blocks in the presence of asymmetric routing or complex BGP policies, and improper permits in multi-homed or customer-cone scenarios.</li>
+<li><strong>SAVI</strong>: Primarily focused on host-level validation in access networks and is insufficient when not globally deployed.</li>
+<li><strong>eFP uRPF (RFC8704)</strong>: While an enhancement, it does not fully resolve the improper block/permit issues, particularly in inter-domain contexts (e.g., Algorithm A leading to improper blocks, Algorithm B to improper permits).</li>
+<li><strong>Root Cause</strong>: Existing uRPF-based mechanisms are &quot;node-level&quot; and rely on a router's local FIB/RIB, which may not accurately reflect the real data plane forwarding path.</li>
+</ul>
+</li>
+<li>
+<p><strong>Requirements for New SAV Technology</strong>:</p>
+<ul>
+<li><strong>Accuracy</strong>: Crucial to avoid improper blocking of legitimate traffic and reduce improper permitting of spoofed traffic.</li>
+<li><strong>Network-Level Approach</strong>: Needed to build SAV tables that align with the real data plane forwarding path, independent of the local FIB/RIB.</li>
+<li><strong>Scalability</strong>: Must be efficient in computation and communication overhead for large-scale deployment.</li>
+<li><strong>Incremental Deployment</strong>: Partial deployment should still provide benefits.</li>
+<li><strong>Security</strong>: Integrity and security of protocol messages must be guaranteed.</li>
+</ul>
+</li>
+<li>
+<p><strong>DSAV (Distributed Control Plane Protocol for SAV)</strong>:</p>
+<ul>
+<li><strong>Concept</strong>: Uses a distributed control plane protocol to discover real data plane forwarding paths via hop-by-hop prefix notifications, generating accurate SAV tables in routers along these paths.</li>
+<li><strong>Mechanism</strong>: Notification messages contain a <code>Source Prefix</code> field (unchanging) and a <code>Propagation Scope</code> field (list of destination prefixes for the next hop, derived from FIB). Nodes originate, relay, or terminate messages based on their FIBs.</li>
+<li><strong>Benefits</strong>: Aims to avoid improper blocks and permits seen with uRPF in both intra- and inter-domain scenarios, allowing deployment in specific areas to protect against spoofing from outside those areas.</li>
+<li><strong>Open Questions</strong>:
+<ul>
+<li><strong>Accuracy</strong>: How to account for policy-based routing (static routes, ACL redirection) that affects forwarding paths.</li>
+<li><strong>Scalability</strong>: Compression of protocol messages (long IP lists).</li>
+<li><strong>Convergence</strong>: Handling temporary inconsistencies between FIB changes and SAV table updates; fast reroute scenarios.</li>
+<li><strong>Incremental Deployment</strong>: Support for multiple disconnected deployed areas.</li>
+<li><strong>Security</strong>: Threat model for DSAV messages.</li>
+<li><strong>Privacy</strong>: Inter-domain DSAV may expose local routing policy information, requiring a privacy/security trade-off.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>ISAV (End-to-End Data Plane Approach)</strong>:</p>
+<ul>
+<li><strong>Concept</strong>: A cryptographic-based SAV scheme where source and destination ASes perform end-to-end packet tag synchronization. Packets carry a legal tag verified by the destination.</li>
+<li><strong>Implementation</strong>: Utilizes AS Border Routers (ABRs) for data plane tag operations and AS Control Servers (ACSs) for control plane information (e.g., prefix-to-tag mapping).</li>
+<li><strong>Scalability</strong>: Achieved through a hierarchical &quot;AS Community&quot; structure, where end-to-end tags are maintained within communities, and &quot;Water ASes&quot; handle tag replacement for inter-community traffic.</li>
+<li><strong>Benefits</strong>: Aims to provide consistent security guarantees and scalability for various deployment scales.</li>
+<li><strong>Open Questions</strong>:
+<ul>
+<li><strong>Protocol Support</strong>: Viability for both IPv4 and IPv6 (IPv4 option header limitations).</li>
+<li><strong>Hierarchy Management</strong>: Distributed vs. centralized approach for community hierarchy.</li>
+<li><strong>IPv6 Extension Header</strong>: Which specific IPv6 option header to use (current design uses Destination Option Header).</li>
+<li><strong>Trust Model</strong>: How ISAV handles &quot;evil&quot; or non-participating ASes; validation mechanisms beyond community agreement.</li>
+<li><strong>Overhead</strong>: Packet processing latency (~10 µs per packet) and MTU overhead (64-bit MAC in IPv6 extension header).</li>
+<li><strong>Design Philosophy</strong>: Suggestions for static cryptographic setup over dynamic arrangements, and considering encryption alongside authentication.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>General Concerns and Community Feedback</strong>:</p>
+<ul>
+<li><strong>Trust Model</strong>: The need for clear documentation of the trust assumptions for any proposed SAV solution.</li>
+<li><strong>Cost vs. Accuracy</strong>: The perennial trade-off, with a preference for achieving high accuracy, then minimizing overhead. The complexity should ideally be comparable to routing protocols.</li>
+<li><strong>Deployment Challenges</strong>: Historical difficulties in achieving widespread deployment of SAV mechanisms, including publishing IP address space and managing topology information, often due to operational and resource constraints.</li>
+<li><strong>Scalability</strong>: A critical concern for any network-wide protocol due to the large number of nodes and potential computational demands.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: It was deemed premature to consider forming a Working Group at this time. The problem space and potential solutions require further exploration and refinement.</li>
+<li><strong>Action Item</strong>: All participants are encouraged to continue discussions and submit comments to the <code>safnet@ietf.org</code> mailing list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Further explore the identified problem space and the root causes of current SAV limitations.</li>
+<li>Deepen the technical discussion around the proposed DSAV and ISAV frameworks, addressing the open questions raised during the session.</li>
+<li>Evaluate additional potential solutions beyond those presented.</li>
+<li>Use the <code>safnet@ietf.org</code> mailing list as the primary platform for ongoing discussions to determine if another BoF is warranted, or if there is sufficient interest and maturity to propose a Working Group.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

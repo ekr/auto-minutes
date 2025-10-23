@@ -1,0 +1,59 @@
+**Session Date/Time:** 10 Nov 2021 16:00
+
+# priv Session Minutes
+
+## Summary
+
+This Birds-of-a-Feather (BoF) session explored the need and potential for an IETF Working Group focused on Privacy Preserving Measurement (PPM). The discussion highlighted the increasing necessity for collecting aggregate data (e.g., browser telemetry, public health metrics, advertising conversions) while safeguarding individual user privacy. Presenters detailed how multi-party cryptographic techniques, particularly Verifiable Distributed Aggregation Functions (VDAFs), can achieve this, differentiating them from traditional anonymization approaches. There was strong community interest in forming a working group, with significant feedback provided on the proposed charter to ensure its scope is flexible, inclusive, and addresses potential abuse cases and trust models.
+
+## Key Discussion Points
+
+*   **Problem Statement:**
+    *   Organizations need to collect aggregate data (e.g., demographics, product usage, website performance, behavioral patterns) for product development, public research, and operational insights.
+    *   This data is often highly sensitive, and traditional methods of collecting individual-level data (even with promises of non-disclosure) are failing due to data breaches and re-identification risks (e.g., using sparse, high-dimensional datasets).
+    *   The goal is to learn only aggregate statistics without ever exposing individual sensitive data.
+*   **Existing Approaches & Limitations:**
+    *   **Anonymous Measurement (e.g., OHi, Mask, IPsec, Tor):** Involves clients encrypting data to a collector, with proxies stripping metadata like IP addresses. Useful for boosting privacy of semi-sensitive data or collecting individual values.
+    *   **Limitations of Anonymization:** Not suitable for high-dimensional datasets (risk of re-identification via correlation), cross-tabulations, or "heavy hitter" problems (where revealing low-cardinality values could expose sensitive information, such as individual URLs).
+*   **Multi-Party Cryptographic Techniques (PPM - Focus of BoF):**
+    *   **Concept:** Clients split their sensitive value into two (information-theoretically secure) shares. Each share is sent to a different, non-colluding server. Servers compute partial aggregates on their shares, then combine these partial aggregates to produce the final aggregate value without any single server ever seeing an individual client's full value.
+    *   **Trust Model:** Requires that the two (or more) aggregation servers do not collude to reconstruct individual data. Clients must trust at least one server not to cheat. The collector needs both servers to behave correctly for aggregate accuracy. While challenging to verify non-collusion, this approach aims to reduce and distribute trust compared to single-party data collection.
+    *   **Verifiable Distributed Aggregation Functions (VDAFs):** These are cryptographic primitives that capture the core functionality. They ensure inputs meet certain validity criteria (e.g., a reported height is within a plausible range) using zero-knowledge proofs, preventing malicious or erroneous inputs from corrupting the aggregate.
+        *   **Prio Protocol:** For numeric aggregates (sum, mean, variance, etc.) using additive secret sharing.
+        *   **Heavy Hitters (e.g., "hits" protocol):** For identifying the most frequent strings (e.g., URLs) in a dataset without revealing less frequent ones.
+*   **Motivating Use Cases Presented:**
+    *   **Browser Telemetry (Mozilla, Google):** Collecting aggregate user interests (time spent on site topics) or identifying problematic websites (web compatibility issues, fingerprinting scripts) without logging individual browsing history.
+    *   **Public Health (ISRG):** The Exposure Notifications Private Analytics (ENPA) system, a collaboration involving Apple, Google, ISRG, and others, is a real-world deployment for COVID-19 exposure notifications. It aggregates millions of measurements per hour in 13 US states and DC, soon expanding internationally, demonstrating scalability and efficacy.
+    *   **Advertising (Google):** Measuring ad conversion and reach without relying on privacy-invasive third-party cookies. Instead, events (ad view, purchase) are processed within the browser and reported as aggregate contributions via PPM, enabling aggregate statistics for campaign analysis.
+*   **Relationship to IETF/CFRG Work:**
+    *   PPM protocols would define the framework and orchestration (e.g., built on HTTPS).
+    *   VDAFs (the underlying cryptographic primitives like Prio and Hits) are expected to be defined and standardized within the CFRG (Crypto Forum Research Group) due to their specialized cryptographic nature.
+    *   PPM is considered complementary to OHi (Oblivious HTTP), with OHi potentially used to enhance the privacy of client-to-PPM server communication.
+*   **Challenges and Trade-offs:**
+    *   Increased architectural complexity due to multiple servers.
+    *   Computational and network overhead introduced by cryptographic proofs and multi-round communication.
+    *   Less flexible than conventional telemetry; aggregations must be defined upfront.
+    *   Discussions arose about whether these solutions primarily aid "good actors" or can also curb malicious tracking; proponents clarified that platform mediation can deprecate privacy-invasive methods once robust PPM alternatives are available.
+*   **Charter Discussion Feedback:**
+    *   **Use Cases:** Strong desire to include motivating use cases within the charter for clarity.
+    *   **Scope Flexibility:** The charter's description of techniques ("splitting measurements between multiple non-colluding servers") was seen as potentially too restrictive; a more general wording is needed to allow for alternative or evolving VDAF implementations.
+    *   **Definition of Aggregation:** Request for a clearer definition of "aggregation" to encompass scenarios like training privacy-preserving machine learning models.
+    *   **Abuse Cases & Mitigations:** Emphasized the importance of documenting potential abuse cases (e.g., malicious collectors inferring individual data from small aggregates, civil attacks, manipulating opt-in mechanisms) and detailing possible mitigations within the working group's scope.
+    *   **Trust Assumptions:** Need to address how assumptions about non-collusion and server discovery/configuration are handled or documented.
+    *   **Working Group Name:** The proposed name "priv" was widely deemed confusing, overly broad, and not clearly descriptive of Privacy Preserving Measurement. A name change was strongly recommended.
+
+## Decisions and Action Items
+
+*   **Decision:** There is strong community support and critical mass of interest to form an IETF Working Group for standardizing Privacy Preserving Measurement (PPM) technologies.
+*   **Action Item (BoF Proponents/Chairs):** Revise the proposed Working Group charter based on the feedback received during the BoF session and subsequent mailing list discussion. Key revisions will include:
+    *   Generalizing the language describing the technical approach to allow for flexibility across various VDAF instantiations and techniques.
+    *   Clarifying the definition of "aggregation" to be inclusive of relevant advanced use cases (e.g., ML models).
+    *   Adding clear documentation of motivating use cases.
+    *   Incorporating work items related to analyzing and mitigating abuse cases and defining relevant threat models.
+    *   Proposing a new, more descriptive and less ambiguous name for the Working Group.
+    *   Considering how trust models and ecosystem deployment scenarios are addressed within the charter.
+
+## Next Steps
+
+*   The revised Working Group charter will be distributed and discussed on the mailing list.
+*   The work on cryptographic primitives (VDAFs) will continue in the Crypto Forum Research Group (CFRG).

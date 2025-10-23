@@ -1,0 +1,68 @@
+**Session Date/Time:** 23 Jul 2024 20:00
+
+# mimi
+
+## Summary
+
+This meeting covered updates on the MIMI protocol and architecture documents, content formats, and discussions around metadata privacy, file sharing, and abuse reporting.  Presentations were given by Richard Barnes, Rowan Mayhew, Brendan McMillion, and Conrad Cobroch. A significant portion of the discussion focused on the trade-offs between functionality and metadata privacy, particularly regarding how much information the hub server should have access to.
+
+## Key Discussion Points
+
+*   **Architecture and Protocol Updates (Richard Barnes):** Refreshed the architecture of client-server-server-client model centered around the concept of a "room." Highlighted the importance of preemption and confirmation involving the authorization policy, participant list, and MLS group state. Server-to-server communication uses mutually authenticated TLS. MLS App Sync extension is used to synchronize participant lists and room policies.
+*   **File Sharing (Richard Barnes, Rowan Mayhew, Jonathan Rosenberg, Benjamin Schwartz, Raphael Robert):** Discussed the complexities of file sharing in a federated environment, including concerns around storage location (hub vs. follower), access control, and privacy (leaking download information).  A "process download" functionality was proposed for privacy. The role of caching proxies and the potential distinction between permanent and temporary storage were debated. Existing work on Mimi Attachments was mentioned.
+*   **Metadata Privacy (Richard Barnes, Rowan Mayhew, Brendan McMillion, Conrad Cobroch):**  Addressed the tension between providing functionality (e.g., banning) that requires servers to see certain information and minimizing data exposure. Three protection levels were outlined: unencrypted, encrypted for followers only (semi-private), and fully encrypted. Existing proposals and open PRs were touched upon.
+*   **Abuse Reporting (Richard Barnes, Rowan Mayhew, Travis):**  Discussed an abuse reporting mechanism leveraging franking.  The rationale for sending reports to the hub (due to policy enforcement responsibilities) was debated. Asynchronous message franking and future work in this area, such as Hekate, were mentioned.
+*   **Content Formats (Rowan Mayhew):** Provided an update on the media content document (draft 4), which now includes seaboard structure, CDDL schema, and example documents. Open issues related to C-Bore encoding choices, a potential subject field, and Matrix extensible events were briefly discussed. Concerns about the use of an implicit message ID were raised, particularly regarding offline message composition and network connectivity issues.
+*   **Robust and Privacy Preserving DS Proposal (Brendan McMillion):** Discussed an approach to handling invalid commits in MLS groups. Addressed different types of invalid commits and introduced the concept of "boxes" to manage forked epochs. This design aims to avoid overly prescriptive DS and maintain consistency.
+*   **Feature Compatibility with Different Metadata Privacy Approaches (Conrad Cobroch):** Presented a taxonomy of metadata privacy levels.  Examined the compatibility of various features (direct invites, invite codes, bans, kicks, access control, auditorium rooms) with different approaches (MIMI-me and encrypted handshake messages). Discussed a potential two-mode system: a baseline mode with greater functionality and a limited-metadata mode for enhanced privacy.
+
+## Decisions and Action Items
+
+*   **File Sharing:** Further discussion to take place on the mailing list and in PRs regarding the file sharing proposal.
+*   **Metadata Privacy:** Decide how to allocate time to talking about the choice within the limited metadata mode
+*   **ACTION:** Add link to Raphael's Mimi Attachments draft to the chat and mailing list.
+*   **ACTION:**  Gather notes on existing abuse reporting work (e.g., Hekate) and send to the list.
+
+## Next Steps
+
+*   Hallway discussions and mailing list traffic on file sharing.
+*   Discussion of metadata privacy approaches and functionality trade-offs to continue.
+*   Determine structure of discussion on Thursday.
+
+
+---
+
+**Session Date/Time:** 25 Jul 2024 16:30
+
+# mimi
+
+## Summary
+This mimi working group meeting covered several key topics, including discovery requirements, room policy, and metadata privacy. The discussion on discovery requirements focused on authenticating mappings, user preferences, and the discovery protocol itself. The room policy segment introduced an attribute-based access control system. The metadata privacy discussion centered around a proposal for a two-level design, balancing functionality and privacy.
+
+## Key Discussion Points
+*   **Mimi Discovery Requirements:**
+    *   The discussion covered verifiable mappings between cross-service identifiers (CSI) and messaging service providers (MSP).
+    *   Concerns were raised about preventing false positives and false negatives in discovery assertions.
+    *   User preferences and how they should be handled, especially regarding multiple mappings and service selection, were discussed, with the current approach punting the majority of that decision to implementation.
+    *   The discovery protocol requirements covered request format, processing, and response structure, sparking a discussion on preference handling and the trustworthiness of discovery providers.
+    * Timeliness for mappings, especially around number re-assignment.
+*   **Mimi Room Policy:**
+    *   An attribute-based access control model was presented for managing room properties and access.
+    *   Examples of different policies (strict administration, cooperative, moderated) were given, highlighting the flexibility of the proposed system.
+    *   Concerns were raised about user impersonation.
+*   **Metadata Privacy:**
+    *   A proposal for a two-level design was presented: a baseline with clients and hub servers, and an optional pseudonymous version.
+    *   The discussion included tradeoffs between functionality and privacy, especially regarding ban enforcement and external joins.
+    *   The role of the hub provider in policy enforcement and potential delegation to external entities was discussed.
+    *   The tree wrap idea for encrypting the ratchet tree was also touched upon.
+    *   The discussion centered on which approach between pseudonym based or encrypted handshake messages was most appropriate and whether deciding on a baseline and an optional add-on were two separate questions or should be decided on at the same time.
+
+## Decisions and Action Items
+*   **Metadata Privacy:** The working group decided to proceed with the two-level design proposal for metadata privacy, with a baseline using semi-private messages to the hub server and an optional pseudonymous extension. Further confirmation will be conducted on the mailing list. The group will work on specifications for both.
+
+## Next Steps
+*   Confirm the metadata privacy decision on the mailing list.
+*   Develop separate documents for the base protocol (including semi-private messages) and the pseudonymous extension.
+*   Resume interim meetings in late August or early September.
+*   Continue discussion on discovery requirements.
+*   Reading and reviewing the current drafts and providing feedback to the mailing list.

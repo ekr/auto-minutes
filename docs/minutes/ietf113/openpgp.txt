@@ -1,0 +1,117 @@
+**Session Date/Time:** 21 Mar 2022 09:00
+
+# openpgp
+
+## Summary
+
+The OpenPGP working group session covered the status of the `draft-ietf-openpgp-crypto-refresh` document, discussing key technical changes like AAD support, certificate structure, and algorithm updates. Significant debate occurred regarding the proposed AAD mechanism and the optionality of User IDs in v5 keys. Decisions were made to solicit further working group input on these critical issues via the mailing list. Additionally, presentations were given on ongoing work for post-quantum cryptography integration, a proposed definition for end-to-end encryption, and a key transparency project, highlighting potential future directions for OpenPGP.
+
+## Key Discussion Points
+
+*   **Administrative and Design Team Update**
+    *   The session began with administrative announcements and a call for note-takers. Aaron volunteered, and a second note-taker was found.
+    *   The OpenPGP design team, formed after the working group re-chartering, has met 29 times, working to catch up on prior efforts.
+    *   The team aims to finalize a draft for Working Group Last Call (WGLC) within weeks. The design team process was deemed productive, and the chairs indicated it could be adopted for future work.
+
+*   **`draft-ietf-openpgp-crypto-refresh-05` Changes (Presented by Eustace)**
+    *   **Authenticated Encryption with Associated Data (AAD):**
+        *   Switched to a Version 2 Symmetrically Encrypted Session Key (SE SK) packet, also referred to as a Side-D Packet Version 2.
+        *   Side-D Packet v2 now includes cipher, AAD mode, and a salt.
+        *   Introduced HKDF for key derivation, providing key separation for different ciphers/AAD modes (preventing downgrade attacks) and per-message salt.
+        *   HKDF input includes session key, packet version, cipher, AAD mode, and chunk size; outputs a message key and part of the nonce.
+        *   Chunked AAD is implemented with chunk sizes as powers of two (64 bytes to 4 MB), each followed by an authentication tag. The last chunk may be truncated, and a final zero-size chunk includes plaintext length as AAD.
+        *   Implementation status: Nibiru (experimental Nupg branch) and Sequoia have implemented it. EAX support is good, GCM is problematic for interoperability, and OCB has limited support (due to past patent concerns).
+        *   A message API for replying to OpenPGP messages was also discussed as a future consideration.
+    *   **Packet Versions and Combinations:**
+        *   New Side-D Packet v2 (containing cipher and AAD mode) is incompatible with older PKESK and SESK packets.
+        *   New signature types are only compatible with new key types.
+        *   Support for new versions can be advertised in OpenPGP certificates via a feature subpacket.
+    *   **Symmetric and Secret Key Encryption:**
+        *   Version 5 SESK packets utilize the same HKDF mechanism for key separation and robust parsing.
+        *   Secret key encryption also uses the same HKDF construction, with aligned layout for robust parsing.
+    *   **Key Material Packets:**
+        *   An octet count was added to public key material, allowing conversion of v5 secret keys to v5 public keys for fingerprint computation.
+    *   **PKESK v5:** Uses recipient fingerprint instead of recipient ID; cipher is no longer included in the encrypted session key.
+    *   **Key Derivation:** Argon2id (RFC 9106) was added as a new password-based key derivation function, with configurable parameters (passes, parallelism, memory). It has been implemented by Nibiru and Sequoia.
+    *   **Signature Packet:**
+        *   Introduced a prefix salt, hashed as the first step, to defend against hash function collision attacks (e.g., SHA-1), evil web application attacks, and fault injection attacks on EDDSA (making signatures non-deterministic).
+        *   The One-Pass Signature Packet now includes the prefix salt and uses a fingerprint instead of a key ID.
+    *   **Padding Packet:** An ignored, arbitrary-length padding packet was introduced, with guidance to use random content to protect against compression layers.
+    *   **General Improvements:**
+        *   Defined Multi-Precision Integer (MPI) encoding for non-integer data, relevant for modern Elliptic Curve (EC) algorithms.
+        *   Deprecated the "old" packet format (now "legacy").
+        *   Included an "Intended Recipient" packet in signatures to bind signing and encryption contexts.
+        *   Certificates are now valid without a User ID (previously required but not bound by signature), making User IDs optional.
+        *   Tooling updates: move to Markdown, one-sentence-per-line, GitLab usage, more tables, and improved text structure.
+    *   **Algorithms:**
+        *   **Public Key (Mandatory):** EDDSA, ECDH (using Curve25519; Curve448 should be implemented).
+        *   **Ciphers (Mandatory):** AES128. Camellia ciphers added. IDEA, TripleDES, and CAST are strongly deprecated.
+        *   **AAD Mode (Mandatory):** OCB. GCM was added as a FIPS-approved AAD mode.
+        *   **Hash Algorithms (Mandatory):** SHA256 (also for fingerprint calculations). MD5, SHA1, and RIPEMD are strongly deprecated.
+    *   **Key IDs and Fingerprints:**
+        *   V5 fingerprints are 32-octet SHA2 outputs. V5 Key IDs are the leftmost 8 octets of the fingerprint.
+        *   Concern was raised that long fingerprints are less ergonomic. The current consensus is to avoid displaying fingerprints to users.
+
+*   **Discussion on AAD Mode Changes**
+    *   Werner (GnuPG) expressed strong concern, noting that the new AAD mechanism diverges from a 2018 working group agreement that led to deployed implementations (GnuPG, RNP). He views this as detrimental to OpenPGP's reliability and reputation. He suggested reverting to OCB-only AAD, citing OCB's lack of known cross-grade attacks and advocating for fewer algorithm choices.
+    *   Daniel (Proposing author) justified the changes due to a downgrade attack vulnerability in GCM (identified by Lara Brisagini) where GCM-encrypted messages could be converted to CFB, potentially leading to decryption if the CFB implementation was flawed. HKDF was chosen to provide key separation. GCM was included to offer a FIPS-approved mode.
+    *   DKG noted that fewer options are generally better, but both the current draft and Werner's proposal represent significant changes from previous iterations, driven by new cryptographic analysis.
+
+*   **Discussion on Certificate Structure and User IDs**
+    *   Daniel (Proposing author) presented a tentative proposal for v5 public keys: make User IDs and their self-signatures optional, and instead require a *direct key self-signature* to store key expiration dates and preferences. Sender identity would be signed as part of the message (e.g., email headers).
+    *   Motivation included current RFC 4880 requirements leading to undocumented conventions, and use cases for keys without User IDs (e.g., unverified keys, privacy-preserving keys). He argued that User IDs are not sufficient for key verification alone.
+    *   DKG supported the proposal, emphasizing the simplification of per-user ID preferences and the lack of reliable real-world use cases for them.
+    *   Werner countered, citing past discussions where User IDs were considered necessary, suggesting the proposal goes too far.
+
+*   **Discussion on Long Fingerprints / Human Verification**
+    *   The design team noted the difficulty of human-verifying 32-octet V5 fingerprints and had no concrete solution, suggesting "don't display to users."
+    *   Martin Arts raised concern that a lack of recommendation could lead to divergent, suboptimal UI implementations, further hindering PGP adoption.
+    *   Daniel (Proposing author) suggested alternatives like QR codes and argued against including suboptimal solutions in the spec.
+    *   Mallory (E2EE draft author) recommended examining UI/UX from popular instant messaging applications (e.g., Signal) that use long fingerprints alongside QR codes.
+    *   DKG clarified that the on-the-wire use of full fingerprints is not an issue; the problem is human interaction. He suggested that cryptographic aspects (e.g., how many bits are sufficient for human verification) might be within the current charter.
+    *   Security Area Director Roman Danyliw deferred a definitive in-scope/out-of-scope decision for this topic, requesting more internal AD and chair discussion.
+
+*   **SHA-1 Collision Detection Proposal**
+    *   DKG proposed a "retcon" for SHA-1 usage. Given that SHA-1 is still used in v4 public keys and v1 SESK (MDC packets), he suggested specifying that implementations *should* use SHA-1 collision detection (`SHA-1 CD`). This would trigger failures for known collision attacks without affecting legitimate data.
+
+*   **Post-Quantum Cryptography (PQC) in OpenPGP (Presented by Falco Schlensky)**
+    *   Falco presented a 3-year project (ending 2024), contracted by the German BSI, focused on standardizing PQC for OpenPGP based on NIST selections.
+    *   The project aims for multi-algorithm (hybrid) KEMs and signatures (lattice-based initially, implemented in Thunderbird/RNP/Botan, GnuPG/Libgcrypt).
+    *   Motivation includes addressing "store now, decrypt later" and ensuring long-term signature security in the face of quantum computing.
+    *   Design criteria: hybrid schemes for fallback, alignment with existing standards, and backward compatibility where possible.
+    *   The first draft is targeted for Q4 2022, with efforts continuing until NIST standardization concludes (end of 2023).
+    *   The project actively seeks cooperation with the OpenPGP working group, recognizing that PQC is not currently in the WG charter.
+    *   Discussion confirmed interest from UK NCSC (Flo) and ProtonMail (Daniel) in collaborating on PQC schemes and implementations.
+
+*   **Definition of End-to-End Encryption (E2EE) (Presented by Mallory Notal)**
+    *   Mallory presented `draft-notal-e2ee-definition`, aiming to provide a clear, authoritative definition of E2EE systems and communications.
+    *   The draft originated in the MLS WG, moved to dispatch, and now has a dedicated mailing list (e2ee@ietf.org).
+    *   Key outcomes sought: prevent mislabeling of non-E2EE systems, provide a common definitional text for other drafts, and harmonize norms.
+    *   The approach defines E2EE directly, without invoking threat models or explaining what it is not.
+    *   The draft is structured in three parts: formal definition (what is an "end," encryption principle), developer's perspective (features, challenges), and user expectations.
+    *   Recent changes (draft-02) expanded the formal definition and addressed "identity vs. endpoint."
+    *   Reviews were requested, particularly on metadata reduction and completeness of E2EE features (e.g., PFS, deniability, disappearing messages).
+
+*   **Key Transparency for OpenPGP (Presented by Aaron)**
+    *   Aaron presented a key transparency project developed at ProtonMail, offering an automated alternative to manual key verification (like key signing parties or the web of trust).
+    *   The problem addressed is key authenticity, as trusting User IDs alone is insufficient, and WKD servers can be single points of failure.
+    *   The solution uses Merkle trees to create verifiable "screenshots" of keys over time, based on CONIKS and Google's Key Transparency. This allows users to verify their keys are consistently published and auditors to ensure tree consistency.
+    *   ProtonMail is the initial implementer, but the system is designed for wider adoption (e.g., keys.openpgp.org).
+    *   It uses Verifiable Random Functions (VRFs) to map addresses to leaves, preventing manipulation.
+    *   The system augments WKD for better key safety and could be integrated into OpenPGP keys.
+    *   Discussion covered the choice of data at the leaves (initially fingerprints, but ProtonMail's implementation uses a "science list" with subkey info and usage flags) and how to ensure the authenticity of submitted keys (binding to WKD and domain ownership provides stronger guarantees and enables historical auditing).
+
+## Decisions and Action Items
+
+*   **AAD Mode Discussion:** Chairs will start a mailing list thread to discuss the working group's preference between the AAD mechanism in `draft-ietf-openpgp-crypto-refresh-05` and Werner's proposal (OCB-only, reverting recent AAD changes).
+*   **Certificate Structure / User IDs:** Chairs will start a mailing list thread to discuss Daniel's tentative proposal for v5 keys (optional User IDs, required direct key self-signatures) versus documenting or requiring the status quo (RFC 4880 conventions).
+*   **SHA-1 Collision Detection:** Chairs will start a mailing list thread to gather feedback on the proposal to recommend SHA-1 collision detection (`SHA-1 CD`) for existing SHA-1 usages in the draft.
+*   **Key Transparency Data Format:** Aaron was requested to elaborate on the specific flexibility needed for his key transparency project that isn't already covered by the OpenPGP public key format.
+*   **E2EE Definition Review:** Working group members are encouraged to read `draft-notal-e2ee-definition` and provide comments on the e2ee@ietf.org mailing list, especially regarding metadata reduction and the completeness of E2EE features.
+
+## Next Steps
+
+*   The OpenPGP design team plans to quickly resolve the identified issues from this meeting and aim for a draft ready for Working Group Last Call (WGLC) within weeks.
+*   After the WGLC, the working group will consider re-chartering to address ongoing issues like human-verifiable fingerprints and the integration of post-quantum cryptography.
+*   Working group members are encouraged to review the `draft-ietf-openpgp-crypto-refresh-05` document and actively participate in the upcoming mailing list discussions on the critical topics identified.
+*   The PQC and Key Transparency presentations highlighted significant work that could inform future re-chartering efforts for the OpenPGP working group.
