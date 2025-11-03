@@ -67,7 +67,7 @@ export async function getCachedMeetingNumbers() {
         return match ? parseInt(match[1], 10) : null;
       })
       .filter((num) => num !== null)
-      .sort((a, b) => a - b);
+      .sort((a, b) => b - a); // Descending order
 
     return meetingNumbers;
   } catch (error) {
@@ -311,7 +311,7 @@ export async function generateRootIndex(destPath = "site/index.md") {
         return match ? parseInt(match[1], 10) : null;
       })
       .filter((num) => num !== null)
-      .sort((a, b) => a - b); // Numerical order
+      .sort((a, b) => b - a); // Descending numerical order
   } catch (error) {
     console.warn("Could not read cache/output directory:", error.message);
   }

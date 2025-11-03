@@ -38,7 +38,8 @@ npm start <meeting-number>
   - `main()` - CLI entry point, handles arguments and coordinates the workflow
 
 - **src/scraper.js** - IETF datatracker interaction
-  - `fetchMeetingSessions(meetingNumber)` - Parses proceedings page to extract session info
+  - `fetchSessionsFromProceedings(meetingNumber)` - Parses proceedings page to extract session info
+  - `fetchSessionsFromAgenda(meetingNumber)` - Parses Meetecho agenda page to extract session info
   - `downloadTranscript(url)` - Downloads plaintext transcripts
 
 - **src/generator.js** - Gemini API integration

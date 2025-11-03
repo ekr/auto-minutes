@@ -35,7 +35,7 @@ async function ietfFetch(url) {
  * @param {number} meetingNumber - The IETF meeting number
  * @returns {Promise<Array>} Array of session objects with name, group, and transcript URL
  */
-export async function fetchMeetingSessions(meetingNumber) {
+export async function fetchSessionsFromProceedings(meetingNumber) {
   let html;
 
   // Fetch from server
@@ -100,6 +100,60 @@ export async function fetchMeetingSessions(meetingNumber) {
       sessionName: sessionName,
       sessionId: sessionId,
       recordingUrl: href,
+    });
+  });
+
+  return sessions;
+}
+
+/**
+ * Fetches the recordings page from Meetecho for a given IETF meeting
+ * @param {number} meetingNumber - The IETF meeting number
+ * @returns {Promise<Array>} Array of session objects with name, group, and recording URL
+ */
+export async function fetchSessionsFromAgenda(meetingNumber) {
+  const url = `https://www.meetecho.com/ietf${meetingNumber}/recordings/`;
+  const response = await ietfFetch(url);
+  const html = await response.text();
+
+  const $ = cheerio.load(html);
+
+  const sessions = [];
+
+  // Find all rows in the recordings table (skip the header row)
+  $('#recsTable tr').each((i, elem) => {
+    const row = $(elem);
+    const cells = row.find('td');
+
+    // Skip header rows or rows without proper cells
+    if (cells.length < 3) {
+      return;
+    }
+
+    const sessionName = cells.eq(0).text().trim();
+    const dateTime = cells.eq(1).text().trim();
+    const recordingLink = cells.eq(2).find('a');
+    const recordingUrl = recordingLink.attr('href');
+
+    if (!sessionName || !recordingUrl) {
+      return;
+    }
+
+    // Extract session ID from the recording URL
+    // URL format: https://meetecho-player.ietf.org/playout/?session=IETF123-6LO-20250723-0730
+    const url = new URL(recordingUrl);
+    const sessionId = url.searchParams.get('session');
+
+    if (!sessionId) {
+      console.warn(`No session ID found in URL: ${recordingUrl}`);
+      return;
+    }
+
+    sessions.push({
+      sessionName: sessionName,
+      sessionId: sessionId,
+      recordingUrl: recordingUrl,
+      dateTime: dateTime,
     });
   });
 

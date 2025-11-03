@@ -6,7 +6,7 @@
 import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { fetchMeetingSessions, downloadTranscript } from "./scraper.js";
+import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript } from "./scraper.js";
 import { initializeClaude, generateMinutes } from "./generator.js";
 import {
   saveMinutes,
@@ -53,7 +53,7 @@ async function generateSessionMinutes(meetingNumber, session) {
 
   // Generate minutes using LLM
   console.log(`  Generating minutes with LLM: ${session.sessionId}`);
-  const minutes = await generateMinutes(transcript, session.sessionName);
+  const minutes = await generateMinutes(transcript, session.sessionName, verbose);
 
   // Save to cache
   await saveCachedMinutes(meetingNumber, session.sessionId, minutes);
@@ -113,6 +113,7 @@ async function main() {
   const argv = yargs(hideBin(process.argv))
     .usage("Usage: $0 [options]")
     .example("$0 --summarize 123", "Generate LLM summaries for IETF 123")
+    .example("$0 --summarize 123 --source agenda", "Fetch sessions from Meetecho agenda")
     .example("$0 --output", "Generate output markdown files from cache")
     .example("$0 --summarize 123 --output", "Generate summaries and output")
     .example("$0 --build", "Build site with 11ty (outputs to _site/)")
@@ -151,6 +152,12 @@ async function main() {
       type: "boolean",
       description: "Run with verbose output",
     })
+    .option("source", {
+      type: "string",
+      choices: ["proceedings", "agenda"],
+      default: "proceedings",
+      description: "Source to fetch sessions from (proceedings or agenda)",
+    })
     .check((argv) => {
       if (!argv.summarize && !argv.output && !argv.build && !argv.pages) {
         throw new Error(
@@ -170,6 +177,7 @@ async function main() {
   const doBuild = argv.build || argv.pages;
   const doPages = argv.pages;
   const model = argv.model;
+  const source = argv.source;
 
   // Check for appropriate API key based on model (only needed for summarize)
   if (doSummarize) {
@@ -200,8 +208,9 @@ async function main() {
       console.log(`Using ${model} model...`);
 
       // Step 1: Fetch all sessions for the meeting
-      console.log("Fetching session list...");
-      const sessions = await fetchMeetingSessions(meetingNumber);
+      const fetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
+      console.log(`Fetching session list from ${source}...`);
+      const sessions = await fetchFunction(meetingNumber);
       console.log(`Found ${sessions.length} sessions`);
 
       if (verbose) {

@@ -32,9 +32,10 @@ export function initializeGemini(apiKey) {
  * Generate meeting minutes from a transcript using the configured model
  * @param {string} transcript - The meeting transcript text (JSON format)
  * @param {string} sessionName - Name of the session
+ * @param {boolean} verbose - Whether to log verbose status information
  * @returns {Promise<string>} Generated minutes in Markdown format
  */
-export async function generateMinutes(transcript, sessionName) {
+export async function generateMinutes(transcript, sessionName, verbose = false) {
   const prompt = `You are an expert technical writer for the IETF. Convert the following meeting transcript into well-structured meeting minutes in Markdown format. It should contain an account of the discussion including any decisions made.
 
 Session: ${sessionName}
@@ -55,6 +56,13 @@ ${transcript}
 
 Generate the meeting minutes:`;
 
+  if (verbose) {
+    console.log(`    [LLM] Model: ${currentModel}`);
+    console.log(`    [LLM] Transcript: ${transcript.length} chars, Prompt: ${prompt.length} chars`);
+    console.log(`    [LLM] Sending API request...`);
+  }
+
+  const startTime = Date.now();
   let generatedText;
 
   if (currentModel === "claude") {
@@ -76,6 +84,10 @@ Generate the meeting minutes:`;
     });
 
     generatedText = message.content[0].text;
+
+    if (verbose) {
+      console.log(`    [LLM] Tokens: ${message.usage.input_tokens} in, ${message.usage.output_tokens} out`);
+    }
   } else if (currentModel === "gemini") {
     if (!gemini) {
       throw new Error(
@@ -87,10 +99,23 @@ Generate the meeting minutes:`;
     const result = await model.generateContent(prompt);
     const response = result.response;
     generatedText = response.text();
+
+    if (verbose) {
+      const usage = response.usageMetadata;
+      if (usage) {
+        console.log(`    [LLM] Tokens: ${usage.promptTokenCount || 'N/A'} in, ${usage.candidatesTokenCount || 'N/A'} out`);
+      }
+    }
   } else {
     throw new Error(
       "No model initialized. Call initializeClaude() or initializeGemini() first.",
     );
+  }
+
+  const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+
+  if (verbose) {
+    console.log(`    [LLM] Completed in ${duration}s, generated ${generatedText.length} chars`);
   }
 
   return cleanMarkdownCodeFence(generatedText);
