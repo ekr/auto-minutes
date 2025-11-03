@@ -1,0 +1,100 @@
+**Session Date/Time:** 29 Jul 2022 16:30
+
+# scim
+
+## Summary
+
+The SCIM working group session at IETF 114 covered updates on the recently adopted SCIM Events draft and a new Use Cases document. A significant portion of the session was dedicated to reviewing existing drafts (cursor-based pagination, multi-valued attribute pagination, soft deletion, roles/entitlements) and introducing new topics (change detection, HR schema, account status context, reference URL improvements, security profile). A primary technical discussion revolved around different approaches to data synchronization and change notification, specifically comparing event-based mechanisms (SCIM Events) with polling-based methods (cursor-based pagination and delta queries), and the need for the working group to align on these strategies.
+
+## Key Discussion Points
+
+*   **SCIM Use Cases Document Update**:
+    *   A new Use Cases document in HackMD format was presented.
+    *   It defines terminology not found in RFCs 7643/7644 (e.g., SCIM Service Provider, SCIM Client, SCIM Schema, SCIM Protocol), industry definitions, concepts (units of work), and business scenarios (end-to-end activities).
+    *   The document will be published to the data tracker soon for review and feedback on the mailing list.
+
+*   **Editor's Role for SCIM Schemas and Protocols**:
+    *   Danny Zolner and Janelle are volunteering as editors for updates and additions to SCIM schemas and protocols.
+
+*   **Existing Drafts (Discussion for Adoption/Feedback)**:
+    *   **Cursor-Based Pagination (Draft)**:
+        *   Matt Peterson's expired draft was discussed, proposing `cursor`, `count`, `nextCursor`, `previousCursor` parameters.
+        *   **Use Case**: Traversing very large result sets (millions of entries) for massive scale operations.
+        *   Comparison with SCIM Events approach was noted, to be discussed further.
+    *   **Multi-Valued Attribute Pagination and Filtering (Draft)**:
+        *   Phil Hunt's draft extends complex multi-value attribute sub-attribute filtering to the `attributes` parameter, allowing paging of attribute values (e.g., members of a large group) rather than resources.
+        *   **Complexity**: Determining total number of rows.
+        *   Alternative proposal by Matt Peterson: Represent group memberships as new top-level resources (`/groupMemberships`, `/userGroups`) to leverage existing resource pagination logic.
+    *   **Soft Deletion (Draft)**:
+        *   Discussed Morteza Cortez's expired draft, introducing an `isSoftDeleted` attribute and query parameter.
+        *   **Problem**: Current SCIM protocol (RFC 7644) dictates a 404 for deleted resources. This draft aims to override that behavior to query soft-deleted resources.
+        *   **Concerns**: Security implications (trolling old links, access control for soft-deleted data), need for clear distinction and definition of "soft delete" vs. "hard delete," and server capability.
+        *   **Use Case**: User lifecycle management, allowing resurrection of users while maintaining resource identifiers.
+    *   **Roles and Entitlements (Draft)**:
+        *   Danny Zolner's draft (v02 recently published) adds `/roles` and `/entitlements` resource types.
+        *   **Purpose**: Enable SCIM clients to discover available role/entitlement values, especially in multi-tenanted SaaS applications where these values are customizable.
+        *   **Features (v02)**: Support for hierarchy of roles/entitlements and numerical availability (e.g., licensed seats).
+
+*   **New Topics (No Drafts Yet)**:
+    *   **Change Detection / Delta Query**:
+        *   **Use Case**: Accurate tracking of data changes for large-scale data manipulation, particularly in pull-based scenarios (e.g., HR providers).
+        *   **Limitations of `meta.lastModified`**: Time drift in distributed systems.
+        *   **Proposal**: `deltaToken` parameter for `GET` requests (e.g., `GET /users?deltaToken=...`).
+        *   **Industry Precedent**: Other REST APIs use delta query mechanisms.
+    *   **Human Resources Schema**:
+        *   **Goal**: A unified, generic HR schema for SCIM to standardize data labeling across HR providers.
+        *   **Need**: Significant involvement from HR system implementers to ensure accuracy and utility.
+    *   **Account Status Context**:
+        *   **Proposal**: Expand the `active` boolean attribute with a complex `accountStatus` attribute to represent granular user states (e.g., pre-hire, on leave (paid/unpaid), terminated).
+        *   **Alignment**: Desire to align with states from the Shared Signals community.
+    *   **Reference URLs Improvement**:
+        *   **Problem**: Inadequate specification for handling `Reference` data types, especially for URLs (e.g., `photos` attribute).
+        *   **Concerns**: Hotlinking performance/cost, security of URLs (ensuring only authorized SCIM Service Providers can access).
+        *   **Current Spec**: Silent on security/post-provisioning behavior, leaving it to implementers, leading to inconsistent or insecure practices.
+        *   **Potential Solutions**: Embedded data (data URIs), trusted proxies, or clearer security considerations.
+    *   **Security Profile**:
+        *   **Goal**: Tighten SCIM security aspects, updating for post-2015 internet landscape.
+        *   **Proposals**: Strongly discourage basic authentication, re-evaluate or strongly advise against the `password` attribute on the user resource.
+        *   **Current Spec**: Already advises against basic auth ("should be avoided").
+        *   **Debate**: Removal of `password` attribute is complex, as some use cases (e.g., acting as a directory for OpenID providers) exist. Broader discussion on credential schema and MFA.
+
+*   **Coordination Use Cases: Paging vs. Events (Core Debate)**:
+    *   **Phil Hunt's Presentation (Events Perspective)**:
+        *   **Overall Scenario**: Independent administrative domains with lifecycle relationships (e.g., employee termination) requiring coordination.
+        *   **Cursor Paging**: Periodically polling for logical copies of entire database for reconciliation.
+            *   **Concerns**: High raw cost for billions of users, high data exposure, potential server thrashing/memory issues for service providers with many tenants. Max results should limit total, not page, results.
+        *   **Event-Based System (SCIM Events)**: Server issues security event tokens (JOTs) in real-time through a message bus or SET Transfer Protocol.
+            *   **Benefits**: Near real-time change notices, minimal information sharing (notice of ID change, client fetches if needed), support for async signaling (bulk completion), security events (risk signals).
+            *   **Design**: Receiver decides what action to take; publisher's responsibility for event persistence is limited post-acknowledgment.
+        *   **Additional Use Cases for Events**: Bootstrap/Recovery (cross-domain), Internal Domain Replication (all information), Bi-directional Event Coordination (moving away from master/slave), Risk Sharing Events (password reset, suspicious activity).
+    *   **Danny Zolner's Response (Pagination Perspective)**:
+        *   **Pagination Benefit**: For a limited period, a cursor can be replayed if a receiver has infrastructure problems (VM failure, etc.), aiding recovery.
+        *   **Infrastructure Simplicity**: Cursor-based pagination is simpler to implement for a SCIM Service Provider than setting up a full shared signals processing infrastructure.
+        *   **Native Support**: Many identity databases natively support cursor-based pagination.
+        *   **Combined Approach**: Cursor-based pagination *with* a delta query mechanism (similar to LDAP changelog but without its security pitfalls) for large-scale changes.
+        *   **Events Use Case (Narrower)**: High-priority, urgent communications (e.g., immediate termination notice from HR) where polling is too slow.
+    *   **Community Input (Ling and others)**:
+        *   Many believe **both** cursor-based pagination and events have unique use cases and are needed. Event publishing should be the primary mechanism for efficient data sync, but pagination serves other needs.
+        *   **Implementation Pattern**: Implementers often start with search/cursor-based pagination due to immediate use cases, and later add event channels for real-time needs or scalability issues.
+        *   **Overhead**: Question posed to implementers/deployers if they are willing to absorb the overhead of supporting both mechanisms.
+        *   **Fallback**: Full export/import is sometimes still necessary to resolve complex data stream issues.
+    *   **Phil's Counterpoints**:
+        *   HTTP E-tags (RFC 7232) and `meta.lastModified` attribute (with some temporal padding) already offer existing mechanisms for change detection at a resource or collection level, respectively, without new specs.
+        *   Concern that if paging is offered, event signaling will be neglected, leading to interoperability issues as half the community adopts one, half the other.
+
+## Decisions and Action Items
+
+*   **SCIM Events Draft Adoption**: The working group has adopted the SCIM Events draft. Nancy and Mike have volunteered as co-authors; others are welcome.
+*   **Use Cases Document**:
+    *   To be published to the data tracker soon.
+    *   Solicit review and feedback on the mailing list.
+*   **Existing Drafts (Pagination, Multi-value Pagination, Soft Delete, Roles/Entitlements)**: Authors are encouraged to post to the mailing list and solicit feedback/comments from the community to gauge interest for adoption calls. Chairs will look for at least three non-author individuals to provide constructive feedback.
+*   **Pagination vs. Events Comparison Chart**: Phil Hunt, Danny Zolner, and Matt Peterson (if available) are encouraged to update the comparison chart to include all options and their respective pros/cons, to facilitate further discussion.
+*   **Mailing List Discussion**: A question will be formally posed to the mailing list: Are implementers and deployers willing to absorb the overhead of supporting both cursor-based pagination and event-based notification mechanisms, given their respective use cases and the desire for interoperability?
+
+## Next Steps
+
+*   The Chairs will update the working group milestones, potentially stretching out the timeline for the Use Cases document if it remains a living document.
+*   The Chairs will discuss whether the future SCIM protocol and schema extensions will be one or several drafts.
+*   An interim meeting will be scheduled, likely in September, with a Doodle poll to determine the date.
+*   The working group looks forward to IETF 115 in London.

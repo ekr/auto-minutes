@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="netmod.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-NETMOD-20211111-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 14:30</p>
+<h1>netmod</h1>
+<h2>Summary</h2>
+<p>The netmod session at IETF 112 covered administrative updates, including document status and the importance of using the mailing list for consensus. Key technical discussions included the status of the YANG versioning drafts, with <code>ietf-yang-module-versioning</code> and <code>ietf-yang-semantic-versioning</code> declared ready for Working Group Last Call. The <code>ietf-yang-packages</code> draft presented progress on addressing open issues, particularly around schema mount functionality and resolving duplication with existing module list mechanisms. A new individual draft on system-defined configuration introduced concepts for managing system-level configuration, leading to significant discussion on backward compatibility, running configuration validity, and origin tracking. Finally, a presentation on extending ACLs (RFC 8519) highlighted functional gaps and sought working group guidance on the approach to enhancements (augmentation vs. revision) and the scope of network-wide ACL management.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrative &amp; Document Status:</strong></p>
+<ul>
+<li>The <code>c-camp</code> document on the agenda is expected to remain within the C-CAMP WG.</li>
+<li>Several post-last call documents require author updates, including one returned to the WG for reference alignment.</li>
+<li>The <code>no-tags</code> draft requires an update from authors.</li>
+<li>The <code>enum-bits</code> draft is nearing Working Group Last Call, pending any immediate additions identified by the WG by December.</li>
+<li><code>versioning-requirements</code> is awaiting progress on other versioning work.</li>
+<li>Emphasis was placed on using the mailing list for consensus building for WG documents, even if authors agree to changes offline.</li>
+</ul>
+</li>
+<li>
+<p><strong>YANG Versioning (<code>ietf-yang-module-versioning</code>, <code>ietf-yang-semantic-versioning</code>):</strong></p>
+<ul>
+<li>Weekly meetings are ongoing and open to all.</li>
+<li><code>ietf-yang-module-versioning</code> (draft-ietf-netmod-module-versioning-05) received editorial updates and minor corrections; no major functional changes.</li>
+<li><code>ietf-yang-semantic-versioning</code> (draft-ietf-netmod-yang-semver-05) includes full author reviews, defines usability for submodules (submodule version change requires module version change, similar to revision dates), and has a shortened/unique YANG module prefix.</li>
+<li>Authors believe both drafts are ready for Working Group Last Call.</li>
+</ul>
+</li>
+<li>
+<p><strong>YANG Packages (<code>ietf-yang-packages</code>):</strong></p>
+<ul>
+<li>Checksum definitions were removed for consistency with <code>module-versioning</code>.</li>
+<li><strong>Open Issues:</strong> 20 open issues, with owners assigned.</li>
+<li><strong>Refining Text (Issue 65):</strong> Needs alignment with stable YANG versioning drafts, especially regarding semantic version labels.</li>
+<li><strong>Schema Mount Functions:</strong> The draft currently lacks schema mount definitions. Authors propose packages could contain modules with mount points and define constraints (e.g., <code>ietf-basic-package</code> restricting to L2/L3 VPNs). Initial rules were proposed for constraints, overriding, and including allowable packages.</li>
+<li><strong>Module List Duplication:</strong> A key concern was duplication of module list functionality with existing mechanisms (e.g., NETCONF <code>hello</code>, <code>NETCONF monitoring</code>, <code>yang-library</code> RFC 7950/8834). Discussion is ongoing on how to remove this duplication.</li>
+</ul>
+</li>
+<li>
+<p><strong>System Defined Configuration (<code>system-defined-configuration</code>):</strong></p>
+<ul>
+<li>This individual draft, based on prior discussions, aims to improve visibility, convenience, configurability, and client control of system configuration.</li>
+<li><strong>Proposed Solution:</strong>
+<ul>
+<li>A mandatory <code>with-system</code> parameter for <code>get</code>/<code>get-config</code> to retrieve combined <code>running</code> and <code>system</code> configuration.</li>
+<li>An optional <code>system</code> datastore, read-only for clients, with dynamic content.</li>
+<li><code>intended</code> configuration would be created by <code>system</code> being overwritten/extended by <code>running</code>.</li>
+</ul>
+</li>
+<li><strong>Key Open Issues:</strong>
+<ul>
+<li><strong><code>running</code> configuration validity:</strong> A fundamental question of whether <code>running</code> must always be a valid configuration tree (as per RFC 7950/8342). Concerns about backward compatibility for offline validation vs. proposed online/offline validation approaches.</li>
+<li><strong>Immutable flag:</strong> Discussion on defining a flag to indicate read-only system configuration.</li>
+<li><strong><code>with-origin</code> for <code>intended</code>:</strong> Whether to expose origin information (system or running) to clients when retrieving from <code>intended</code>.</li>
+<li><strong><code>origin=system</code> for copied configuration:</strong> If system configuration is explicitly copied into <code>running</code>, should its origin remain <code>system</code> or be treated as client-configured? This relates to the behavior of <code>with-defaults</code> in explicit mode.</li>
+</ul>
+</li>
+<li>Concern was raised about potential incompatible redefinition of RFC 7950/8342, suggesting an alternative <code>without-system</code> flag approach for normal operation. The issue of backward compatibility for clients unaware of system information was highlighted.</li>
+</ul>
+</li>
+<li>
+<p><strong>Extensions of ACLs (RFC 8519):</strong></p>
+<ul>
+<li>The draft proposes enhancements to the <code>ietf-acl</code> YANG model (RFC 8519) based on operational experience.</li>
+<li><strong>Limitations of RFC 8519:</strong> Design makes some extensions via augmentation complicated, potentially requiring redefinition.</li>
+<li><strong>Functional Gaps Identified:</strong>
+<ul>
+<li>Lack of manipulating lists of prefixes (currently one prefix per entry), leading to sub-optimal configuration for many-to-many rules.</li>
+<li>Inability to define aliases or sets (e.g., prefix sets, protocol sets, port sets, ICMP sets) for reuse across ACLs.</li>
+<li>Sub-optimal handling of IPv4 fragments and TCP flags (e.g., no bitmasking for multiple flags).</li>
+<li>Limited actions (accept/discard); desire for rate-limited or payload-based filtering.</li>
+<li>RFC 8519 is a device model, but there's a need for network-level ACL management (e.g., central management, reusing templates across multiple devices).</li>
+</ul>
+</li>
+<li><strong>Guidance Sought:</strong> Working Group guidance was requested on the best approach for enhancements: a new version of the ACL model (minimizing breaking changes) or augmenting the existing model. Also, how to handle a separate module for network-wide ACLs/sets (in netmod or elsewhere).</li>
+<li>The proposed functionality is stateless.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>YANG Versioning Drafts:</strong>
+<ul>
+<li><strong>Decision:</strong> The chairs will initiate a Working Group Last Call for <code>ietf-yang-module-versioning</code> and <code>ietf-yang-semantic-versioning</code>.</li>
+<li><strong>Decision:</strong> These drafts will be held within the working group until all five versioning-related drafts are ready for IESG processing.</li>
+</ul>
+</li>
+<li><strong>Post-Last Call Document:</strong> Authors of the document returned to the WG are expected to align it with reference documents. Others wishing to help should contact authors and cc the netmod chairs.</li>
+<li><strong><code>enum-bits</code> Draft:</strong>
+<ul>
+<li><strong>Action Item:</strong> Working Group members are requested to review <code>enum-bits</code> by December and propose any immediate additions to the mailing list. If no significant issues or additions are identified, the chairs will move it to Working Group Last Call.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong><code>ietf-yang-packages</code>:</strong> Authors to continue working on the 20 open issues, including proposals for schema mount functionality and addressing module list duplication.</li>
+<li><strong><code>ietf-yang-packages</code> (Chairs Request):</strong> Authors are requested to post weekly meeting topics to the mailing list to facilitate broader participation.</li>
+<li><strong>System Defined Configuration:</strong> Authors to update the draft with more concrete technical proposals regarding running configuration validity, origin tracking, and backward compatibility. Continued discussion on the mailing list is encouraged, with potential for another interim meeting if interest remains high.</li>
+<li><strong>ACL Extensions:</strong> Authors to update the draft with detailed proposals on how to implement the identified enhancements, including specific proposals for augmenting or revising RFC 8519, and a more concrete design for the network-level ACL module. Discussion will continue on the mailing list.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

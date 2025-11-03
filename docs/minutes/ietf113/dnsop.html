@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dnsop.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-DNSOP-20220322-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 22 Mar 2022 09:00</p>
+<h1>dnsop</h1>
+<h2>Summary</h2>
+<p>The dnsop working group session began with administrative announcements, including the publication of two RFCs (DNSSEC IANA Considerations and DNS TCP Requirements) and an update on the SVCB/HTTPS Service Binding draft's progress through the IESG call. Chairs announced a readiness to adopt new work, having cleared a backlog of existing documents. An initial survey indicated strong interest in DNSSEC Bootstrapping and DNSSEC Automation drafts, for which a call for adoption will be initiated soon. The Area Director requested the working group to prioritize a BCP document on DNSSEC, suggesting a fast-track approach.</p>
+<p>The session featured presentations of six new drafts:</p>
+<ol>
+<li><strong>Negative Caching of DNS Resolution Failures</strong>: Proposing stricter requirements for resolvers to cache resolution failures.</li>
+<li><strong>Glue is Not Optional</strong>: Clarifying requirements for name server implementations regarding glue records, particularly distinguishing in-domain and sibling glue.</li>
+<li><strong>DNSSEC DANE for SVCB and HTTPS RRs</strong>: Integrating DANE with new SVCB/HTTPS records and QUIC, addressing CNAME handling and transport prefix labels.</li>
+<li><strong>DNSSEC Dry Run</strong>: Introducing a mechanism for testing DNSSEC deployments without user-visible failures, leveraging a new DS algorithm type.</li>
+<li><strong>Expressing Communication Service Requirements in DNS Queries</strong>: Suggesting a method to encode Quality of Service (QoS) requirements directly into DNS query names.</li>
+<li><strong>Structured DNS Error Page</strong>: Proposing the use of structured JSON within Extended DNS Errors (EDE) for better reporting of DNS filtering and blocking.</li>
+</ol>
+<p>All presented drafts are candidates for future working group adoption and will be included in an upcoming survey to gauge and prioritize working group interest.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>New Work Adoption Strategy</strong>: Chairs outlined a two-phase approach for new work: an immediate call for adoption for DNSSEC Bootstrapping and DNSSEC Automation, followed by a broader survey for other drafts, including those presented in this session, to prioritize future work.</li>
+<li><strong>DNSSEC BCP Priority</strong>: The Area Director, Warren Kumari, urged the working group to fast-track the development of a DNSSEC Best Current Practice (BCP) document, emphasizing its importance and aiming to avoid the administrative overhead of a separate, short-lived working group.</li>
+<li><strong>Multi-signer DNSSEC Automation (Ulrich W.)</strong>: A special request highlighted the problem of requiring multiple DNSSEC signers to support identical algorithms, which hinders domain migration and deployment for smaller entities. It was noted that current RFCs requiring signatures of all algorithms in a DNSKEY set are problematic in such scenarios, necessitating adjustments to DNSSEC RFCs.</li>
+<li><strong>Negative Caching of DNS Resolution Failures (Dwayne W.)</strong>: The draft proposes strengthening requirements for recursive resolvers to cache various resolution failures (timeouts, SERVFAIL, REFUSED, DNSSEC validation failures) for a minimum of 5 seconds (up to 5 minutes) to prevent excessive query retries during outages. It also recommends exponential backoff and limiting retries to twice (three queries total). Discussion centered on making exponential backoff a &quot;MUST&quot; requirement and the impact on large recursive operators with many backend servers.</li>
+<li><strong>Glue is Not Optional (Dwayne W.)</strong>: The draft clarifies that its requirements apply to name server software, not registry operations. It proposes rephrasing &quot;glue&quot; to &quot;referral glue&quot; and suggests that sibling glue could be optional if message size constraints are hit, while in-domain glue remains required. Discussions focused on the appropriate terminology for &quot;glue&quot; (with a strong preference for definition in the DNS Terminology document) and the implications for registry operations.</li>
+<li><strong>DNSSEC DANE for SVCB and HTTPS RRs (Ben S.)</strong>: The draft proposes integrating DANE with SVCB/HTTPS records and QUIC, treating SVCB output (target, transport, port) as input for standard DANE. It suggests simplifying DANE by having a single reference identity for validation and updating RFC 6698 transport prefixes to clarify their meaning for DTLS/QUIC. Concern was raised about the DANE CNAME handling and the implications for certificate ownership and management.</li>
+<li><strong>DNSSEC Dry Run (Willem T.)</strong>: This draft introduces a new DS algorithm type to enable DNSSEC dry runs, allowing operators to test deployments and receive EDE reports without impacting end-users. Resolvers would first attempt validation with the dry-run DS; if validation fails, a report is sent, and validation is retried without the dry-run DS. Concerns included registry provisioning challenges (e.g., variable hash lengths, EPP signaling) and whether adding more complexity to resolvers is preferable over pushing EDE adoption. A &quot;meta digest type&quot; for DS records was suggested as an alternative to avoid polluting the DS algorithm space with specific &quot;fake&quot; types.</li>
+<li><strong>Expressing Communication Service Requirements in DNS Queries (Donald E.)</strong>: The draft proposes encoding QoS requirements (e.g., minimum latency, maximum bandwidth) within DNS QNAMES using new RLDH labels (e.g., <code>qs--</code>). This aims to allow applications to indirectly achieve QoS without direct awareness, potentially through &quot;semantic addresses.&quot; Discussion questioned whether SVCB records might be a more appropriate mechanism and how a DNS query could realistically influence network path QoS.</li>
+<li><strong>Structured DNS Error Page (Thiru C.)</strong>: The draft suggests using an extra text field within the EDNS Extended Error (EDE) option to convey structured JSON data about DNS filtering or blocking. While initially designed for user-facing error pages, a key concern was the security implications of a resolver directing a client to an arbitrary web page. The authors clarified that error pages are optional, and machine-readable fields for user agent display are prioritized. The working group indicated a preference for truly machine-readable information, with optional user-facing components handled safely by the client.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<p><strong>Decisions:</strong></p>
+<ul>
+<li>No new work was formally adopted during this meeting. All new drafts presented will be part of an upcoming working group survey to gauge interest for adoption.</li>
+</ul>
+<p><strong>Action Items:</strong></p>
+<ul>
+<li><strong>Chairs</strong>:
+<ul>
+<li>Initiate a call for adoption survey later this week for the &quot;DNSSEC Bootstrapping&quot; and &quot;DNSSEC Automation&quot; drafts.</li>
+<li>Conduct another working group-wide survey in early/mid-April to gather feedback and prioritize other potential new work, including the drafts presented in this session and the AD's request for a DNSSEC BCP.</li>
+<li>Follow up on the Area Director's request to prioritize the development of a DNSSEC BCP.</li>
+</ul>
+</li>
+<li><strong>Authors of &quot;Glue is Not Optional&quot;</strong>: Continue discussion on the mailing list regarding the appropriate terminology for &quot;glue&quot; and its definition's placement (e.g., in the DNS Terminology document).</li>
+<li><strong>Authors of &quot;DNSSEC Dry Run&quot;</strong>: Engage in further mailing list discussion, addressing concerns related to registry provisioning (e.g., EPP extensions for signaling, hash length validation) and the overall complexity added to resolvers.</li>
+<li><strong>Authors of &quot;Structured DNS Error Page&quot;</strong>: Refine the draft to clearly delineate mandatory machine-readable fields from optional, potentially user-facing components, and consider replacing direct page links with machine-readable contact information (e.g., mailto links).</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The dnsop working group will conduct surveys to prioritize and adopt new work items.</li>
+<li>Authors of the presented drafts are encouraged to continue discussions on the mailing list to address feedback and refine their proposals in anticipation of the adoption surveys.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

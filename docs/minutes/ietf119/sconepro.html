@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="sconepro.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF119-SCONEPRO-20240320-2330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 20 Mar 2024 23:30</p>
+<pre><code class="language-markdown"># sconepro
+
+## Summary
+
+This Birds of a Feather (BoF) session explored the need for a standardized approach to content-specific traffic management, particularly for adaptive bitrate (ABR) video.  Presentations covered current traffic shaping practices, a proof-of-concept leveraging MASQUE, and lessons learned from the PLUS effort. A lively discussion followed, focusing on the applicability of the proposed solutions, security considerations, and potential challenges for widespread deployment.
+
+## Key Discussion Points
+
+*   **Current Traffic Shaping:**
+    *   Marcus Ciela (Ericsson) detailed how network operators currently throttle video traffic, citing bandwidth limitations and the increasing dominance of video.  Techniques include traffic policing (packet dropping) and traffic shaping (delaying packets). Both have shortcomings affecting congestion control and user experience.
+    *   Challenges include accurate traffic detection (especially with encryption) and the difficulty in understanding the QoE impact of shaping decisions.
+*   **MASQUE Proof of Concept:**
+    *   Matt (Meta) presented a lab trial using MASQUE to signal media rate limitations to a Facebook app. The app then adapted its video quality and instructed the CDN to cap its send rate.
+    *   Results showed improved video experience (VMAF score, reduced stalling) with similar network tonnage compared to traditional shapers.
+    *   This demonstrated the feasibility of application-level adaptation based on network signals.  The use of a proxy was for ease of experimentation, not a core requirement.
+*   **Lessons from PLUS:**
+    *   Brian Tralmell reminded attendees of the PLUS effort, which aimed for a generalized &quot;path layer&quot; to signal network conditions.  PLUS faced scope creep and trust model issues.
+    *   Key takeaway: Explicit signals should only be used when intended by the signal originator and aligned with control points.
+*   **Key Questions and Concerns Raised:**
+    *   **Jonathan Hoyland (Cloudflare):**  How to ensure that the signaling originates from the lowest bandwidth hop and how to deal with multiple shaping boxes.
+    *   **Janine Yoengco (Fastly):**  What happens if the sconepro device has a higher bandwidth than the actual bottleneck? The impact of more complex bandwidth distribution.
+    *   **Steve Farrell:**  How can the client authenticate the box? And Security model concerns related to authentication.
+    *   **Chris and Osio:** The lack of security model exploration, concerns about how to fit this thing and authenticate it..
+    *   **Jon Pullum (Cloudflare):** The complexity of multipath and the need to address that.
+    *   **Many:** Ensuring equal treatment of traffic, and the concern that this might be used to optimize video and thus worsen the traffic of others.
+*   **Potential Solutions and Approaches:**
+    *   **Dan (Denver):** The intent is to get rid of shaping through ABR. The solution would be in conjunction with user consent (e.g. budget conscious subscriptions).
+    *   **Tommy:** A few considerations on app-network collaboration such as intentional distribution, protecting and authenticating information, minimal information, limiting impact and having minimum set of entities.
+    *   **Ted Hardy:** The use of explicit signals that are simple and signal one specific network conditions, and has less risks in faking it.
+    *   **Marcus Elon:** Discovery of mechanisms like the proxy and/or PDDs to enable access networks.
+    *   **The group agreed:** To follow explicit signals that are from the network in path that are capable of dropping your packets, similar to an ECN mechanism.
+    *   **Anoop (Meta):** Packet-core users are all authenticated by networks and would already possess client authentication, and no additional discovery is required.
+
+## Decisions and Action Items
+
+*   **Decision:** No immediate decision to form a working group.
+*   **Action Item:** Continue discussion on the mailing list to address outstanding issues and refine the problem statement. Particular focus should be paid to a better security model and discovery method.
+*   **Action Item:** Explore additional methods of discovering the bottleneck hop.
+
+## Next Steps
+
+*   Chairs will summarize the BoF discussion on the mailing list.
+*   Discussions will continue on the mailing list to further refine the problem statement, potential solutions, and address security and deployment concerns.
+*   The chairs will re-evaluate the need for a working group based on the outcome of the mailing list discussions.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

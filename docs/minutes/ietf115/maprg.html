@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="maprg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-MAPRG-20221110-1300">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 10 Nov 2022 13:00</p>
+<h1>maprg</h1>
+<h2>Summary</h2>
+<p>The maprg session featured a diverse set of research presentations covering various aspects of internet measurement and analysis. Discussions included potential BGP security vulnerabilities, passive measurement techniques for Quick, the performance implications of DNS over Quick, empirical analysis of Starlink's performance, challenges in detecting IPv6 scanning, insights into IoT device security, a meta-analysis of IETF standardization processes, and an assessment of the conflict's impact on Russian domain infrastructure. Common themes included the importance of longitudinal studies, the evolving landscape of internet protocols (IPv6, Quick), and the challenges of security and attribution in a complex global network.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Kirin: Reconsidering Prefix Aggregation Attack (Pavel Foremsky)</strong></p>
+<ul>
+<li>Presented a revisited prefix aggregation attack against BGP, made easier by IPv6, distributed BGP sessions, and RPKI's role in route filtering.</li>
+<li>IPv6 /29 allocations can be split into millions of /48s, and remote BGP peering options facilitate distributed attack sources.</li>
+<li>Simulations and lab experiments showed that modern routers could be crashed with millions of IPv6 routes, indicating little headroom given current global routing table sizes.</li>
+<li><strong>Recommendations:</strong> Implement dynamic Max-Prefix limits, new limits on originated routes per AS or more-specifics per assigned block, and apply scientific checks beyond PeeringDB values.</li>
+<li><strong>Q&amp;A:</strong> Emphasized responsible disclosure.</li>
+</ul>
+</li>
+<li>
+<p><strong>Passive Measurement of Quick and Hypergiant Deployments (Jonas Mück)</strong></p>
+<ul>
+<li>Investigated passive measurement opportunities of Quick backscatter traffic to understand hypergiant content-serving infrastructure (Layer 7 load balancers).</li>
+<li>Observed distinct retransmission patterns and structured Connection IDs (CIDs) used by hypergiants like Facebook (encoding version, host ID, work ID, process ID).</li>
+<li>This structured CID allows fingerprinting off-net servers and simplifies routing for Layer 4 load balancers during client migration, avoiding state sharing.</li>
+<li>Active measurements revealed clusters of virtual IP addresses sharing Layer 7 load balancers.</li>
+<li><strong>Conclusion:</strong> Passive measurements are effective and non-intrusive for understanding hypergiant Quick deployments.</li>
+<li><strong>Q&amp;A:</strong> Discussed the non-intrusive nature for competitor analysis and the potential for randomized CIDs to obscure internal infrastructure.</li>
+</ul>
+</li>
+<li>
+<p><strong>DNS Privacy with Speed: Web Performance Impact of DoQ (Robin Marx)</strong></p>
+<ul>
+<li>Presented an analysis of the web performance impact of DNS over Quick (DoQ) compared to DoUDP, DoT, and DoH.</li>
+<li><strong>Findings:</strong> DoQ performance is significantly better than DoH (often halving the performance penalty) but still slightly slower than DoUDP due to the 1-RTT handshake (as no 0-RTT was observed in deployments).</li>
+<li>For simple web pages, DoQ was ~10% slower than DoUDP; for complex pages with multiple DNS lookups, the performance difference was minimal (2%), as the connection setup cost is amortized.</li>
+<li><strong>Implementation Status:</strong> All DoQ servers supported session resumption, but none supported 0-RTT, and many were not on the latest protocol versions, suggesting non-production deployments.</li>
+<li><strong>Future Work:</strong> Scaling measurements, leveraging 0-RTT for DoQ, and comparing against DNS over HTTP/3 (DoH3).</li>
+<li><strong>Q&amp;A:</strong> Concerns were raised about bad DoQ server configurations (e.g., retries always on, session resumption without 0-RTT causing linkability) and the need for fair comparisons with production-level DoH3.</li>
+</ul>
+</li>
+<li>
+<p><strong>A First Look at Starlink Performance (Francois Michel)</strong></p>
+<ul>
+<li>Evaluated Starlink's performance against traditional wired and geostationary satellite internet access from a vantage point in Belgium.</li>
+<li><strong>Findings:</strong> Starlink performs surprisingly close to fast Ethernet, with a minimum added latency of 20ms (median 50ms on idle links).</li>
+<li>Observed significant bufferbloat under heavy HTTP/3 Quick loads (RTTs more than doubling).</li>
+<li>Packet losses occurred even under light load, with long bursts (dozens of packets), likely due to the antenna losing focus as satellites move.</li>
+<li><strong>Methodology:</strong> Quick's explicit packet numbers were invaluable for studying latency and loss bursts.</li>
+<li><strong>Q&amp;A:</strong> Discussed how the measured RTT variation was lower than theoretical satellite path variation, suggesting compensation in the ground segment. BBR was noted to significantly outperform Cubic on Starlink, achieving much higher throughputs. The importance of specific measurement timing and location was highlighted due to the dynamic nature of the satellite constellation.</li>
+</ul>
+</li>
+<li>
+<p><strong>Eliminating Large-Scale IPv6 Scanning (Philip Richter)</strong></p>
+<ul>
+<li>Presented the first longitudinal study on large-scale IPv6 scanning, leveraging CDN firewall logs and public traffic traces.</li>
+<li><strong>Findings:</strong> IPv6 is actively being scanned, with 10-100 weekly active sources detected (far less than IPv4, but present).</li>
+<li>Scanning is heavily concentrated in a few cloud/data center ASNs, with a mysterious, continuously active source (likely in China) topping the list.</li>
+<li>IPv6 scans often target multiple ports, suggesting general penetration testing rather than specific vulnerability exploits.</li>
+<li><strong>Challenge:</strong> Identifying and attributing IPv6 scan sources is difficult due to the flexibility of address assignment. Aggregating too little (e.g., /128) misses distributed scans, while aggregating too much (e.g., /32 for a cloud provider) conflates scanners with legitimate users, potentially causing collateral damage if used for blocking.</li>
+<li><strong>Q&amp;A:</strong> Confirmed the low volume of V6 scanning compared to V4 and the current absence of V6 botnets, but highlighted the attribution challenge should V6 botnets emerge.</li>
+</ul>
+</li>
+<li>
+<p><strong>IoT Security by the Numbers (Leslie Daigle)</strong></p>
+<ul>
+<li>Discussed the scope of IoT attacks based on data from the Global Cyber Alliance's honey farm, primarily in the IPv4 space.</li>
+<li><strong>Findings:</strong> Honeypots receive ~5,000 attacks/day. Many attacks originate from Tor-like VPN services, implicating unsuspecting home users.</li>
+<li><strong>Phase 1 (Passwords):</strong> Devices with non-default passwords were never cracked, while default password devices were cracked ~80 times. This demonstrates the effectiveness of basic password hygiene.</li>
+<li><strong>Phase 2 (Software Stacks):</strong> Two-thirds of attacks targeted software stacks (e.g., PHP, SQL), attempting to exploit known vulnerabilities (e.g., on old Boa web servers). Up-to-date software and strong passwords significantly reduced attack success and interest from attackers.</li>
+<li><strong>Conclusion:</strong> Device security (updatable, non-default passwords) is crucial. A long tail of devices running outdated, vulnerable software remains a significant problem. Regulation might help, but addressing attacks at the source network level and developing network monitoring tools are also vital.</li>
+<li><strong>Q&amp;A:</strong> Encouraged collaboration with interested parties.</li>
+</ul>
+</li>
+<li>
+<p><strong>Covetus IETF: Measuring IETF Ossification (Ignacio Castro)</strong></p>
+<ul>
+<li>Presented a meta-measurement of the IETF standardization process using RFCs, emails, and drafts to detect potential &quot;ossification.&quot;</li>
+<li><strong>Findings:</strong>
+<ul>
+<li>Fewer email participants are generating a stable number of emails, indicating a &quot;chattier&quot; environment among fewer individuals.</li>
+<li>The IETF appears more cohesive, with a growing largest connected component of participants.</li>
+<li>An influential minority increasingly dominates email discussions and draft production, and it takes longer for new participants to gain influence.</li>
+<li>Conversations are becoming more complex, with more RFCs discussed across more areas.</li>
+<li>The publication process is harder: It takes three times longer and requires more drafts to publish an RFC, attributed to more authors, institutions, and countries.</li>
+</ul>
+</li>
+<li><strong>Overall Takeaway:</strong> The IETF relies heavily on an influential minority, publishing is more complex, and the process is slower.</li>
+<li><strong>Ongoing Work:</strong> Building a recommendation tool for draft reviewers.</li>
+<li><strong>Q&amp;A:</strong> No time for questions, encouraged direct contact.</li>
+</ul>
+</li>
+<li>
+<p><strong>Where.ru: Assessing the Impact of Conflict on Russian Domain Infrastructure (Tom Akawate)</strong></p>
+<ul>
+<li>Empirically assessed the impact of the Russia-Ukraine conflict, Western sanctions, and Russian internet sovereignty efforts on Russian domain infrastructure (.ru, .rf).</li>
+<li><strong>Findings (Hosting &amp; DNS):</strong> A significant portion of Russian internet infrastructure was already repatriated (fully Russian) by 2017 due to pre-existing sovereignty drives. Post-conflict, only a minor shift occurred, with some sanctioned domains moving from partly to fully Russian due to Western providers cutting ties (e.g., NetNod, Cedar).</li>
+<li><strong>Findings (Web PKI/Certificates):</strong> This was the most affected area. Let's Encrypt (a U.S. entity) became nearly completely dominant (91% to 99.23%) as other Certificate Authorities stopped issuing for Russian domains post-conflict. Despite Russia's own root CA, uptake was very low, with most preferring Let's Encrypt.</li>
+<li><strong>Conclusion:</strong> While hosting and DNS were largely insulated by prior repatriation efforts, the Web PKI sector showed significant exposure and an unexpected reliance on foreign (U.S.) infrastructure for certificates.</li>
+<li><strong>Q&amp;A:</strong> Discussed the challenge of differentiating between a governmental drive for internet sovereignty and natural domestic supply chains due to language/currency.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>No formal decisions were made by the Research Group.</li>
+<li><strong>Action for Authors:</strong> Authors were encouraged to engage with the audience on standards and operational perspectives, and to provide contact information for further discussions and collaboration.</li>
+<li><strong>Action for Participants:</strong> Participants were encouraged to read the papers for more details and to contact authors directly for collaboration, especially for projects like Starlink measurements or IETF process analysis.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>LEO Satellite ISP Testbed:</strong> A short paper from IMC announced the creation of a testbed for Low Earth Orbit satellite ISP systems. Contact Muhammad (details in IMC paper) for more info and the LEOCON bi-monthly webinar series.</li>
+<li><strong>DNS Privacy with Speed:</strong> Future work includes increasing the scale of DoQ measurements, exploring 0-RTT support, and evaluating DNS over HTTP/3 (DoH3).</li>
+<li><strong>Starlink Performance:</strong> Future work involves multi-vantage point studies, inter-satellite link studies, and benchmarking against Geo satellite access, with all data publicly available for collaboration.</li>
+<li><strong>IoT Security:</strong> Continued efforts to develop tools and techniques to monitor and manage networks with IoT devices, aiming for an &quot;Automated IoT Defense Ecosystem.&quot;</li>
+<li><strong>IETF Ossification:</strong> Ongoing work includes building a recommendation tool for draft reviewers, and further research into the drivers of IETF dynamics.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,80 @@
+**Session Date/Time:** 24 Mar 2022 12:00
+
+# mpls
+
+## Summary
+
+The MPLS Working Group session at IETF 113 included discussions on several drafts, including In-situ OAM (IUM) data plane integration, LSP Ping extensions for Segment Routing (SR) Path SIDs, deprecation of Router Alert in LSP Ping, and a debate on the reuse of the Entropy Label Indicator (ELI) for MPLS In-band Application Data (MIAD) versus defining a new Special Purpose Label (SPL). The session also featured an overview of a generic framework for MPLS Extension Headers. Several drafts requested Working Group adoption.
+
+## Key Discussion Points
+
+*   **Session Logistics and Agenda:**
+    *   Welcome to new AD Andrew Alston and secretary Mack.
+    *   Reminder of the IETF Note Well.
+    *   Zafar questioned the agenda item "Policy on Special Purpose Label Reuse" (later presented by Tony Li), which was clarified as early design team work. Lowa asked if a draft should be written for this topic, with Tony Li indicating he would if it proved contentious.
+*   **Working Group Status:**
+    *   An errata was reported for RFC 6512, an editorial/typo that may have technical implications, requiring follow-up with the AD.
+    *   One new RFC was published since the last meeting.
+    *   Two documents are in the RFC Editor queue; one is held up by Lowa, who committed to addressing it post-meeting.
+    *   `draft-ietf-mpls-6374-sr` has requested Working Group Last Call.
+*   **MPLS Data Plane IUM Draft (Rakesh Gandhi):**
+    *   **Proposal:** Integrate In-situ OAM (IUM) data fields into MPLS encapsulation. Utilizes a G-ACh type for IUM data and two flags (in the TTL field of a label, e.g., Entropy Label, SPL, NPL) to indicate IUM data presence (after bottom of stack) and request hop-by-hop processing.
+    *   **Discussion:**
+        *   Greg Mirsky questioned the relationship to MIAD and the design team's direction, noting G-ACh is not part of current MIAD discussions, but Rakesh stated it was an MPLS-RT expert suggestion and adaptable.
+        *   Tariq raised concerns about handling existing IUM headers in LSP hierarchies and potential issues with partial persistence on egress.
+    *   **Request:** Working Group adoption.
+*   **LSP Ping for SR Path SIDs (Xiao Mi):**
+    *   **Proposal:** Defines three new Target FEC Stack TLVs for LSP Ping to identify Segment Routing (SR) Path Segments (as defined in `draft-spring-mpls-path-segment`):
+        1.  SR Policy Path SID (identified by head, color, endpoint).
+        2.  SR Candidate Path Path SID (head, color, endpoint, protocol origin, originator, discriminator).
+        3.  SR Segment List Path SID (head, color, endpoint, protocol origin, originator, discriminator, segment list ID).
+    *   **Purpose:** Allow the egress node to validate control plane to forwarding plane synchronization for SR paths.
+    *   **Discussion:** Tariq asked if the Path Segment is relevant to transit nodes; authors clarified it is primarily for egress node validation.
+    *   **Request:** Working Group adoption.
+*   **Deprecating Router Alert in LSP Ping (Greg Mirsky):**
+    *   **Proposal:** Remove the Router Alert option from LSP Ping (RFC 8029) and reclassify RFC 7506 (which registers Router Alert for IPv6) as Historic.
+    *   **Motivation:** Router Alert poses security issues (RFC 6398) and is considered unnecessary for LSP Ping, as other protective mechanisms (special loopback addresses, TTL=1) are sufficient. Also aims to avoid confusing the 6MAN WG's work on IPv6 hop-by-hop options.
+    *   **Discussion:**
+        *   Greg noted that IPv6 mapping of IPv4 loopback range has no special meaning in IPv6, which could impact entropy for LSP Traceroute, an issue to be investigated.
+        *   Zafar clarified RFC 6398 is general IPv6 security, not MPLS-specific.
+    *   **Request:** Working Group review and adoption, and communication with 6MAN.
+*   **Policy on Special Purpose Label Reuse (Tony Li):**
+    *   **Topic:** Debate on reusing ELI (Entropy Label Indicator) for MIAD (MPLS In-band Application Data) versus defining a new SPL (Special Purpose Label).
+    *   **Tony's Critique of ELI Reuse (based on `draft-ukrain-mpls-eli-miad`):** Tony presented arguments against six claims of advantage for ELI reuse, stating that benefits like faster deployment, smaller stack size, or hardware support are either inconsequential, not unique to ELI reuse, or introduce backward compatibility risks. He also argued against using "Network Programming Labels" due to lack of IETF definition and SR-specificity. Tony advocated for a *new* SPL for MIAD.
+    *   **Discussion (highly contentious):**
+        *   Rakesh strongly disagreed with Tony's assessment, particularly on faster deployment and protocol extensions, arguing ELI reuse offers significant benefits in terms of less work, easier certification, and backward compatibility.
+        *   Darren clarified that ELI reuse could still benefit from existing label stack walking while new microcode handles MIAD processing.
+        *   Zafar emphasized that ELI reuse reduces label stack size, citing previous PALS WG discussions, and criticized the idea of a new SPL leading to a "four-label stack." Tony countered that MIAD can carry entropy, making a separate EL unnecessary.
+        *   Bruno sought clarification on "backward compatibility" claims, agreeing that `draft-ukrain-mpls-eli-miad` does not add LSEs.
+        *   Ketan asked about MIAD covering all special labels and confirmed `draft-ukrain` and `draft-fa` carry entropy.
+        *   Lowa suggested Tony write a draft to formalize his position, which Tony agreed to.
+        *   Tariq raised a concern about ancillary data in an entropy label breaking hashing if it changes along the path.
+        *   Kiriti characterized ELI reuse as a "hack" and not "forward progress."
+        *   Lowa suggested segmenting MPLS extensions into phases (minimum effort for quicker adoption, then more extensible) citing long deployment times for features like Entropy Label. Tony questioned if ELI reuse genuinely saves time.
+*   **MPLS Extension Headers (Changwang Lin/Zhenbin Li):**
+    *   **Proposal:** A generic framework for MPLS Extension Headers (MEH) to enable extensible in-network services (e.g., IUM, network slicing, SFC). MEH would be placed between the MPLS label stack and the payload, indicated by an in-stack SPL.
+    *   **Key Design Principles:**
+        *   Support in-network adding/removing/processing of headers (unlike IPv6 EH).
+        *   Allow chaining multiple hop-by-hop headers (flat structure).
+        *   Enable fast access to Layer 4 headers by skipping MEH.
+        *   Ignore unknown MEH and continue forwarding for backward compatibility.
+        *   Optimized for fast data plane processing.
+    *   **Requirements:** Flexibility, extensibility, performance, backward compatibility.
+    *   **DT Conclusion on Indicator:** The Open Design Team concluded against using G-ACh and preferred a single SPL as an indicator.
+    *   **MEH Format:** Similar to IPv6 EH but with `Next Header Type` to indicate subsequent MEH or payload. Supports edge-to-edge and hop-by-hop headers, with HBH headers placed first for performance.
+    *   **Hardware Considerations:** Designed for simplicity and performance on fast paths, minimizing FSM and steps. Indicator at bottom of stack for simplicity/backward compatibility.
+    *   **Summary:** MEH offers a generic, protocol-independent solution for MPLS in-network services, leveraging lessons from IPv6 but with greater design freedom due to less historical burden.
+    *   **Discussion:** Due to time constraints, discussion was moved to the email list.
+
+## Decisions and Action Items
+
+*   **Decision (Design Team):** The Open Design Team concluded that the indicator for MIAD should be a single Special Purpose Label (SPL) and decided against using G-ACh.
+*   **Action Item (Lowa):** Address the document currently stalled in the RFC Editor Queue.
+*   **Action Item (Tony Li):** Draft a document outlining his position on "Policy on Special Purpose Label Reuse" (i.e., new SPL vs. ELI reuse) to facilitate further discussion.
+*   **Action Item (Greg Mirsky/Ron):** Investigate the implications of IPv6 loopback range usage for LSP Ping entropy, given that IPv4 loopback mapping has no special meaning in IPv6.
+*   **Action Item (Working Group):** Review and discuss the requested Working Group adoptions for `draft-ietf-mpls-data-plane-ium`, `draft-ietf-mpls-lsp-ping-sr-path-sid`, and `draft-ietf-mpls-deprecate-router-alert` on the mailing list.
+
+## Next Steps
+
+*   All attendees and interested parties are encouraged to engage in further technical discussions on the MPLS Working Group mailing list, especially concerning the adoption requests and the contentious debate on special purpose label reuse for MIAD.
+*   Continue work in the design team and prepare for future IETF sessions.

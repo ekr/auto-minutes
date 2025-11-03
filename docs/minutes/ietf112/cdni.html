@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="cdni.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-CDNI-20211109-1600">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 09 Nov 2021 16:00</p>
+<h1>cdni</h1>
+<h2>Summary</h2>
+<p>The CDNI working group session covered updates on several drafts, including two drafts adopted as working group items. Discussions focused on URI signing (currently in IESG Last Call), HTTPS delegation (ACME STAR), a new proposal for capacity insights extensions, and a comprehensive update on metadata extensions. Key decisions involved proceeding with the adoption of the Triggers Extension and Footprint Extension drafts, setting milestones, and addressing open issues for the URI signing draft, including a tight deadline for IESG telechat review. New proposals for capacity signaling and enhanced metadata capabilities generated significant discussion, with chairs encouraging further review and comments.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Draft Adoptions</strong>:</p>
+<ul>
+<li><strong>CDNI Triggers Extension Draft</strong>: Originally by Ori, this draft was previously adopted as an extension but is now being re-adopted as a full update to RFC 8007 for clarity. The draft includes generic extensions for trigger objects (V2), mechanisms for indicating propagation failures, and additional content selection methods (regexes, playlists).</li>
+<li><strong>CDNI Footprint Extension Draft</strong>: This draft proposes additions to the metadata footprint registry (RFC 8006), specifically introducing &quot;subdivision codes&quot; (ISO 3166-2) for finer geographic granularity and a &quot;footprint union&quot; type for additive semantics in footprint objects.</li>
+</ul>
+</li>
+<li>
+<p><strong>Proposed New Generic Mechanism for Trigger Content Selection</strong>: Nir proposed a change to the Triggers Extension draft to use a generic mechanism with a registry for new content selection methods, rather than enumerating them as properties in <code>trigger-v2</code> objects. This approach was generally supported for a cleaner object model.</p>
+</li>
+<li>
+<p><strong>URI Signing Draft (IESG Last Call)</strong>: Phil provided an update on the draft, which is addressing feedback from IESG Last Call:</p>
+<ul>
+<li><strong>Client IP</strong>: Concerns about usefulness and privacy were raised. The working group agreed to keep the client IP field, acknowledging it supports niche, often internal, use cases, but will add strong disclaimers about its limitations and risks.</li>
+<li><strong>Shared Keys</strong>: While historically used, shared keys are considered a poor security practice. The working group decided to remove explicit support and examples from the document, instead only mentioning them in the security considerations section to strongly discourage their use.</li>
+<li><strong>Mandatory URI Container</strong>: Discussion confirmed the URI container should remain optional, as it allows for &quot;skeleton key&quot; tokens that apply broadly, with Chris noting that forcing a URI would just lead to a wildcard regex.</li>
+<li><strong>Advice for Designated Experts</strong>: Phil will reach out to IESG ADs for specific examples on what further advice is needed.</li>
+</ul>
+</li>
+<li>
+<p><strong>HTTPS Delegation (ACME STAR)</strong>: Frederick presented on the latest version of the HTTPS delegation draft (v7), which has been split into two documents. Remaining work includes:</p>
+<ul>
+<li>Completing security and privacy sections.</li>
+<li>Updating references to align with RFC 9115.</li>
+<li>Discussing the necessity of carrying certain <code>star-delegate</code> properties (ACME server, credentials location, RAI, CSR template) between CDNs.</li>
+<li>Synchronizing with the SVA working group regarding CDNI interfaces.</li>
+<li>It was noted that the draft is not yet ready for Working Group Last Call due to these pending significant updates.</li>
+</ul>
+</li>
+<li>
+<p><strong>CDNI Capacity Insights Extensions (New Proposal)</strong>: Andrew introduced a new draft proposing extensions for signaling capacity capabilities and limits via the FCI.</p>
+<ul>
+<li><strong>Core Concepts</strong>: <code>fci-capacity-limits</code> (downstream advertises limits, e.g., bits/sec, reqs/sec), <code>fci-telemetry</code> (downstream advertises supported telemetry sources), and <code>mi-requested-capacity-limits</code> (upstream requests downstream to reconsider limits via generic metadata).</li>
+<li><strong>Telemetry</strong>: Acknowledged that many existing telemetry sources are proprietary, but the data types are consistent. The goal is to standardize a telemetry interface in the future, using generic sources in the interim.</li>
+<li><strong>Object Structure</strong>: Discussion included <code>total-limits</code> vs. <code>host-limits</code> for different traffic profiles, with suggestions to simplify the object structure.</li>
+<li><strong>Workflow</strong>: Upstream periodically polls for capacity limits and telemetry, adjusting traffic routing accordingly.</li>
+</ul>
+</li>
+<li>
+<p><strong>CDNI Metadata Extensions (New Proposal)</strong>: Glenn presented a detailed update on the metadata extensions draft, driven by SVA open caching requirements.</p>
+<ul>
+<li><strong>Approach</strong>: All proposed extensions are implemented as new generic metadata objects within the existing RFC 8006 structure, without modifying the core object model.</li>
+<li><strong>Key Enhancements</strong>: Enhanced source origin definitions (load balancing, failover, authentication), increased CDN-specific cache control policies, dynamic CORS headers, traffic type, <code>service-id</code>, Open Caching configurations, and a structured mechanism for &quot;private features&quot;.</li>
+<li><strong>Processing Stages</strong>: A major addition defining four key points in the request/response pipeline (Client Request, Origin Request, Origin Response, Client Response) where metadata can be applied conditionally using a &quot;metadata expression language&quot;.</li>
+<li><strong>SVA API Integration</strong>: Noted that SVA has an API for metadata publishing (push model), and there's potential for future IETF consideration.</li>
+<li><strong>Draft Size and Structure</strong>: The draft is extensive. There was a suggestion to break it down into smaller, more manageable, themed drafts (e.g., cache control policies, expression language/processing stages) to facilitate review and adoption.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>CDNI Triggers Extension Draft</strong>:
+<ul>
+<li><strong>Decision</strong>: Adopted as a working group draft.</li>
+<li><strong>Action</strong>: Milestone set for completion by March 2022 (IETF 113), with recognition that further work may extend this.</li>
+<li><strong>Action</strong>: Nir to propose the generic content selection mechanism as a subsequent update to the adopted working group draft.</li>
+</ul>
+</li>
+<li><strong>CDNI Footprint Extension Draft</strong>:
+<ul>
+<li><strong>Decision</strong>: Adopted as a working group draft.</li>
+<li><strong>Action</strong>: Milestone set for Working Group Last Call by March 2022 (IETF 113).</li>
+</ul>
+</li>
+<li><strong>URI Signing Draft</strong>:
+<ul>
+<li><strong>Decision</strong>: Tentatively keep Client IP field with strong disclaimers.</li>
+<li><strong>Decision</strong>: Explicitly remove shared key support/examples from the document, referencing them only in security considerations as a discouraged practice.</li>
+<li><strong>Decision</strong>: The URI Container will remain optional.</li>
+<li><strong>Action</strong>: Phil to post the discussion points and decisions on the mailing list for wider feedback and IESG AD input.</li>
+<li><strong>Action</strong>: Phil to merge Chris's PR regarding normative references and prepare a stable version of the draft for the December 2nd IESG Telechat by approximately November 25th.</li>
+</ul>
+</li>
+<li><strong>HTTPS Delegation Draft</strong>:
+<ul>
+<li><strong>Action</strong>: Frederick to update the draft, focusing on alignment with RFC 9115, completing security/privacy sections, and clarifying <code>star-delegate</code> properties.</li>
+</ul>
+</li>
+<li><strong>CDNI Capacity Insights Extensions Draft</strong>:
+<ul>
+<li><strong>Action</strong>: Andrew to incorporate feedback from the discussion, particularly regarding the simplification of the object structure.</li>
+</ul>
+</li>
+<li><strong>CDNI Metadata Extensions Draft</strong>:
+<ul>
+<li><strong>Action</strong>: Glenn to post answers to existing comments on the mailing list.</li>
+<li><strong>Action</strong>: Glenn to plan for Revision 2, with more examples.</li>
+<li><strong>Action</strong>: Glenn to consider breaking the large draft into smaller, more focused drafts, grouped by metadata type or functionality (e.g., cache control, processing stages/expression language).</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>All working group members are encouraged to read the recently updated and newly proposed drafts and provide comments on the mailing list.</li>
+<li>Specific focus for review will be on the URI Signing draft to facilitate its IESG review, the HTTPS Delegation draft for RFC 9115 alignment, and the new Capacity Insights and Metadata Extensions drafts for initial feedback and direction.</li>
+<li>Discussions regarding the SVA's metadata publishing API and its potential for IETF adoption may be initiated on the mailing list.</li>
+<li>The next IETF meeting (IETF 113) is scheduled for March 2022.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

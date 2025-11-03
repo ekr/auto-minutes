@@ -1,0 +1,82 @@
+**Session Date/Time:** 19 Mar 2024 07:30
+
+```markdown
+# mimi
+
+## Summary
+
+This session focused on discovery mechanisms for MIMI, particularly concerning service-independent identifiers (SIIs) and message service providers (MSPs). The discussion covered consensus points from previous meetings, explored the nature of SIIs and SSIs, and debated the architecture of discovery providers (DPs), including the implications of a logical singleton versus a sharded system.  There was also discussion regarding what identifier formats are appropriate for MIMI to support.
+
+## Key Discussion Points
+
+*   **Discovery Problem Definition:** Agreed upon the need for authentication and distribution of SII-to-SSI mappings. Emphasis on *provider* discovery.
+*   **SII vs. SSI:**  Debated whether discovery services should return reachability information for MSPs or globally routable SSIs (URLs).  The potential need for both was raised.  Terms SII and SSI are difficult to distinguish and should be re-evaluated.
+*   **User Journey vs. Architecture:** Concern was raised that the requirements are being defined by an architecture. A user journey should be outlined before defining technical requirements.
+*   **MIMI Protocol & Identifiers:**  The discussion focused on the MIMI protocol draft and that the output of a discovery service should be something `@ provider`.
+*   **Key Discovery:** Discussed if key information for secure association should be part of the discovery process.  Arguments made for and against, with concerns raised about differing lifetimes of key material versus SII mappings. Focus on SII integrity at discovery. Signing keys could be part of the discovery process.
+*   **Scope of Identifiers:**  Telephone numbers are the most pressing case. Discussed the importance and scope of email addresses as SIIs, along with related challenges and geopolitical considerations. Need for a system that isn't native to telephone numbers or email.
+*   **DP Architecture (Logical Singleton vs. Sharded):**  Extensive discussion on whether DPs should be a logical singleton (aggregating all mappings) or a sharded system due to geopolitical or policy reasons. A singleton would need to expose all possible routes, an ideal but likely impossible situation. The relationship with existing message transport architectures like phone number portability was discussed.
+
+## Decisions and Action Items
+
+*   **Action Item:** Re-evaluate and rename SII and SSI to avoid confusion in the requirements document.
+*   **Decision:** To focus on the "B" case rather than the "A" case on slide two for what can be returned by the service.
+*   **Action Item:** Keep an eye on the mailing list to schedule the next interim at which we'll pursue a discovery discussion
+
+## Next Steps
+
+*   Schedule an interim session to continue the discovery discussion.
+*   Further explore the relationship between MIMI identity and discovery.
+*   Continue evaluating use cases, architectural constraints, and geopolitical considerations related to DP architecture.
+```
+
+---
+
+**Session Date/Time:** 20 Mar 2024 23:30
+
+# mimi
+
+## Summary
+The Mimi working group held its second session of the week, focusing on the content format draft and architecture/protocol documents. Key discussions revolved around message IDs, attachment security, binary encoding formats (CBOR vs TLS Presentation Language), the inclusion of a subject header, and the overall architecture of the Mimi protocol. The group reached rough consensus to adopt the architecture and protocol documents.
+
+## Key Discussion Points
+*   **Content Format:**
+    *   Message ID is now calculated as the hash of the ciphertext. The hub's accepted timestamp is available to providers.
+    *   Discussion on preventing the web bug in attachments. Agreement that a hash of the underlying content should be included to bind the content to the message.
+    *   Mentioned that the rendering sort order based on the "last seen" header is deemed sufficient, given the limitations of not specifying a client-side protocol.
+    *   Mentions will adopt the identifier format decided by the protocol document.
+*   **Binary Encoding:**
+    *   Debate on using TLS Presentation Language (from MLS) vs. CBOR. Trade-offs discussed included parsing speed, extensibility, and existing implementations.
+    *   A poll was conducted to gauge preference between TLS and CBOR, with CBOR receiving slightly more votes.
+    *   Decision to use TLS Presentation Language in the content format document with an appendix showing CBOR examples.
+*   **Subject Header:**
+    *   Discussion on whether to include a subject header in the content format. Concerns were raised about the complexity and potential for inconsistencies with existing implementations.
+    *   General sentiment leaned towards excluding the subject header from the base content format.
+*   **Architecture & Protocol:**
+    *   Discussion around the "active" vs. "inactive" participant distinction and its purpose. An inactive participant has permission to join the MLS group without a device.
+    *   Servers (especially the hub) have visibility into the full MLS group state, including client identities (or pseudonyms).
+    *   MLS operations need to be sequenced properly with changes to the room state.
+    *   Overview of the HTTP-based transport, MLS-based E2EE security layer, and application layer.
+    *   Discussion on how MLS AppSync proposal work.
+    *   The importance of proper identifiers in the transport layrer.
+    *    Tim's expressed his opinion to prescribe a specific mechanism for authentication. 
+*    **HTTP Endpoints:**
+    *    Details regarding the directory endpoint.
+    *    Arguments in favor to not force directory and just have protocol spell resource paths.
+
+## Decisions and Action Items
+*   **Content Format Draft:**
+    *   Include a hash of the underlying content to prevent the web bug.
+    *   Use TLS Presentation Language in the content format document with an appendix showing CBOR examples.
+    *   Exclude the subject header from the base content format.
+*   **Adoption Call:**
+    *   The working group tentatively agreed to adopt the architecture and protocol documents. A formal adoption call will be put out to the mailing list.
+*   **Working Group Repository:**
+    *   To file issues and PRs after the documents are formally adopted.
+
+## Next Steps
+*   Formal adoption call on the mailing list for the architecture and protocol documents.
+*   Set up a working group repository on github for the adopted documents.
+*   Schedule an interim meeting to continue the discovery discussion (led by chairs) and explore other topics, including the implementation and behavior of the queues.
+*   Investigate and clarify the requirements and mechanisms for adding the key schedule.
+*   File specific issues on the respective github and have the discussed over async.

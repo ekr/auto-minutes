@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ohai.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-OHAI-20220726-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 26 Jul 2022 17:30</p>
+<h1>ohai</h1>
+<h2>Summary</h2>
+<p>The ohai working group session focused primarily on the status of the main Oblivious HTTP (OHTTP) protocol document, discussing recent updates and moving towards a Working Group Last Call. Additionally, two new drafts related to OHTTP service discovery and rate limiting were presented, along with an initial presentation of a draft on OHTTP gateway key consistency. Discussions highlighted significant privacy and security considerations for these ancillary documents, particularly concerning dynamic discovery and maintaining unlinkability.</p>
+<h2>Key Discussion Points</h2>
+<h3>OHTTP Main Protocol Document (draft-ietf-ohai-ohttp)</h3>
+<ul>
+<li><strong>Recent Updates</strong>: Chris Wood provided an update on the main OHTTP document.
+<ul>
+<li><strong>State-Based Anti-Replay Mitigation</strong>: A mechanism allowing gateways to respond with a retry date if a client's request is too old, reducing the need for endless state on the gateway side. The text for this was moved from a separate, stalled draft by Martin Thomson (PR #137) into the main specification.</li>
+<li><strong>Terminology Changes</strong>: Successful mailing list discussion led to moving away from &quot;proxy&quot; to &quot;relay&quot; and &quot;target&quot; to &quot;gateway&quot; to clarify roles.</li>
+<li><strong>Privacy Text</strong>: Improved text on privacy implications of differential treatment by a relay based on client interaction with a gateway, e.g., &quot;shadow banning&quot; use cases.</li>
+<li><strong>Key Schedule Change</strong>: A minor but breaking change to the HPKE key schedule, proposed by David Benjamin, to ensure that all OHTTP configuration parameters are bound to the exported key, improving the binding between the client's request encryption and the gateway's response encryption.</li>
+</ul>
+</li>
+<li><strong>Readiness for WGLC</strong>: The document is considered feature-complete with existing interoperable implementations. A poll was conducted among attendees regarding readiness for Working Group Last Call (WGLC), showing strong support.</li>
+</ul>
+<h3>Oblivious HTTP Service Discovery (draft-pauly-ohai-svcb-ohttp)</h3>
+<ul>
+<li><strong>Presenter</strong>: Tommy Pauly.</li>
+<li><strong>Goal</strong>: To enable dynamic discovery of OHTTP gateways and their key configurations, addressing use cases beyond coordinated deployments.</li>
+<li><strong>Use Cases</strong>:
+<ol>
+<li>Discovering an oblivious gateway associated with a specific target service.</li>
+<li>Discovering an oblivious gateway for a DNS resolver (e.g., DoH).</li>
+</ol>
+</li>
+<li><strong>Proposed Mechanism</strong>:
+<ul>
+<li>DNS SVCB/HTTPSS records to learn the oblivious gateway URI.</li>
+<li>A <code>GET</code> request to the gateway to fetch its key configuration.</li>
+</ul>
+</li>
+<li><strong>Privacy Concerns</strong>: Unique gateway URIs or key configurations could lead to client targeting or identification. The draft seeks to fold into broader consistency discussions.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Security Concerns (Martin Thomson, Ben Schwartz)</strong>: A main concern was that an intermediary (e.g., on the DNS path) could substitute its own gateway, potentially impersonating the origin and bypassing TLS protections. The gateway must be provisioned through a trusted channel. There was a suggestion to consider <code>/.well-known</code> endpoints.</li>
+<li><strong>Scope (Eric Gorth)</strong>: Consistency and correctness are critical but complex enough for a separate draft. This draft could focus on the payload format, pointing to other drafts for secure fetching.</li>
+<li><strong>Relay vs. Gateway Discovery (Martin Thomson)</strong>: Argued for separate discovery mechanisms for relays and gateways to minimize collusion risks. Gateway discovery is specific to OHTTP, while relay discovery might be more generic.</li>
+<li><strong>Working Group Interest (Chris Wood)</strong>: The problem is important and should be solved by the WG. Supported adoption after revisions.</li>
+</ul>
+</li>
+</ul>
+<h3>Oblivious HTTP Rate Limiting (draft-dan-ohai-ohttp-rate-limit)</h3>
+<ul>
+<li><strong>Presenter</strong>: Dan Wing.</li>
+<li><strong>Goal</strong>: To help identify and rate-limit misbehaving clients that abuse a target service, allowing the relay to apply targeted throttling without affecting all clients.</li>
+<li><strong>Updates</strong>:
+<ul>
+<li>Extends HTTP API rate limit headers with relay-specific details (<code>ohttp-target</code> parameter).</li>
+<li>The relay can delay action, waiting for multiple complaints about the same client to avoid partitioning good clients.</li>
+<li>A mechanism for the proxy and target to communicate about understood headers.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Privacy Concerns (Ben Schwartz, Martin Thomson)</strong>: The <code>ohttp-target=2</code> setting raised concerns about allowing the gateway to instruct the relay to apply special treatment to a particular user, potentially breaking OHTTP's unlinkability guarantees. This requires &quot;sharp analysis&quot; of its privacy impact and how it aligns with the base OHTTP privacy claims, especially regarding client confidence in privacy protections.</li>
+</ul>
+</li>
+</ul>
+<h3>Oblivious HTTP Gateway Key Consistency (draft-schwartz-ohai-ohttp-key-consistency)</h3>
+<ul>
+<li><strong>Presenter</strong>: Ben Schwartz (first presentation).</li>
+<li><strong>Problem Statement</strong>: How to dynamically obtain and verify the authenticity and global consistency of the gateway URL, key configuration, and target URL without hardcoding, while preserving OHTTP's unlinkability guarantees. Hardcoding prevents key rotation and operational flexibility.</li>
+<li><strong>Proposal</strong>: Dynamic bootstrap without losing OHTTP privacy guarantees.
+<ol>
+<li>A config file (gateway URL, key config, target URL) is fetched through the relay, which acts as an HTTP cache. This provides consistency among users of that relay.</li>
+<li>The same config file is also fetched directly from the service description host over authenticated HTTPS. This provides authenticity.</li>
+<li>The client checks that both copies are identical.</li>
+</ol>
+</li>
+<li><strong>Additional Privacy</strong>: Suggested the relay also act as a CONNECT UDP proxy (a Mask proxy) to prevent the gateway from learning client IP addresses, which could be used for profiling.</li>
+<li><strong>Performance</strong>: Estimated two round trips (similar to a fresh QUIC setup), considered manageable given the infrequent nature of config updates.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>CONNECT UDP Requirement (Martin Thomson)</strong>: Questioned the necessity of CONNECT UDP and HTTP/3 requirements, suggesting focusing on the abstract double-check mechanism (two different TLS handshake contexts) and the relay's caching role for consistency. He also clarified that gateway learning client IPs is not inherently a problem but can become one in certain deployment contexts.</li>
+<li><strong>Generic vs. OHTTP Specific (Eric Gorth)</strong>: Suggested that once specific OHTTP payload details are removed, this could become a more generic mechanism for shared payload validation, potentially belonging in a dispatch group or another WG, though Ben preferred it stay in ohai.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>OHTTP Main Protocol Document (draft-ietf-ohai-ohttp)</strong>:
+<ul>
+<li><strong>Decision</strong>: The working group will proceed with a Working Group Last Call (WGLC) for the main OHTTP protocol draft.</li>
+<li><strong>Action Item</strong>: Chris Wood to merge open pull requests (specifically PR #137) and add any final editorial text. A new version will be cut soon, and chairs will then initiate the WGLC.</li>
+</ul>
+</li>
+<li><strong>Oblivious HTTP Service Discovery (draft-pauly-ohai-svcb-ohttp)</strong>:
+<ul>
+<li><strong>Action Item</strong>: Tommy Pauly to revise the draft, specifically addressing the security and consistency concerns raised (e.g., potential for DNS path manipulation, re-introducing <code>/.well-known</code> mechanisms, and clarification on separate relay vs. gateway discovery). Further discussion on adoption will follow a revised draft.</li>
+</ul>
+</li>
+<li><strong>Oblivious HTTP Rate Limiting (draft-dan-ohai-ohttp-rate-limit)</strong>:
+<ul>
+<li><strong>Decision</strong>: The draft is not ready for further steps at this time.</li>
+<li><strong>Action Item</strong>: Dan Wing to perform and present a &quot;sharp analysis&quot; of the draft's privacy implications, particularly how <code>ohttp-target=2</code> interacts with OHTTP's unlinkability guarantees and overall privacy model.</li>
+</ul>
+</li>
+<li><strong>Oblivious HTTP Gateway Key Consistency (draft-schwartz-ohai-ohttp-key-consistency)</strong>:
+<ul>
+<li><strong>Decision</strong>: Initial presentation for feedback.</li>
+<li><strong>Action Item</strong>: Ben Schwartz to continue iterating on the draft based on the feedback received, with further discussion to occur on the mailing list.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<p>The primary focus for the working group is to finalize the main OHTTP protocol document by completing the Working Group Last Call. Concurrently, the working group will continue to discuss and refine the ancillary drafts related to service discovery, rate limiting, and key consistency, with specific revisions and analyses requested before further progress can be made on these. Discussions will continue on the mailing list.</p>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

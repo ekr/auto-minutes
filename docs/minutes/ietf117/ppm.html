@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ppm.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF117-PPM-20230725-0030">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2023 00:30</p>
+<pre><code class="language-markdown"># ppm
+
+## Summary
+
+This PPM working group meeting covered several topics, including updates on DAP and VDAF drafts, a proposal for differential privacy in DAP, discussion on query modes in DAP, and a proposal for report authentication using privacy pass. Key discussions revolved around the scope and implementation details of these proposals, with an emphasis on balancing privacy, utility, and security considerations.
+
+## Key Discussion Points
+
+*   **DAP and VDAF Updates:**
+    *   DAP revision 5 introduces the &quot;pingpong&quot; topology, specializing DAP to exactly 2 aggregators (leader and helper), simplifying the protocol, and improving performance.
+    *   VDAF revision 6 allows for arbitrary aggregators opening it for other protocols.
+    *   Discussion around the new name pingpong topology as it is considered &quot;silly.&quot;
+    *   Histogram representation in VDAF now parameterized by the number of buckets for improved efficiency.
+*   **Differential Privacy in DAP:**
+    *   A proposal was presented for incorporating differential privacy (DP) into DAP to protect individual measurements from being leaked via aggregate results.
+    *   Different approaches to adding noise (client-side, aggregator-side, collector-side) and their trade-offs were discussed.
+    *   Questions were raised about the appropriate working group for this work (PPM vs. others), with the consensus leaning towards PPM initially.
+    *   The scope of the document was debated, including the level of detail for DP mechanisms, integration with DAP/VDAF, and guidance on parameter tuning (e.g., Epsilon and Delta).
+    *   The usefulness of local DP was questioned in the context of DAP and how it fits within the system, in contrast to central DP.
+    *   The impact of a potentially defecting aggregator in the context of DP was discussed.
+*   **DAP Query Modes (Time Interval vs. Fixed Size):**
+    *   A discussion was initiated on the two query types currently supported by DAP: time interval and fixed size.
+    *   Concerns were raised about the &quot;orphaned reports&quot; problem with the time interval query type.
+    *   The potential of a fixed size query with the ability to simulate time intervals was discussed, but challenges related to seasonality were highlighted.
+    *   Potential benefits of eliminating the time interval query type, such as a cleaner collection API, were presented.
+    *   A hybrid approach, combining arrival time and a &quot;report age&quot; cutoff to alleviate latency issues, was suggested.
+    *   The importance of maintaining the ability to run comparative experiments against the same time period with multiple DAP tasks was highlighted.
+*   **Report Authentication with Privacy Pass:**
+    *   A proposal for an extension to DAP using Privacy Pass tokens to mitigate civil attacks (malicious parties generating a large number of reports) was presented.
+    *   The extension involves clients acquiring tokens and attaching them to DAP reports, with aggregators validating the tokens.
+    *   The need for the client to synthesize the challenge instead of leader/helper was discussed.
+    *   The rationale for not using the standard Privacy Pass HTTP bindings was explored, focusing on the indirect client-helper communication.
+    *   Concerns were raised about the threat model assumptions (specifically regarding the trustworthiness of the leader and helper) and the effectiveness of Privacy Pass in this context.
+    *   The possibility of re-using tokens across DAP tasks, mainly for privacy pass infrastructure load issues.
+    *   Helpers should retrieve the key by fetching from a known directory.
+
+## Decisions and Action Items
+
+*   **Adopt DP work:** PPM will adopt the work on Differential Privacy for DAP/VDAF.
+*   **DP Draft:** Continue working on the differential privacy draft, focusing on algorithm specifications and composition with VDAF. The level of detail for DAP-specific integration remains open.
+*   **Investigate Seasonality**: Investigate the challenges of seasonality related to running experiments by the Divvy Up team.
+*   **Evaluate Orphaned Reports**: Evaluate how orphaned reports influence DAP by Divvy Up.
+
+## Next Steps
+
+*   The differential privacy draft will continue to be developed, with contributors welcome.
+*   Further work will be done to analyze the use cases and concerns around DAP query types, particularly the seasonality issue with fixed-size queries.
+*   The report authentication proposal will be further discussed and refined on the GitHub repository.
+*   Consider an interim meeting to discuss DAP query types.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

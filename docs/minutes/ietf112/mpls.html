@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="mpls.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-MPLS-20211108-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 14:30</p>
+<h1>mpls</h1>
+<h2>Summary</h2>
+<p>The mpls working group session included administrative updates, a review of working group document statuses, and reports on the MPLS Open Design Team (ODT) activities. Several drafts were presented, focusing on STAMP encapsulation for pseudo-wires, a YANG data model for MPLS Maximum Segment Depth (MSD), and considerations for deterministic QoS in the MPLS data plane. Key discussions revolved around the architectural implications of new functionalities on the MPLS label stack, the appropriateness of various encapsulation methods, and the need for extensible QoS solutions. Several drafts requested working group adoption or last call.</p>
+<h2>Key Discussion Points</h2>
+<h3>Administrative Updates</h3>
+<ul>
+<li><strong>Chairs</strong>: Tarek, Loa, Nick.</li>
+<li><strong>Secretary</strong>: Mak Chen (unable to attend, Nick volunteered for minutes).</li>
+<li><strong>Note Well</strong>: Standard IETF Note Well and BCP pointers were presented.</li>
+<li><strong>GitHub Repo</strong>: The mpls working group now has a GitHub repository for drafts, encouraging participants to submit work-in-progress for review and comments.</li>
+<li><strong>Agenda</strong>: The agenda included administrative items, working group status, ODT report, and three presentations.</li>
+<li><strong>Document Status Reports</strong>: Authors were encouraged to reach out to chairs for slots and include reports on open issues and next steps for working group documents. No new errata since IETF 111.</li>
+</ul>
+<h3>Working Group Document Status</h3>
+<ul>
+<li><strong>New RFC</strong>: RFC 1941 was published.</li>
+<li><strong>RFC Editor Queue</strong>:
+<ul>
+<li>One document is almost at RFC publication.</li>
+<li>Another is in MISSREF state, waiting on action from the shepherd/authors.</li>
+</ul>
+</li>
+<li><strong>IESG Queue</strong>: One document is awaiting authors' response to AD questions; authors confirmed they would respond.</li>
+<li><strong>Newly Adopted Document</strong>: Early code point allocation has been triggered.</li>
+<li><strong>Updated WG Documents</strong>: Authors of updated documents were encouraged to send status reports to the mailing list.</li>
+<li><strong>RAR CPFR</strong>: This document was returned from IESG to the working group. Authors believe all requested edits have been made and that it can progress again.</li>
+<li><strong>RFC 6374 SR draft</strong>: Authors believe the document is ready for Working Group Last Call.</li>
+<li><strong>SFC Control</strong>: The document needs feedback (informal or formal via WG Last Call). Shepherd to follow up.</li>
+<li><strong>SREP OAM draft</strong>: Authors requested WG Last Call, believing no further updates are needed. The draft's expiration was refreshed.</li>
+<li><strong>New Individual Drafts</strong>: Two drafts are on the joint MPLS/PALS/DetNet session (Nibble and MIAD requirements). One individual draft is on the MPLS session agenda.</li>
+<li><strong>In-band PM Encapsulation</strong>: Version 1 reviewed by the MPLS team, comments addressed in Version 2. An open issue relates to MPLS indicators and ancillary data (MIAD) being discussed in the MPLS ODT. Authors were encouraged to participate in the ODT discussions.</li>
+<li><strong>LR Draft</strong>: Query about working group adoption status. Authors to check if an update regarding integration with the MPLS ODT was promised.</li>
+</ul>
+<h3>MPLS Open Design Team (ODT) Report (Loa)</h3>
+<ul>
+<li><strong>Background</strong>: Multiple drafts were attempting to use the same &quot;first byte&quot; space in the MPLS label stack as the ACH, necessitating a careful architectural approach.</li>
+<li><strong>Scope</strong>: Activities are focused on &quot;MPLS Indicators and Ancillary Data&quot; (MIAD project).</li>
+<li><strong>MIAD Project Goals</strong>:
+<ul>
+<li>Produce &quot;spine indicators&quot; within the MPLS label stack to indicate desired actions not clear from the label itself.</li>
+<li>Define &quot;ancillary data&quot; carried with the packet to support these actions.</li>
+<li>Ancillary data forms: in-stack data, post-data, or no data.</li>
+</ul>
+</li>
+<li><strong>Agreements</strong>:
+<ul>
+<li>Anything specified previously must continue to work.</li>
+<li>Only one set of ancillary data can exist after the Bottom-of-Stack (BoS) label.</li>
+<li>Ancillary data might be complex and structured.</li>
+<li>New applications must resolve how to carry indicators and ancillary data without interfering with existing specifications.</li>
+</ul>
+</li>
+<li><strong>Output</strong>: Use cases, requirements, a framework, and solution drafts (status as WG or individual drafts is an open question).</li>
+<li><strong>Backward Compatibility</strong>: Acknowledged that existing &quot;broken heuristics&quot; (e.g., first nibble for IPv4) will continue to work as well as they can, but the ODT will not fix inherent flaws in old specifications.</li>
+</ul>
+<h3>STAMP Encapsulation for Pseudo-Wires (Rakesh Gandhi)</h3>
+<ul>
+<li><strong>Scope</strong>: Encapsulation of simple two-way active measurement protocol (STAMP) test packets for MPLS pseudo-wires, covering cases with and without an IP/UDP header.</li>
+<li><strong>Motivation (without IP/UDP header)</strong>: To allow in-band STAMP packets to precisely match the headers and ECMP paths of data traffic that does not carry an IP header (e.g., TDM pseudo-wires), for accurate latency and packet loss measurements.</li>
+<li><strong>Discussion (Greg, Stewart)</strong>: Concerns raised about the complexity of the &quot;without IP/UDP header&quot; case. Greg and Stewart argued that OAM typically uses IP/UDP headers and that the pseudo-wire operation should encapsulate everything, making the presence of an IP/UDP header irrelevant for path selection if an entropy label is used. They suggested this topic warrants further discussion offline (mailing list or side meeting).</li>
+<li><strong>Procedures</strong>:
+<ul>
+<li>Uses existing ACH values (21 for IPv4, 57 for IPv6) for cases with IP/UDP.</li>
+<li>Proposes new ACH values for cases without IP/UDP headers, with the Channel Type field distinguishing sender and reflector packets.</li>
+</ul>
+</li>
+<li><strong>Working Group Adoption</strong>: Authors requested working group adoption. Stewart suggested the document belongs in the PALS working group, where companion documents were developed.</li>
+</ul>
+<h3>YANG Data Model for MPLS MSD (Jin)</h3>
+<ul>
+<li><strong>Context</strong>: The draft defines a YANG data model for MPLS Maximum Segment Depth (MSD), augmenting the MPLS base model (RFC 8960). It was originally part of RFC 9201 and split out during IESG review.</li>
+<li><strong>Updates</strong>:
+<ul>
+<li>Interface MSD status now augments the MPLS interface, making it more specific to MPLS-enabled interfaces.</li>
+<li>Removed the <code>max-sd-depths</code> grouping.</li>
+<li>Editorial changes and updated security considerations.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Jeff</strong>: Asked about how the model handles cases where a node understands MSD but cannot determine its value. Jin stated it's a read-only parameter reporting what the hardware/lower level provides. Jeff will take this to the list.</li>
+<li><strong>Tarek</strong>: Questioned the utility and IGP alignment of reporting MSD per-interface, noting that IGP capabilities often focus on per-node. Jin clarified that corresponding IGP models (for ISIS and OSPF) also include per-link MSDs.</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Authors believe the draft is ready for working group adoption and requested an adoption call.</li>
+</ul>
+<h3>Deterministic QoS for MPLS Data Plane (Torsten)</h3>
+<ul>
+<li><strong>Problem Statement</strong>: Current MPLS forwarding (per-hop per-flow bounded latency) relies on shapers/interleaved regulators, leading to:
+<ul>
+<li>High complexity and scalability issues (tens of thousands of shapers in large networks).</li>
+<li>Maximum jitter, which is undesirable for industrial applications.</li>
+<li>Desire for per-hop per-flow stateless behavior with source routing and low jitter.</li>
+</ul>
+</li>
+<li><strong>Solution Options</strong>:
+<ul>
+<li><strong>Option 1 (No MPLS Packet Header Changes)</strong>: Proposes Traffic Class Queueing and Forwarding (TCQF). This solution is per-flow stateless, offers very low jitter (independent of path properties), and uses 3-5 Traffic Class (TC) values in the MPLS label. It has been validated in a 2000 km WAN.</li>
+<li><strong>Option 2 (MPLS Packet Header Extensions)</strong>: Acknowledges the need for more extensible QoS solutions for DetNet and beyond. Discussed areas like pre-off, alternatives to TCQF (potentially requiring timestamps, priority fields), DSCP/ECN alignment (e.g., for L4S), and bandwidth management. Emphasizes the danger of standardizing non-extensible solutions now, suggesting a broader design team effort across MPLS and IPv6.</li>
+</ul>
+</li>
+<li><strong>TCQF Mechanism</strong>: Based on Time-Sensitive Networking (TSN) cyclic queueing and forwarding. Packets are forwarded bucket-by-bucket in cycles, with latency being one cycle. A cycle number is put into the packet (using TC bits) to manage latency and jitter across links.</li>
+<li><strong>Extensible QoS Header</strong>: Torsten highlighted a range of unsolved QoS problems that could benefit from an extensible header, including pre-off, alternative bounded latency mechanisms, DSCP/ECN unification, and bandwidth management. He posed questions about extensibility mechanisms (e.g., tLVs vs. new extension headers).</li>
+<li><strong>Call to Action</strong>: Torsten requested support for the TCQF draft (in the DetNet WG) as a workable, short-term bounded latency solution for MPLS. He also encouraged a longer-term, broader QoS effort in conjunction with the MPLS design team, involving the Transport Area.</li>
+<li><strong>Discussion (AC)</strong>: Raised concerns about the feasibility of getting 3-5 TC values, given only 3 TC bits and ongoing debates in L4S. Suggested a deeper discussion in DetNet or a design team due to the complexity of comparing CQF and ATS.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>RAR CPFR</strong>: Authors to send an email to the MPLS mailing list confirming all outstanding comments have been addressed to allow the document to progress again.</li>
+<li><strong>RFC 6374 SR draft</strong>: Chairs to initiate a Working Group Last Call for this document.</li>
+<li><strong>SFC Control</strong>: Loa (shepherd) to encourage informal feedback/review from the working group or initiate a formal Working Group Last Call.</li>
+<li><strong>SREP OAM draft</strong>: Chairs to verify the Working Group Last Call request.</li>
+<li><strong>In-band PM Encapsulation</strong>: Authors are encouraged to participate in the MPLS Open Design Team (ODT) to discuss how the draft's functionality aligns with MIAD indicators and ancillary data.</li>
+<li><strong>STAMP Encapsulation for Pseudo-Wires</strong>: The discussion regarding the necessity and complexity of the &quot;without IP/UDP header&quot; encapsulation case will be moved to the mailing list or a dedicated side meeting for further technical exploration. The working group ownership (MPLS vs. PALS) will also need clarification.</li>
+<li><strong>YANG Data Model for MPLS MSD</strong>: Chairs to initiate a Working Group adoption call for this draft.</li>
+<li><strong>Deterministic QoS for MPLS</strong>: Torsten encourages MPLS working group members to engage in the DetNet working group regarding the TCQF draft and to consider a longer-term, more comprehensive QoS effort within the MPLS design team, potentially collaborating with DetNet and the Transport Area.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>MPLS Working Group chairs will follow up on the status and progression of documents requiring Working Group Last Call or adoption calls.</li>
+<li>Authors of various drafts are expected to follow up on action items, including sending emails to the list or engaging in related design team discussions.</li>
+<li>The MPLS Open Design Team will continue its work on MIAD, focusing on deciding the format and scope of indicators and ancillary data, and ensuring compatibility.</li>
+<li>Further technical discussion on STAMP encapsulation for pseudo-wires (especially the &quot;without IP/UDP header&quot; case) will occur on the mailing list or in a dedicated side meeting.</li>
+<li>MPLS working group members are encouraged to participate in DetNet discussions related to deterministic QoS solutions and to consider a joint effort with the MPLS ODT on extensible QoS mechanisms.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

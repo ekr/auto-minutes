@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="pals.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-PALS-20211108-1600">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 16:00</p>
+<h1>pals Session Meeting Minutes</h1>
+<h2>Summary</h2>
+<p>This was a joint session of the PALS, MPLS, and DETNET Working Groups, the third such meeting since IETF 111. The primary focus was on discussing fundamental architectural issues arising from proposals for new applications and uses at the bottom of the MPLS label stack, as well as indications for ancillary data. Key presentations covered requirements for label stack indicators, DetNet's use of the ACH, issues with the MPLS First Nibble (MFN), and a generalized approach to Network Function Indicators. Discussions highlighted the need for careful design to ensure extensibility, backward compatibility, efficient use of Special Purpose Labels (SPLs), and clear definitions for in-stack versus post-stack data. The Open Design Team (ODT) work is ongoing and will continue to refine these concepts.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Chairs' Introduction and Agenda Overview</strong></p>
+<ul>
+<li>Session chaired by Andy Malis, with Stuart and Tariq as co-chairs. Dave TNC is the working group secretary and minute-taker.</li>
+<li>Minutes are being taken live on Etherpad/HedgeDoc.</li>
+<li>The meeting purpose is to discuss basic architectural issues for new applications at the bottom of the MPLS label stack, a continuation of previous joint sessions.</li>
+<li>The Open Design Team (ODT) work is not yet complete and will continue after this IETF meeting.</li>
+<li>Attendees were asked to keep questions during presentations to clarification only, reserving broader discussion for the dedicated open discussion slot.</li>
+</ul>
+</li>
+<li>
+<p><strong>Requirements for MPLS Label Stack Indicators (Matthew Bocci)</strong></p>
+<ul>
+<li><strong>Draft Scope</strong>: Specifies requirements for indicators of ancillary data below the label stack, intended as a product of the MPLS ODT. Version 0.</li>
+<li><strong>Terminology</strong>: Proposed &quot;Ancillary Data&quot; (data relating to the MPLS packet used for forwarding/processing, can be implicit, in-stack, post-stack, or within payload) and &quot;Ancillary Data Indicator (ADI)&quot; (indicator in label stack that ancillary data exists, optionally indicating type).</li>
+<li><strong>Architectural Principles</strong>: Solutions must maintain MPLS extensibility, flexibility, and efficiency; not restrict generality; coexist with existing mechanisms; and make use of existing data plane operations without inconsistency with RFC 3031.</li>
+<li><strong>Protocol Capability &amp; Backward Compatibility</strong>: ADIs/ancillary data must not be delivered to nodes incapable of processing them. Coexistence with G-ACH. LER must determine if far-end LSR can accept/process a packet with a given ADI.</li>
+<li><strong>Protocol Development Work</strong>:
+<ul>
+<li>Special Purpose Labels (SPLs) are a mechanism of last resort due to limited pool.</li>
+<li>ADI mechanisms must operate in the context of the Top-of-Stack LSE.</li>
+<li>ADIs must ensure target downstream LSRs can parse the label stack sufficiently.</li>
+<li>Support point-to-point and point-to-multipoint paths (each ADI for one or the other).</li>
+<li>Data plane mechanisms for ADIs must be independent of control plane type (LDP, RSVP, BGP, static, IGP).</li>
+<li>Control planes must define downstream LSR/ODR ability to accept/process ADIs.</li>
+<li>Multiple ADIs for different applications can be in the same label stack, but each ADI supports one application.</li>
+</ul>
+</li>
+<li><strong>Security Requirements</strong>: Solution to verify authenticity of ancillary data. Design must not expose confidential information to LSRs.</li>
+<li><strong>Next Steps</strong>: Clean up duplicate requirements, gather more from emerging applications, develop companion architecture/framework, seek community review.</li>
+<li><strong>Discussion (Krithi Chetlur)</strong>:
+<ul>
+<li>Suggested softening &quot;SPLs as last resort&quot; if a <em>single</em> SPL can be multi-purpose (e.g., carry multiple ADI types), rather than one SPL per ADI type.</li>
+<li>Questioned the strictness of &quot;neither an ADI nor ancillary data must be delivered to a node that is not capable of processing it,&quot; suggesting that some ADIs might be for optimization (no harm if not processed), while others are critical (must not be forwarded if not understood).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>DetNet and DetNet's use for ACH (Balazs Varga)</strong></p>
+<ul>
+<li>DetNet data plane for MPLS identified two sub-layers: service and forwarding.</li>
+<li>Uses pseudo-wire architecture. DetNet service sub-layer requires a sequence number (in a &quot;DetNet Control Word&quot; - DCW) for flow identification. DCW is mandatory.</li>
+<li>Encapsulation: Label stack, followed by S-label (bottom of stack for DetNet flow), then the DCW.</li>
+<li>DCW details: First nibble all zero, followed by sequence number (critical for packet replication, duplicate elimination, order preservation). Sequence number space is circular and monotonically increasing.</li>
+<li>OAM for DetNet Service Sub-Layer: Proposed using ACH with a reserved field for the sequence number.</li>
+<li><strong>Proposed New DetNet ACH Format</strong>: First nibble '1', version '1', includes sequence number and channel type. A second 32-bit word for Node ID, flags, and session identifier (some fields reserved for now). Aims to extend applicability.</li>
+<li><strong>Discussion (Krithi Chetlur)</strong>:
+<ul>
+<li>Concerned about the small 4-bit space of the first nibble for sequence numbers.</li>
+<li>Suggested an extension field or subtype mechanism for DetNet OAM to manage the space more effectively, rather than relying solely on versioning.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>MPLS First Nibble (Krithi Chetlur)</strong></p>
+<ul>
+<li><strong>Context</strong>: The MPLS First Nibble (MFN) is the high-order 4-bit field of the first octet after the last label. It became special as a heuristic (e.g., recognizing IPv4/v6 packets for load balancing) and to indicate post-stack data (PSD) type.</li>
+<li><strong>Two Cases</strong>: Naked payload (e.g., IPv4/v6) or a Post-Stack Header (e.g., Control Word, OAM word, Beer header, G-ACH).</li>
+<li><strong>Problems</strong>: Heuristics can fail (Ethernet packets with MFN=4/6 mistaken for IP, causing incorrect load balancing). Current PSD types avoid 4/6, but new IP versions could create new conflicts.</li>
+<li><strong>Goals</strong>: Allow current implementations to continue working (with caveats), but lay groundwork for better, more efficient implementations and clearer PSD identification.</li>
+<li><strong>Recommendations</strong>:
+<ul>
+<li>For Ethernet payloads: Must have a control word (strengthening existing &quot;should&quot;).</li>
+<li>Decouple MFN and IP version numbers. Do not interpret MFN values 4 or 6 as IP versions for new IP versions or non-IP packets.</li>
+<li>MFN should identify the type of PSD only (e.g., 0=control word, 1=OAM, 5=Beer); a registry is needed.</li>
+<li>For non-IPv4/v6 payloads: Must have PSD.</li>
+<li>Use Fat Pseudowire or Entropy Labels for load balancing instead of MFN-based IP heuristics.</li>
+<li>Going forward, only IPv4/v6 can be naked payload; any new IP versions or other Layer 2/1 packets must have PSD.</li>
+<li>Keep PSD recognition/parsing entirely in the data plane, using unique registries.</li>
+</ul>
+</li>
+<li><strong>Future Proposal (not yet in draft)</strong>: To extend the MFN space, a proposal includes a dedicated MFN value for extensible PSD, followed by a subtype field and a &quot;Total Length of PSD&quot; field. This allows skipping unknown PSD.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Hao Yu</strong>: Questioned if MFN is still needed if a robust ADI mechanism in the label stack exists.</li>
+<li><strong>Loa Andersson</strong>: Suggested increasing the subtype field to 8 bits to better utilize MFN space.</li>
+<li><strong>Stuart Bryant</strong>: Emphasized that raw Ethernet packets will always exist, making MFN-based forwarding decisions unreliable without other qualifying information.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Special Purpose Label / Forwarding Actions Indicators (Krithi Chetlur)</strong></p>
+<ul>
+<li><strong>ISD (In-Stack Data) vs. PSD (Post-Stack Data)</strong>:
+<ul>
+<li><strong>ISD Philosophy</strong>: For urgent processing, constrained environment, compact encoding, respects bottom-of-stack. Process quickly, be parsimonious.</li>
+<li><strong>PSD Philosophy</strong>: Freer, does not need to be ultra-compact, can be self-describing (e.g., TLV-like structures).</li>
+</ul>
+</li>
+<li><strong>ISD Content</strong>: ISD should primarily indicate <em>who</em> should look at the PSD (e.g., specific egress, every hop, optional). It should not repeat PSD type information to avoid confusion.</li>
+<li><strong>Extensions (Reusing a Bit)</strong>: Proposed a &quot;Bottom of Section&quot; bit (inverting the traditional E-bit) within an FAI block. This bit would delineate &quot;Flag Section,&quot; &quot;Standard Data Section,&quot; and &quot;User-Defined Data Section,&quot; allowing parsers to skip unknown sections. This effectively reuses 30 bits per label for various data.</li>
+<li><strong>Discussion (Hao Yu)</strong>: Reiterated that if a clear design for ancillary data exists, most information should be placed after the label stack to simplify the stack itself. Krithi countered that urgent data (e.g., slice identifiers, entropy labels) is needed in-stack for immediate processing without deep stack parsing.</li>
+</ul>
+</li>
+<li>
+<p><strong>Network Function Indicator (John Drake)</strong></p>
+<ul>
+<li><strong>Context</strong>: Generalizes Krithi's forwarding actions concept.</li>
+<li><strong>Key Elements</strong>: Two Special Purpose Labels (SPLs): one for Hop-by-Hop, one for End-to-End. P-nodes only look at Hop-by-Hop SPLs.</li>
+<li><strong>Extensibility</strong>: Network functions are defined in RFCs, specifying their type (hop-by-hop/end-to-end), associated flag bit in the &quot;Network Function Flags,&quot; and ancillary data (in-stack or after-stack).</li>
+<li><strong>NFI Block Structure</strong>: SPL, followed by &quot;Network Function Flags&quot; (a registry of bits, with a continue bit for multi-entry flags), then In-Stack Ancillary Data (31 bits per entry, ordered by flags).</li>
+<li><strong>Processing</strong>: Nodes can understand network function flags up to a certain bit position, allowing them to skip over ancillary data for unsupported functions.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Krithi Chetlur</strong>: Questioned how intermediate nodes differentiate hop-by-hop vs. end-to-end SPLs if deep in the stack. John clarified that hop-by-hop SPLs <em>precede</em> end-to-end SPLs. Krithi also objected to &quot;network function,&quot; preferring &quot;network action&quot; to imply less heavyweight processing. Advocated for in-stack data to be exclusively hop-by-hop, with all end-to-end and some hop-by-hop (due to size) in post-stack data.</li>
+<li><strong>Greg Mirsky</strong>: Asked if a flag being present without corresponding metadata in post-stack data would constitute an invalid packet. John replied that this behavior is part of the network function's definition.</li>
+<li><strong>Stuart Bryant</strong>: Suggested that hop-by-hop data might be forced to go after the bottom of the stack if it's too large for in-stack. Also emphasized the need for an indicator <em>above</em> the stack to signify data <em>below</em> the stack.</li>
+<li><strong>Loa Andersson &amp; Hao Yu</strong>: Raised concerns about the scarcity of SPLs (only 8 base SPLs left). Suggested investigating more efficient encoding, potentially reducing to one base SPL for both functions. Hao Yu reiterated keeping the label stack simple and moving complexity to post-stack data.</li>
+<li><strong>Adrian Farrel</strong>: Asked about distinguishing between functions a router <em>must</em> operate on (and drop if not understood) vs. those it <em>can</em> ignore. This &quot;must vs. can ignore&quot; distinction is critical for incremental deployment and needs clear definition within network function specifications.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>DECISION</strong>: The Open Design Team (ODT) calls will continue following this IETF meeting.</li>
+<li><strong>ACTION</strong>: Krithi Chetlur to write up his proposal for extending the MPLS First Nibble (MFN) space and circulate it for community review.</li>
+<li><strong>ACTION</strong>: The DetNet Working Group will discuss the proposed new DetNet ACH format in their upcoming meeting.</li>
+<li><strong>ACTION</strong>: The chairs will hold discussions to determine the best approach for managing the significant volume of ongoing work, potentially through specialist discussion groups, more focused weekly ODT meetings, or virtual interims, in addition to regular ODT calls.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Open Design Team (ODT)</strong>: Continue weekly meetings to progress discussions on architectural issues and solutions.</li>
+<li><strong>Requirements Draft</strong>: Clean up any duplicate requirements, continue gathering requirements from emerging applications, and solicit broad review and feedback.</li>
+<li><strong>Architectural Document</strong>: Develop a companion architecture and framework document to guide solutions.</li>
+<li><strong>MFN Proposal</strong>: Review and provide feedback on Krithi Chetlur's MFN extension proposal once circulated.</li>
+<li><strong>In-Stack vs. Post-Stack Data</strong>: Continue discussion on the principles for determining whether ancillary data should be carried in-stack or post-stack.</li>
+<li><strong>SPL Allocation</strong>: Explore more efficient use of Special Purpose Labels (SPLs) and consider strategies to reduce the number of base SPLs required for these indicators.</li>
+<li><strong>Processing Models</strong>: Define the processing model for MPLS routers in the context of ancillary data, including constraints and behavior for unknown functions (e.g., must drop vs. can ignore).</li>
+<li><strong>Generalization of Forwarding Actions</strong>: Continue work on generalizing forwarding actions/network functions, including clear definitions for ancillary data characteristics and placement.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

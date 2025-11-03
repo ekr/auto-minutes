@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="httpapi.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-HTTPAPI-20220729-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 29 Jul 2022 14:00</p>
+<h1>httpapi</h1>
+<h2>Summary</h2>
+<p>The httpapi working group convened to discuss several active drafts. Key discussions revolved around the <em>Rate Limit</em> headers, where the working group did not reach consensus on consolidating three separate headers into a single structured field, despite editor investigation. For <em>API Media Types</em>, the working group decided against including a normative YAML to JSON conversion algorithm, deeming it out of scope. The JSON-LD context appendix for <em>HTTP Problem Details (7807bis)</em> was also removed due to complexity and scope concerns, clearing the path for its publication. Finally, a significant portion of the session focused on the <em>Deprecation</em> header, with a proposal to introduce a new, consolidated <em>Lifecycle</em> header using structured fields to encompass deprecation, sunset, and other API lifecycle stages. While enthusiasm for this was noted, formal consensus was not achieved.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Rate Limit Headers (draft-ietf-httpapi-rate-limit-headers)</strong>
+<ul>
+<li><strong>Goal:</strong> Communicate service limits to clients, consolidate existing practices, and avoid header proliferation. Introduced <code>RateLimit-Limit</code>, <code>RateLimit-Remaining</code>, <code>RateLimit-Reset</code>, <code>RateLimit-Policy</code> as structured fields.</li>
+<li><strong>Editor's Stance (Roberto):</strong> Editors decided against combining these into a single structured field, as requested by some WG members.
+<ul>
+<li><strong>Rationale:</strong> Current implementations (10+ years) widely use separate integer-valued fields; implementers found combined fields confusing; structured field parsers are not yet widely available in the current API ecosystem. The primary goal is to consolidate existing practice, not to force new syntax without operational experience.</li>
+</ul>
+</li>
+<li><strong>Working Group Concerns (Mark Nottingham, Martin Thomson):</strong> Discomfort with editor decisions based on unshared data. Aesthetically, three separate headers are repetitive. If specified as structured fields, but appearing as simple integers, it creates an &quot;attractive nuisance&quot; that could lead to parsing errors with future extensions. A single, atomic unit would be more efficient and easier to process.</li>
+<li><strong>Poll Results:</strong> A poll on combining the fields into one structured field (vs. keeping three separate headers) showed <strong>no consensus</strong> (7 for editor's decision / 3 headers, 6 against / 1 header, out of 13 voters).</li>
+</ul>
+</li>
+<li><strong>Media Types for API Specifications (draft-ietf-httpapi-media-type-registration)</strong>
+<ul>
+<li><strong>Goal:</strong> Register media types for OpenAPI, JSON Schema, etc., to improve interoperability and content negotiation. Focus on <code>application/yaml</code> and <code>application/plus+yaml</code>.</li>
+<li><strong>Fragment Identifier for <code>+yaml</code>:</strong> Discussion on whether <code>plus+yaml</code> media types should be required to use the same fragment identifier as <code>application/yaml</code>.
+<ul>
+<li><strong>Editors' View:</strong> Forcing this would break existing implementations (e.g., <code>application/schema+yaml</code> already defines its own). RFC 6838 does not require <code>+suffix</code> types to share the base type's fragment identifier. Flexibility for new types to define their own is preferred.</li>
+<li><strong>Mark Nottingham:</strong> Common pattern is for <code>+suffix</code> types to default to the base type's fragment identifier, but allow opting out.</li>
+</ul>
+</li>
+<li><strong>Normative YAML to JSON Conversion (Issue 59):</strong> A request from the W3C YAML-LD working group to include a normative algorithm for converting YAML to JSON.
+<ul>
+<li><strong>Working Group Position (Chairs, Mark Nottingham):</strong> This is complex, potentially outside the working group's charter, would delay the draft, and would be a significant scope creep for a media type registration document.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>HTTP Problem Details (RFC 7807bis / draft-ietf-httpapi-rfc7807bis)</strong>
+<ul>
+<li>The document has passed working group last call.</li>
+<li><strong>JSON-LD Context Appendix:</strong> An open question was whether to include a JSON-LD context as a non-normative appendix.
+<ul>
+<li><strong>Discussion (Eric, Mark Nottingham):</strong> JSON-LD involves mapping JSON to RDF, which requires settling on an RDF vocabulary. This is a complex discussion belonging more to the RDF community, not the httpapi WG, and would be difficult to resolve in time for an immutable RFC.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Deprecation Header (draft-ietf-httpapi-deprecation)</strong>
+<ul>
+<li><strong>Current State (Eric):</strong> The draft aligns syntactically with the <code>Sunset</code> header (uses HTTP-date format, not a structured field), for consistency.</li>
+<li><strong>Proposal for <code>Lifecycle</code> Header (Eric, Mark Nottingham):</strong> A new, generic <code>Lifecycle</code> header could encompass <code>Sunset</code>, <code>Deprecation</code>, and potentially other API lifecycle stages (e.g., experimental). This would use structured fields.
+<ul>
+<li><strong>Pros:</strong> Single place for API status, consistent syntax (structured fields), naturally extensible.</li>
+<li><strong>Cons (Eric):</strong> Would mean starting from scratch, might take considerable time (1-2 years), and would obsolete the existing <code>Sunset</code> RFC.</li>
+</ul>
+</li>
+<li><strong>Structured Fields Date Type (Mark Nottingham):</strong> Discussion hijacked to gather feedback on adding a <code>date</code> type to structured fields (e.g., <code>@</code> + integer epoch vs. ISO date string). This could make structured fields more attractive for deprecation/lifecycle.</li>
+<li><strong>Poll Results:</strong> A poll on exploring a unified <code>Lifecycle</code> header as an alternative to separate <code>Sunset</code> and <code>Deprecation</code> headers showed <strong>enthusiasm but not consensus</strong> (9 for, 3 against, out of 12 voters).</li>
+</ul>
+</li>
+<li><strong>Idempotency-Key Header (draft-ietf-httpapi-idempotency)</strong>
+<ul>
+<li>Author (Sanjay) was not present.</li>
+<li><strong>Status (Eric):</strong> No formal blockers, but not ready for WG Last Call; needs a re-read and review.</li>
+</ul>
+</li>
+<li><strong>Link Template (draft-ietf-httpapi-link-template)</strong>
+<ul>
+<li><strong>Status (Mark Nottingham):</strong> Similar discussions regarding consistency with existing <code>Link</code> headers. Will reuse structured field syntax from the retrofit draft. Will explore allowing URI templates in the <code>anchor</code> parameter. This addresses a common issue in the OpenAPI world.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Rate Limit Headers:</strong>
+<ul>
+<li><strong>Decision:</strong> No consensus was reached on combining the <code>RateLimit-</code> headers into a single structured field.</li>
+<li><strong>Action Item:</strong> Discussion on this issue (pull request 65) will continue on the mailing list and GitHub. API community members are encouraged to participate.</li>
+</ul>
+</li>
+<li><strong>Media Types for API Specifications:</strong>
+<ul>
+<li><strong>Decision:</strong> The request to include a normative YAML to JSON conversion algorithm (Issue 59) is <strong>out of scope</strong> for this working group's charter. The related pull request will be closed.</li>
+<li><strong>Action Item:</strong> Discussion on the fragment identifier rules for <code>plus+yaml</code> media types will continue on the mailing list.</li>
+</ul>
+</li>
+<li><strong>HTTP Problem Details (RFC 7807bis):</strong>
+<ul>
+<li><strong>Decision:</strong> The JSON-LD context appendix will <strong>not</strong> be included in the document.</li>
+<li><strong>Action Item:</strong> The document will proceed towards publication without the JSON-LD context appendix.</li>
+</ul>
+</li>
+<li><strong>Deprecation Header:</strong>
+<ul>
+<li><strong>Decision:</strong> No consensus was reached on moving to a unified <code>Lifecycle</code> header, despite enthusiasm in the room poll.</li>
+<li><strong>Action Item:</strong> Discussion on the <code>Lifecycle</code> header proposal will be taken to the mailing list for broader feedback. Eric to initiate this.</li>
+</ul>
+</li>
+<li><strong>Idempotency-Key Header:</strong>
+<ul>
+<li><strong>Action Item:</strong> Eric to reach out to Sanjay for updates and to assess readiness for WG Last Call.</li>
+</ul>
+</li>
+<li><strong>Link Template:</strong>
+<ul>
+<li><strong>Action Item:</strong> Mark Nottingham will prepare a Pull Request to update the draft to use structured fields.</li>
+</ul>
+</li>
+<li><strong>General:</strong>
+<ul>
+<li><strong>Announcement:</strong> The <code>Link Set</code> document (RFC 9264) has been successfully published, marking the first RFC from this working group.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continued discussion on the <code>RateLimit-</code> headers and <code>plus+yaml</code> fragment identifiers on the working group mailing list and GitHub.</li>
+<li>Eric to post a summary and solicit further feedback on the <code>Lifecycle</code> header proposal to the mailing list.</li>
+<li>Mark Nottingham to submit a PR for the <code>Link Template</code> draft using structured fields.</li>
+<li>Eric to coordinate with Sanjay regarding the <code>Idempotency-Key</code> draft.</li>
+<li>The chairs will proceed with the publication of <code>HTTP Problem Details (7807bis)</code> without the JSON-LD context appendix.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

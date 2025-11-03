@@ -1,0 +1,104 @@
+**Session Date/Time:** 21 Mar 2022 09:00
+
+# dispatch
+
+## Summary
+
+The dispatch session at IETF 113 featured discussions on five Internet-Drafts and one proposed side meeting, primarily focusing on potential working group formation or AD sponsorship. Key topics included new email headers for complaint feedback and `Expires` functionality, a well-known URL for ECH configuration, content negotiation for Messaging Layer Security (MLS), and a comprehensive protocol for software ethics transparency. A general consensus emerged for a working group forming BoF for MLS content negotiation, while the "Open Ethics Transparency Protocol" was deemed too broad for the IETF in its current form. Several pressing, interconnected issues in the email ecosystem, particularly regarding DKIM replay attacks and ARC adoption, were also highlighted during Any Other Business (AOB), suggesting a potential need for a broader email maintenance working group.
+
+## Key Discussion Points
+
+*   **Complaint Feedback Loop Address Header (draft-jeanphilippe-email-cfpl-header)**
+    *   **Problem:** Existing email feedback loops are manual, per-provider, and difficult to maintain, especially with the shift to DKIM-based reputation. This hinders smaller mailbox providers from offering feedback loops.
+    *   **Proposal:** Introduce two new email headers: `CF-Address` for the complaint report destination and an associated ID. Both headers would be covered by a DKIM signature, aligning with the `From` header. Mailbox providers would use existing reputation data to avoid sending reports to spammers.
+    *   **Discussion:**
+        *   The proposal was seen as a reasonable, useful experiment.
+        *   Concerns were raised regarding potential DKIM replay attacks, where legitimate emails could be replayed to unintended recipients, negatively impacting sender reputation.
+        *   A need for a more comprehensive approach to email-related work was noted, with some suggesting a new, broader email maintenance working group rather than individual AD sponsorship due to the complexity and interdependencies of email issues.
+
+*   **Well-Known URL for Publishing ECHConfig Lists (draft-farrell-well-known-echconfig-list)**
+    *   **Problem:** Encrypted Client Hello (ECH) relies on public keys that are rotated. A mechanism is needed for a "zone factory" to retrieve these keys from front-end servers and publish them in DNS, particularly in CDN scenarios where the DNS operator may not be the CDN provider.
+    *   **Proposal:** Utilize a `.well-known` URI to publish ECHConfig Lists in a JSON format. This would provide a standardized way for systems to discover and fetch ECH public keys.
+    *   **Discussion:**
+        *   Initial reactions indicated the proposal seemed reasonable and had cross-area relevance (ART/SEC).
+        *   A key debate revolved around whether this solution should be specific to ECH or generalized for broader secure service discovery, potentially encompassing SVCCB records.
+        *   Arguments for a general solution emphasized avoiding "croft" (ad-hoc point solutions) and allowing for evolution, though this would involve more work and coordination between DNS and HTTP aspects.
+        *   Arguments for a specific solution cited the immediate, pressing need for CDNs and the benefit of addressing a clear problem before generalizing.
+        *   The TLS working group chairs noted that not all TLS-related work fits within the TLS WG's wire-format focus, suggesting it might be better handled by other experts for broader deployment.
+        *   No clear consensus was reached on the appropriate working group (DNSOP, TLS, HTTP, HTTPAPI were mentioned) or whether to pursue a general or specific approach.
+
+*   **Updated Use of the Expires Message Header Field (draft-levine-expires-header)**
+    *   **Problem:** The `Expires` header exists for X.400 and Usenet messages but is not formally defined or widely recognized for general Internet email.
+    *   **Proposal:** Rehabilitate the `Expires` header with its existing syntax and meaning, explicitly allowing its use in any email message. The proposal intentionally avoids dictating specific user agent behavior, instead enabling mail software to take reasonable actions (e.g., auto-deletion, graying out) for time-sensitive content.
+    *   **Discussion:**
+        *   The proposal was well-received, seen as sensible and non-contentious, with some implementers already using similar concepts.
+        *   It was highlighted as a small change that could standardize existing vendor-specific implementations.
+
+*   **Messaging Layer Security (MLS) Content Negotiation (draft-may-mls-content-types & draft-may-mls-inmate)**
+    *   **Context:** MLS (Messaging Layer Security) is an efficient group keying protocol, primarily driven by instant messaging/group chat applications, aiming for end-to-end security in federated environments.
+    *   **Problem:** The core MLS protocol lacks a mechanism to specify or negotiate the format of its application data, which is crucial for interoperability between different messaging vendors and systems in a federated setup. The existing CPIM is outdated.
+    *   **Proposals:**
+        1.  **Content Negotiation:** Introduce MLS key package extensions for clients to list supported MIME types and Group Info extensions for group administrators to define mandatory MIME types for participation.
+        2.  **Example Content Format ("inmate"):** Provide a common format for rich messaging features (text, replies, reactions, editing, expiring messages) using existing IETF specifications. This aims to be an example/common baseline rather than a universal standard.
+    *   **Discussion:**
+        *   Attendees broadly agreed on the importance of the problem, particularly for end-to-end encrypted interoperable messaging.
+        *   Concerns were raised about the complexity of standardizing messaging *semantics* rather than just syntax, as past efforts devolved into "walled gardens."
+        *   Strong support emerged for a Working Group Forming BoF to further explore the problem space, build community, and gather operator input. It was stressed that the focus should be on true user-facing interoperability.
+        *   A desire for an expedited, potentially virtual, WG-forming BoF was expressed, given the rapid pace of development in the messaging space.
+
+*   **Open Ethics Transparency Protocol (draft-nikita-open-ethics-transparency-protocol)**
+    *   **Problem:** A significant lack of transparency in the software industry regarding how products handle data and operate, similar to the historical absence of "nutrition labels" in other industries. Current regulations are often insufficient without practical transparency mechanisms.
+    *   **Proposal:** An "Open Ethics Transparency Protocol" that enables software developers to create machine-readable "ethics passports" (JSON files) detailing their software's components, operational methods (e.g., heuristics, AI models), and software base (open/proprietary). These passports, identified by `openethics://` URIs, would be placed on `.well-known` URLs, allowing crawlers and clients to build composite disclosures. Cryptographic hashing and third-party validation would enhance trust.
+    *   **Discussion:**
+        *   The work was recognized as very interesting and tackling an important societal problem.
+        *   A major point of concern was the breadth of the proposal, encompassing not just technical protocols but also regulatory, ethical, and societal aspects (e.g., "universal ethics," auditing costs, user feedback loops).
+        *   Many participants felt the scope was too large for the IETF in its current form, resembling a "systems engineering" problem rather than a specific protocol development task.
+        *   It was suggested that a separate, broader multi-stakeholder group might be better suited to define the overall system, which could then feed specific, concrete protocol requirements to the IETF.
+        *   The presenter clarified the intent was to *avoid* universal ethics, instead providing descriptive transparency for personalized user choice, with auditors paid by companies seeking profit.
+        *   References were made to similar "consent receipts" work that might offer a model for system building.
+
+*   **Open Event Streaming Open Network (OESON) (draft-emiliano-event-streaming-open-network)**
+    *   **Problem:** Significant difficulty in connecting asynchronous message flows across the internet (e.g., between microservices, organizations). Lack of a standardized URI scheme for message flows and insufficient DNS support lead to fragmented, proprietary solutions.
+    *   **Proposal:** Introduce an `oes:` URI scheme for message flows, creating an "Open Event Streaming Open Network" based on DNS. This would allow common referencing of message flows, reducing integration complexity. An "Accessing Protocol" (analogous to SMTP) would handle authentication and commands (e.g., `subscribe`, `collect`, `distributor`, `signal`) for managing message flow connections and processing.
+    *   **Discussion:** No queue activity for this presentation in the main dispatch session. The presenter invited interested parties to a scheduled side meeting for further discussion.
+
+*   **Any Other Business (AOB) - Email Ecosystem Challenges**
+    *   **Francesca (AD) announced:** The ECMA Script Media Types updates draft has moved to RFC editor. The ISG is aware of the possibility of a broader "email maintenance working group" to address various interconnected email drafts.
+    *   **Braun highlighted three pressing email-related problems:**
+        1.  **DKIM Replay Attacks:** Lack of envelope signing in DKIM allows replaying legitimate, signed emails to arbitrary recipients, causing reputation damage. Potential solutions (e.g., signed header aligned with envelope) face challenges with Bcc, privacy, and breaking indirect mail flows.
+        2.  **ARC Adoption & Policy Signaling:** Difficult to know if a recipient supports ARC, which is crucial for preserving DMARC validation in indirect mail flows. A mechanism (e.g., DNS record, SMTP capability) for signaling ARC support is needed.
+        3.  **Large Files by Email:** Current methods (links in HTML) lack proper signaling and lifetime management for attachments, leading to broken links over time.
+    *   **Discussion (Barry Leiba):** Replay attacks were a known, hard problem during DKIM development, ultimately punted due to complexities (Bcc, privacy, indirect flows). DMARC's unintended use with mailing lists highlights the difficulty of retrofitting solutions. These issues underscore the need for a holistic approach to email standards.
+
+## Decisions and Action Items
+
+*   **Complaint Feedback Loop Address Header (draft-jeanphilippe-email-cfpl-header):**
+    *   **Decision:** Work should proceed, likely under a new working group for wider email maintenance if community interest supports its creation.
+    *   **Action Item:** AD (Murray) to engage with the community regarding the formation of a broader email working group.
+
+*   **Well-Known URL for Publishing ECHConfig Lists (draft-farrell-well-known-echconfig-list):**
+    *   **Decision:** No clear consensus on working group or area.
+    *   **Action Item:** Continue discussion on the dispatch mailing list to determine the most appropriate path forward (e.g., specific WG, generalization, area).
+
+*   **Updated Use of the Expires Message Header Field (draft-levine-expires-header):**
+    *   **Decision:** Recommended for AD sponsorship.
+
+*   **Messaging Layer Security (MLS) Content Negotiation (draft-may-mls-content-types & draft-may-mls-inmate):**
+    *   **Decision:** Strong support for a Working Group Forming BoF.
+    *   **Action Item:** Proposers to work towards organizing a Working Group Forming BoF.
+
+*   **Open Ethics Transparency Protocol (draft-nikita-open-ethics-transparency-protocol):**
+    *   **Decision:** Work deemed interesting and important but too broad (systems engineering vs. protocol) for the IETF in its current form.
+    *   **Action Item:** Proposer to distill the specific, IETF-appropriate technical problems (protocol/data format) from the larger ecosystem vision and potentially bring those back for discussion.
+
+*   **Open Event Streaming Open Network (OESON) (draft-emiliano-event-streaming-open-network):**
+    *   **Decision:** No dispatch decision made in this session.
+    *   **Action Item:** Attendees encouraged to join the scheduled side meeting for further discussion.
+
+## Next Steps
+
+*   **Email Ecosystem Issues:** The IESG is aware of the potential for a new "email maintenance working group" to address complex, interconnected email challenges, including DKIM replay attacks, ARC adoption, and large file attachments. Discussions will continue on mailing lists.
+*   **MLS Content Negotiation:** A Working Group Forming BoF will be organized to discuss the problem of interoperable messaging with MLS and potential solutions.
+*   **ECH Config Lists:** Continued discussion on the dispatch mailing list to determine the appropriate working group and scope (general vs. specific) for the ECH configuration work.
+*   **Open Ethics Transparency Protocol:** The author will refine the scope to focus on concrete, IETF-specific technical problems for future consideration.
+*   **OESON:** A side meeting is scheduled for further community discussion and feedback on the proposed Open Event Streaming Open Network.

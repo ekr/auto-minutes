@@ -1,0 +1,48 @@
+**Session Date/Time:** 28 Jul 2022 21:30
+
+# dance
+
+## Summary
+
+The DANCE working group met to discuss the status of its core protocol documents and explore new use cases. The DANCE architecture document has been adopted. Key discussions revolved around the DANE TLS client authentication and TLS extension documents, specifically addressing differences in TLS 1.2 vs. 1.3 implementation, the necessity of TLS 1.2 support, and the potential need for a new TLS extension to solicit client certificates. The group also heard presentations on leveraging DNSSEC and DANE for digital identity trust registries and for securing communications in Unmanned Aircraft Systems (UAS) within the Drip context. A significant outcome was the decision to pursue a standalone draft for a TLS extension to solicit client certificates.
+
+## Key Discussion Points
+
+*   **Administrative Updates**: Wes Redeker (Chair) opened the session, highlighting the IETF Note Well, masking policy, and the importance of signing into the meeting. Tim was noted as the primary note-taker, with a call for additional note-takers. The DANCE architecture document has been adopted.
+*   **DANCE Core Protocol Documents Status (Shumon Huque)**:
+    *   **Documents in Focus**: `draft-ietf-dance-tls-client-auth` (DANE protocol for TLS client authentication) and `draft-ietf-dance-tls-client-auth-extension` (TLS extension for signaling DANE usage and optionally conveying client domain name).
+    *   **TLS 1.2 vs. 1.3 Differences**: Shumon highlighted that in TLS 1.2, DANCE extensions are unencrypted in ClientHello/ServerHello. In TLS 1.3, they are moved to encrypted CertificateRequest/Certificate messages, requiring the server to send the extension first.
+    *   **TLS 1.2 Support**: Martin Thompson questioned the necessity of supporting TLS 1.2, given its age. Discussion points:
+        *   Initial security/privacy concerns with unencrypted extensions in TLS 1.2 led to the TLS 1.3 design.
+        *   Some argued for continued TLS 1.2 support due to legacy applications, IETF mandates (UTA working group), and industrial applications.
+        *   Renegotiation in TLS 1.2, a method to protect client authentication, is often disabled by servers due to security concerns (CPU denial of service attacks).
+        *   Bob Moskowitz emphasized that many environments, especially industrial ones, will use TLS 1.2 for decades. He suggested adding justification text for 1.2 inclusion.
+    *   **Alternative Authentication Methods**: Martin Thompson and Nick Sullivan suggested exploring Post-Handshake Authentication and Exported Authenticators in TLS 1.3, which could offer unified authentication compatible with both TLS 1.2 and 1.3 without handshake changes, though potentially requiring more application-layer work. Shumon acknowledged this but noted the design intent was to minimize application burden.
+    *   **"Solicit Client Certificate" Extension**: Victor Kuarsingh raised the need for a TLS extension that allows a client to request a server to solicit its certificate, particularly useful in cases where servers don't always require client certificates but might benefit from optional client authentication (e.g., SMTP, web servers with public/authenticated content).
+    *   **Document Completion**: Shumon expressed that the core documents are largely done, pending discussions on the TLS 1.2 justification and the "solicit client certificate" extension.
+*   **New Use Case: DNSSEC for Digital Identity (Jacques Latour - CIRA)**:
+    *   **Problem**: Missing support in DNS/DNSSEC for finding, identifying, and authenticating digital trust registries in the digital identity world.
+    *   **Proposal**: Leverage DANE TLSA records and a potential new `TR` (Trust Registry) RR type.
+    *   **Mechanism**: An IoT registry issues verifiable credentials (digital certificates with FQDNs in SAN) to IoT devices. These certificates are verifiable via TLSA records in DNS. To establish a chain of trust for the issuer itself, the IoT registry publishes a TLSA record for its root certificate and a `TR` record indicating its registration in a higher-level trust registry (e.g., `trustregistry.ca`). This creates a chain of trust that could extend up to an IANA-level trust anchor.
+    *   **Goal**: Provide a DNSSEC-based anchoring for digital identity, offering an alternative to blockchain solutions for trust registries.
+    *   **Discussion**: Clarifying questions included the role of IANA (could be any top-level trust collector) and requests for simpler use cases/requirements documents to aid understanding of this complex topic. The need for a new RR type (`TR`) was questioned.
+*   **New Use Case: Drip and Dance (Bob Moskowitz - HCL Technologies)**:
+    *   **Context**: Securing Unmanned Aircraft (UA) communications, a greenfield area, with constrained capacity. Two main communication types: Command and Control (C2) and Network Remote ID (telemetry).
+    *   **Protocol Choices**: DTLS is likely for network remote ID (fixed, known service provider). ESP (IPsec) with IKE/HIP is more likely for mobile C2 (e.g., UA launched from a moving truck). QUICK was mentioned as a potential third option but not extensively explored due to existing ICAO mandates for DTLS in manned aircraft.
+    *   **UA Identities**: Defined in `draft-ietf-drip-rid`, using Hierarchical Host Identity Tags (DET) that resolve to DNS FQDNs. DETs can be revoked by absence from DNS.
+    *   **DNS Trust**: DNSSEC for trust is challenging with millions of short-lived DETs. Bob proposed "registration evidence" using `CERT` resource records with private OIDs, providing proof of registration and trust in the DET without relying on DNSSEC signing of every record.
+    *   **DANE/DANCE Integration**: When using DTLS, sending an RFC 7250 raw public key is possible, but DANCE with a derived FQDN allows the server to look up all necessary information from DNS, simplifying the handshake. This is particularly relevant for network remote ID service providers, a limited number of servers.
+    *   **Discussion**: Paul Wouters suggested using DNS query chains for offline synchronization of client-server state, embedding them in TLS extensions. Bob acknowledged this but highlighted challenges with handoffs between UTM spaces and dynamic changes. Wes Redeker inquired about bandwidth savings with DANE/DANCE, which Bob confirmed is a focus, especially with byte counting and potential use of SCHC (Static Context Header Compression). Victor questioned the widespread support for raw public keys in TLS stacks, though others confirmed OpenSSL and Håkon Lönning's work in this area.
+
+## Decisions and Action Items
+
+*   **Decision**: The DANCE architecture document (`draft-ietf-dance-architecture`) has been adopted as a working group document.
+*   **Action Item**: Shumon Huque (or editors of `draft-ietf-dance-tls-client-auth`) to add specific text justifying the inclusion and support for TLS 1.2, explaining its relevance to legacy applications and current IETF directions.
+*   **Decision**: To address the need for selective client certificate solicitation, a **standalone draft** for a new TLS extension will be pursued. This extension should be general-purpose and decoupled from the DANCE core documents to allow broader use.
+*   **Action Item**: Victor Kuarsingh (and potentially others) to consider authoring the standalone draft for the "solicit client certificate" TLS extension.
+
+## Next Steps
+
+*   The editors of `draft-ietf-dance-tls-client-auth` and `draft-ietf-dance-tls-client-auth-extension` should continue to incorporate feedback, particularly regarding the TLS 1.2 justification, and prepare for a working group last call, potentially after further consideration of exported authenticators if the working group expresses strong interest.
+*   The Digital Identity and Drip use cases should be further discussed on the DANCE mailing list to determine if they warrant new work items or extensions to the working group's charter.
+*   The "solicit client certificate" extension draft should be initiated and discussed to determine its scope and appropriate publication venue (DANCE, TLS, or UTA working groups).

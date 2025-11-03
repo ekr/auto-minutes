@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="idr.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF122-IDR-20250317-0600">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF122-IDR-20250321-0800">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 17 Mar 2025 06:00</p>
+<pre><code class="language-markdown"># idr
+
+## Summary
+
+The IDR meeting covered a range of topics including BGP Tunnel Encapsulation Attribute updates, link bandwidth extended community, BGP SR policy, flow spec, the SCPath attribute, and V6/V4 islands over a V6 core.  Discussions focused on draft status, adoption requests, pre-Shepherd reviews, implementation considerations, and security implications.
+
+## Key Discussion Points
+
+*   **BGP Tunnel Encapsulation Attribute:**  A template for authors adding new tunnels or sub-TLVs was discussed.  The importance of including information such as the tunnel name, description, mandatory/optional sub-TLVs, validation procedures, interaction between tunnel TLVs, security considerations, and management details was emphasized.
+*   **Link Bandwidth Extended Community:**  Updates on the draft were presented, focusing on error handling, particularly in the context of multiple link bandwidth extended communities. The discussion clarified that error handling applies during weighted ECMP computation, preferring the lowest value irrespective of transitivity unless values are the same. Questions were raised regarding the propagation of non-transitive communities and the relationship between this draft and the best-current-practice draft. Community scrubbing was emphasized.
+*   **BGP SR Policy:** An extension to BGP SR policy for puzzle scheduling was introduced, particularly addressing scenarios with discontinuous links and frequent topology changes. Discussion centered around the potential use of the management plane vs. control plane for this feature, coordination with the TVR and SPRING working groups, and the use of scheduled LSPs.
+*   **Flow Spec:** Discussion centered on several drafts related to flow spec V2.  Key points included the order of filters, a default implementation and design, how to address sparse component sets, and the minimal implementation of V2, action extended communities, and conflict resolution.
+*   **FCBGP:** The forwarding commitment draft was presented, focusing on securing BGP announcements.  Discussion covered the security guarantees provided by FCBGP, particularly in partial deployment scenarios, and compared it to BGPSEC. Considerations included the risk of state removal, copy-and-paste attacks, and the potential for leveraging RPKI.
+
+## Decisions and Action Items
+
+*   **Link Bandwidth Extended Community:** Authors will incorporate suggestions from the mailing list to better discuss filtering and potential impacts when implemented without community support.
+*   **BGP SR Policy:** Authors to send a formal adoption request to the IDR mailing list. Authors will revise their draft in accordance with a shepherd review. Authors to coordinate bit definitions with SPRING working group.
+*   **Flow Spec:** Authors to consider feedback about the best approach to deal with filter TLVs components and numbering conventions.
+*   **FCBGP:** Authors to consider the suggestion to include static RPKI information. The topic will be discussed further on the mailing list and at the upcoming cider ops meeting.
+
+## Next Steps
+
+*   Working group last call on the BGP SR policy NRPO3 draft will proceed, likely alongside its LS feature.
+*   Further discussion and collaboration with SPRING, TVR, and other relevant working groups on topics such as BGP SR Policy and administrative flags will occur.
+*   Continue discussion on the mailing list and at future meetings regarding FCBGP and other topics presented.
+
+
+---
+
+**Session Date/Time:** 21 Mar 2025 08:00
+
+# idr
+
+## Summary
+
+The IDR working group meeting covered several draft proposals, including extensions to BGP FlowSpec for CAS traffic steering, a solution for connecting IPv4 islands over IPv6 (4PE), dynamic capability advertisement in BGP, and SRv6 list optimization. The discussions highlighted the need for coordination with other working groups, addressing potential interoperability issues, and clarifying the scope and applicability of the proposed solutions.
+
+## Key Discussion Points
+
+*   **BGP FlowSpec V2 for CAS:**
+    *   The draft proposes extensions to BGP FlowSpec to enable flow classification and path selection for CAS.
+    *   Concerns were raised about security error handling and the need to coordinate with the CATS working group.
+    *   Coordination with ongoing work on FlowSpec V2 regarding match criteria and action types is crucial.
+*   **4PE:**
+    *   The draft describes a solution for connecting IPv4 islands over an IPv6 core.
+    *   It's an informational draft leveraging existing standards (RFC 4798, RFC 5549, RFC 8950).
+    *   Questions arose about the necessity of 4PE in scenarios where IPv4-less AS configurations are possible, to be addressed on the mailing list.
+*   **BGP Dynamic Capability:**
+    *   The draft aims to enable dynamic advertisement of BGP capabilities without session resets.
+    *   Challenges exist in handling capabilities requiring tight coordination between peers (Type C).
+    *   Concerns about backward compatibility with existing deployments of BGP dynamic capability version 16. Making the ACK mandatory poses interoperability issues. Deployment experience needs to be collected and backward compatibility needs to be considered.
+*   **SRv6 List Optimization:**
+    *   The draft proposes optimizations for SRv6 policies by enabling controllers to notify ingress nodes about the presence of egress node SIDs in the SID list.
+    *   Concerns raised on dependency on administrative flag TLV which is not a working group document.
+    *   Coordination is required with other working groups. Common TLV usage is requested for the Admin TLV.
+    *   Incomplete support in the network needs text describing the behavior in this scenario.
+*   **BGPLS Advertisement of QOS Parameters**
+    *   The draft proposes extensions to report QOS (CIR, PIR) information.
+    *   Consider dynamic queues as they are supported with NPO
+    *   The proposal is only over BGPLS, is there consideration for IGP?
+
+## Decisions and Action Items
+
+*   **BGP FlowSpec V2 for CAS:**
+    *   Authors to revise the draft based on feedback regarding security error handling.
+    *   Authors to coordinate with CATS working group and FlowSpec V2 development.
+*   **4PE:**
+    *   Author to provide text and respond on the mailing list for the question on why IPv4 is needed when you can run without it.
+*   **BGP Dynamic Capability:**
+    *   Authors to collect and review implementation reports, especially regarding the impact of making the ACK mandatory.
+    *   Address the question on backwards compatibility between existing and new implementers.
+    *   Consider merging extended dynamic capability into the current draft.
+*   **SRv6 List Optimization:**
+    *   Authors to work together with Spring regarding draft and protocols.
+    *   Address dependency on administrative flag TLV.
+    *   Add a section describing behaviour when not fully supported.
+    *   Consider common TLV usages.
+
+## Next Steps
+
+*   Authors to revise drafts based on discussions and feedback.
+*   Continue discussions on the mailing lists.
+*   Evaluate adoption of the 4PE and SRv6 List Optimization drafts after addressing comments and action items.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

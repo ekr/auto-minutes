@@ -1,0 +1,64 @@
+**Session Date/Time:** 29 Jul 2022 16:30
+
+# mls
+
+## Summary
+
+The mls working group session provided updates on the status of core documents, notably announcing that Draft 16 of the MLS Protocol document is ready for AD review, incorporating a significant change to a balanced binary tree structure. New drafts for Federation and Extensions were introduced, with the Extensions document serving as a home for more application-specific functionalities. A new proposal for Content Negotiation was discussed, addressing the need for applications to signal and discover supported data formats within MLS groups. This last proposal sparked considerable debate regarding media type complexities, IANA registry usage, and its alignment with the working group's charter, leading to a decision to consult the Area Director before pursuing adoption.
+
+## Key Discussion Points
+
+*   **Working Group Status Update**
+    *   **Architecture Draft:** Awaiting author responses to chairs' questions before forwarding to the AD for review.
+    *   **Federation Draft:** Has been revived and updated.
+    *   **Extensions Draft:** A brand new document to house application-specific extensions.
+    *   **Protocol Document:** Received positive feedback from security researchers during Working Group Last Call (WGLC).
+*   **MLS Protocol Document (Draft 16) Update**
+    *   After WGLC and several interims, Draft 15 was released and led to a "clean" second WGLC, resulting in Draft 16.
+    *   **Key Change in Draft 15:** Switched from using a left-balanced binary tree to a *balanced binary tree*, ensuring the number of leaves is always a power of two (a full tree).
+        *   **Mechanistically:** Adding a leaf now involves doubling the tree size and adding blank nodes; removing a leaf involves halving the tree (taking the left subtree).
+        *   **Benefits:** Simplifies tree mathematics, particularly around the parent hash, as the structure beneath a node remains constant.
+        *   **Impact:** While it introduces more "virtual" blank nodes on the right, these are generated on-the-fly and do not significantly impact protocol performance.
+    *   **Draft 16 Changes:** Only minor edits, including adding a missing field in `to_be_signed` group info and moving a reference to informative.
+    *   **Current Status:** Draft 16 is ready for submission for AD review.
+*   **Architecture Document Update**
+    *   The document aligns well with the protocol.
+    *   Authors were advised to focus on completing current work before proposing future additions.
+*   **Federation Document Update**
+    *   A non-normative document focused on outlining interoperability and federation scenarios.
+    *   Provides high-level guidelines for applications and deployment (e.g., server interoperability, client-server communication).
+    *   Includes security considerations and is updated to align with newer protocol drafts.
+    *   It does *not* specify wire formats for federated messages, acknowledging that the MLS WG charter does not accommodate normative federation details. It serves as a placeholder, potentially to be referenced by future normative documents from other groups (e.g., MIMI WG).
+*   **Extensions Document Introduction**
+    *   Created to house functionalities deemed too specific for the core protocol document.
+    *   The `AppAck` mechanism (previously in the protocol document) is the first extension.
+    *   "Targeted messages" is a proposed additional extension.
+    *   **Discussion:** Whether to have individual small documents for each extension or a single "catch-all" document. The consensus was to use a single document for currently proposed small, "low-hanging fruit" extensions, with the understanding that complex extensions might warrant separate documents in the future. Precedent from TLS (RFC 6066) was noted for multi-extension documents.
+*   **Content Negotiation Draft Introduction**
+    *   **Problem Statement:** MLS currently lacks mechanisms to:
+        1.  Discover application formats supported by group members.
+        2.  Signal the required application formats within a group.
+        3.  Specify the format of opaque application data. This complicates long-lived groups and interoperability.
+    *   **Proposal:** Two new MLS extensions:
+        1.  `accepted_media_types`: Included in a key package to declare a client's supported IANA media types (e.g., `image/jpeg`, `text/plain`, `vnd.examplecorp+json`).
+        2.  `required_media_types`: Included in the group context to specify media types all group members must support.
+    *   **Application Data Framing:** If `required_media_types` is present, application data would be framed with a small TLS presentation language struct containing a `media_type` field (zero-length implies the first `required_media_type`) and `application_content`.
+    *   **Discussion:**
+        *   **Media Type Complexity:** Concerns were raised about handling media type parameters (e.g., `charset=utf-8`) and the inherent complexity of certain top-level types (e.g., `model`, `font`, `multi-part`). `multi-part alternative` was highlighted as particularly problematic due to historical issues in email.
+        *   **Registry vs. Open Use:** A suggestion was made to initially establish an *MLS-specific registry of permitted MIME types* with an expert, starting restrictively and gradually opening up, rather than allowing any IANA media type or vendor type from the start, to ensure interoperability.
+        *   **Charter Applicability:** A significant concern was raised that this draft touches upon "enabling interoperability among applications," which the MLS WG charter explicitly states is *not* a goal for the base protocol. The question is whether such a goal is permissible for an extension document.
+        *   **WG Expertise:** The discussion revealed the specialized nature of media type and MIME expertise, leading to questions about whether the MLS WG is the appropriate venue or if it should be punted to a group like MIMI.
+
+## Decisions and Action Items
+
+*   **Decision:** MLS Protocol Draft 16 is ready for the Area Director (AD) review.
+*   **Action Item:** The chairs will consult with the AD (Paul) regarding the Content Negotiation draft's alignment with the MLS working group charter and whether it can be adopted given the charter's restrictions on application-level interoperability.
+*   **Action Item:** The chairs encourage working group members to read and provide feedback on the new Extensions and Content Negotiation drafts.
+
+## Next Steps
+
+*   The MLS Protocol Document (Draft 16) will proceed to AD review, followed by the broader IESG review process.
+*   The Architecture Document will continue its path to AD review once author responses are incorporated.
+*   Further discussion and review of the Federation and Extensions drafts are encouraged.
+*   Pending AD feedback on the charter, the Content Negotiation draft will either be considered for adoption within MLS, or its development may be considered for a future working group like MIMI.
+*   Rohan (author of Content Negotiation) is encouraged to continue garnering interest and review for his draft.

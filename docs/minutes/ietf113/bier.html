@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="bier.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-BIER-20220323-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 23 Mar 2022 13:30</p>
+<h1>bier</h1>
+<h2>Summary</h2>
+<p>The bier working group session at IETF 113 covered updates on existing drafts, discussed new proposals, and addressed administrative items. Key discussions revolved around the status of BIER-IPA, signaling BIFT-IDs for non-MPLS BIER, encapsulation of In-situ OAM (IOAM) over BIER, the re-introduction of a generalized &quot;Fault Request Return Multicast&quot; (FRM) semantic, a proposal for IPv6 Routing Header based BIER encapsulation, and a broad discussion on BIER extension headers and Generic Delivery Functions (GDF). A decision was made to issue an adoption call for &quot;Beers Multicast as a Service,&quot; and action items were set for the chairs to formalize a GitHub policy and for authors to initiate discussions on the mailing list for new proposals.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Administration</strong></p>
+<ul>
+<li>The chairs announced the need for a standardized approach to tracking issues for adopted drafts, suggesting the use of GitHub repositories due to limitations of the IETF tracker in maintaining history.</li>
+<li>Alvaro (Huawei) raised concerns regarding the lack of a clear working group policy for GitHub usage, including how issues discussed on GitHub would be reflected on the mailing list, and the scope of such a policy (e.g., adopted vs. non-adopted drafts). He referenced Git Working Group recommendations for guidance.</li>
+</ul>
+</li>
+<li>
+<p><strong>BIER Working Group Status Update</strong></p>
+<ul>
+<li><strong>BIER-IPA (draft-ietf-bier-bier-ipa-oam):</strong> Jeffrey has closed comments with Alvaro, one more revision pending.</li>
+<li><strong>PIM Single BIER (draft-ietf-bier-pim-single-bier-oam):</strong> Waiting for a document to be referenced.</li>
+<li><strong>OSPF B3 (draft-ietf-ospf-bier-v3):</strong> Hanging in publication queue.</li>
+<li><strong>Pattern Q Discovery, Ping:</strong> Waiting for write-ups.</li>
+<li><strong>BGP-LS BIER (draft-ietf-idr-bgpls-bier):</strong> Expired, IDR did not react.</li>
+<li><strong>IDR Extensions (draft-ietf-idr-bier-extensions):</strong> Expired, seeking new authors or revival.</li>
+<li><strong>Multicast HTTP Response / BRFR (draft-ietf-bier-multicast-http-response):</strong> Merged, ready, with one mailing list item to address. (Note: A new version of this work was presented later).</li>
+<li><strong>Multicast as a Service (draft-ietf-bier-multicast-as-service):</strong> Presented previously, due for an adoption call.</li>
+</ul>
+</li>
+<li>
+<p><strong>Non-MPLS BIER Extensions (draft-ietf-bier-non-mpls-bier-extensions)</strong></p>
+<ul>
+<li>Jeffrey (Juniper) presented updates on this draft, which evolved from an Ethernet-only scope back to generic non-MPLS.</li>
+<li><strong>BIFT-ID Encoding:</strong> Discussion on BIFT-ID uniqueness. RFC 8279 mandates domain-wide unique BIFT-IDs for non-MPLS.
+<ul>
+<li><strong>Option 1:</strong> Hard-encoding BSL, Sub-domain ID, and Set ID (no provisioning/signaling, less flexibility).</li>
+<li><strong>Option 2:</strong> Using a 16-bit opaque IBU (requires provisioning).</li>
+<li><strong>Proposed Alternative:</strong> BIFT-IDs can be locally significant, like MPLS labels, requiring signaling but offering flexibility.</li>
+</ul>
+</li>
+<li>The draft aims to support both hard-encoding/IBU and locally significant BIFT-IDs with signaling (ISIS, OSPFV2/V3 extensions mirroring MPLS).</li>
+<li><strong>Inter-Area Leaking:</strong> For BIER information TLV, if a BFR ID is zero, the information may be omitted when leaking across areas/levels, as receiving BFRs only care about subdomain topology, BIER-IPA, and BFER IDs, not the specific encapsulation used by intermediate nodes.</li>
+<li>Jeffrey believes the draft is ready for Working Group Last Call.</li>
+</ul>
+</li>
+<li>
+<p><strong>BIER Encapsulation for IOAM Data (draft-xia-bier-ioam)</strong></p>
+<ul>
+<li>Xiaomi (China Telecom) presented on encapsulating IOAM over BIER.</li>
+<li><strong>Encapsulation Options:</strong> Initially two options, Option 2 (BIER Header + IOAM Header + Payload) was preferred. A third option (BIER Header + GDF Header + IOAM Header + Payload) was noted.</li>
+<li><strong>Motivation:</strong> Multicast flows (e.g., live video) are sensitive to loss/delay, and in-situ OAM provides necessary on-path telemetry for BIER multicast networks.</li>
+<li><strong>Mechanism:</strong> IOAM data follows the BIER header, indicated by a new <code>BIER Proto</code> type. <code>Next Protocol</code> fields in IOAM options sequence them and indicate payload type.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>Tony P (Juniper) questioned the destination of OAM information (all receivers vs. per-receiver) and highlighted that existing BIER OAM is a separate stream, not carrying payload.</li>
+<li>Jeffrey (Juniper) suggested deferring discussions on BIER extension headers to the GDF presentation.</li>
+<li>Cun (Huawei) objected, stating existing IOAM encapsulations (MPLS, IPv6, SFC NSH) make this draft redundant.</li>
+<li>Tony P countered that relying on the payload always having its own OAM is an assumption that may not hold.</li>
+<li>Greg (Juniper) pointed out that active OAM may not follow the exact data path/queuing, and IOAM's pre-allocation or incremental addition affects metrics and can lead to fragmentation.</li>
+<li>Ying (Huawei) echoed concerns about duplicated functionality and asked whether extending BIER for IOAM, network slicing, or APN is within the working group's charter, and how IPsec would interact with this encapsulation. Jeffrey clarified that IPsec on an outer IPv6 tunnel would not affect BIER processing until the tunnel is exited.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Fault Request Return Multicast (FRM) / Multicast HTTP Response (draft-dirk-bier-multicast-http-response)</strong></p>
+<ul>
+<li>Dirk (Huawei) re-introduced an updated version of an expired &quot;Multicast HTTP&quot; draft, now generalized to a &quot;Fault Request Return Multicast&quot; (FRM) semantic.</li>
+<li><strong>FRM Semantic:</strong> Defines a dynamic multicast communication where a datagram from a source to multiple destinations is a response to incoming requests from those destinations. An &quot;ephemeral group address&quot; is derived from an &quot;identifying characteristic&quot; (e.g., HTTP URI) across requests. This allows for dynamic, short-lived multicast responses (e.g., for OTT video chunk requests).</li>
+<li><strong>Relevance:</strong> Dirk sought feedback on the relevance of this work to the group, its potential applicability to other underlay technologies, and called for new contributors.</li>
+<li>Tony P noted similarities to generic reliable multicast and emphasized the need for clear problem definition and practical use cases.</li>
+</ul>
+</li>
+<li>
+<p><strong>Routing Header Based BIER Information Encapsulation (draft-will-bier-ipv6-rh)</strong></p>
+<ul>
+<li>Will (China Telecom) proposed using an IPv6 Routing Header (RH) to carry BIER information.</li>
+<li><strong>Motivation:</strong> Preserve source/destination addresses for traffic monitoring and VPN identification, which current BIER encapsulations do not support.</li>
+<li><strong>Mechanism:</strong> Defines a new RH type with a BIRT algorithm field and a BIRT algorithm-specific part (bitstring).</li>
+<li><strong>Forwarding:</strong>
+<ul>
+<li><strong>All nodes support RH BIER:</strong> BFR encapsulates IPv6 header with RH, bitstring is updated along the path, inner source/destination IP unchanged.</li>
+<li><strong>Some nodes do not support RH BIER:</strong> Non-RH-aware nodes are treated as IPv6 hops. BFR encapsulates an outer IPv6 header to tunnel to the next RH-aware node.</li>
+</ul>
+</li>
+<li><strong>Discussion:</strong> Fun Hong (Huawei) and Ying (Huawei) questioned why this draft was on the agenda, as the working group had previously concluded work on IPv6 extension header solutions for BIER after extensive discussions. Tony P confirmed the WG's conclusion had not changed and saw no new arguments in the presentation.</li>
+</ul>
+</li>
+<li>
+<p><strong>BIER Extension Headers / Generic Delivery Functions (GDF)</strong></p>
+<ul>
+<li>Jeffrey (Juniper) led a discussion on defining BIER extension headers and aligning them with Generic Delivery Functions (GDF).</li>
+<li><strong>GDF Concept:</strong> Generic functions (e.g., fragmentation, security, IOAM) are applicable across different layers (MPLS, IPv6, BIER, Ethernet). The goal is to define a common extension header mechanism for reuse across these layers.</li>
+<li><strong>Alignment:</strong> GDF aims to align BIER and MPLS extension headers. Jeffrey presented the MPLS extension header format, which uses a &quot;header-of-headers&quot; structure with a <code>Next Header</code> field.</li>
+<li><strong>Challenges:</strong> The header length units differ between MPLS (4-octet) and IPv6 (8-octet) extension headers, preventing direct reuse of IPv6 extension headers in MPLS/BIER.</li>
+<li><strong>Questions for WG:</strong>
+<ul>
+<li>Does aligning extension header formats across BIER, MPLS, and IPv6 make sense?</li>
+<li>Should the proposed format be used for BIER IOAM?</li>
+<li>Should header length units be standardized (e.g., BIER to 8-octet)?</li>
+<li>Consider a container for IPv6 extension headers within BIER.</li>
+</ul>
+</li>
+<li>Tony P requested Jeffrey to initiate a mailing list discussion on this topic, noting it appears to be a significant refactoring of approaches.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> The working group will issue an adoption call for the &quot;Beers Multicast as a Service&quot; draft.</li>
+<li><strong>Action Item:</strong> Chairs to formulate an official working group policy for using GitHub for draft issue tracking, based on Git Working Group recommendations, and circulate it to the mailing list for review and adoption.</li>
+<li><strong>Action Item:</strong> Authors of &quot;BIER Encapsulation for IOAM Data&quot; (draft-xia-bier-ioam) and interested parties are requested to take the discussion on the mailing list.</li>
+<li><strong>Action Item:</strong> Dirk (Huawei) and potential contributors for &quot;Fault Request Return Multicast&quot; (FRM) are encouraged to join the draft and focus on problem definition and scope on the mailing list.</li>
+<li><strong>Action Item:</strong> Jeffrey (Juniper) to send an email to the mailing list with a pointer to the &quot;BIER Extension Headers / GDF&quot; presentation to initiate a discussion on the proposed framework.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The chairs will follow up on the GitHub policy.</li>
+<li>Discussions on BIER IOAM, FRM, and BIER Extension Headers/GDF are expected to continue on the mailing list.</li>
+<li>The &quot;Non-MPLS BIER Extensions&quot; draft is expected to move towards Working Group Last Call after a final revision.</li>
+<li>The status of &quot;Routing Header Based BIER Information Encapsulation&quot; indicates the working group is unlikely to pursue this approach further given past conclusions.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dtn.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-DTN-20221110-1300">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 10 Nov 2022 13:00</p>
+<h1>dtn</h1>
+<h2>Summary</h2>
+<p>The dtn working group meeting covered updates on the IPN Naming Scheme, administrative records for BPV7, COSE BPSEC security contexts, the DTN Management Architecture, and a demonstration of IPv6 support for DTN. Key discussions revolved around clarifying IPN URI semantics, the need for PKI in BPSEC, defining a common CLA service model, and an architectural framework for DTN management in challenged networks. Several points from the IPN update were deemed contentious and deferred to the mailing list for further discussion.</p>
+<h2>Key Discussion Points</h2>
+<h3>IPN Naming Scheme Update</h3>
+<ul>
+<li><strong>Background</strong>: The <code>ipn:node.service</code> URI scheme is used for bundle sources and destinations, requiring uniqueness for interoperability. Existing RFCs (6260, 7116, 9171) define it, but there are perceived problems and inconsistencies.</li>
+<li><strong>Perceived Problems</strong>:
+<ul>
+<li>Misleading name of the single IANA &quot;cbhe&quot; registry for node numbers, which predates BPV7.</li>
+<li>Inconsistencies across RFCs regarding IPN definition, particularly node number uniqueness.</li>
+<li>Single flat numbering space for node numbers leads to inefficient encoding (Cbor) for late allocations and lacks reserved low numbers for private/experimental use.</li>
+</ul>
+</li>
+<li><strong>Proposed Solutions in Draft</strong>:
+<ul>
+<li><strong>Clarify IPN usage for BPV7</strong>: Consolidate rules from existing RFCs. Proposed rules:
+<ul>
+<li>Node number <code>0</code> is reserved for <code>ipn:0.0</code> (null endpoint).</li>
+<li>Node numbers <code>&gt;= 2^64</code> must not be used (Cbor encoding limit).</li>
+<li><strong>Contentious</strong>: All IPN URIs co-located on a single bundle processing node <em>must</em> share the same node number. This was heavily debated, with arguments for allowing multiple node numbers per node for flexibility (e.g., multi-homing) and for maintaining a strict one-to-one relationship for routing simplicity.</li>
+<li>Service number <code>0</code> for administrative endpoint should be <code>MUST</code> (was <code>MAY</code> in BPV7).</li>
+</ul>
+</li>
+<li><strong>Rename and Clone IANA Registries</strong>:
+<ul>
+<li>Rename <code>cbhe</code> registries to <code>bpv6 node numbers</code> and <code>bpv6 URI service numbers</code>.</li>
+<li>Create new <code>bpv7</code> registries, copying policies but making low numbers private use.</li>
+<li>Discussion: Some questioned the need for two separate registries for the same URI scheme, despite protocol differences.</li>
+</ul>
+</li>
+<li><strong>Reserve Low Numbers for Private Use</strong>: Allows efficient encoding for lab/experimental setups without IANA registration. Discussion on the trade-off of using precious low numbers for private use versus production.</li>
+<li><strong>Introduce New Numbering Authority Prefixes</strong>: A hierarchical numbering scheme allowing organizations to manage sub-allocations efficiently, reducing IANA contention and enabling global uniqueness with flexible encoding. These components are optional.</li>
+</ul>
+</li>
+<li><strong>Uniqueness Discussion</strong>: The enforcement of uniqueness was clarified to be through RFC specification and testing, not external policing. The definition of a &quot;node&quot; itself was raised as a potential area for further clarity.</li>
+</ul>
+<h3>BPV7 Administrative Records</h3>
+<ul>
+<li>The document has been recently adopted by the working group.</li>
+<li>No substantial feedback or comments received yet, other than an editorial change clarifying IANA registration policy.</li>
+<li>This document is a dependency for work in the ACME working group and the Security Area.</li>
+</ul>
+<h3>COSE BPSEC Security Context Records</h3>
+<ul>
+<li><strong>Problem</strong>: Current BPV7 default security contexts use symmetric keys, limiting use cases. PKI security is needed for larger, internet-facing DTN networks and aligns with modern internet best practices.</li>
+<li><strong>Proposal</strong>: Use COSE (CBOR Object Signing and Encryption) algorithms within BPSEC.</li>
+<li><strong>Goals</strong>: Avoid altering existing BPSEC structures or PKI infrastructure, reuse COSE tools/protocols, and leverage future COSE developments (e.g., compressed certificates, post-quantum crypto).</li>
+<li><strong>Mechanism</strong>: COSE acts as a container; the draft proposes a minimum interoperability profile focusing on PKI algorithms (elliptic curve, RSA) usable with existing X.509 PKI and certificate profiles (RFC 9174).</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Relationship with ACME document for node ID validation: This document focuses on <em>using</em> certificates for end-to-end BPSEC, while ACME addresses <em>issuance</em> and <em>validation</em> of certificates for DTN node IDs. Concerns were raised about the robustness of ACME's current experimental method for node ID validation.</li>
+<li>Leveraging existing PKI: Suggestion to look at established large-scale PKI frameworks like ICAO's international PKI to avoid re-invention.</li>
+</ul>
+</li>
+</ul>
+<h3>DTN Management Architecture (DTNMA)</h3>
+<ul>
+<li><strong>Rename</strong>: Formerly Asynchronous Management Architecture (AMA), now DTN Management Architecture (DTNMA) to better reflect its focus on DTN.</li>
+<li><strong>Core Problem</strong>: Managing DTN devices in challenged (asynchronous, disruptive, delayed) and constrained (compact encodings needed) networks.</li>
+<li><strong>Three Main Components</strong>: Support for asynchronous behavior, an autonomy engine for self-management, and compact encodings.</li>
+<li><strong>Distinction from Existing Work</strong>: SNMP, Netconf, Restconf, and Corecomp don't fully address the intersection of autonomy, asynchronous behavior, and efficient encodings simultaneously.</li>
+<li><strong>Updated Reference Model</strong>: Introduces an &quot;autonomy engine&quot; configured via &quot;policy&quot;. Key enablers for self-management:
+<ol>
+<li><strong>Pre-shared definitions</strong>: Standardized Application Data Models (ADMs) and autonomy models agreed upon during brief connectivity.</li>
+<li><strong>DTNMA Agent Self-Management</strong>: The managed device's autonomy engine acts on local policy during disconnection.</li>
+<li><strong>Command-Based Management</strong>: A command-and-control interface for policy transfer, avoiding bulk data updates.</li>
+</ol>
+</li>
+<li><strong>Autonomy Model</strong>: Policy expressions (rules: if stimulus then action) are sent by the manager to populate a local rule database on the agent. Agent reactions can include impacting its local rule database, issuing application controls, generating reports, or updating a runtime data store.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Clarification that &quot;applications and services&quot; on the managing device are distinct from those on the managed device.</li>
+<li>Transport reliability: The architecture separates the reference model from specific protocol specifications. Reliability (e.g., custody transfer bundles) would be implemented at the protocol layer, or acknowledgements handled through subsequent device behavior/reporting.</li>
+<li>Coexistence with non-challenged networks: The architecture is intended to be robust enough for DTN challenges but also leverage strengths of underlying network segments, possibly via interoperable bridges.</li>
+<li>Reference to BPV7: While the abstract mentions BPV7, the model is intended to be applicable beyond just BPV7, including other bundle protocols or non-BP scenarios.</li>
+</ul>
+</li>
+</ul>
+<h3>IPv6 Support for DTN Demonstration</h3>
+<ul>
+<li><strong>Motivation</strong>: IPv4 address scarcity and NAT hinder end-to-end connectivity. IPv6 offers abundant addresses, restoring end-to-end reachability, especially for mobile and fixed access networks.</li>
+<li><strong>Opportunity</strong>: IPv6 enables BP-based applications to reach the terrestrial network edge, facilitating scalable protocol testing and new application development.</li>
+<li><strong>Implementation</strong>: IPv6 support added to JPL's ION implementation (open source branch) for UDPCL, LTP over UDP, and TCPCL. Tested on LAN and public networks.</li>
+<li><strong>Live Demo</strong>: Scott Johnson successfully demonstrated <code>bping</code> across IPv6-enabled CLAs (UDP, LTP over UDP, TCP) between California and Florida, and locally.</li>
+<li><strong>Question to WG</strong>: Which other IP-based CLAs should receive IPv6 functionality next?</li>
+<li><strong>Discussion</strong>: Consensus that all IP-based CLAs should support both IPv4 and IPv6. Also, reiteration that CLAs are not limited to IP, with non-IP examples (e.g., UART for Laura radios) being actively developed.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<h3>Decisions</h3>
+<ul>
+<li>Brian Sipos's slides for CLA service definition can be presented if time permits within his existing slots.</li>
+<li>Mark Blanche's draft on service registry/application framework can be discussed during Open Mic if time permits.</li>
+<li>The <code>bpv7 administrative records</code> draft has been adopted as a working group document.</li>
+</ul>
+<h3>Action Items</h3>
+<ul>
+<li><strong>Rick Taylor</strong>: Drive mailing list discussion on contentious points from the IPN Naming Scheme Update, including:
+<ul>
+<li>Single vs. multiple IANA registries for IPN.</li>
+<li>Clarity and definitions of private use vs. experimental ranges.</li>
+<li>Strictness of the one-to-one relationship between a node and its node number(s).</li>
+<li>Limiting the size of numbering authority and assigned node numbers.</li>
+</ul>
+</li>
+<li><strong>Alberto</strong>: Post to the mailing list specific arguments regarding allowing multiple node numbers per node for the IPN scheme.</li>
+<li><strong>Brian Sipos</strong>: Post to the mailing list about IPv6 and interface distinctions in the context of IPN addressing.</li>
+<li><strong>Working Group Members</strong>:
+<ul>
+<li>Review the <code>bpv7 administrative records</code> draft and provide comments to the mailing list within the next few months.</li>
+<li>Review the <code>Cosi BPSEC security context records</code> draft and provide feedback, including whether it should be adopted as a working group document.</li>
+<li>Join the mailing list discussion on the <code>CLA Service Definition</code> draft.</li>
+<li>Review the <code>DTN Management Architecture</code> document and provide comments to the mailing list.</li>
+</ul>
+</li>
+<li><strong>Brian Sipos</strong>: Start a mailing list thread to solicit comments on the <code>CLA Service Definition</code> draft.</li>
+<li><strong>Scott Johnson</strong>: Consider porting other IP-based CLAs to IPv6 in the ION implementation.</li>
+<li><strong>All Presenters</strong>: Post additional questions and requests for review to the mailing list for their respective documents.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue detailed discussions on the contentious points of the IPN Naming Scheme Update via the mailing list.</li>
+<li>Progress review and adoption discussions for the <code>Cosi BPSEC security context records</code> and <code>CLA Service Definition</code> drafts.</li>
+<li>Encourage comprehensive review and feedback for the <code>DTN Management Architecture</code> document.</li>
+<li>Further development and porting of IP-based CLAs to IPv6.</li>
+<li>Potential interim working group meeting if there is sufficient interest and need for further focused discussion.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

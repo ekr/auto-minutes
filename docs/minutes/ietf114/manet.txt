@@ -1,0 +1,116 @@
+**Session Date/Time:** 29 Jul 2022 14:00
+
+# manet Session Minutes
+
+## Summary
+
+This joint session of the MANET, Babel, and ROLL working groups focused on the challenges and potential solutions for multicast routing in mobile ad-hoc networks. The discussion highlighted the unique difficulties of multicast in MANETs, reviewed existing approaches and their shortcomings, explored new data plane technologies in Linux, presented a deep dive into 802.11s mesh multicast, introduced the Beer (Bit Index Explicit Replication) architecture as a potential solution for Babel, and provided an overview of multicast capabilities within RPL. A key theme was the trade-offs between duplicate packet suppression and explicit packet encapsulation, with a strong inclination towards encapsulation for robust multicast in challenging radio environments. The session concluded with a call for continued cross-WG discussion to identify common building blocks and potential solutions.
+
+## Key Discussion Points
+
+### MANET Multicast Status and Challenges (Ronald)
+
+*   The MANET working group's 2016 charter included work on Simplified Multicast Forwarding (SMF, RFC 6621) and defining a Multicast Forwarding Information Base (FIB). This work was largely neglected due to focus on the D-LAB protocol.
+*   RFC 6621 (2012) describes duplicate packet detection and relay set selection mechanisms, leveraging unicast routing information.
+*   **Unique Challenges in MANETs:**
+    *   **Non-transitive links:** `A -> B` and `B -> C` does not guarantee `A -> C`.
+    *   **Single radio interfaces:** Nodes often retransmit on the same interface they received a packet, which conflicts with some existing multicast protocols.
+    *   **Node mobility:** Leads to frequent topology changes, making per-group membership maintenance too costly ("churn"). Smart flooding approaches are often used.
+    *   The assumption of radio links being the bottleneck (not CPU) was challenged, as user-space forwarding can be prohibitive for moderate link speeds.
+*   The necessity of multi-hop IP-layer multicast was questioned, with alternatives like sub-IP layer solutions (e.g., synchronized collaborative broadcast/barrage relay) being discussed.
+*   IP overlays over heterogeneous radio technologies or federated MANETs (nodes with multiple radio interfaces) introduce significant forwarding complications.
+*   **Shortcomings of SMF (from a 2016 presentation):** Implementations often in user-space (poor performance), disseminates to the entire MANET (no group membership awareness), relay set selection and duplicate packet detection mechanisms do not adequately support multiple interfaces.
+*   NRL has a continued SMF implementation on GitHub, but it has been outside the MANET WG's visibility.
+*   **Suggestion:** Beer (Bit Index Explicit Replication) was proposed as a potential fit for IP-layer multicast over heterogeneous radio types.
+
+### IP Multicast Routing on Linux (Henning)
+
+*   The presentation focused on data plane challenges for IP multicast routing on Linux.
+*   **Current Approaches (User Space):**
+    *   Raw sockets: Works but can conflict with firewalls and policy routing.
+    *   TUN/TAP interfaces: Better integration, but still user space and requires traffic injection.
+*   **Goal:** Kernel-space multicast forwarding for performance and integration. Traditional Linux IP multicast is designed for Ethernet segments and does not fit MANET use cases.
+*   **MANET-Specific Challenges for Kernel Multicast:**
+    1.  **Retransmission on the same interface:** Newer Linux kernels appear to allow this, addressing a long-standing issue.
+    2.  **Selective forwarding:** Difficult to implement dynamically.
+    3.  **Local traffic:** Kernel forwarding ignores local traffic; virtual Ethernet devices could address this.
+    4.  **Suppressing duplicates:** Requires custom kernel code (e.g., modules), which is undesirable for maintenance and acceptance.
+*   **Proposed Solution (using eBPF/XDP):** Leverage eBPF (Extended Berkeley Packet Filter) and XDP (Express Data Path) to implement custom kernel logic for filtering, modifying (TTL), and redirecting incoming MANET traffic, including duplicate detection (sequence numbers or hashes) without needing kernel modules.
+*   **Discussion:**
+    *   **Concerns about Duplicate Elimination:** Linux kernel multicast API is not designed for disjoint networks. Duplicate elimination is fundamentally problematic, as it can break upper-layer protocols that intentionally send duplicate packets (e.g., DHCPv4), and introduces scaling issues and unbounded state. IP forwarding should not generally remove duplicates.
+    *   **eBPF as Custom Code:** While avoiding kernel modules, eBPF is still custom kernel code. A better long-term solution would be a general kernel API for multicast over mesh networks, independent of routing protocols.
+    *   **Layer Separation:** Radio systems are increasingly handling L1/L2 deduplication; the IP layer should ideally not be involved in this.
+
+### 802.11s Mesh Multicast (Donald Eastlake)
+
+*   802.11 (Wi-Fi) is a complex, widely deployed standard with built-in security.
+*   **Infrastructure ESS (Extended Service Set):** Access Points (APs) beacon, stations associate. APs can multicast to associated stations using a group key. Multicast from stations is unicast to the AP, then multicast by the AP.
+*   **Multicast Reliability in 802.11:** The standard includes various mechanisms: sending at higher rates, unsolicited retransmissions, polling stations, block acknowledgements, and serial unicast (though this loses multicast's advantages). Sequence numbers handle fragmentation and duplicates.
+*   **Ad-Hoc Mode:** Stations beacon and send directly (a one-hop mesh). Multicast is a simple flood.
+*   **802.11s Mesh (Four-Address Header, Six Addresses):**
+    *   Uses a four-address header for general links or mesh. Mesh frames can use six addresses (original source, final destination, mesh source, mesh destination, transmitter, receiver) to traverse multiple hops within the mesh.
+    *   Mesh points beacon with a mesh profile (ID, path selection protocol, metric). They peer as equals, negotiate keying, and distribute group keys for multicast.
+    *   The entire mesh appears as a Layer 2 link to the outside world.
+    *   **Multicast in 802.11s:** Primarily achieved by flooding with duplicate elimination (using source address and sequence number cached at mesh nodes) and TTL. Spanning Tree Protocol (STP) handles loops with external networks.
+*   **Discussion:** 802.11s path selection (AODV with proactive beaconing) has been observed to not scale well beyond a few nodes. It might be a good base for Layer 3 routing if its internal mesh protocol is disabled, allowing a fully bridgeable single-hop Wi-Fi ad-hoc mode. 802.11s multicast effectively floods the mesh.
+
+### Beer in Babel Networks (Sandison)
+
+*   **Beer (Bit Index Explicit Replication):** A new multicast technology that eliminates the need for explicit multicast distribution trees and per-flow state on intermediate nodes.
+*   **Layered Architecture:** Decouples the IP multicast packet (with its IP destination address) from the Beer forwarding plane.
+*   **Beer Forwarding:** Based on a bitstream in a Beer header (following an L2 or tunnel header like MPLS, IPv6, or a generic tunnel). Each bit in the bitstream corresponds to an egress Beer router.
+*   The ingress router encapsulates the IP multicast packet with the Beer header. Intermediate nodes forward based solely on the Beer header. The egress router decapsulates.
+*   **Suitability for Babel:** Beer is attractive for Babel networks because it requires no multicast tree signaling/state, works with any routing protocol (ISIS, OSPF, BGP, Babel), and supports various encapsulations. Software forwarding is viable for lower data rates.
+*   **Babel Signaling for Beer:** Involves Babel route advertisements for Beer router loopback addresses (TRVs) for BIFT (Beer Forwarding Table) calculation. Traffic can be tunneled over Beer-incapable nodes. An open-source implementation for Beer signaling in Babel exists.
+*   **Discussion:**
+    *   Beer provides efficient broadcast replication without building trees or flooding. While hardware support has been a deployment hurdle, software forwarding is suitable for MANETs with lower data rates.
+    *   Beer fundamentally avoids the duplicate packet problem and the issues described for traditional MANET multicast. The ideas behind Beer are highly relevant for MANET.
+    *   **Layering:** Beer represents an added layer of encapsulation. This approach (encapsulation vs. duplicate detection) is key to solving multicast issues.
+    *   **Challenges:** The hardest problem for Beer in MANET is the dynamic assignment of unique bit positions (identifiers) to Beer nodes within the mesh.
+    *   **Flexibility:** Beer's architecture is not limited to IP Layer 3; it can potentially be adapted for Layer 2 by mapping L2 stations to bits.
+
+### Multicasting in ROLL (Pascal)
+
+*   **RPL (Routing Protocol for Low-Power and Lossy Networks):** A distance-vector protocol optimized for mesh networks with roots (traffic mostly to/from roots).
+*   **DODAG (Destination-Oriented Directed Acyclic Graph):** Provides loopless paths to the root.
+*   **Downward Routing Modes:**
+    *   **Non-Storing Mode:** Root rebuilds DODAG structure from parent advertisements and uses source routing.
+    *   **Storing Mode:** Nodes aggregate and pass up addresses of children to parents, building downward routes.
+*   **MOF3 (Storing Mode with Multicast):** Uses the preferred parent tree as a multicast tree. Leaves inject multicast addresses, and parents keep all rather than freshest. Packets are unicast or broadcast copied down the tree. Can leverage the tree to send packets to the root for downward distribution, avoiding duplicate elimination issues.
+*   **Meepo (Multicast Extensions for P2P Networks):** An independent mechanism for efficient information dissemination in large, dense networks. It uses a 3-core algorithm (RFC 6206) where nodes only retransmit if they haven't received enough copies within a timer period, reducing redundant transmissions compared to simple flooding.
+*   **New Work (6Loch/RAW):**
+    *   Leverages non-storing mode and IPv6 ND extensions for devices to register unicast/anycast/multicast addresses they are interested in (sleep proxy model). The root then performs ingress replication (tunnels to edge routers, who distribute).
+    *   **Beer-like variations (stalled work):**
+        *   **Constraint Cast:** Uses Bloom filters to encode destination addresses, allowing flexible sizing and graceful degradation with false positives instead of hard bitmap size limits.
+        *   **Beer for RPL:** Aims to compress routing state in storing mode. Instead of sending full address lists, nodes send a single bitmap representing themselves and their children, which parents OR together and pass up. This reduces per-descendant state to one bitmap per direct child.
+
+### Babel Features (Julius)
+
+*   Babel (RFC 8966, 2021) is a traditional routing protocol designed for hybrid/heterogeneous networks that handles meshes well.
+*   **Recent Protocol-Agnostic Extensions (with multiple implementations):**
+    1.  **MAC Authentication:** Minimalistic, provably invulnerable to replay, doesn't require real-time clocks or persistent storage.
+    2.  **Source Specific Routing (ASDR):** Allows routing packets based on their source address, enabling "cheap" network multi-homing. Requires Linux kernel support (v3.11+). (Currently IPv6 only for kernel support).
+    3.  **V4 via V6 Routing:** Enables routing IPv4 traffic through IPv6-only nodes in a backbone without translation, tunneling, or overhead. Requires Linux kernel changes (v5.2+).
+    4.  **RTT Sensitive Metrics:** Automatically computes routing metrics based on RTTs, offering surprising stability compared to naive RTT approaches. Widely deployed but the draft is uncompleted due to lack of full understanding of *why* it works so well.
+
+### General Discussion & Conclusion
+
+*   The assignment of identifiers for Beer nodes in a MANET remains a difficult problem. Solutions could involve making the mesh its own Beer domain or designing protocol-agnostic signaling.
+*   MPLS as a data plane was considered for layering but its control plane protocols are likely inappropriate for MANETs. Beer does not require MPLS.
+*   The core dilemma for multicast in MANETs is **duplicate packet suppression vs. encapsulation**. Duplicate suppression (which some protocols implement) is problematic because it breaks protocols that rely on duplicate packets (e.g., DHCPv4) and can introduce unbounded state. Encapsulation (used by Beer, 802.11s, SMF extension headers) appears to be a more robust alternative. The question was posed if there is a "third possibility" beyond these two approaches.
+*   Leveraging Layer 2 Ethernet headers (for Wi-Fi) was suggested as a potential layering mechanism that might avoid carrying extra headers.
+*   For Beer in ROLL, the BRTE (Bit Index Explicit Replication - Traffic Engineering) approach could allow hop-by-hop packet steering, but requires topology information at the sending router, which is challenging in high-churn MANETs.
+*   It was emphasized that there are two reasons for duplicate packets: those *intended* by the application (which the IP layer should pass) and those *accidentally created* by the multicast system (which need cleanup). A clean layer separation is important.
+
+## Decisions and Action Items
+
+*   No formal decisions were made during this session.
+
+## Next Steps
+
+*   Continue the discussion on multicast in MANETs, Babel, and ROLL on the respective mailing lists, possibly with cross-posting to keep the community engaged.
+*   Further explore the Beer (Bit Index Explicit Replication) architecture as a potential solution for multicast in MANETs and ROLL, including investigating the challenges of dynamic identifier assignment.
+*   Identify common building blocks for multicast across the MANET, Babel, and ROLL working groups.
+*   Consider holding more frequent joint sessions or an interim meeting to foster collaboration and accelerate progress.
+*   Investigate potential "third possibilities" for multicast forwarding in MANETs that avoid both duplicate packet suppression and explicit encapsulation, as proposed during the session.
+*   Understand the reasons why Beer work in ROLL might have stalled previously to avoid repeating mistakes.

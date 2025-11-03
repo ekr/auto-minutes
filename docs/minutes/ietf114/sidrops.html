@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="sidrops.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-SIDROPS-20220727-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 27 Jul 2022 14:00</p>
+<h1>sidrops</h1>
+<h2>Summary</h2>
+<p>The sidrops session featured presentations and discussions on four key topics: enhancing Source Address Validation (SAV) with a new approach called BAR-SAV, a proposal for a Trust Anchor Key (TAK) object to simplify RPKI Trust Anchor key rollovers, a method for RPKI repository migration based on key rollovers, and significant updates to the ASPA (AS Path Attestation) profile and verification documents, including a contentious debate on the ASPA object format. Discussions highlighted the challenges of RPKI adoption, operational complexities, and the need for practical, deployable solutions.</p>
+<h2>Key Discussion Points</h2>
+<h3>Enhancing Source Address Validation (SAV) with BAR-SAV (Igor Lubachev)</h3>
+<ul>
+<li><strong>Problem Statement</strong>: Current SAV mechanisms (e.g., RFC 8704) are insufficient, leading to low adoption (around 15% of networks for 7 years). They primarily infer data plane forwarding information from BGP signals not designed for it, lacking sufficient signal.</li>
+<li><strong>BAR-SAV Proposal</strong>: Augment existing BGP messages with ASPA and ROA information.
+<ul>
+<li>Strictly improves on RFC 8704 by looking at the entire AS path rather than just the origin AS.</li>
+<li>Requires no new protocols or changes to existing ones, aiming for easier adoption and immediate benefits for early deployers.</li>
+<li>Works on both peer and customer links.</li>
+<li><strong>Mechanism</strong>: Two phases:
+<ol>
+<li>Discover the &quot;customer cone&quot; using ASPA (when available) and BGP AS paths (iteratively).</li>
+<li>Identify prefixes owned by these customer cone ASNs using ROA information and BGP announcements (where origin AS is in the customer cone).</li>
+</ol>
+</li>
+</ul>
+</li>
+<li><strong>Use Cases</strong>:
+<ul>
+<li><strong>Direct Server Return (DSR)</strong>: BAR-SAV can help validate packets sourced from an IP prefix &quot;owned&quot; by an edge CDN AS (S2) even if S2 doesn't advertise that prefix via BGP, as long as a ROA attests S2's ownership.</li>
+<li><strong>Route Leak Detection</strong>: ASPA validation helps BAR-SAV construct a correct customer cone, thus rejecting leaked routes.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>iBGP cases</strong>: Request to examine how BAR-SAV would apply to iBGP cases, beyond the presented eBGP examples.</li>
+<li><strong>Economic Cost</strong>: Implementing SAV often requires burning FIB resources, adding cost without directly selling &quot;bits.&quot; The speaker acknowledged that economics is a driver but emphasized the need for economical solutions, especially for smaller networks.</li>
+<li><strong>RPKI Fail-Open Semantics</strong>: Using RPKI objects (ROAs/ASPA) for SAV might break their traditional fail-open semantics. If RPKI data is temporarily unavailable or incomplete, it could lead to blocking legitimate traffic. This suggests a need for careful consideration of object semantics or defining new purpose-built objects.</li>
+<li><strong>ASPA Pruning</strong>: Using ASPA to prune the customer cone could be problematic. A customer might use a transit link outbound without intending to advertise inbound reachability, potentially leading to valid return traffic being dropped. This highlights a potential mismatch between policy directionality and perceived connectivity.</li>
+<li><strong>Data Consistency/Availability</strong>: Concerns about the reliability of RPKI publication points and partial cache failures. Suggestions for caching mechanisms (e.g., 24-48 hour validity) to mitigate temporary unavailability.</li>
+<li><strong>Policy vs. Connectivity</strong>: A fundamental concern that policy directionality in AS paths might not be isomorphic to straight connectivity, leading to filters that are too enthusiastic and discard valid packets. While BAR-SAV aims to expand the permissive list, it may not achieve perfection.</li>
+<li><strong>Wider Problem</strong>: Attacks can come from peers, and the customer cone concept needs to accurately reflect these relationships, including regionalized peering and partial transit services.</li>
+</ul>
+</li>
+</ul>
+<h3>Trust Anchor Key (TAK) Object for RPKI Rollover (Tom Harrison)</h3>
+<ul>
+<li><strong>Goal</strong>: Simplify RPKI Trust Anchor key rollover (main goal) and update root CA certificate URLs (secondary goal), reducing reliance on specific HSM vendors.</li>
+<li><strong>Current Challenges</strong>: Manual distribution of new TA files, client updates, and custom TA update processes.</li>
+<li><strong>TAK Proposal</strong>: Define a new signed object to signal TA key/root CA certificate URL changes in-band.</li>
+<li><strong>Comparison with Other Approaches</strong>:
+<ul>
+<li><strong>RFC 4021 (CMP)</strong>: Involves cross-signing old/new keys and repository distribution, but assumes out-of-band TA distribution and clients receiving certs from other sources, which differs from RPKI's in-band, repository-centric model.</li>
+<li><strong>RFC 8649 (Hash of Root Key)</strong>: Includes hash of upcoming key in TA certificate. Issues include potential RP ignored extensions and inability to transition from previous TAL data if old cert is replaced.</li>
+<li><strong>Web PKI</strong>: Relies on cross-certification and issuing new root CA certificates.</li>
+<li><strong>RFC 5011 (DNSSEC Updates)</strong>: Introduced the concept of an &quot;acceptance timer.&quot;</li>
+</ul>
+</li>
+<li><strong>Key Document Changes</strong>:
+<ul>
+<li><strong>Acceptance Timer</strong>: Incorporated from RFC 5011 (30 days, arbitrary). A client must see the new key consistently for this period before updating its trust store. This mitigates risks of temporary key compromise allowing an attacker to transition clients to their controlled key.</li>
+<li><strong>Revoked Flag Removed</strong>: The <code>revoked</code> flag was removed as it didn't align with the common understanding of &quot;revocation.&quot;</li>
+<li><strong>Predecessor Key Reference</strong>: TAK object now includes a reference to the predecessor key for better verification.</li>
+<li><strong>TA Certificate URL Reuse</strong>: Advice for TAs to reuse previous TA certificate URLs for new keys once old key is no longer maintained, to aid client transition.</li>
+</ul>
+</li>
+<li><strong>Validator Currency</strong>: Analysis of validators connecting to NLnet Labs RPKI services shows a significant portion (15-50%) are more than 12 months old, suggesting a concerted effort will be needed to get people onto versions supporting TAK objects for practical reliance.</li>
+<li><strong>Next Steps</strong>: Address feedback, update prototype code, and continue development.</li>
+</ul>
+<h3>RPKI Repository Migration (Tim Bruijnzeels)</h3>
+<ul>
+<li><strong>Context</strong>: Discussion on different RPKI publication models, from RIR-provided services to dedicated CAs and third-party content providers. Hosted repositories simplify operation and enable wider RPKI adoption.</li>
+<li><strong>Problem</strong>: How to migrate from one RPKI repository to another, especially when running one's own.</li>
+<li><strong>Proposal</strong>: Leverage the existing key rollover process (new key pair, new certificate, staging, activation, old key removal) for repository migration.
+<ul>
+<li>During key activation, instead of publishing everything under the new key <em>and</em> immediately removing from the old key, keep objects in both locations for some time to avoid non-atomic updates.</li>
+</ul>
+</li>
+<li><strong>Challenges</strong>:
+<ul>
+<li>Relying parties might see no objects, both objects, or only the new objects during the transition due to fetching from two different locations.</li>
+<li>Authority Information Access (AIA) pointers changing might trigger issues in some RP tools.</li>
+<li>The current provisioning protocol (RFC 6492) and its responses might need re-evaluation if the publication URI changes.</li>
+</ul>
+</li>
+<li><strong>Call for Action</strong>: The presenter seeks group consensus on documenting and standardizing this repository migration process.</li>
+<li><strong>Feedback</strong>: Strong support from Chris Morrow to standardize and document the migration process.</li>
+</ul>
+<h3>ASPA Document Update (Alexander Azimov)</h3>
+<h4>ASPA Profile Document</h4>
+<ul>
+<li><strong>Previous (v7)</strong>: ASPA object defined as <code>customer AS</code> with its <code>provider list</code>, expecting separate objects for IPv4 and IPv6.</li>
+<li><strong>Current (v8)</strong>: ASPA object now carries a &quot;list of lists,&quot; where each item contains a list of providers and may contain an address family (AFI). The idea is to allow a single object for both IPv4 and IPv6 policies, even when they differ.</li>
+<li><strong>Discussion - v7 vs. v8 Format</strong>:
+<ul>
+<li><strong>Arguments for v8 (single object)</strong>:
+<ul>
+<li>Fewer RPKI objects for RPs to process.</li>
+<li>Overwhelmingly common case is same/similar transits for both AFIs.</li>
+<li>Less surprising to operators if the on-wire format aligns with a mental model of shared topology.</li>
+<li>Existing implementations (NLnet Labs, others) are already based on v8, rolling back would be significant work.</li>
+<li>Translation from ASN.1 to RTR format can happen at the RP (where compute is cheap), similar to ROAs with multiple prefixes.</li>
+</ul>
+</li>
+<li><strong>Arguments against v8 (preference for v7 simplicity)</strong>:
+<ul>
+<li>Increased complexity in the object content (semantic overlaps, need for unions, difficult test cases).</li>
+<li>Potential for complicated debugging when interacting with routers (e.g., <code>show asp</code> commands per AFI).</li>
+<li>V4 and V6 topologies are not always congruent and are not guaranteed to remain so, making the &quot;common case&quot; argument potentially temporary.</li>
+<li>Concern that increased complexity could delay deployment and experience with ASPA.</li>
+<li>Strong preference to keep complexity <em>north</em> of the router, with the router expecting separate v4/v6 data.</li>
+<li>Randy Bush: Router separates v4/v6 naturally; &quot;what's presented to the user and the GUI is arbitrary in either of these schemes.&quot;</li>
+</ul>
+</li>
+<li><strong>Outcome</strong>: No consensus was reached. The discussion highlighted the trade-off between on-wire conciseness and operational/implementation complexity. It was suggested to continue the debate on the mailing list.</li>
+</ul>
+</li>
+</ul>
+<h4>ASPA Verification Document</h4>
+<ul>
+<li><strong>Generalization</strong>: Updates devoted to generalizing upstream and downstream verification procedures.</li>
+<li><strong>New Index Types</strong>:
+<ul>
+<li><code>invalid index</code>: minimal index for which an AS in the path is not authorized to transit.</li>
+<li><code>reversed embedded index</code>: calculated similarly but for the reverse AS path.</li>
+<li>These indexes help detect problems for prefixes from providers, route servers, and peers.</li>
+</ul>
+</li>
+<li><strong>Leak Detection</strong>: Simple rules defined based on these indexes: if <code>invalid index</code> is less than the AS path length, it's a leak (for routes from provider/peer/IX). For routes from providers, if the sum of <code>invalid indexes</code> is less than AS path length, it's invalid.</li>
+<li><strong>Route Servers</strong>: If a route server is not transparent, it must be added to the provider list in ASPA, enabling standard upstream verification for all parties at an IX.</li>
+<li><strong>Unknown Paths</strong>:
+<ul>
+<li><strong>Definition</strong>: A path that may have been leaked, indicating an AS in the upstream segment without an ASPA record.</li>
+<li><strong>Detection</strong>: Uses <code>unknown index</code> (first AS in upstream segment without ASPA record) and <code>reverse unknown index</code>. A path may be leaked if there's &quot;enough space&quot; for a leak (e.g., <code>unknown index</code> &lt; AS path length).</li>
+</ul>
+</li>
+<li><strong>AS-Sets</strong>: Ongoing discussion to consistently mark routes with AS-sets as <code>invalid</code>, regardless of their position in the path.</li>
+<li><strong>Call for Action</strong>: Volunteers needed to read the document and code the ASPA logic for specification checking.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>AS0 ASPA</strong>: Reiteration that Tier-1 providers and non-transparent IXes/route servers should register an AS0 ASPA.</li>
+<li><strong>Route Server Clients</strong>: Discussion on whether a transit provider acting as a route server client should include the route server's AS in its ASPA, even if the route server is transparent. The draft currently implies they should if non-transparent. Randy Bush strongly opposed adding complexity due to non-standard behavior of IXes putting their AS in the path, urging to reduce complexity.</li>
+<li><strong>Upstream verification for RS clients</strong>: Sriram noted potential issues with this, requiring further discussion.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>ASPA Object Format</strong>: No decision made during the meeting on whether to adopt version 7 or version 8 of the ASPA profile document.</li>
+<li><strong>ASPA Profile &amp; Verification Documents</strong>: Alexander Azimov to summarize the mailing list discussion on ASPA object format. Volunteers requested to read the verification document and assist with coding the ASPA logic.</li>
+<li><strong>Repository Migration</strong>: Tim Bruijnzeels to write to the mailing list seeking further feedback and support for standardizing the repository migration process.</li>
+<li><strong>BAR-SAV</strong>: Discussion points raised (iBGP, fail-open, policy vs. connectivity, customer cone in peering) need further exploration, likely on the mailing list.</li>
+<li><strong>TAK Object</strong>: Feedback needed on the document, prototype code to be updated.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussion on the ASPA profile document's object format (v7 vs. v8) on the mailing list.</li>
+<li>Alexander Azimov to incorporate feedback into the ASPA verification document and seek volunteers.</li>
+<li>Tim Bruijnzeels to draft a proposal for standardizing RPKI repository migration and circulate it on the mailing list.</li>
+<li>Further discussions and refinement of BAR-SAV concepts, especially regarding operational challenges and edge cases, are expected to continue on the mailing list.</li>
+<li>Feedback for the TAK object document is encouraged.</li>
+<li>The chairs suggested an intermediate interim meeting might be necessary before the next IETF meeting in London if significant progress is made on these topics.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

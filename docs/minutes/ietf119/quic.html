@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="quic.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF119-QUIC-20240319-2330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 19 Mar 2024 23:30</p>
+<pre><code class="language-markdown"># quic
+
+## Summary
+
+The QUIC working group meeting at IETF 119 covered several topics including updates on QLOG, multipath QUIC, act frequency, security considerations, QUIC on streams, BDP frame extension, and FEC.  The meeting involved presentations, open discussions, and decisions on future directions for these topics.
+
+## Key Discussion Points
+
+*   **QLOG:**
+    *   Progress on removing QPAC and editorial updates.
+    *   Merged support for path migration and the basis for multipath.
+    *   Discussion about extensibility and defining additional QLOG schemas.  Explicit listing of event groups versus implicit inclusion of all categories was discussed.
+    *   Using CDDL type sockets for new frame types and group sockets for extending existing types (e.g., transport parameters).
+*   **Multipath QUIC:**
+    *   Discussion on explicit path ID proposal and its advantages over previous drafts, particularly in CID management and packet number space handling.
+    *   Comparison of the new proposal with draft-ietf-quic-multipath-06, including pros and cons.
+    *   Internal reports from hackathon implementations indicated explicit pass ID management works well.
+    *   Open issues were discussed, including pass ID reuse, preferred pass ID during handshake, coordination of pass ID spaces between client and server, and pass retirement.
+*   **Act Frequency:**
+    *   Discussion on the updates after the working group last call, clarifications made, and remaining points of discussion.
+    *   Issues closed without action, including handling of ECN, and what happens after an idle time.
+    *   Normative changes including max act delay and error type for invalid values.
+*   **Security Considerations:**
+    *   Discussed resource exhaustion attacks against QUIC protocol, specifically related to connection ID management and path validation.
+    *   Explored the vulnerabilities and potential fixes, focusing on preventing memory exhaustion and managing congestion control.
+    *   Discussed similarities to HTTP/2 rapid reset attack.
+*   **QUIC on Streams:**
+    *   Introduction of the &quot;QUIC on Streams&quot; concept - using QUIC streams on top of TCP, aiming to reduce the duplication of effort in maintaining separate stacks for QUIC and TCP.
+    *   Discussion about the potential harm in making it easier to deploy something over QUIC with an abstraction layer, but also acknowledged the desire for avoiding duplicated efforts and the reality of supporting TCP.
+*   **QUIC BDP Frame:**
+    *   Discussion about the use case of a BDP frame to transport congestion control parameters, particularly for careful resume.
+    *   Proposed client-side changes, allowing the receiver to participate in deciding whether a change in congestion control parameters is useful.
+    *   Concerns were raised about communicating congestion control parameters on the wire and whether it's best to just use tokens instead.
+*   **FEC (Forward Error Correction):**
+    *   Brief presentation on FEC implementation in QUIC, the tunneling of RTP streams and experimentation done. The aim of FEC is to reduce waiting time to recover lost packets.
+
+## Decisions and Action Items
+
+*   **Multipath QUIC:** Merge PR 292 to go forward with the explicit path IDs design (subject to confirmation of consensus on the mailing list).
+    *   **ACTION:** Authors to merge PR 292.
+    *   **ACTION:** Someone should go and make a PR about even and odd number allocation to client and server for new passes to allow for server initiated passes.
+
+*   **Act Frequency:** Run another working group last call.
+    *   **ACTION:** Chairs to schedule another working group last call for the Act Frequency draft.
+
+*   **Security Considerations:** Dig into manipulating RTT and congestion control. The need to make the language regarding limiting the amount of IDs an endpoint has to track stronger was discussed.
+    *   **ACTION:** Review issue 3509 in the base drafts repo.
+
+*   **QUIC BDP Frame:**  Working group is interested in the congestion control changing information use case. Follow-up with some offline discussion. Discussion about whether this could be moved to the Congestion Control Working Group.
+    *   **ACTION:** Follow-up with some offline discussion.
+
+## Next Steps
+
+*   Continue discussions on the QUIC mailing list for open issues, particularly those related to multipath QUIC.
+*   Authors should address open issues on multipath QUIC following the discussions in the meeting.
+*   Continue experimentation with extensibility points for QLOG to exercise their functionality.
+*   Encourage implementation and experimentation with the QLOG draft.
+*   Further explore the &quot;QUIC on Streams&quot; concept within the community.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

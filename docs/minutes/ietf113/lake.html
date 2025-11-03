@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lake.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-LAKE-20220321-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2022 13:30</p>
+<h1>lake</h1>
+<h2>Summary</h2>
+<p>The LAKE session at IETF 113 focused primarily on the status of the AD HOC protocol, including reports from implementers, progress on formal security analyses (both computational and symbolic models), and updates to the core protocol drafts. Key discussions revolved around implementation experiences on constrained devices, performance benchmarks, and the identification of potential areas for strengthening the protocol's security guarantees in various threat models. Decisions were made regarding the next steps for draft progression, particularly in light of ongoing security analyses.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Status:</strong> The LAKE Traces draft was adopted, and the AD HOC specification (v12) was declared ready for formal analysis. An article was published in IEEE Computer Magazine inviting academic scrutiny of the protocol. The AD HOC specification has been frozen in the data tracker since IETF 112 to allow for analysis, but development continues on an editor's copy (v13) in GitHub. The milestone to ship the document to the ISG by March 2022 is likely to be pushed back due to ongoing vetting.</li>
+<li><strong>Hackathon Report:</strong> A recent hackathon focused on developing and testing a minimal, verifiable Rust implementation of AD HOC (editor's copy v13) for microcontrollers, emphasizing low size and static Diffie-Hellman. Successful interoperability testing was conducted between the Rust initiator and an Eclipse Californium responder, confirming a 45-byte Message 2 and consistent master secret derivation. The working group now has nine independent AD HOC implementations.</li>
+<li><strong>Developer Feedback (Inria - Francisco):</strong>
+<ul>
+<li>Experiences implementing AD HOC (draft 05) on constrained nRF52 BLE devices for a privacy-focused research project (RIOTFP).</li>
+<li>A C implementation (<code>ad-hoc-c</code>) was developed, utilizing <code>nano-cbor</code>, <code>tinycrypt</code>, and <code>Ed25519</code>.</li>
+<li>Benchmarks (software-only crypto on Cortex M0+/M4) showed ROM usage around 9-10KB and RAM around 4KB (highly buffer-dependent). Handshake times were significant, up to 20 seconds on M0+ for signature-based methods, primarily due to cryptographic operations.</li>
+<li>Feedback included the need for better COSY abstraction libraries, asynchronous crypto APIs to manage timeouts, and clearer guidance on credential handling. Chacha20-Poly1305 was suggested as a preferred cipher suite for constrained environments due to smaller size and simpler implementation compared to AES-CCM.</li>
+<li>A correction was noted: mbedTLS <em>does</em> support AES-GCM, and Ed25519 support is in development for mbedTLS.</li>
+</ul>
+</li>
+<li><strong>Developer Feedback (Assa Abloy - Marek):</strong>
+<ul>
+<li>Experiences with AD HOC (draft 12) as part of a modular IoT stack for device-to-cloud/mobile/device communication, using COAP, OSCORE, and X.509 certificates.</li>
+<li>Implemented a single C library (<code>micro-oscore-micro-ad-hoc</code>) wrapped for various platforms (embedded, iOS, Node.js), utilizing hardware-accelerated mbedTLS on nRF52840.</li>
+<li>Performance was significantly better with hardware acceleration: a full AD HOC handshake (Method 0, Cipher Suite 2, P-256, X.509 validation) over BLE GATT took approximately 180ms on nRF52840, within a total operation time of 600-800ms for full connection setup.</li>
+<li>Future plans include building a COAP/HTTP proxy and contributing to test vector generation.</li>
+</ul>
+</li>
+<li><strong>Implementation Security Update (Malicious):</strong>
+<ul>
+<li>Presented work on a formally verifiable Rust implementation of AD HOC using Inria's HackSpec framework, aiming for provable correctness, memory safety, and side-channel resistance on microcontrollers.</li>
+<li>Challenges include HackSpec's reliance on the Rust standard library (preventing <code>no_std</code> compilation for embedded targets) and poor library support for elliptic curve point compression.</li>
+<li>A minimal AD HOC initiator (static-static, 45-byte Message 2) implementation in <code>no_std</code> Rust successfully interoperates with existing backends, without external libraries for CBOR/COSY.</li>
+<li>An open question was raised about ensuring the formal model accurately reflects the RFC specification.</li>
+</ul>
+</li>
+<li><strong>Computational Analysis (Baptiste):</strong>
+<ul>
+<li>Outlined the approach to prove AD HOC security in the computational model, considering constrained environments that use 64-bit MACs and 128-bit elliptic curves (specifically Cipher Suites 0 and 2).</li>
+<li>Goals include proving key privacy (forward security, implicit authentication), mutual authentication (explicit authentication), and identity protection.</li>
+<li>A key point of study is whether 128-bit security can be achieved after the exchange of a few application messages, given that handshake MACs are 64-bit.</li>
+<li>Discussion with Scott raised concerns that properties of AEAD schemes like GCM/CCM might limit security to 64-bit, even with subsequent messages, if an initial forgery is successful. This needs further investigation.</li>
+<li>The definition of the &quot;session key&quot; for formal analysis (e.g., <code>prk4x3m</code>) requires clarification.</li>
+<li>Expected timeline for concluding this analysis is approximately two months.</li>
+</ul>
+</li>
+<li><strong>Symbolic Analysis (Charlie):</strong>
+<ul>
+<li>Presented findings from symbolic analysis using the Tamarin prover, modeling AD HOC's four authentication methods and capturing subtle cryptographic primitive behaviors.</li>
+<li>The protocol provides expected security properties in reasonable threat models. However, in stronger attacker models, several potential weaknesses were identified, prompting proposed improvements:
+<ol>
+<li><strong>Clarify Final Key:</strong> <code>prk4x3m</code> as a session key offers weaker properties. A final key derivation step tying PRK and the transcript would strengthen guarantees.</li>
+<li><strong>Retransmission Misuse:</strong> Retransmitting a randomized Message 3 (if state is simply recomputed) can lead to reusing the same AEAD key/IV for different messages, breaking AEAD security. The proposal is to retransmit <em>exactly</em> the same message.</li>
+<li><strong>TEE Weakness in Static Auth:</strong> In static authentication, the MAC key and session key are identical. If a TEE device is compromised (leaking session key), the MAC key is also leaked, allowing an attacker to forge MACs. This is not an issue with Method 0 (signatures).</li>
+<li><strong>Future Resilience:</strong> Against potential future hash collisions (e.g., SHA-256) or identity element attacks, checking for low-order groups and strict type-checking of received data (e.g., cipher suite arrays) can mitigate risks.</li>
+</ol>
+</li>
+<li>The analysis model will be kept updated with draft evolutions.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> The LAKE Traces draft has been adopted.</li>
+<li><strong>Decision:</strong> The AD HOC specification (v12) has been declared ready for formal analysis.</li>
+<li><strong>Decision (Compliance Requirements):</strong> Implementations <em>must</em> support Cipher Suite 2 and 3, unless an application profile specifies otherwise.</li>
+<li><strong>Decision (Compliance Requirements):</strong> Implementations <em>must</em> be able to parse padded messages (referring to the receiving side).</li>
+<li><strong>Action Item (Francisco):</strong> Update slide in Developer Feedback 1 to correctly reflect mbedTLS support for AES-GCM.</li>
+<li><strong>Action Item (Authors):</strong> Convert Charlie's symbolic analysis remarks into GitHub issues for detailed discussion on the mailing list and GitHub.</li>
+<li><strong>Action Item (Working Group Chairs/Authors):</strong> Clarify the definition of &quot;session key&quot; (e.g., <code>prk4x3m</code>) for formal analysis on the mailing list.</li>
+<li><strong>Action Item (Marek, ETH Zurich):</strong> Coordinate with LAKE chairs regarding ongoing computational analysis work to ensure synchronization.</li>
+<li><strong>Action Item (Charlie):</strong> Keep the working group chairs informed of any publications resulting from the symbolic analysis work.</li>
+<li><strong>Action Item (Authors):</strong> Schedule a breakout meeting this week to structure and organize test vectors, particularly in JSON format, with Marek's assistance.</li>
+<li><strong>Action Item (Working Group Chairs):</strong> Coordinate directly with the various security analysis teams (Baptiste, Charlie, Marek, Malicious) to understand the impact of submitting a new draft version (v13) on their ongoing work. A decision will then be announced on the mailing list.</li>
+<li><strong>Action Item (Working Group Chairs):</strong> If necessary, to prevent draft expiry by April 23rd and avoid sending a wrong signal, consider resubmitting draft v12 as draft v13 without changes, in coordination with the analysis teams.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Draft Progression:</strong> Submit new versions of the AD HOC (v13) and LAKE Traces (v01) drafts from their respective GitHub master branches to the data tracker, as all previous issues have been addressed.</li>
+<li><strong>Address New Feedback:</strong> Incorporate and address the review comments and findings from the hackathon and the detailed security analyses presented during this meeting.</li>
+<li><strong>Working Group Last Call:</strong> Target Working Group Last Call for the drafts once all feedback and new issues have been sufficiently addressed.</li>
+<li><strong>Formal Analysis Coordination:</strong> Continue close coordination with all involved security analysis teams to integrate their feedback and ensure the protocol is thoroughly vetted.</li>
+<li><strong>Implementation Development:</strong> Complete the port of the verifiable Rust implementation to target embedded boards (TI CC2538, Nordic) and publish it as a Rust crate. Use the formal model to generate formally vetted code.</li>
+<li><strong>Test Vector Development:</strong> Further develop and structure test vectors, especially for JSON format, through a scheduled breakout meeting.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

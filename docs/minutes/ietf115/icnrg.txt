@@ -1,0 +1,116 @@
+**Session Date/Time:** 08 Nov 2022 13:00
+
+# icnrg
+
+## Summary
+
+The ICNRG session included an update on document status, notably on the coordinated publication of ICN Ping, Traceroute, and Path Steering. Key presentations covered the Flick (File-like ICN Collections) manifest specification, a novel building block container format that diverges from manifest-based approaches to address streaming, multi-authorship, and content deletion challenges, and the deployment of ICN as a service using the C4 CCNx implementation with Docker. The session concluded with a discussion on developing Restful ICN applications and a proposal for an interim meeting to explore ICN's role in metaverse/AR/VR applications.
+
+## Key Discussion Points
+
+*   **Housekeeping and Logistics**
+    *   Reminded participants of IRTF IPR rules and the IETF mask policy.
+    *   Emphasized that IRTF produces informational or experimental RFCs, focusing on research to enable future experiments.
+    *   Matthias volunteered as note-taker for the session.
+    *   Encouraged using the Meetecho `q` tool for queue management and stating names before speaking.
+
+*   **Research Group Document Status**
+    *   **CCNinfo:** Sent to the RFC Editor for publication.
+    *   **LastCallTimeTLVs:** Waiting for IRTF-chair (Colin) to initiate the IRPSG review.
+    *   **ICN Ping, Traceroute, and Path Steering:**
+        *   Ping and Traceroute have successfully completed IRPSG review and are ready for final stages.
+        *   These two documents are being held up to be published together with **Path Steering** due to their enhanced utility when combined.
+        *   Path Steering is now an RG draft, having undergone significant revisions, including updates to NDN encoding.
+        *   **Call to Action:** The RG chairs requested a rapid review and last call for Path Steering (within the next month) to enable expeditious IRPSG review and publication of all three RFCs together.
+
+*   **Presentation: Flick (File-like ICN Collections)**
+    *   **Presenter:** Mark St. Pierre
+    *   **Background:** Flick (first draft 2017, current 04 draft) provides a manifest structure for easier hash-based naming, supporting nameless objects, segmenting large content, collections, and offloading signatures.
+    *   **Core Features:**
+        *   Hierarchical manifest of hashes, allowing retrieval of segments using hash-based naming.
+        *   Canonical traversal order (pre-order, top-down, left-right).
+        *   Metadata (e.g., subtree size, digests, locators for routing hints) and annotations (pointer-specific size).
+        *   Built-in encryption mechanism using AES (pre-shared or wrapped keys) with support for in-place encryption/decryption.
+        *   Multiple interest construction techniques adaptable to how publishers create data.
+        *   Support for hash groups, allowing different naming conventions and metadata within a single manifest.
+        *   Distinguishes between a "Root" manifest (single top-level) and "Root plus Top" (allows changing signature/locators without re-hashing content).
+    *   **Remaining Work for 04 Draft:**
+        *   Updating the Python prototype implementation to align with the draft.
+        *   Adding an example for acyclic digraphs (e.g., deduplication of common content objects).
+        *   Clarifying nonce and salt usage, potentially incorporating a KDF to prevent repeated nonces.
+        *   Reviewing and incorporating IANA, security, and NDN considerations (NDN section is currently stale).
+    *   **Discussion:**
+        *   Mark called for community review and contributions due to Flick's importance as a core mechanism for ICN applications handling large objects.
+        *   Ken Calvert (University of Glasgow) confirmed a student is implementing Flick for NDN and will provide feedback, particularly on the NDN section and encryption details.
+        *   Early implementations existed in eINC, and Matthias has a Closure prototype.
+
+*   **Presentation: Building Block Container Format**
+    *   **Presenter:** Jens Finkhaeuser
+    *   **Motivation:** Developed under NGI0 with specific goals: streaming-friendliness (especially live streaming), multiplexing content types, offline-first operation, collaborative editing, end-to-end encryption by default, and robust content deletion ("right to be forgotten" under GDPR).
+    *   **Critique of Manifests:** Manifests are seen as problematic for content deletion (old manifests persist), real-time updates for live streaming, and multi-author scenarios (signing, merging conflicts).
+    *   **Alternative Approach (No Manifest):**
+        *   Uses "extents" (similar to file systems), analogous to Git or blockchain (without proof-of-work).
+        *   Each extent's identifier is a hash of its parent's extent ID and the author's ID, ensuring verifiable, deterministic, and conflict-free creation by multiple authors.
+        *   To manage tree width in multi-author scenarios, an "ideal parent identifier" mechanism is proposed, based on the longest or most linear path using a weighted edge scheme.
+    *   **Security & Deletion:**
+        *   Extents are signed; encryption is optional (public key signature or AAD). Key distribution is a challenge but can potentially be multiplexed into the resource.
+        *   Deletion is handled by overwriting an extent's content section with empty content, preserving the extent identifier. This aims to make caches treat deletion as an edit, increasing the likelihood of content being forgotten compared to simply removing a reference in a manifest.
+    *   **Discussion:**
+        *   The format is designed for an ICN-type software stack but could have broader uses.
+        *   Deletion doesn't guarantee removal once content is cached by a consumer. The approach is an attempt to make cache-level deletion more likely.
+        *   Similarities were drawn to Secure Scuttlebutt's distribution properties.
+
+*   **Presentation: ICN as a Service using C4 CCNx Implementation**
+    *   **Presenter:** Katsuyoshi Ohara (NICT Japan)
+    *   **Motivation:** Address the gap in deploying ICN modules within existing internet infrastructures, beyond routing, forwarding, caching, and security research.
+    *   **C4 (CCNx-based Extensible Packet One NG):**
+        *   Open-source CCNx 1.0 platform, developed since 2016.
+        *   Designed for lightweight implementation, extensibility, and usability (e.g., on resource-constrained devices like Raspberry Pi).
+        *   Pluggable architecture with `c4d` (packet forwarding engine) and `csmanagerd` (caching engine). Allows deploying full or minimal ICN stacks based on requirements.
+        *   Provides essential CCNx utilities (consumer, producer, CCNinfo).
+    *   **C4 Pico:** Python-based wrapper program for C4, significantly simplifying application development (e.g., reducing interest sending code from 33 lines in C to 4 in Python).
+    *   **Docker Integration:**
+        *   Leverages Docker for container-based virtualization, enabling quick and scalable deployment of ICN services as microservices.
+        *   Example Dockerfiles for `c4-base`, `c4-minimum` (for ICN nodes), and `c4-cache` (for CS manager).
+        *   Uses `docker-compose` for defining and running multi-container ICN applications, simplifying scenario-based evaluations.
+    *   **Sample Scenario: Video Streaming:**
+        *   Demonstrated at the NICT ICN Summer Workshop 2021 (fully online).
+        *   Producer at NICT Tokyo, consumers across Japan, successfully constructed ICN nodes on laptops and received video streams.
+        *   Highlights the ease of deployment for beginners using Docker-based ICN networking.
+    *   **Discussion:**
+        *   C4 can run on modern Raspberry Pi-like sensor nodes.
+        *   C4's modular build system allows configuring and compiling only necessary functions, resulting in smaller binaries for constrained devices.
+        *   Compared to traditional HTTP streaming, ICN offers benefits like in-network caching, transcoding, and enhanced packet recovery at each router, but performance comparisons are pending.
+
+*   **Presentation: Restful ICN**
+    *   **Presenter:** Matthias Wählisch
+    *   **Background:** Explored how to build web-like applications with ICN, inspired by discussions around Quick/HTTP/RPC.
+    *   **Challenge:** How to improve upon HTTP/3 over Quick with a data-oriented ICN design, enabling efficient RPC-style and RESTful communication.
+    *   **Problem with Naive Approach:** Directly mapping HTTP requests to Interest/Data is unsuitable due to large parameter passing, security concerns, and differing time scales (network vs. application).
+    *   **Proposed Design:**
+        *   Enable client-server communication with request-response series within a session context.
+        *   Employ **reflexive forwarding** for RPC-like communication and key exchange, without exposing client identity.
+        *   Response data are ICN data objects (encrypted), avoiding tunnels.
+        *   Establish and maintain shared session state using **key identifiers** as session IDs.
+        *   Use recording parameter passing for clients to refer to previously created application state, similar to HTTP cookies.
+        *   Leverage **CCNx Key Exchange** (TLS 1.3-like) but integrate it with reflexive forwarding for a more ICN-native approach, deriving keys for session data object encryption.
+    *   **Outlook:** This approach could lead to simpler implementations than HTTP/3 over Quick, while retaining ICN benefits like caching and name-oriented systems. Acknowledged challenges include name privacy. Calls for implementation and experimentation.
+    *   **Discussion:** Time limited; questions encouraged on the mailing list.
+
+*   **Next Steps / Any Other Business**
+    *   **Metaverse/AR/VR Side Meeting:** A side meeting at IETF London highlighted interest in ICN for distributed AR/VR applications.
+    *   **Proposed Interim Meeting:** The chairs proposed an interim meeting (perhaps late November/early December) to discuss an ICN research agenda focused on metaverse and AR/VR applications, leveraging ICN technologies like multi-destination/multi-path forwarding. Interested parties were asked to contact the chairs or respond to a mailing list announcement.
+
+## Decisions and Action Items
+
+*   **Notetaker:** Matthias volunteered to take notes for the session.
+*   **Path Steering Last Call:** The RG chairs requested a rapid review and last call for the **Path Steering** draft within the next month, to allow for coordinated publication with ICN Ping and Traceroute.
+*   **Flick Review:** The community is urged to review the **Flick (04 draft)**, with particular attention to the NDN section, IANA considerations, and security considerations. Ken Calvert and his student will provide feedback based on their NDN implementation efforts.
+*   **ICN for Metaverse/AR/VR:** An interim meeting will be planned for late November/early December to discuss an ICN research agenda in this domain. Chairs will send a call for interest to the mailing list.
+
+## Next Steps
+
+*   **Flick:** Authors to address open issues in the 04 draft and prepare for the 05 submission.
+*   **Path Steering:** Community to provide reviews; chairs to initiate last call process.
+*   **Restful ICN:** Encourage researchers to implement and experiment with the proposed design.
+*   **Metaverse/AR/VR:** Chairs to coordinate and announce details for the proposed interim meeting.

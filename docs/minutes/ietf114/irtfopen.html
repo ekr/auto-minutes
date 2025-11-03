@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="irtfopen.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-IRTFOPEN-20220725-1900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 19:00</p>
+<h1>irtfopen</h1>
+<h2>Summary</h2>
+<p>The IRTF Open Meeting commenced with introductory remarks from the IRTF Chair, covering IETF/IRTF procedures, IPR policies, and meeting logistics. Updates were provided on IRTF Research Groups and the Applied Networking Research Prize (ANRP). The session primarily featured two ANRP award talks: Tushar Swami presented &quot;Taurus: A Data Plane Architecture for Per-Packet Machine Learning,&quot; detailing how to integrate ML inference directly into network data planes. Sam Kumar followed with &quot;Performant TCP for Low-Power Wireless Networks,&quot; outlining how a re-engineered TCP stack (tcplp) can overcome challenges in LowPAN environments, thus enabling full TCP/IP functionality for embedded devices.</p>
+<h2>Key Discussion Points</h2>
+<h3>IRTF Introduction and Updates</h3>
+<ul>
+<li><strong>Procedural Reminders</strong>: The IRTF Chair (remote) reminded participants of IETF's Intellectual Property Rights (IPR) disclosure rules, meeting recording policies (including live streaming to YouTube), code of conduct, and anti-harassment procedures.</li>
+<li><strong>Meeting Logistics</strong>: In-person attendees were requested to sign in via Meetecho Light, use the electronic queue for questions, and maintain FFP2/N95 mask-wearing (except for active speakers). Remote participants were asked to keep audio/video off unless presenting or asking questions.</li>
+<li><strong>IRTF Mission</strong>: The IRTF focuses on longer-term research issues to complement IETF's standards work. Its primary outputs are research papers and understanding, not standards documents, though it publishes experimental and informational RFCs.</li>
+<li><strong>Research Group News</strong>:
+<ul>
+<li><strong>GAIA RG</strong>: Welcomed Curtis Heimerl as new co-chair, joining Jane Coffin. Leandro Navarro is stepping down after this meeting.</li>
+<li><strong>RFC Publication</strong>: One RFC was published since the last meeting, from the Information Centric Networking (ICN) RG, on architectural considerations for an ICN main resolution service.</li>
+</ul>
+</li>
+<li><strong>Applied Networking Research Prize (ANRP)</strong>:
+<ul>
+<li><strong>Purpose</strong>: Recognizes recent results in applied networking research relevant to internet standards, identifies promising new ideas, and highlights up-and-coming researchers.</li>
+<li><strong>Sponsorship</strong>: Gratefully sponsored by the Internet Society, Comcast, and NBC Universal.</li>
+<li><strong>Current Awardees</strong>: Tushar Swami and Sam Kumar were congratulated and presented their award talks during this session.</li>
+<li><strong>Future ANRP Talks</strong>: Sumi Kasha and Daniel Wagner are scheduled to give ANRP talks at IETF 115.</li>
+<li><strong>2023 Nominations</strong>: Nominations for the 2023 ANRP awards will open in September 2022.</li>
+</ul>
+</li>
+<li><strong>Applied Networking Research Workshop (ANRW)</strong>:
+<ul>
+<li><strong>Event Details</strong>: Co-located with ACM SIGCOMM, the workshop is scheduled for tomorrow in Philadelphia.</li>
+<li><strong>Chairs</strong>: TJ Chang and Marwan Fayed.</li>
+<li><strong>Program</strong>: Features four research papers, a keynote, and innovative talks on novel approaches to protocol specification.</li>
+<li><strong>Registration</strong>: Free for IETF registrants, but separate registration is required.</li>
+<li><strong>ANRW 2023</strong>: Will be co-located with IETF in July 2023 in San Francisco.</li>
+</ul>
+</li>
+<li><strong>Travel Grants</strong>:
+<ul>
+<li><strong>Purpose</strong>: Offered to support early-career academics/PhD students from underrepresented groups to attend IRTF RGs, and for the ANRW.</li>
+<li><strong>Sponsors</strong>: Akamai, Comcast, Cloudflare, and Netflix.</li>
+<li><strong>Call for Support</strong>: Interested sponsors and applicants are encouraged to visit the travel grants webpage or contact the IRTF Chair.</li>
+</ul>
+</li>
+</ul>
+<h3>ANRP Talk 1: Taurus: A Data Plane Architecture for Per-Packet Machine Learning (Tushar Swami)</h3>
+<ul>
+<li><strong>Problem</strong>: Modern networks require increasingly complex and high-performance management. Machine Learning (ML) is a promising solution.</li>
+<li><strong>Taurus Concept</strong>: Proposes splitting ML operations: training occurs in the control plane (off the critical path), while inference (decision-making) happens per-packet, at line rate, in the data plane.</li>
+<li><strong>Rationale for Data Plane Inference</strong>: Control plane latency is too high for per-packet critical applications (e.g., anomaly detection). An estimated 1.5 million packets could be missed while waiting for control plane rule installation, significantly degrading performance and robustness.</li>
+<li><strong>Hardware Architecture</strong>: Modifies a Protocol Independent Switch Architecture (PISA) by adding a reconfigurable MapReduce Unit.
+<ul>
+<li><strong>MapReduce Unit</strong>: Supports common linear algebra operations (neural networks, SVMs, k-means) using SIMD parallelism and loop unrolling for high performance.</li>
+<li><strong>Integration</strong>: Packet parsers extract features for ML, and match-action tables are used for rule-based pre-processing (feature cleaning) and post-processing (interpreting ML results and taking action).</li>
+</ul>
+</li>
+<li><strong>Design Considerations</strong>: The MapReduce unit is designed to be reconfigurable, operate at line rate with a fixed clock, have minimal area/power overhead, and handle a batch size of one (per-packet).</li>
+<li><strong>Evaluation (ASIC Analysis)</strong>: Based on a coarse-grain reconfigurable architecture (Plasticine), a 12x10 compute grid showed only 3.8% area overhead for a range of ML applications. For anomaly detection (SVM, DNN), it achieved 1 Gigapacket per second (GPPS) throughput with latencies in the hundreds of nanoseconds and less than 1% area/power overhead.</li>
+<li><strong>Open-Source FPGA-based Testbed</strong>: An FPGA-based &quot;bump-in-the-wire&quot; testbed (using a Tofino switch and an FPGA) was developed as a proof-of-concept for functionality, though not full line-rate performance.</li>
+<li><strong>Testbed Demo (Anomaly Detection)</strong>: Demonstrated that data plane anomaly detection via Taurus maintained an F1 score of 71.1% (matching the software baseline), whereas control plane-based detection dropped to 0-1.5% F1 score due to significant packet loss from latency.</li>
+<li><strong>Q&amp;A Highlights</strong>:
+<ul>
+<li><strong>Detectable Anomalies</strong>: Features are not limited to packet headers; control plane can install metadata, and match-action tables can perform aggregate calculations over time.</li>
+<li><strong>Delay of Model Updates</strong>: Model training is an offline, asynchronous process. While developing models for entirely new attack classes has a high initial cost, the deployment and inference are rapid.</li>
+<li><strong>Energy Consumption</strong>: While the switch itself might see a minimal power increase, the overall network energy consumption could decrease by offloading ML from external servers to specialized in-network hardware.</li>
+<li><strong>IETF Implications</strong>: This work suggests a need for IETF standardization around packet header fields used as ML features or for carrying model weights. There's also potential for a standardized programming model (e.g., a P4 extension) for data plane ML elements.</li>
+</ul>
+</li>
+</ul>
+<h3>ANRP Talk 2: Performant TCP for Low-Power Wireless Networks (Sam Kumar)</h3>
+<ul>
+<li><strong>Context</strong>: Low-Power Wireless Personal Area Networks (LowPANs) adopted IP (via 6LoWPAN) but largely eschewed TCP, relying instead on UDP-based protocols like CoAP due to perceived unsuitability of TCP.</li>
+<li><strong>Research Goal</strong>: To demonstrate that TCP can work well in LowPANs, enabling a full IP-based architecture and fostering broader adoption.</li>
+<li><strong>Research Artifact</strong>: <code>tcplp</code>, a re-engineered, performant TCP stack for embedded LowPAN devices.</li>
+<li><strong>Performance</strong>: <code>tcplp</code> achieved significantly higher goodput than previous TCP attempts in LowPANs, approaching theoretical upper bounds.</li>
+<li><strong>Impact</strong>: OpenThread (Google's LowPAN stack for smart homes) has adopted <code>tcplp</code> as its default TCP implementation, influencing the Thread network standard.</li>
+<li><strong>LowPAN Challenges</strong>: Embedded devices have limited CPU/memory. The IEEE 802.15.4 link layer has a small MTU (~100 bytes) and low wireless range, necessitating multi-hop mesh networks. Energy constraints mandate low-duty cycle radios.</li>
+<li><strong>Dispelling Prior Concerns</strong>:
+<ul>
+<li><strong>&quot;TCP is too heavy&quot;</strong>: <code>tcplp</code> uses 32KB code and 0.5KB data memory per connection. The primary overhead is buffers (2-3KB for bandwidth-delay product), which are essential for any bulk transfer protocol.
+<ul>
+<li><strong>Memory Optimization</strong>: Receive and reassembly buffers are combined into a single, statically-sized flat array using a bitmap for out-of-order data, avoiding dynamic memory allocation.</li>
+</ul>
+</li>
+<li><strong>&quot;Poor performance with wireless loss&quot; (Wireless TCP Problem)</strong>: LowPANs have small bandwidth-delay products, resulting in only 4-12 in-flight TCP segments. TCP's congestion control quickly recovers from losses, making it surprisingly resilient to wireless losses in these networks.</li>
+</ul>
+</li>
+<li><strong>Actual Reasons for Poor Performance and Proposed Solutions</strong>:
+<ul>
+<li><strong>Small L2 Frame Size (MTU)</strong>: TCP/IP headers are large relative to the small 802.15.4 MTU (104 bytes).
+<ul>
+<li><strong>Solution</strong>: <code>tcplp</code> allows TCP segments to <em>span</em> multiple link-layer frames, leveraging 6LoWPAN fragmentation/reassembly. Optimal gains are observed at 3-5 frames per segment, balancing overhead amortization with fragmentation loss risk. (Opportunity for future work: TCP header compression in 6LoWPAN).</li>
+</ul>
+</li>
+<li><strong>Hidden Terminals (Multi-Hop Wireless)</strong>: In multi-hop chains of wall-powered nodes, concurrent transmissions from non-hearing nodes can collide at intermediate hops. RTS/CTS mechanisms are often too expensive.
+<ul>
+<li><strong>Solution</strong>: Introduce a randomized backoff delay between link-layer retries. If a transmission fails, the node waits a random amount (e.g., 0-10 times the frame transmission time) before retrying, even if the channel appears clear. This reduced packet loss from 6% to 1% (optimal delay found at ~40ms).</li>
+</ul>
+</li>
+<li><strong>Poor Interaction with Link-Layer Scheduling (Low Duty Cycle)</strong>: Receiver-initiated duty cycle protocols (e.g., in OpenThread) where a battery-powered node sends a &quot;data request&quot; to a wall-powered node, can cause significant latency. TCP's ACK-clocking or multi-RTT interactions (like HTTP over TCP) can consistently hit worst-case sleep cycles.
+<ul>
+<li><strong>Solution</strong>: Adaptive duty cycle. The battery-powered node varies its data request frequency based on TCP/HTTP protocol state. For example, it sends requests more frequently when expecting an HTTP request after accepting a connection. This nearly eliminated the performance gap between HTTP over TCP and CoAP.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Overall Evaluation</strong>: <code>tcplp</code> significantly outperforms prior TCP implementations in LowPANs in terms of goodput. In energy efficiency, it performed comparably to CoAP (approx. 2% radio duty cycle for a 24-hour sense-and-send task).</li>
+<li><strong>Conclusions</strong>: TCP is a viable and performant option for LowPANs.
+<ul>
+<li>Reconsider the use of specialized lightweight protocols that merely emulate TCP's functionality, favoring the more interoperable and broadly used TCP.</li>
+<li>TCP can simplify LowPAN network design by enabling true end-to-end connectivity without requiring specialized application-layer gateways, potentially allowing consolidation of border routers.</li>
+<li>UDP-based protocols will still have their place for highly specialized applications where they offer substantial performance gains, but for many use cases, TCP is now a competitive alternative.</li>
+</ul>
+</li>
+<li><strong>Q&amp;A Highlights</strong>:
+<ul>
+<li><strong>QUIC Comparison</strong>: Many of the solutions (hidden terminals, link layer scheduling) are generic to bulk data transfer, suggesting similar benefits for QUIC.</li>
+<li><strong>Memory Guarantee</strong>: <code>tcplp</code> is designed to avoid dynamic memory allocation for buffers.</li>
+<li><strong>Interoperability</strong>: <code>tcplp</code> is built on FreeBSD's mature TCP stack, ensuring interoperability with unmodified internet hosts. All <code>tcplp</code> modifications are local to the LowPAN device or link layer.</li>
+<li><strong>Forwarding Buffer Stress</strong>: Higher TCP throughput puts more stress on intermediate router buffers. This is mitigated by Active Queue Management (AQM) using Explicit Congestion Notification (ECN) to keep queues short, improve fairness, and limit buffer usage.</li>
+<li><strong>Link Layer Constraints</strong>: Some solutions, like randomized backoff for hidden terminals, directly impact the link layer. 6LoWPAN handles packet reordering and reassembly when segments span multiple frames.</li>
+<li><strong>CoAP Justification</strong>: CoAP emerged to address the unsuitability of HTTP/1.1 for IoT RESTful interfaces. While HTTP/2 and HTTP/3 (QUIC) offer binary, compressible alternatives, the work suggests TCP can still be a viable and interoperable option for many scenarios where CoAP is used for streaming or block transfers.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: Curtis Heimerl was welcomed as the new co-chair for the Global Access to the Internet for All (GAIA) Research Group, succeeding Leandro Navarro.</li>
+<li><strong>Decision</strong>: The Applied Networking Research Prize (ANRP) was awarded to Tushar Swami and Sam Kumar for their outstanding contributions.</li>
+<li><strong>Action Item (Community)</strong>: Nominate excellent applied networking research for the 2023 ANRP awards, with nominations opening in September 2022.</li>
+<li><strong>Action Item (Community)</strong>: Attend the Applied Networking Research Workshop (ANRW) co-located with IETF tomorrow, or other IRTF Research Group sessions later in the week.</li>
+<li><strong>Action Item (IRTF Chair)</strong>: Continue seeking sponsors for IRTF travel grants.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>ANRP Award Talks</strong>: Future ANRP award talks by Sumi Kasha and Daniel Wagner are scheduled for IETF 115 in London (November).</li>
+<li><strong>ANRW 2023</strong>: The Applied Networking Research Workshop will again be co-located with IETF in July 2023 in San Francisco.</li>
+<li><strong>Standardization Potential (Taurus)</strong>: Explore potential IETF standardization for packet header fields relevant to ML features/model weights and for a programming model (e.g., P4 extensions) for data plane ML.</li>
+<li><strong>TCP in LowPANs (tcplp)</strong>: Continue encouraging adoption of <code>tcplp</code> in LowPAN stacks and further research into TCP header compression for 6LoWPAN, as well as exploring HTTP/2 and HTTP/3 (QUIC) in these environments.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

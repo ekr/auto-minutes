@@ -1,0 +1,103 @@
+**Session Date/Time:** 22 Mar 2022 13:30
+
+# detnet
+
+## Summary
+The DetNet Working Group at IETF 113 discussed various aspects of deterministic networking, covering charter updates, milestone revisions, and a range of technical drafts. Key discussions included expanding the charter to encompass new traffic treatments, an ITU-T liaison report, the framework for DetNet control planes, OAM mechanisms for MPLS and IP, a packet ordering function, IPv6 data plane enhancements using extension headers, requirements for large-scale DetNet deployments, and specific queuing/forwarding solutions like Time-Sensitive Cyclic Queuing and Forwarding (TCQF) and Deadline-based Forwarding. Additionally, discussions touched on one-way delay measurement without clock synchronization and PCE extensions for DetNet path computation. The chairs emphasized the contribution-driven nature of the WG and planned for adoption calls for requirements and solution documents in upcoming months.
+
+## Key Discussion Points
+
+*   **Opening & Logistics**: The session was held in a hybrid format, with a note on IETF policies, code of conduct, and tools (Meetecho for queue/blue sheets, Hedgedoc for notes). Two sessions were planned, one WG-specific and a joint session with PALS/MPLS.
+*   **Charter Update**:
+    *   Discussion focused on adding flexibility to the charter's traffic treatment clause, specifically for queuing and scheduling.
+    *   A proposal to add "for example" between "including" and "forwarding" was presented to allow for non-prescriptive listing of traffic treatments.
+    *   The AD (John Scudder) had no objection, noting it makes the intent clearer.
+    *   A question arose regarding coordination with SDOs like IEEE TSN for shared mechanisms; the chairs affirmed continued coordination while evaluating proposals based on specifics.
+*   **Milestones Update**:
+    *   Milestones were updated to reflect progress and an expanded scope, notably for OAM and data plane enhancements.
+    *   A correction was noted for the "first OAM document" entry, clarifying it's not specific to "IP OAM."
+    *   The "enhanced DetNet data plane requirements" milestone was clarified to cover requirements for new queuing mechanisms and solutions, stemming from discussions with the Transport Area AD.
+    *   The WG confirmed its contribution-driven approach, allowing for multiple requirements and solution documents if merited, rather than a single document per area.
+*   **ITU-T SG13/Q6 Liaison Report (Scott Mansfield)**:
+    *   Reviewed liaison activity between IETF and ITU-T SG13/Q6 (QoS and QoE, large-scale networks, resource control).
+    *   Highlighted ITU-T's focus on "large-scale networks" and "inter-domain networks," looking at use cases, frameworks, and architectures for 2030 and beyond, often from a top-down perspective.
+    *   Emphasized the importance of terminology alignment between SDOs.
+    *   Mentioned key ITU-T documents related to functional architecture, jitter guarantee, and QoS requirements for IMT-2020 (5G) and beyond.
+    *   Encouraged IETF participation in ITU-T meetings as invited experts to identify gaps and foster collaboration.
+*   **DetNet Controller Plane Framework (Shusang Li)**:
+    *   Document aims to consolidate DetNet control plane requirements and provide an overview of control architecture (fully distributed, fully centralized SDN-like, hybrid).
+    *   Covers considerations for various DetNet mechanisms (explicit paths, resource reservation, POF) and data plane solutions (MPLS, IP, SR).
+    *   Updates included refining management plan specifications and removing detailed protocol extension examples.
+    *   Discussion points: Integration with RAW architecture (Pascal Thubert, Carlos Pignataro suggested specific proposals on the mailing list); inclusion of TSN control plane protocols (Toerless Eckert suggested QCC reference).
+    *   Authors requested more WG input on flow aggregation and management plan scope (YANG, OAM).
+*   **DetNet MPLS OAM (Greg Mirsky)**:
+    *   Presented updates to the DetNet ACH definition, differentiating it from pseudo-wire ACH with a new version number, sequence number, channel type, node ID, flags, and session identifier.
+    *   Coordination with PALS/MPLS OAM design team was confirmed.
+    *   Proposed an IANA registry for DetNet MPLS OAM flags.
+    *   Discussion on the encoding and mechanism of OAM packets; specific usage of fields like "session ID" needs further definition.
+    *   Concern raised that the document might not be ready for a Working Group Last Call (WGLC) due to unaddressed mechanism discussions.
+*   **DetNet IP OAM (Greg Mirsky)**:
+    *   Document describes active OAM for DetNet IP using UDP encapsulation, mapping to monitor the DetNet flow.
+    *   For DetNet service sub-layer realization, it proposes using MPLS over UDP for OAM to ensure fate-sharing with the DetNet flow.
+    *   Lou Berger emphasized the need for a solution that works for native IP (6-tuple flows) without MPLS encapsulation, suggesting this document or another should cover it.
+    *   Pascal Thubert suggested using IPv6 extension headers (Hub-by-Hop, SRH, Destination Option) for native IP OAM, similar to MPLS encapsulation, to signal path and treatment independent of application flows.
+*   **Packet Ordering Function (POF) (Janos Farkas)**:
+    *   Document describes algorithms for POF in the DetNet service sub-layer to address out-of-order packet delivery caused by replication and elimination.
+    *   The draft is stable, focusing on algorithms, with delay variation aspects considered out of scope for this document.
+    *   The authors are seeking WG adoption.
+    *   Toerless Eckert suggested the ultimate goal should be a normative YANG document for POF parameters and other service sub-layer functions.
+*   **IP/IPv6 Data Plane Enhancements using Extension Headers (Pascal Thubert)**:
+    *   Proposal to use IPv6 extension headers (Hub-by-Hop, Destination Option, SRH) as a network construct to carry path and treatment information, independent of application flow 5-tuple.
+    *   This approach aims to enable transport of multiple flow types (data, OAM) and aggregated flows with shared fate, similar to MPLS.
+    *   Emphasized the advantage of Hub-by-Hop headers being processed close to the IPv6 header, potentially enabling hardware processing.
+    *   Discussion on the guarantee of HBH header processing in a limited domain (DetNet scope) vs. the global internet, and interworking with SRH.
+*   **Large Scale DetNet Requirements (Fan Yang)**:
+    *   Document motivated by prototyping and trials of large-scale deterministic networks.
+    *   New requirements added: support for configuration of multiple queuing mechanisms and cross-domain mechanisms.
+    *   Overall technical requirements include time synchronization, propagation latency, high speed, numerous devices, massive traffic, and tolerance for failures/topology changes.
+    *   Potential data plane implications: IPv6 extension headers, redundancy/flow identification (e.g., for aggregation), and queue-related information.
+    *   The authors are requesting an adoption call for this document as the starting point for enhanced requirements.
+*   **Time-Sensitive Cyclic Queuing and Forwarding (TCQF) (Toerless Eckert)**:
+    *   Highlighted limitations of existing bounded latency solutions (RFC 2212, TSN ATS, TSN cyclic queuing) for large-scale, high-speed networks.
+    *   Proposed TCQF as an enhanced cyclic queuing mechanism, carrying cycle identity in the packet, supporting arbitrary latency and high speeds (proven up to 100Gbps+).
+    *   The draft proposes standardizing TCQF with an MPLS forwarding plane using the traffic class field.
+    *   Adjacent work includes YANG models, ingress policing, and tagging for other data planes (e.g., DSCP, SRv6).
+    *   Question on adopting multiple data plane solutions vs. a generic one; the presenter advocated for multiple solutions based on deployment experience, suggesting TCQF is a good first candidate.
+*   **Reference Delay-Based One-Way Delay (OWD) Measurement (Bin Yang)**:
+    *   Proposed a method for accurate end-to-end OWD measurement without clock synchronization, leveraging a deterministic path (from DetNet) as a reference.
+    *   Method uses a reference packet and a target packet, with timestamps recorded at both ends, and equations to derive the target delay.
+    *   Benefits include reduced deployment cost and no impact on intermediate devices.
+    *   Concern raised about timer instability and skew without clock synchronization.
+*   **Deadline-based Forwarding (Xianfeng Li)**:
+    *   Proposed a solution for DetNet based on deadline attributes (Time-Dependent Delay Limit - TDL) for packet forwarding.
+    *   TDL attributes change with time, with TDL=0 having the highest priority.
+    *   Mechanism involves carrying TDL information in the packet and placing packets into queues based on TDL.
+    *   Benefits: No clock synchronization required, relative time operation, pragmatic enhancement of PQ, supports partial upgrades and scalability.
+*   **PCE-based Path Computation for DetNet (Shuanglong Chen)**:
+    *   Document describes extensions to PCE for carrying bounded latency constraints and distributing deterministic paths.
+    *   Proposed PCE extensions include a metric object for end-to-end delay/jitter, an IOSP extended flag TLV for deterministic path capability, and ERO/SRERO extensions for distributing path computation (e.g., DetNet sub-TLV, cycle sub-TLV).
+    *   Suggested that this work could be done in DetNet or PCE WG, and comments are welcome.
+
+## Decisions and Action Items
+
+**Decisions:**
+*   The Area Director (John Scudder) approved the proposed charter update to add "for example" to the traffic treatment clause, making it non-prescriptive and allowing for new mechanisms like queuing and scheduling.
+
+**Action Items:**
+*   **DetNet Controller Plane Framework**: Authors to consider adding flow aggregation and incorporating RAW integration proposals (from Pascal Thubert, Carlos Pignataro) and TSN protocol references (from Toerless Eckert) based on mailing list discussions.
+*   **DetNet MPLS OAM**: Continue discussion on the mailing list regarding specific usage of "session ID" and other fields, and readiness for a Working Group Last Call.
+*   **DetNet IP OAM**: Greg Mirsky to provide comments on supporting native IP 6-tuple flows in the document and explore the use of IP extension headers for DetNet OAM. Mailing list discussion to continue.
+*   **Packet Ordering Function (POF)**: Mailing list discussion requested on the feasibility and scope of a YANG model for POF configuration parameters.
+*   **IP/IPv6 Data Plane Enhancements**: Continue discussion on the mailing list and socialize the idea in SixMan WG.
+*   **Large Scale DetNet Requirements**: Chairs will poll the working group for adoption of this document as the enhanced requirements document, potentially as soon as next month, following further mailing list discussion.
+*   **Time-Sensitive Cyclic Queuing and Forwarding (TCQF)**: Continue mailing list discussions, with a view towards potential adoption of solutions documents around the next IETF, allowing time for other contributions.
+*   **Reference Delay-Based OWD Measurement**: Further discussion on the mailing list regarding the impact of timer instability without clock synchronization.
+*   **Deadline-based Forwarding**: Continue mailing list discussions.
+*   **PCE-based Path Computation for DetNet**: Authors to bring this work to the PCE WG for discussion and coordinate with PCE chairs regarding which WG will own the work, pending DetNet WG interest.
+
+## Next Steps
+
+*   Continue active engagement and technical discussions on the DetNet mailing list for all presented drafts.
+*   The chairs plan to initiate a Working Group adoption poll for the "Large Scale DetNet Requirements" document in the near future.
+*   For solution documents related to traffic treatment enhancements (e.g., TCQF, Deadline-based Forwarding), the chairs plan to consider adoption calls around the next IETF (IETF 114) to allow time for additional contributions and discussions.
+*   Further coordination with other WGs (e.g., PCE, SixMan) is encouraged for relevant drafts.

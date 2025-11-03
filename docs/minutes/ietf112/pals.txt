@@ -1,0 +1,104 @@
+**Session Date/Time:** 08 Nov 2021 16:00
+
+# pals Session Meeting Minutes
+
+## Summary
+
+This was a joint session of the PALS, MPLS, and DETNET Working Groups, the third such meeting since IETF 111. The primary focus was on discussing fundamental architectural issues arising from proposals for new applications and uses at the bottom of the MPLS label stack, as well as indications for ancillary data. Key presentations covered requirements for label stack indicators, DetNet's use of the ACH, issues with the MPLS First Nibble (MFN), and a generalized approach to Network Function Indicators. Discussions highlighted the need for careful design to ensure extensibility, backward compatibility, efficient use of Special Purpose Labels (SPLs), and clear definitions for in-stack versus post-stack data. The Open Design Team (ODT) work is ongoing and will continue to refine these concepts.
+
+## Key Discussion Points
+
+*   **Chairs' Introduction and Agenda Overview**
+    *   Session chaired by Andy Malis, with Stuart and Tariq as co-chairs. Dave TNC is the working group secretary and minute-taker.
+    *   Minutes are being taken live on Etherpad/HedgeDoc.
+    *   The meeting purpose is to discuss basic architectural issues for new applications at the bottom of the MPLS label stack, a continuation of previous joint sessions.
+    *   The Open Design Team (ODT) work is not yet complete and will continue after this IETF meeting.
+    *   Attendees were asked to keep questions during presentations to clarification only, reserving broader discussion for the dedicated open discussion slot.
+
+*   **Requirements for MPLS Label Stack Indicators (Matthew Bocci)**
+    *   **Draft Scope**: Specifies requirements for indicators of ancillary data below the label stack, intended as a product of the MPLS ODT. Version 0.
+    *   **Terminology**: Proposed "Ancillary Data" (data relating to the MPLS packet used for forwarding/processing, can be implicit, in-stack, post-stack, or within payload) and "Ancillary Data Indicator (ADI)" (indicator in label stack that ancillary data exists, optionally indicating type).
+    *   **Architectural Principles**: Solutions must maintain MPLS extensibility, flexibility, and efficiency; not restrict generality; coexist with existing mechanisms; and make use of existing data plane operations without inconsistency with RFC 3031.
+    *   **Protocol Capability & Backward Compatibility**: ADIs/ancillary data must not be delivered to nodes incapable of processing them. Coexistence with G-ACH. LER must determine if far-end LSR can accept/process a packet with a given ADI.
+    *   **Protocol Development Work**:
+        *   Special Purpose Labels (SPLs) are a mechanism of last resort due to limited pool.
+        *   ADI mechanisms must operate in the context of the Top-of-Stack LSE.
+        *   ADIs must ensure target downstream LSRs can parse the label stack sufficiently.
+        *   Support point-to-point and point-to-multipoint paths (each ADI for one or the other).
+        *   Data plane mechanisms for ADIs must be independent of control plane type (LDP, RSVP, BGP, static, IGP).
+        *   Control planes must define downstream LSR/ODR ability to accept/process ADIs.
+        *   Multiple ADIs for different applications can be in the same label stack, but each ADI supports one application.
+    *   **Security Requirements**: Solution to verify authenticity of ancillary data. Design must not expose confidential information to LSRs.
+    *   **Next Steps**: Clean up duplicate requirements, gather more from emerging applications, develop companion architecture/framework, seek community review.
+    *   **Discussion (Krithi Chetlur)**:
+        *   Suggested softening "SPLs as last resort" if a *single* SPL can be multi-purpose (e.g., carry multiple ADI types), rather than one SPL per ADI type.
+        *   Questioned the strictness of "neither an ADI nor ancillary data must be delivered to a node that is not capable of processing it," suggesting that some ADIs might be for optimization (no harm if not processed), while others are critical (must not be forwarded if not understood).
+
+*   **DetNet and DetNet's use for ACH (Balazs Varga)**
+    *   DetNet data plane for MPLS identified two sub-layers: service and forwarding.
+    *   Uses pseudo-wire architecture. DetNet service sub-layer requires a sequence number (in a "DetNet Control Word" - DCW) for flow identification. DCW is mandatory.
+    *   Encapsulation: Label stack, followed by S-label (bottom of stack for DetNet flow), then the DCW.
+    *   DCW details: First nibble all zero, followed by sequence number (critical for packet replication, duplicate elimination, order preservation). Sequence number space is circular and monotonically increasing.
+    *   OAM for DetNet Service Sub-Layer: Proposed using ACH with a reserved field for the sequence number.
+    *   **Proposed New DetNet ACH Format**: First nibble '1', version '1', includes sequence number and channel type. A second 32-bit word for Node ID, flags, and session identifier (some fields reserved for now). Aims to extend applicability.
+    *   **Discussion (Krithi Chetlur)**:
+        *   Concerned about the small 4-bit space of the first nibble for sequence numbers.
+        *   Suggested an extension field or subtype mechanism for DetNet OAM to manage the space more effectively, rather than relying solely on versioning.
+
+*   **MPLS First Nibble (Krithi Chetlur)**
+    *   **Context**: The MPLS First Nibble (MFN) is the high-order 4-bit field of the first octet after the last label. It became special as a heuristic (e.g., recognizing IPv4/v6 packets for load balancing) and to indicate post-stack data (PSD) type.
+    *   **Two Cases**: Naked payload (e.g., IPv4/v6) or a Post-Stack Header (e.g., Control Word, OAM word, Beer header, G-ACH).
+    *   **Problems**: Heuristics can fail (Ethernet packets with MFN=4/6 mistaken for IP, causing incorrect load balancing). Current PSD types avoid 4/6, but new IP versions could create new conflicts.
+    *   **Goals**: Allow current implementations to continue working (with caveats), but lay groundwork for better, more efficient implementations and clearer PSD identification.
+    *   **Recommendations**:
+        *   For Ethernet payloads: Must have a control word (strengthening existing "should").
+        *   Decouple MFN and IP version numbers. Do not interpret MFN values 4 or 6 as IP versions for new IP versions or non-IP packets.
+        *   MFN should identify the type of PSD only (e.g., 0=control word, 1=OAM, 5=Beer); a registry is needed.
+        *   For non-IPv4/v6 payloads: Must have PSD.
+        *   Use Fat Pseudowire or Entropy Labels for load balancing instead of MFN-based IP heuristics.
+        *   Going forward, only IPv4/v6 can be naked payload; any new IP versions or other Layer 2/1 packets must have PSD.
+        *   Keep PSD recognition/parsing entirely in the data plane, using unique registries.
+    *   **Future Proposal (not yet in draft)**: To extend the MFN space, a proposal includes a dedicated MFN value for extensible PSD, followed by a subtype field and a "Total Length of PSD" field. This allows skipping unknown PSD.
+    *   **Discussion**:
+        *   **Hao Yu**: Questioned if MFN is still needed if a robust ADI mechanism in the label stack exists.
+        *   **Loa Andersson**: Suggested increasing the subtype field to 8 bits to better utilize MFN space.
+        *   **Stuart Bryant**: Emphasized that raw Ethernet packets will always exist, making MFN-based forwarding decisions unreliable without other qualifying information.
+
+*   **Special Purpose Label / Forwarding Actions Indicators (Krithi Chetlur)**
+    *   **ISD (In-Stack Data) vs. PSD (Post-Stack Data)**:
+        *   **ISD Philosophy**: For urgent processing, constrained environment, compact encoding, respects bottom-of-stack. Process quickly, be parsimonious.
+        *   **PSD Philosophy**: Freer, does not need to be ultra-compact, can be self-describing (e.g., TLV-like structures).
+    *   **ISD Content**: ISD should primarily indicate *who* should look at the PSD (e.g., specific egress, every hop, optional). It should not repeat PSD type information to avoid confusion.
+    *   **Extensions (Reusing a Bit)**: Proposed a "Bottom of Section" bit (inverting the traditional E-bit) within an FAI block. This bit would delineate "Flag Section," "Standard Data Section," and "User-Defined Data Section," allowing parsers to skip unknown sections. This effectively reuses 30 bits per label for various data.
+    *   **Discussion (Hao Yu)**: Reiterated that if a clear design for ancillary data exists, most information should be placed after the label stack to simplify the stack itself. Krithi countered that urgent data (e.g., slice identifiers, entropy labels) is needed in-stack for immediate processing without deep stack parsing.
+
+*   **Network Function Indicator (John Drake)**
+    *   **Context**: Generalizes Krithi's forwarding actions concept.
+    *   **Key Elements**: Two Special Purpose Labels (SPLs): one for Hop-by-Hop, one for End-to-End. P-nodes only look at Hop-by-Hop SPLs.
+    *   **Extensibility**: Network functions are defined in RFCs, specifying their type (hop-by-hop/end-to-end), associated flag bit in the "Network Function Flags," and ancillary data (in-stack or after-stack).
+    *   **NFI Block Structure**: SPL, followed by "Network Function Flags" (a registry of bits, with a continue bit for multi-entry flags), then In-Stack Ancillary Data (31 bits per entry, ordered by flags).
+    *   **Processing**: Nodes can understand network function flags up to a certain bit position, allowing them to skip over ancillary data for unsupported functions.
+    *   **Discussion**:
+        *   **Krithi Chetlur**: Questioned how intermediate nodes differentiate hop-by-hop vs. end-to-end SPLs if deep in the stack. John clarified that hop-by-hop SPLs *precede* end-to-end SPLs. Krithi also objected to "network function," preferring "network action" to imply less heavyweight processing. Advocated for in-stack data to be exclusively hop-by-hop, with all end-to-end and some hop-by-hop (due to size) in post-stack data.
+        *   **Greg Mirsky**: Asked if a flag being present without corresponding metadata in post-stack data would constitute an invalid packet. John replied that this behavior is part of the network function's definition.
+        *   **Stuart Bryant**: Suggested that hop-by-hop data might be forced to go after the bottom of the stack if it's too large for in-stack. Also emphasized the need for an indicator *above* the stack to signify data *below* the stack.
+        *   **Loa Andersson & Hao Yu**: Raised concerns about the scarcity of SPLs (only 8 base SPLs left). Suggested investigating more efficient encoding, potentially reducing to one base SPL for both functions. Hao Yu reiterated keeping the label stack simple and moving complexity to post-stack data.
+        *   **Adrian Farrel**: Asked about distinguishing between functions a router *must* operate on (and drop if not understood) vs. those it *can* ignore. This "must vs. can ignore" distinction is critical for incremental deployment and needs clear definition within network function specifications.
+
+## Decisions and Action Items
+
+*   **DECISION**: The Open Design Team (ODT) calls will continue following this IETF meeting.
+*   **ACTION**: Krithi Chetlur to write up his proposal for extending the MPLS First Nibble (MFN) space and circulate it for community review.
+*   **ACTION**: The DetNet Working Group will discuss the proposed new DetNet ACH format in their upcoming meeting.
+*   **ACTION**: The chairs will hold discussions to determine the best approach for managing the significant volume of ongoing work, potentially through specialist discussion groups, more focused weekly ODT meetings, or virtual interims, in addition to regular ODT calls.
+
+## Next Steps
+
+*   **Open Design Team (ODT)**: Continue weekly meetings to progress discussions on architectural issues and solutions.
+*   **Requirements Draft**: Clean up any duplicate requirements, continue gathering requirements from emerging applications, and solicit broad review and feedback.
+*   **Architectural Document**: Develop a companion architecture and framework document to guide solutions.
+*   **MFN Proposal**: Review and provide feedback on Krithi Chetlur's MFN extension proposal once circulated.
+*   **In-Stack vs. Post-Stack Data**: Continue discussion on the principles for determining whether ancillary data should be carried in-stack or post-stack.
+*   **SPL Allocation**: Explore more efficient use of Special Purpose Labels (SPLs) and consider strategies to reduce the number of base SPLs required for these indicators.
+*   **Processing Models**: Define the processing model for MPLS routers in the context of ancillary data, including constraints and behavior for unknown functions (e.g., must drop vs. can ignore).
+*   **Generalization of Forwarding Actions**: Continue work on generalizing forwarding actions/network functions, including clear definitions for ancillary data characteristics and placement.

@@ -1,0 +1,76 @@
+**Session Date/Time:** 25 Jul 2022 14:00
+
+# bier
+
+## Summary
+
+The Bier working group session covered updates on the status of various drafts, including one moving to AUTH48 and several needing shepherds or addressing AD comments. Two new drafts were presented: "Beer Multicast as a Service" which introduced mechanisms for supporting customer Beer in provider VPNs, and a "Beer Extension Header" proposal aiming for a generic, multi-protocol extension header. A third presentation on "BIFT ID Signaling for BRTE" discussed how to signal BRTE-specific BIFT IDs in IGPs. A significant portion of the session was dedicated to a broader discussion on the challenges of Beer deployment, the "chicken and egg" problem regarding hardware support, and the need for more interoperable implementations and visible success stories.
+
+## Key Discussion Points
+
+*   **Administrative & Logistics**:
+    *   Initial audio challenges were resolved.
+    *   Minute takers were volunteered.
+    *   The AD reminded attendees to wear masks when not at the microphone due to IETF policy.
+*   **Draft Status Updates**:
+    *   `draft-ietf-bier-te-arch` (BRTE Architecture) is in AUTH48, awaiting `draft-ietf-bier-bier2e-oam` to become an RFC.
+    *   `draft-ietf-bier-terkas-bier-ospf-mpls` and `draft-ietf-bier-bier-ipv6-oam` are in the queue, awaiting AD comments/author updates.
+    *   `draft-ietf-bier-multicast-service` (presented today) is a new working group document.
+    *   `draft-ietf-bier-fast-reroute` has been adopted and is in Last Call.
+    *   `draft-ietf-bier-h-bier-ls` requires review from the IDR working group.
+    *   `draft-ietf-bier-php-bier`, `draft-ietf-bier-bier-ipv6`, and `draft-ietf-bier-prefix-redistribution` require document shepherds. A volunteer stepped up for `draft-ietf-bier-bier-ipv6`.
+    *   `draft-ietf-bier-ping` is receiving updates.
+    *   The expired `draft-ietf-bier-idr-extensions` needs new co-authors/editors as the original author is no longer focused on the work.
+    *   The expired `draft-ietf-bier-mlb` (Stig) needs resubmission after PIM extensions are complete (now in AUTH48).
+*   **Beer Multicast as a Service (`draft-ietf-bier-multicast-service`) - Jeffrey Zhang**:
+    *   **Proposal**: Added a new section for supporting Beer in VPNs (i.e., customer Beer running over a provider VPN service).
+    *   **Overlay Signaling**: Existing IDR extensions can be used for VPN IP Saffire.
+    *   **Underlay Transport**:
+        *   **Ingress Replication**: Simple, no special Beer handling in the provider core.
+        *   **Provider Beer for Customer Traffic**: Uses Beer in the provider core for efficient replication but requires maintaining customer Beer state (BIFT ID, BFR IDs) in the underlay.
+    *   **Discussion on Scalability and State**:
+        *   **Concern (Huawei)**: Leaking client BFR IDs/BIFT IDs into the provider network is not hierarchical, raises scalability problems, and may violate traditional VPN architecture and charter scope. Suggested ingress replication as the optimal solution.
+        *   **Response (Jeffrey, Thomas, Tony)**: This is a design trade-off. It offers efficient replication and operator control over state (unlike flow-based IP Multicast). It's about plan-ability and operator accountability, allowing providers to decide how many customer BIFTs to support. Analogies were drawn to selective MVPN/EVPN tunnels that also add state.
+        *   **Technical Comment (Tony)**: If Beer information is extended with Route Distinguishers (RDs) in IGP, the IGP must support this different primary key. Suggested a capability indication in router description.
+*   **Beer Extension Header (`draft-ietf-bier-extension-header`) - Jeffrey Zhang**:
+    *   **Goal**: Define a generic extension header mechanism aligned with NQOS and IPv6 extension headers to support generic functions across MPLS, Beer, and IPv6.
+    *   **Structure**: Proposed a "Header of Extension Headers" (HoEH) after the Beer header, containing:
+        *   Reserved field (4 bits).
+        *   Counter of extension headers.
+        *   Total length of extension headers.
+        *   Original upper layer protocol type.
+        *   Next hop type (using IP Protocol Numbers registry values).
+    *   **Benefits**: Reuse IPv6 extension headers; only one number from the IP protocol registry is needed to signify a generic extension header. Beer-specific functions can then be encoded using an "Extension field" within the generic extension header.
+    *   **Feedback**: Seeking comments and consensus for multi-vendor support.
+*   **BIFT ID Signaling for BRTE (`draft-ietf-bier-te-bift-id-signaling`) - Sandy Zhang**:
+    *   **Context**: BRTE uses explicit paths and a BIFT ID to locate its forwarding table, distinct from Beer's BFER-based forwarding.
+    *   **Proposal**: Signal BRTE-specific BIFT IDs in IGPs (e.g., ISIS, OSPF/OSPFv3).
+    *   **Mechanism (ISIS example)**: Advertise MPLS, non-MPLS, and IPv6 encapsulation sub-TLVs associated with a BRTE info sub-TLV. MPLS labels and non-MPLS BIFT IDs must not overlap.
+    *   **Discussion**:
+        *   **Thomas Eckert**: Further discussion is needed on how BRTE shares SI/SD space with Beer, as this may impact signaling.
+        *   **Jeffrey Zhang**: Argued that BRTE BIFT content is typically provisioned by a controller (e.g., via YANG), and the BIFT ID itself could be provisioned this way, negating the need for IGP signaling.
+        *   **Sandy Zhang**: Acknowledged the BRTE YANG draft for controller provisioning but stated that if IGP signaling is desired for agency bit operations, then BIFT ID advertisement is necessary.
+*   **General Discussion on Beer Deployment Challenges**:
+    *   **"Chicken and Egg" Problem (Jeffrey Zhang)**: New encapsulation/forwarding requires programmable or new hardware chips. This leads to customer hesitation, which in turn reduces vendor motivation for broad platform support, creating a stalemate.
+    *   **Need for Success Stories (Stig)**: Requested presentations on Beer deployments at future IETF meetings (e.g., MBONED).
+    *   **Existing Deployments (Lenny)**: Highlighted RareNet (French RENATER), which uses Tofino P4 switches with Beer, AMT relay, and unicast-multicast translator. Suggested MBONED as a venue for operational considerations discussions.
+    *   **Interoperability and Maturity (Hu, Dirk)**: Vendors need to focus on a core set of interoperable functionalities to drive deployments. Network operators need to know how many other telcos are using Beer (backbone vs. data center) to gauge maturity and justify internal adoption.
+    *   **Hardware/Software (Chair, Thomas, David, Ron)**: Header manipulation post-replication for Beer requires specific hardware pipelines, limiting even programmable chip support. Software implementations could drive initial adoption, but data center/telco use cases often demand hardware, creating another "chicken and egg" for software. The MONET WG is looking into software-based routing solutions and Beer applicability.
+    *   **Application Drivers (Sandy Zhang)**: In China, operators recognize Beer's value but need clear application drivers. Efforts are underway to connect Beer technology with CDN and media delivery applications.
+
+## Decisions and Action Items
+
+*   **Action**: A volunteer will shepherd `draft-ietf-bier-bier-ipv6`. The chair will coordinate.
+*   **Action**: The chair will send an email to the list requesting volunteers for remaining shepherd roles for `draft-ietf-bier-php-bier`, `draft-ietf-bier-ipv6`, and `draft-ietf-bier-prefix-redistribution`.
+*   **Action**: Stig will resubmit the expired `draft-ietf-bier-mlb` for last call.
+*   **Decision**: `draft-ietf-bier-idr-extensions` requires new co-authors/editors to address comments and move forward.
+*   **Action**: Lenny will send links to the RareNet Beer deployment to the mailing list.
+*   **Decision**: Discussions on the "Beer Multicast as a Service," "Beer Extension Header," and "BIFT ID Signaling for BRTE" drafts will continue on the mailing list for further technical feedback and consensus building.
+
+## Next Steps
+
+*   **Shepherd Process**: Facilitate the shepherding process for identified drafts to move them through the RFC pipeline.
+*   **Mailing List Engagement**: Encourage active discussion on the newly presented drafts (`draft-ietf-bier-multicast-service`, `draft-ietf-bier-extension-header`, `draft-ietf-bier-te-bift-id-signaling`) to resolve technical questions and gather consensus.
+*   **Operational Considerations**: Explore opportunities for sessions in other working groups (e.g., MBONED) to discuss Beer operational considerations and deployment experiences.
+*   **Deployment Strategy**: Continue brainstorming and investigating strategies to overcome the "chicken and egg" problem hindering broader Beer deployment, potentially focusing on data center use cases, software implementations, or identifying core interoperable features for initial vendor focus.
+*   **Application Integration**: Encourage efforts to connect Beer technology with specific application drivers (e.g., CDN, media delivery) to demonstrate its value and stimulate adoption.

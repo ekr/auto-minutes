@@ -1,0 +1,50 @@
+**Session Date/Time:** 25 Jul 2023 16:30
+
+# quic
+
+## Summary
+
+This meeting covered several key topics, including updates on multipath QUIC, reliable stream reset, QLOG, act frequency, QuickLB, QUIC enabled service differentiation, and NAT traversal using QUIC. Discussions focused on open issues, potential solutions, and the need for further experimentation and implementation.
+
+## Key Discussion Points
+
+*   **Multipath QUIC:**
+    *   Discussion on path status frame representation: whether to use a single frame with a status value or split into multiple frames (Path Available, Path Standby).
+    *   Debate on the number of error codes specific to multipath.
+    *   Discussion about probing and non-probing frames in multipath QUIC, particularly regarding ACK frames and path validation.
+    *   Concerns raised on a proposed major change in how paths are identified and managed (assigning connection IDs to path identifiers).
+*   **Reliable Stream Reset:**
+    *   Discussion on whether to retain the variant of the closed stream frame without an error code. The WG generally favored removing it due to the lack of a clear use case.
+    *   Confirmation that using a 1-byte frame type for the closed stream frame is acceptable.
+*   **QLOG:**
+    *   Presentation on recent updates, including the addition of support for RFCs finalized in 2022 (GREASE, extended connect, prioritization).
+    *   Discussion on splitting the data moved event into stream data moved and datagram data moved.
+    *   Discussion on standardizing approach for identifying which QLOG documents are in use including a proposal to use URNs registered with IANA.
+*   **Act Frequency:**
+    *   Debate about whether to use a 1-byte or 2-byte frame type. Agreement to switch to 2 bytes with a suggested code point from Martin Duke.
+    *   Discussion about behavior after emerging from quiescence and the need for timely feedback (immediate ACK or adjusted act frequency). The WG favored editorial text about receiver behavior.
+    *   Concerns raised about MinRTT and Smooth RTT and how they affect Act Frequency.
+*   **QuickLB:**
+    *   Presented issues with structured Connection IDs for load balancing and suggested a new bit for config rotation.
+    *   Concerns about potential downsides: connection IDs limited to 32 bytes, a footgun for configurations, and misrouting with latency.
+*   **QUIC Enabled Service Differentiation:**
+    *   Proposal to embed priority information in the connection ID of multipath QUIC.
+    *   Concerns raised regarding potential privacy leaks, the applicability outside of controlled backbone networks, trust in priority markings, and the complexity of implementation and orchestration.
+*   **NAT Traversal:**
+    *   Presentation of a draft to enable QUIC in peer-to-peer settings using ICE.
+
+## Decisions and Action Items
+
+*   **Multipath QUIC:** Continue discussion on GitHub.
+*   **Reliable Stream Reset:** Remove the close stream frame variant without an error code. Ship a -02 with incorporated feedback.
+*   **Act Frequency:** Switch to a 2-byte frame type with the code point suggested by Martin Duke.
+*   **Reliable Stream Reset and Act Frequency:** A working group last call after next version.
+*   **QLOG:** Dror will write UDP schema.
+*   **QUIC Enabled Service Differentiation:** Review concerns and rethink approach.
+*   **Reliable Stream Reset:** Add interop reports.
+
+## Next Steps
+
+*   Publish updated drafts incorporating the decisions made during the meeting.
+*   Continue discussions on open issues via GitHub and the mailing list.
+*   Encourage implementation and interoperability testing to further mature the specifications.

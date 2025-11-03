@@ -1,0 +1,97 @@
+**Session Date/Time:** 29 Jul 2022 14:00
+
+# lsr
+
+## Summary
+
+The lsr working group session covered administrative items, working group status updates, and presentations on seven different drafts. A key administrative point was the severe backlog in AD reviews for documents ready for publication. The working group successfully decided on immediate adoption for the ASLA BiS drafts. However, several other drafts, particularly those related to Virtual Tenant Networks (VTN) and Prefix Unreachability, faced significant technical objections and a lack of working group consensus for adoption or progression. Discussion for these drafts will continue on the mailing list, with chairs emphasizing the need for robust technical justification and avoiding redundant or hacky solutions. The session concluded with a call for more engagement on the mailing list for all drafts.
+
+## Key Discussion Points
+
+*   **Administrivia**:
+    *   Participants reminded of the Note Well, mask policy, and signing into the on-site tool for attendance and queue management.
+*   **Working Group Status Update (AC)**:
+    *   **RFC 9127 (LSP Ping/Traceroute Yang Model)**: Soon to be published (RFC48), unblocking OSPF and ISIS Yang models. Efforts will restart to resurrect interest in follow-on Yang models.
+    *   **Flex-Algo**: Still waiting for publication. This is critical foundational work, blocking many SR drafts and other working group documents.
+    *   **SRv6 Extensions**: Ready for working group last call (WGLC) shortly after IETF 114, following review and incorporation of comments. Huawei has implementations.
+    *   **Dynamic Flooding for Dense Graphs**: Implementations have slowed, with only one currently. The working group plans to target this for Experimental publication due to broad interest, deeming it a priority.
+    *   **Fast Flooding**: Chair (AC) will discuss WGLC readiness with authors. Bruno recently made an incremental update; reviews are encouraged.
+    *   **Interim Meeting**: Targeting September 7th for drafts not on the agenda or those deemed potentially unnecessary.
+*   **General WG Progress (Les/John)**:
+    *   Les raised concerns about the slow progress of documents through the IESG pipeline.
+    *   AD (John) acknowledged a severe backlog in reviews but stated steps are being taken to expedite the process. He noted a preference for timely, less extensive reviews over delayed, comprehensive ones.
+*   **ASLA BiS (Les)**:
+    *   **Problem**: Confusion regarding the specification of zero-length ABM advertisements led to errata, then BiS drafts for IS-IS and OSPF.
+    *   **Updates**: Clarified applicability to SRTE (SR MPLS and SRv6), use of zero-length ABMs and L-bit, and specified that legacy routers must continue to advertise legacy and *not* ASLA.
+    *   **Next Steps**: Requested immediate working group adoption, WGLC within one IETF cycle, and AD to focus IESG review solely on the changes.
+    *   **Decision**: The working group had no objections to immediate adoption.
+*   **Using ISIS Multi-Topology for SR-based VTNs (Chung)**:
+    *   **Purpose**: Describes applying IS-IS Multi-Topology (MT) to build SR-based Virtual Tenant Networks (VTNs), using MT-ID as a VTN control plane identifier. Applicable for a small number of VTNs.
+    *   **Updates**: Clarified resource-aware SIDs are optional, detailed forwarding plane operations, and discussed scalability. Claimed implementations exist.
+    *   **Request**: Working Group Last Call.
+    *   **Discussion**:
+        *   Les and AC objected, arguing the draft's content is only meaningful if the working group officially adopts and progresses the broader VTN extensions/framework (e.g., from TEAS), which has not happened.
+        *   Ketum suggested merging content into a similar informational Spring architecture draft, as this draft doesn't propose IGP extensions.
+    *   **Decision**: WGLC for this draft is blocked due to dependencies on other work and concerns about progression order. Discussion to continue on the mailing list.
+*   **Using Flex-Algo for SR-based VTNs (Xu)**:
+    *   **Purpose**: Describes applying Flex-Algo to build SR-based VTNs, using Flex-Algo ID as a VTN identifier.
+    *   **Updates**: Proposed minor extensions for L2 bundle TLVs, including an "exclusive" flag, and a correlation mechanism between Flex-Algo and L2 member links.
+    *   **Request**: Working Group Adoption.
+    *   **Discussion**:
+        *   Joel Halpern raised concerns about confusing "separate topology" (implied by Flex-Algo for VTNs) with "network resource partitions" (NRPs) in TEAS, which exist *within* a shared topology for scalability reasons. He questioned the scalability of this approach.
+        *   Peter described the proposed L2 bundle extensions as "hacky" and specific, not a generic solution.
+        *   AC questioned the justification for Flex-Algo over Multi-Topology if MT is simpler.
+    *   **Decision**: Working group adoption is blocked due to significant concerns regarding scalability, generality of the solution, and potential for bespoke designs. Discussion to continue on the mailing list.
+*   **Multi-Part TLVs (Tony Lee)**:
+    *   **Problem**: Existing TLVs (e.g., Type 22) can exceed 255 bytes, but current specifications don't define handling for overflow.
+    *   **Proposed Solution**: Allow multiple parts of the same TLV code point to be concatenated.
+    *   **Key Discussion Points**:
+        *   Need to define what "key" information within a TLV should be replicated across parts.
+        *   Proposal for a router capability bit to signal support for multi-part TLVs, to ensure legacy implementations don't crash when encountering them.
+        *   Concerns raised about forcing a catalog of all TLVs and their keys if a capability is introduced.
+        *   AC asked for clarification on router behavior if the capability is not advertised (e.g., which information to prioritize if only partial advertisement is possible).
+    *   **Action Item**: Authors will discuss the capability mechanism and other concerns, aiming for a next version of the draft.
+*   **Distributed Fast Flooding (Tony P)**:
+    *   **Purpose**: Presents a new flavor of flood reduction and load distribution based on previous work (mana, open fabric, RIFT), aiming for 70% reduction in flooding volume.
+    *   **Mechanism**: Operates in a completely distributed manner without explicit signaling or protocol extensions. Uses shortest path tree computations and hashing of LSP IDs to assign re-flooding responsibility across different nodes, thus balancing the load.
+    *   **Partition Recovery**: Uses existing PSNP mechanisms with timers to repair missed floods, ensuring reachability after transient failures.
+    *   **Discussion**:
+        *   AC and Ben explored the solution's effectiveness in different topologies and the computational load on unstable networks. Tony P explained on-demand computation, caching, and the handling of PSNPs for specific omitted LSPs.
+        *   Les questioned the lack of explicit signaling for node support, but Tony P clarified it inter-operates with older nodes and that the PSNP mechanism handles missed floods.
+    *   **Decision**: No formal adoption call, but general interest expressed. Authors encouraged to continue work and address comments.
+*   **Unreachability Prefix Announcement (UPA) (Peter)**:
+    *   **Problem**: Summarization hides reachability, making it hard to signal loss of individual prefixes for applications like BGP-PIC.
+    *   **Proposed Solution**: Reuses the existing LSInfinity metric in IS-IS (RFC 5305/5308) and OSPF (v2/v3) to signal unreachable prefixes without introducing new protocol extensions.
+    *   **Behavior**: Existing nodes propagate but ignore; interested edge nodes (PEs) recognize and use the information. L1/L2 routers would be specified to propagate these between areas.
+    *   **Discussion**:
+        *   Tony P acknowledged the solution uses standard protocol behavior but noted that infinity metrics can trigger "interesting bugs" in implementations and could be seen as "abusing the protocol."
+        *   Odjin, Chung, and Zebo argued that LSInfinity traditionally means "ignore during SPF computation" rather than "unreachable" and that an explicit indication would be clearer.
+        *   AC supported the draft, stating providers have requested IGP-based solutions and that the existing usages are complementary.
+    *   **Decision**: The working group is divided on the interpretation and suitability of LSInfinity for this purpose. Discussion will continue on the mailing list, specifically on the need for explicit signaling.
+*   **Prefix Unreachable Announcement (PUA) (Odjin)**:
+    *   **Problem**: Summarized advertisements hide unreachability, requiring prompt switchover to alternative endpoints for services.
+    *   **Proposed Solution**: Explicitly declare prefix unreachable using its original originator, and set the metric to LSInfinity to prevent misbehavior in unsupported nodes. Proposes a capability bit for negotiation. Introduces `max_announcement_threshold` to control flood volume.
+    *   **Discussion**:
+        *   The chairs noted that despite long discussion, consensus for this draft has not been reached. They expressed concern about using working group resources without stronger technical justification.
+        *   Chris (WG member) questioned the consistency of using LSInfinity in this draft while simultaneously arguing against its sufficiency in Peter's UPA draft.
+        *   Peter criticized the use of "originator as zero" as a broken mechanism and reiterated his invitation for Odjin to collaborate on the UPA draft.
+    *   **Decision**: The draft lacks working group consensus for adoption. Discussion will continue on the mailing list, focusing on the core technical issues and the need for explicit signaling versus existing mechanisms.
+*   **Advertisement of Stub Link Attributes (Odjin)**:
+    *   **Problem**: Need to discover inter-AS topologies (PTAs, IXCs) and perform traffic engineering for anycast services by transferring stub link characteristics.
+    *   **Proposed Solution**: Define a new sub-TLV container for link type and link prefix. Argued against reusing existing T-related TLVs (e.g., remote AS number) due to inefficiency and inability to describe certain scenarios.
+    *   **Discussion**:
+        *   Les and the chairs noted that this draft has been presented multiple times, extensively discussed, and failed a prior adoption call. They questioned the continued use of working group resources without new, compelling technical arguments that address the previous objections.
+        *   Odjin argued that updates had addressed previous comments and that "final users" (service providers) prioritize the necessity of such information.
+    *   **Decision**: Working group adoption is denied due to lack of consensus and repeated objections to the proposed solution over existing alternatives. Chairs suggested the draft might need to be let go.
+
+## Decisions and Action Items
+
+*   **Decision**: The ASLA BiS drafts (IS-IS and OSPF) are immediately adopted by the working group.
+*   **Action Item**: Authors of Multi-Part TLVs to discuss the "router capability" mechanism and other open concerns, and release a revised draft.
+*   **Action Item**: Discussions for ISIS Multi-Topology for SR-based VTNs, Flex-Algo for SR-based VTNs, UPA, PUA, and Advertisement of Stub Link Attributes will continue on the mailing list to address technical objections and seek consensus.
+
+## Next Steps
+
+*   Continue discussions on all unresolved drafts on the lsr mailing list.
+*   An interim meeting is targeted around September 7th for drafts that could not be presented or require further discussion.
+*   More engagement on the mailing list is encouraged for all drafts, not just those by authors.

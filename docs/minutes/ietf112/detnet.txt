@@ -1,0 +1,80 @@
+**Session Date/Time:** 10 Nov 2021 12:00
+
+# detnet Session Minutes - IETF 112
+
+## Summary
+
+The detnet working group session at IETF 112 covered updates on existing working group documents, discussed new proposals, and addressed liaison statements. Key areas of discussion included Operations, Administration, and Maintenance (OAM) for DetNet, Packet Replication, Elimination, and Ordering Functions (PREOF) for IP data plane, requirements for large-scale and wide-area deterministic networks, microburst mitigation, and Traffic Class Cyclic Queuing and Forwarding (TC-CQF) for MPLS. A significant procedural discussion involved the potential merging of OAM-related individual drafts into working group documents and the coordination with other working groups like PALS and IDR, particularly for new header formats and BGP FlowSpec extensions.
+
+## Key Discussion Points
+
+*   **Working Group Status Update:**
+    *   One new RFC published (`RFC 9056: IP over MPLS Data Plane`).
+    *   Two documents (`detnet-bounded-latency`, `detnet-yang`) have requested publication.
+    *   `detnet-oam-framework` and `detnet-control-plane-framework` are ongoing working group documents.
+    *   Bi-weekly meetings are advancing OAM work.
+*   **Liaison Statement from ITU-T SG13:** A liaison on deterministic communication work items was received. The WG will discuss a response on the mailing list.
+*   **DetNet OAM Framework (draft-ietf-detnet-oam-framework):**
+    *   Requirements for the DetNet service sub-layer were merged into this document.
+    *   Requirements are now structured into General, Forwarding Sub-layer, and Service Sub-layer categories.
+    *   New requirements for the service sub-layer include discovery of DetNet relay nodes, collection of service sub-layer specific information, exercising PREOF functions, and supporting Alarm Indication Signal (AIS) propagation.
+    *   Open issues raised for mailing list discussion: Making hybrid performance measurement methods mandatory (currently "may support"), splitting proactive and on-demand OAM into separate requirements for clarity, and addressing a potential duplication in unidirectional performance measurement requirements.
+    *   A brief discussion occurred on the definition of hybrid OAM and the use of "telemetry" in the context of OAM.
+*   **DetNet OAM for Service Sub-layer (draft-balazs-detnet-oam-service-sublayer):**
+    *   This individual draft aims to collect service sub-layer specific OAM topics, with the intention to move text to WG documents.
+    *   It focuses on `DetNet Ping` processing at relay nodes and proposes a `DetNet ACH (Associated Channel Header)` format.
+    *   The proposed `DetNet ACH` format extends the standard ACH by an additional 32 bits to accommodate DetNet-specific information (e.g., sequence number, node ID, session ID, level, flags).
+*   **DetNet OAM for MPLS (draft-ietf-detnet-mpls-oam):**
+    *   This WG document was updated to address comments.
+    *   Discussion centered on the new `DetNet ACH` format proposed in `draft-balazs-detnet-oam-service-sublayer`.
+    *   It was noted that this format was presented in a joint PALS/MPLS/DetNet meeting and was generally well-received for using ACH versioning rather than a new first nibble.
+    *   Discussion on coordination with the MPLS Open Design Team and PALS WG regarding the ACH structure. It was suggested that the structure of Nibble 1 ACH likely belongs in PALS, but the principle of making reserve bits a parameter of the channel type might be acceptable.
+    *   Chairs emphasized the importance of documenting a working group position by bringing the technical content into the WG document while continuing to coordinate with other groups.
+*   **PREOF for IP Data Plane (draft-ietf-detnet-ip-data-plane-pref):**
+    *   This draft describes how to add PREOF functionality to the DetNet IP data plane using tunneling techniques (UDP/IP tunnels).
+    *   The document is considered stable, clarifying its tunneling basis and leveraging existing data plane building blocks without new header fields.
+    *   A request for working group adoption was made.
+    *   A significant concern was raised regarding the integration of the elimination function's inherent jitter or buffering requirements into bounded latency calculations, suggesting it might require per-flow shaping. This was noted as a general PREOF architectural concern, not specific to IP.
+    *   Questions were raised about the necessity of this document given existing MPLS and UDP-IP encapsulation RFCs, and how inner flow visibility is maintained in tunneled IP.
+*   **Packet Ordering Function (draft-balazs-detnet-packet-ordering-function):**
+    *   This draft describes algorithms to correct out-of-order packets resulting from PREOF.
+    *   Updates clarify that while POF may cause delay variation, addressing this (e.g., with jitter buffers or shapers) is considered outside its scope, belonging to the forwarding sub-layer.
+    *   A request for working group adoption was made.
+    *   The concern about defining latency calculus and avoiding passing "undefined latency variation" to other components was reiterated, suggesting a shaper might be an integral part of the elimination/ordering function.
+*   **Requirements for Large Scale DetNet (draft-pony-detnet-large-scale-reqs):**
+    *   Motivations: Considering more queuing mechanisms and large-scale network influences.
+    *   Requirements include: tolerance of time asynchrony (across/within domains, without full synchronization, using async-based methods), support for large single-hop propagation latency, accommodating higher link speeds, scalability for devices and massive traffic flows, tolerance of failures/topology changes, and support for incremental device updates.
+    *   A section on "proposed queuing mechanisms" was suggested by a chair to be removed from a requirements document as it constitutes solution space.
+*   **Requirements for Wide Area IP DetNet (draft-li-detnet-wide-area-ip-req):**
+    *   This draft addresses problems in wide-area IP deterministic networking, such as differentiated service requirements, resource allocation efficiency, strict path guarantees, inter-domain routing, and managing multiple dynamic flows and microbursts.
+    *   Requirements listed include: differentiated queues for multiple services, reducing topology size/integrating multi-comp scalability, high resource efficiency with guarantees, and managing multiple dynamic flows to reduce microbursts.
+    *   Discussion indicated potential overlap and the possibility of merging this with `draft-pony-detnet-large-scale-reqs`.
+*   **Microbursts Decreasing in Layer 3 Network (draft-pony-detnet-microburst-decreasing-l3):**
+    *   The draft explores methods to decrease microbursts, highlighting that IP traffic inherently shows burstiness causing long delays.
+    *   Three approaches discussed: traditional IP (light load, scalable but unreliable), TSN mechanisms like CQF (reliable but complex and less scalable for large networks), and a proposed method focusing on scalability and performance for critical traffic by separating control/data plane, using self-decision on the data plane, and shaping at edges/intermediate nodes.
+*   **MPLS Traffic Class Queueing for CQF (draft-torless-detnet-mpls-tc-cqf):**
+    *   Introduces Traffic Class Cyclic Queuing and Forwarding (TC-CQF) for MPLS, an adaptation of TSN's CQF.
+    *   TC-CQF uses the MPLS Traffic Class field to tag packets, which reduces clock synchronization requirements and allows for arbitrary long/jittery WAN links, overcoming limitations of traditional CQF.
+    *   Highlights its importance as a proven, standardized option for service provider-class networks that avoids per-flow shaper state and provides low jitter.
+    *   Requested working group adoption and discussion on charter changes if needed.
+    *   Chairs noted that queuing is typically not a routing area function, requiring AD and ISG buy-in.
+*   **BGP Flow Specification for DetNet Flow Mapping (draft-li-detnet-bgp-flowspec-detnet-flow-mapping):**
+    *   This draft proposes extending BGP Flow Specification to map TSN streams to DetNet flows and vice-versa, to support service proxy functions and flow aggregation.
+    *   It suggests new flowspec types and extended communities for TSN traffic filtering and associated actions.
+    *   Jeff Tantsura (IDR co-chair) commented that the base FlowSpec RFC is not extensible, and work is starting on FlowSpec v2 in IDR. He invited the authors to present at an IDR interim.
+    *   Chairs advised clarifying the document's scope to focus specifically on TSN mapping and coordinating with IDR and the AD for appropriate placement.
+
+## Decisions and Action Items
+
+*   **Action Item:** Greg (co-author of `draft-ietf-detnet-mpls-oam`) to conduct a poll on the mailing list to gauge working group consensus on merging the technical content from `draft-balazs-detnet-oam-service-sublayer` (specifically the DetNet ACH format) into `draft-ietf-detnet-mpls-oam`.
+*   **Decision:** The working group will continue discussions on `draft-ietf-detnet-ip-data-plane-pref` (PREOF for IP) and `draft-balazs-detnet-packet-ordering-function` (Packet Ordering Function) on the mailing list to address raised technical concerns before considering working group adoption requests.
+*   **Action Item:** Authors of `draft-pony-detnet-large-scale-reqs` and `draft-li-detnet-wide-area-ip-req` to continue discussions on the mailing list, with the chairs suggesting exploring potential merging of these requirements drafts.
+*   **Action Item:** Chairs to discuss with the AD regarding the charter implications and feasibility of `draft-torless-detnet-mpls-tc-cqf` (TC-CQF for MPLS) for working group adoption, given its nature as a queuing function in the routing area. Mailing list discussion to continue in parallel.
+*   **Action Item:** Jing to contact Jeff Tantsura (IDR co-chair) to arrange a presentation of `draft-li-detnet-bgp-flowspec-detnet-flow-mapping` at an upcoming IDR interim. The document's scope should be clarified to emphasize TSN mapping.
+
+## Next Steps
+
+*   All ongoing discussions, particularly on new proposals and adoption requests, should continue actively on the detnet mailing list.
+*   Authors are encouraged to incorporate feedback and clarify any ambiguities in their drafts.
+*   The chairs will facilitate coordination with other working groups (PALS, MPLS, IDR) and the AD for procedural guidance on cross-area work items and document placement.
+*   Informal working meetings can be scheduled as needed to advance specific documents.

@@ -1,0 +1,68 @@
+**Session Date/Time:** 24 Jul 2023 16:30
+
+# dnsop
+
+## Summary
+
+The DNSOP meeting covered a variety of topics, including updates on existing documents, discussions of new proposals, and considerations for future work. Key discussions revolved around CDS consistency, compact denial of existence signaling, root zone trust anchor publication, QD count limitations, out-of-protocol signaling, zone pipeline design, DNS Notify extensions, and multi-algorithm DNSSEC considerations. Several drafts were proposed for adoption, and the working group sought input on various design choices.
+
+## Key Discussion Points
+
+*   **CDS Consistency (Peter)**:
+    *   Discussion about a fourth failure mode related to key rollover and the importance of consistency checks across authoritative name servers.
+    *   Options for handling `csync` records in multi-provider setups with different serial number logic.
+    *   Debate on whether the parent agent is allowed to break the DNSSEC chain of trust by applying a `csync` process.
+    *   Yohan expressed concerns about the definition of correctness and distribution problems.
+    *   Wes emphasized the critical need for automatically updating systems and suggested the potential for restarting with new solutions.
+
+*   **Compact Denial of Existence (Schumon, Christian)**:
+    *   Debate on whether to standardize both NXNAME and ENT signals for non-existent names and empty non-terminals, respectively. Victor supports only ENT, while others see value in both.
+    *   Whether to use the INA Early Allocation Process for real code points.
+    *   Explicit queries for NXNAME or ENT type: Should behavior be defined?
+    *   Concerns about implementing a signalling solution for replacing RCode 3, especially for DNSSEC-enabled queries.
+    *   Whether to recommend new implementations use this protocol or discourage it in favor of standard minimally-covering ANSEC or NSAC3.
+    *   Ed raised concerns about overloading NSEC records.
+
+*   **Root Zone Trust Anchor Publication (Paul)**:
+    *   The need to revise RFC 7958 to fix an erratum, optionally include the key in the XML format, update the DNSSEC practice statement reference, and address XML comment handling.
+
+*   **QD Count Limitations (Ray)**:
+    *   Discussion focused on limiting the QD count to 1 in DNS queries, updating RFC 1035 to reflect this limitation.
+    *   Peter noted potential issue of open thread implementation use QD count = 2; some servers respond with form error.
+    *   Lars questioned the limitation and the rationale behind it. Jim suggested the QD count must not be more than one.
+
+*   **DNS Out-of-Protocol Signaling (Willum)**:
+    *   The potential use of out-of-protocol signaling (OOPS) to bridge DNS and BGP for triggering BGP actions based on DNS events (e.g., zone loading, expiration).
+    *   Discussion on conditions to signal, signalling mechanisms and whether the mechanism should be local to the system.
+    *   Ben questioned whether this is unique to DNS or can it apply to any protocol.
+
+*   **Zone Pipeline (Yohan)**:
+    *   Zone Generation Pipeline Design and how best practice in the space would provide a robust pipeline.
+    *   A desire to have more open discussion about Zone design and the best design for Robust pipelines.
+    *   Requirement not to have custom software in the critical path.
+    *   Ingress and Egress Validation.
+
+*   **DNS Notify (Yohan)**:
+    *   Proposal to generalize the RFC 1996 DNS NOTIFY to allow CDS and other RR types to be included in notifications.
+    *   A motivation for the extension to improve scanning efficiency and key rollover coordination in multi-signer environments.
+    *   Warren questioned if this would open up DOS obfuscation opportunities.
+    *   Ed: concern with rate limiting because there is a need for these to roll quickly.
+    *   Lavin: Event driven is better than polling so how do we make it easier.
+
+*   **Multi-Algorithm DNSSEC (Peter, Schuman, Victor, Dwayne)**:
+    *   Discussion on relaxing requirements on serving RRSIGs for all advertised algorithms.
+    *   Peter stated his team wanted to present how best to relax the algorithm serving to provide the best user experience.
+
+## Decisions and Action Items
+
+*   **CDS Consistency:** Peter to address feedback from the list.
+*   **Compact Denial of Existence:** Further discussion on the mailing list to resolve open issues, potential for an interim meeting if needed.
+*   **QD Count Limitations:** Ray to consolidate the doc and rewrite to the guidance, and to create another doc to document all of the details of this specific instance
+*   **DNS Out-of-Protocol Signaling:** Attendees to review implementation details
+*   **Zone Pipeline:** Gather opinions, and comments and provide to the group
+
+## Next Steps
+
+*   The working group chairs will consider adopting drafts based on the discussions and feedback received.
+*   Authors of the discussed proposals will revise their drafts based on working group feedback.
+*   Further discussions will occur on the DNSOP mailing list to resolve outstanding issues and gather more input.

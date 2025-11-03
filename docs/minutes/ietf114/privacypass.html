@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="privacypass.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-PRIVACYPASS-20220728-2000">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 20:00</p>
+<h1>privacypass</h1>
+<h2>Summary</h2>
+<p>The privacypass session at IETF 114 covered significant progress in deployment and specification. Discussions included Apple's implementation experience with Private Access Tokens (a Privacy Pass type 2 deployment), updates on the core architecture, authentication scheme, and protocol drafts, a detailed overview of the rate-limited token issuance protocol, and an exploration of key consistency and discovery mechanisms relevant to privacy-preserving protocols. Key decisions involved IANA considerations for new token types and plans for enhancing architectural text regarding service misbehavior. An adoption call is ongoing for the rate-limited token document, and the chairs will consider an adoption call for the key consistency document as an informational draft.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrative</strong>:</p>
+<ul>
+<li>Note-taker: Marcus volunteered.</li>
+<li>Note Well reminder.</li>
+<li>Agenda approved.</li>
+</ul>
+</li>
+<li>
+<p><strong>Deployment Experience (Apple's Private Access Tokens)</strong>:</p>
+<ul>
+<li>Apple announced Private Access Tokens (PATs), an implementation of Privacy Pass type 2 (publicly verifiable tokens using RSA blind signatures), at their developer conference in June.</li>
+<li>PATs are being integrated into iOS 16 and macOS Ventura, supporting client functionality automatically within WebKit environments and for app developers.</li>
+<li>Cloudflare and Fastly have deployed token issuers for initial experimentation. Attestation is done via iCloud servers for device and account attestation. Other platforms can use other attestation types.</li>
+<li>Current usage: Approximately 35,000 tokens issued per day, 16,000 redeemed, primarily for Cloudflare managed CAPTCHAs. Minimal user-facing latency impact.</li>
+<li><strong>Discussion on potential over-reliance</strong>: Nick Doty (CDC) raised concern about developers potentially blocking access permanently for non-token holders.
+<ul>
+<li>Tommy Pauly (Apple) acknowledged this is a valid concern, stating that Apple's public guidance is to use PATs <em>in lieu of</em> CAPTCHAs and always provide a fallback.</li>
+<li>Mitigations in place: user-level toggle, attestation system rate-limiting, and device-side limits on token requests (e.g., ignoring requests if exceeding a few per minute).</li>
+<li><strong>Action Item</strong>: Add advice to the architecture document regarding these mitigations and the ecosystem's expectation of fallback mechanisms.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Core Documents Status (Architecture, Authentication Scheme, Protocol)</strong>:</p>
+<ul>
+<li><strong>Status</strong>: Authors believe these drafts are technically mature and ready for working group last call, with some wording refinements still needed.</li>
+<li><strong>Recent Changes</strong>:
+<ul>
+<li><strong>Architecture</strong>: Clarified trust model, removed old text, added more text on centralization.</li>
+<li><strong>Auth Scheme</strong>: Clarified support for multiple origin names, guidance for token challenge handling, double-spending prevention, added test vectors.</li>
+<li><strong>Basic Issuance Protocol</strong>: Clarified token verification, described consistent key validation retrieval.</li>
+</ul>
+</li>
+<li><strong>Open Issues</strong>:
+<ul>
+<li><strong>IANA Registry for Token Types</strong>:
+<ul>
+<li><strong>Decision</strong>: The new registry for Privacy Pass token types will reside on a new privacy pass-specific IANA page.</li>
+<li><strong>Discussion on Review Policy</strong>: Proposed &quot;Specification Required&quot; for new entries. Kenazi raised concerns about this discouraging experimentation and encouraging squatting, suggesting a model similar to QUIC with provisional allocations.</li>
+<li><strong>Action Item</strong>: Clarify IANA notes to allow for provisional/temporary allocations for experimentation, reserving IANA's right to yank them if not formalized.</li>
+</ul>
+</li>
+<li><strong>Misbehaving Attestation/Issuance Services (Issue #141)</strong>:
+<ul>
+<li><strong>Problem</strong>: What if an attestation or issuance service starts behaving maliciously (e.g., issuing tokens willy-nilly)?</li>
+<li><strong>Discussion</strong>: This is an exceptional event. The ecosystem needs mechanisms for origins to report bad tokens back to issuers, and for issuers to detect and potentially &quot;kick out&quot; misbehaving attesters. Maintaining credibility is key for these services. Temporary adjustments to trust (e.g., an attester taking itself out of the pool to patch a zero-day) are envisioned.</li>
+<li><strong>Action Item</strong>: Add architectural text describing how to handle misbehaving parties, focusing on credibility maintenance and reporting/detection mechanisms.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Dependencies and Security Analysis</strong>:
+<ul>
+<li>Sophia (Brave) asked about dependencies on CFRG documents (e.g., BO PRF, blinded RSA) and the need for formal security/privacy analysis of the new architecture's threat model.</li>
+<li>Chris Wood (co-author) stated that CFRG blind RSA and VPF drafts are nearing research last call and shouldn't block Privacy Pass progress.</li>
+<li>Tommy Pauly noted the architecture document tries to cover analysis, but further independent analysis documents are welcome, especially given shared properties with OHTTP and MASQUE.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Rate Limited Token Issuance Protocol</strong>:</p>
+<ul>
+<li><strong>Motivation</strong>: Basic issuance lacks per-client rate limiting, which is crucial for applications like meter paywalls, bot damage dampening, etc., without falling back to privacy-compromising methods like IP-based rate limiting.</li>
+<li><strong>Design Goals</strong>: Maintain existing privacy properties (origin learns only &quot;token presented without exceeding limit&quot;, issuer learns nothing about client linkage), simple adoption, minimize issuer/attester state, prevent attester/issuer from linking client-origin pairs.</li>
+<li><strong>Mechanism</strong>: Extends basic issuance. Issuer learns origin for rate limit selection. <strong>Attester</strong> takes on more responsibility, learning a &quot;stable mapping&quot; (rate limiting context) specific to a per-client secret and per-origin secret, and <strong>enforces the rate limit</strong>. Token requests can now fail.</li>
+<li><strong>State Distribution</strong>: Origin (constant state: validation key), Client (state per server), <strong>Attester (most state: #clients x #servers)</strong>, Issuer (state per configured server).</li>
+<li><strong>Privacy Properties</strong>: No linking by origin or attester of two requests from the same client. Attester learns access patterns (client/origin secret pairs), which is deemed an acceptable trade-off given its existing privilege (e.g., client IP address).</li>
+<li><strong>Open Issues</strong>:
+<ul>
+<li>Unclear how much leakage is possible through attester-learned access patterns if combined with auxiliary information.</li>
+<li>Better technical solution possible with partially blind signatures (currently not available).</li>
+</ul>
+</li>
+<li><strong>Status</strong>: Two interoperable implementations, security analysis submitted for peer review (being updated to address leakage concerns).</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Sybil Attacks</strong>: Jonathan asked if the attestation prevents Sybil attacks. Chris Wood confirmed that the protocol assumes the client-attester relationship (e.g., device attestation, IP address) prevents an attacker from endlessly spinning up new identities.</li>
+<li><strong>Information Leakage</strong>: Mia Columbia asked about providing the count from attester to issuer (rejected because it leaks too much linking information). The current design leaks a &quot;little bit of information&quot; via the origin count but is considered a better trade-off.</li>
+<li><strong>Effectiveness of Metering for Abuse Cases</strong>: Nick Doty asked if a single &quot;yes/no&quot; threshold from metering is effective for abuse cases, or if more nuanced data (e.g., number of attempts) is needed. Chris Wood stated this is an active discussion in the anti-frauds community, and the rate-limited token is a &quot;tool&quot; that falls between basic Privacy Pass (no rate limits) and existing IP/cookie tracking (full rate limiting data). It should improve fraud signals for many sites without re-identifying users.</li>
+</ul>
+</li>
+<li><strong>Action Item</strong>: Review the Rate Limited Token document for its ongoing adoption call, which ends in approximately two weeks.</li>
+</ul>
+</li>
+<li>
+<p><strong>Key Consistency and Discovery</strong>:</p>
+<ul>
+<li><strong>Motivation</strong>: Many IETF protocols (Privacy Pass, OHTTP, Tor) require clients to have a <em>consistent</em> and <em>authentic</em> view of server keys to prevent privacy leakage (unlinkability) or redirection to malicious services.</li>
+<li><strong>Requirements</strong>:
+<ul>
+<li><strong>Unlinkability</strong>: Servers can't link usage of a specific key to an individual user.</li>
+<li><strong>Authenticity</strong>: When clients use a key, it's the intended key for that specific server.</li>
+</ul>
+</li>
+<li><strong>Problem</strong>: If a server distributes different keys to different clients, or an adversary injects a malicious key, privacy and security are compromised.</li>
+<li><strong>Design Space</strong>: Roughly categorized into four approaches:
+<ol>
+<li>Fetching through a <strong>trusted proxy</strong>.</li>
+<li>Fetching and verifying through a <strong>trusted proxy</strong> (e.g., Constancy Double Check).</li>
+<li>Fetching through <strong>multiple untrusted proxies</strong> and verifying consistency.</li>
+<li>Using an <strong>audited bulletin board</strong> (e.g., authentic append-only log like Key Transparency).</li>
+</ol>
+</li>
+<li><strong>Proposal</strong>: Authors (Chris Wood) propose publishing this document as an informational working group supporting document to help inform discussions around key consistency solutions (e.g., Ben Schwartz's &quot;Constancy Double Check&quot; draft).</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Tommy Pauly highlighted the importance of this work and suggested explicitly mentioning &quot;Double Check&quot; as a technique.</li>
+<li><strong>Action Item</strong>: Chairs will consider an adoption call for this document as an informational draft in the Privacy Pass working group.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: IANA registry for Privacy Pass token types will be a new, privacy pass-specific page.</li>
+<li><strong>Decision</strong>: The proposed IANA review policy for new token types is &quot;Specification Required.&quot; This will be clarified to allow for provisional/temporary allocations for experimentation, with IANA reserving the right to revoke.</li>
+<li><strong>Action Item</strong>: Architectural text to be added to address handling misbehaving attestation/issuance services, emphasizing credibility and detection/reporting mechanisms.</li>
+<li><strong>Action Item</strong>: Add advice to the architecture document regarding fallbacks and mitigations for potential developer over-reliance on Private Access Tokens (e.g., device-side rate limits, user toggles).</li>
+<li><strong>Action Item</strong>: Review the Rate Limited Token issuance protocol document; its adoption call is ongoing and ends in approximately two weeks.</li>
+<li><strong>Action Item</strong>: Chairs will consider an adoption call for the Key Consistency and Discovery document to be published as an informational document in the Privacy Pass working group.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Working group members are encouraged to review the Rate Limited Token issuance protocol document and provide feedback for its ongoing adoption call.</li>
+<li>The chairs will evaluate an adoption call for the Key Consistency and Discovery document.</li>
+<li>Authors of the core documents will refine wording and incorporate feedback on IANA considerations and misbehaving services.</li>
+<li>Continued discussion in relevant groups (e.g., anti-frauds community) on the effectiveness of metering for various abuse cases.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

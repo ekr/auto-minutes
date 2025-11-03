@@ -1,0 +1,54 @@
+**Session Date/Time:** 26 Jul 2022 17:30
+
+# mpls - IETF 114 Working Group Minutes
+
+## Summary
+
+The MPLS working group convened for its 25th anniversary session at IETF 114. Discussions covered various drafts, including proposed iOAM encapsulation in MPLS, mLDP extensions for multi-topology routing, deprecation of Router Alert in LSP Ping, and the creation of an IANA registry for the MPLS first nibble. A new proposal for generalizing IPv6 tunnels for MPLS was also presented, addressing challenges in MPLS OAM and new feature encapsulation. Key actions involve initiating Working Group Last Call for one draft and starting mailing list discussions for others to gauge readiness for adoption.
+
+## Key Discussion Points
+
+*   **MPLS Working Group 25th Anniversary:** Co-chair Loa Andersson provided a brief historical account, noting the first tag switching BOF in November 1996, the chartering of the MPLS WG in March 1997, and its first official meeting in August 1997. He suggested August 13th or 15th, 1997, as a potential "birthday."
+*   **Errata Review:**
+    *   RFC 5462: An erratum regarding a missing RRO IPv6 sub-object was accepted as straightforward.
+    *   RFC 3031: An erratum claiming confusion between L1/L2/L3 abbreviations and OSI layers was reviewed. Given the RFC's longevity (25 years), the WG chairs deemed it not a significant issue due to common understanding in context.
+*   **Document Status Update:**
+    *   One new RFC was published.
+    *   One RFC is currently stuck in MISSREF; the co-chair confirmed the shepherd will proceed once the main author reposts an updated draft.
+    *   Four new working group documents were adopted.
+*   **MPLS iOAM Encapsulation (draft-gandhi-mpls-iom-encapsulation):**
+    *   **Scope:** Transport iOAM data fields within MPLS using both edge-to-edge and hop-by-hop models.
+    *   **Proposed Mechanism:** Uses a special purpose MNA label, with flags in the next LSE's TTL field to indicate post-stack data and hop-by-hop processing. It leverages ippm WG definitions for iOAM data fields.
+    *   **Concerns:** Gregory Erickson raised that RFC 5586 restricts GACH usage to OAM packets, not data packets, which is problematic for iOAM's intended use. He also expressed concerns about the performance impact of "pre-allocated" iOAM for MPLS.
+    *   **Alternative Consideration:** Authors acknowledged the GACH issue and indicated openness to using the MPLS Extension Header (from Hieu's draft) as a common header for post-stack data.
+    *   **Capability Signaling:** It was confirmed that capability signaling (either MNA-specific or PCE-based) is essential for ingress nodes to verify egress/intermediate node capabilities to avoid packet drops.
+*   **MPLS mLDP Extensions for Multi-Topology Routing (draft-ietf-mpls-mldp-mt):**
+    *   **Status:** The draft has been adopted, implemented, and deployed.
+    *   **Comments Addressed:** The authors updated the text for "reserved bits" to "must be zero on transmission and ignored on receipt." A suggestion to split the draft into separate IGP MT and Flex-Algo extensions was rejected, with authors preferring the current unified approach as deployments typically use one or the other, not both simultaneously.
+*   **Deprecating the use of Router Alert in LSP Ping (draft-ietf-mpls-deprecate-route-alert):**
+    *   **Motivation:** The draft proposes removing the use of Router Alert in LSP Ping packets. Other mechanisms (e.g., setting IPv4 destination to 127.0.0.0/8 with TTL=1, or IPv6 ::1 with TTL=1) can already prevent packets from exiting the MPLS domain. The IPv6 community is generally moving towards deprecating Router Alert.
+    *   **Usage Assessment:** The authors believe this mode of LSP Ping with Router Alert is not widely implemented.
+    *   **IPv6 Specifics:** Gregory Erickson highlighted that the IPv6 loopback is a single address (::1), not a subnet, and suggested considering the source UDP port number as an entropy source for LSP Ping in IPv6.
+*   **MPLS First Nibble IANA Registry (draft-ietf-mpls-first-nibble):**
+    *   **Goal:** To establish an IANA registry for the first four bits following the last label in an MPLS stack (termed "post-stack data" or PSD).
+    *   **Rationale:** Existing uses (e.g., pseudowire/Ethernet control words, BEER header) have been allocated ad-hoc. A registry would provide clearer allocation and prevent confusion with IP version numbers (by avoiding 4 and 6).
+    *   **Mandate for Non-IP:** The draft recommends mandating the presence of PSD (e.g., a control word not starting with 4 or 6) for all non-IPv4/IPv6 packets to prevent misinterpretation.
+    *   **Signaling Debate:** A point of discussion was whether the presence of PSD should be signaled in the control plane, the data plane (as in some MNA proposals), or both (as in BEER).
+*   **To Generalize the IPv6 Tunnel for MPLS (draft-chen-mpls-generalize-ipv6-tunnel-mpls):**
+    *   **Motivation:** Addresses challenges in MPLS, including lack of source identification for MP2P OAM, inability to directly determine payload type, difficulty encapsulating new forwarding attributes (iOAM, IFIT), and ECMP complexity.
+    *   **Proposal:** Reuses the "Generalized IPv6 (GJP6) Tunnel" concept (from `draft-chen-gjp6-tunnel-ipv6-header-00`) to encapsulate MPLS label stacks within IPv6 headers/extension headers.
+    *   **Benefits:** Leverages IPv6 source/destination addresses and Flow Label, and reuses GJP6's mechanisms for new features.
+    *   **Encapsulation:** MPLS labels are placed in the IPv6 Destination Address ("IPv6 MPLS SID Type 1") or in IPv6 Extension Headers ("IPv6 MPLS SID Type 2") for longer stacks. The MPLS control plane remains unchanged.
+    *   **Open Questions:** Gregory Erickson asked for clarification on how this work relates to existing MPLS over IP/UDP (RFC 7510) and MPLS-SR over IP (RFC 8663), and SFL. Tarek Saad inquired about the precedence of conflicting TTL/Traffic Class fields between MPLS and IPv6, and the use of "SID" implying SRv6 relation. Authors clarified that MPLS TTL/Traffic Class would take precedence for now, and the "SID" terminology refers to a generalization of SRv6 segments.
+
+## Decisions and Action Items
+
+*   **draft-ietf-mpls-mldp-mt:** The authors (Mukesh Gupta) are to send an email to the MPLS working group mailing list to request initiation of the Working Group Last Call for publication.
+*   **draft-ietf-mpls-deprecate-route-alert:** The author (Kireeti Kompella) is to initiate a discussion on the MPLS mailing list to gather feedback on current implementations and usage of Router Alert in LSP Ping, in preparation for a potential Working Group adoption call.
+
+## Next Steps
+
+*   **draft-gandhi-mpls-iom-encapsulation:** Authors should continue engagement with the working group, addressing the GACH-related concerns and further exploring the MPLS Extension Header draft as a potential alternative for post-stack data encapsulation.
+*   **draft-ietf-mpls-first-nibble:** The working group is encouraged to discuss the utility and scope of this IANA registry on the mailing list, particularly regarding the signaling of post-stack data presence (control plane, data plane, or both), to inform a Working Group adoption decision.
+*   **draft-chen-mpls-generalize-ipv6-tunnel-mpls:** Authors are requested to clarify the draft's relationship to existing MPLS over IP/UDP solutions and SFL, provide more detail on the handling of conflicting header fields (TTL, Traffic Class), and refine the "SID" terminology to accurately reflect its generalized SRv6 context. Further mailing list discussion is expected.
+*   **General:** Authors of adopted documents are encouraged to ensure their drafts are current and shepherd write-ups are prepared to advance the publication process.

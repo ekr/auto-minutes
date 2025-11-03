@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="oauth.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF121-OAUTH-20241104-0930">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF121-OAUTH-20241105-0930">Recording 2</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF121-OAUTH-20241107-0930">Recording 3</a></p>
+<p><strong>Session Date/Time:</strong> 04 Nov 2024 09:30</p>
+<pre><code class="language-markdown"># oauth
+
+## Summary
+
+The OAuth working group meeting covered several topics including token status lists, attestation-based client authentication, transaction tokens, and a proposal for client-specific authorization server metadata. Discussions centered on specification improvements, addressing open issues, and exploring future directions for each area.
+
+## Key Discussion Points
+
+*   **Token Status List (TSL):**
+    *   Discussion on removing support for unsigned JSON/CBOR status lists to simplify the specification. Concerns were raised about forcing cryptographic protection for all status lists and the group decided to confirm consensus on the mailing list.
+    *   Debate on adding options for compression algorithms, with a final consensus against adding additional algorithm options, in favor of sticking with Zlib for simplicity and implementation ease.
+    *   Discussion on content type requirements for status lists. Concerns were raised about compatibility with systems that don't support proper content types. Justin Richer argued strongly that the standard should adhere to HTTP's content negotiation, so must be mandated.
+*   **Attestation-Based Client Authentication:**
+    *   The group decided to split concerns for trusting clients vs trusting attestation keys.
+    *   Discussion on nonce mechanisms to prevent replay attacks, leveraging learnings from the OpenID for VC group with an option to allow the client opt for a specific nonce or new nonce. George noted that we need to define a common nonce solution. Justin Richer responded that the nonce must be in context of the protocol and cryptographic carrier.
+    *   Plans to include depop optimization, where the same key can be used both for client attestation and depop for efficiency.
+*   **Transaction Tokens:**
+    *   Discovery of transaction token service (TTS) endpoint: Should it be baked in the authorization server, configured out of band, or rely on some discovery mechanism?
+    *   Deployment models for TTS were discussed, including embedded, centralized, and distributed models. The group decided to raise the topic on the WIMS mailing list to solicit feedback on relevant deployment models.
+    *   Discussion on how batch processing cases would interact with transaction tokens.
+    *   Agreement to use the &quot;Authorization Details&quot; claim from RAR (Rich Authorization Requests) at the top level of the transaction token for authorization details.
+*   **Client ID Hint Presentations:**
+    *   Presentation of a proposal to allow authorization servers to serve different metadata depending on the client ID provided in the metadata request.
+    *   Discussion on potential deployment challenges and security/privacy implications of dynamic AS metadata discovery. Justin Richer mentioned webfinger failures and deployments issues with it.
+
+## Decisions and Action Items
+
+*   **Token Status List (TSL):**
+    *   **Decision:** Remove support for unsigned JSON/CBOR status lists. (Confirm on mailing list)
+    *   **Decision:** Stick with Zlib for compression, without additional algorithm options. (Confirm on mailing list)
+    *   **Decision:** Content-type will be specified as a must in the spec.
+    *   **Action Item:** Schedule an interim meeting in early December to review progress and finalize the specification.
+    *   **Action Item:** Authors to address the open issues and editorial pass.
+*   **Attestation-Based Client Authentication:**
+    *   **Action Item:** Authors to work on open issues.
+    *   **Action Item:** Authors to define a nonces endpoint, leveraging what was learned in open ID for ECI.
+    *   **Action Item:** Consider leveraging findings to make a common nonce solution.
+*   **Transaction Tokens:**
+    *   **Action Item:** Raise deployment model questions on the WIMS mailing list to gather more feedback.
+    *   **Action Item:** Add &quot;Authorization Details&quot; claim from RAR to the top level of the transaction token.
+*   **Client ID Hint Presentations:**
+    *   **Action Item:** Continue discussion and potentially explore the proposal further based on community feedback.
+
+## Next Steps
+
+*   Authors of each draft will work on addressing the open issues and feedback received during the meeting.
+*   The working group will schedule an interim meeting in early December to review the Token Status List and Attestation-Based Client Authentication drafts.
+*   The Transaction Tokens deployment model will be raised on the WIMS mailing list for further discussion.
+*   The idea of the Client ID hint presentation will be further fleshed out and then the community will weigh in on whether it is a good idea or not.
+
+
+---
+
+**Session Date/Time:** 05 Nov 2024 09:30
+
+```markdown
+# oauth
+
+## Summary
+
+This meeting covered several key topics, including Identity Chaining, OAuth for First-Party Apps, Client ID Metadata Documents, and updates to OAuth 2.1.  A significant portion of the meeting was dedicated to a discussion of Identity Chaining and the challenges related to sender-constrained tokens.  The group also discussed the OAuth 2.1 update.
+
+## Key Discussion Points
+
+*   **Identity Chaining &amp; Confirmation Key Transfer:** The session focused on a solution to enable sending constraint tokens across trust domains.
+    *   Two deployment scenarios were presented: Resource server acting as client, and Authorization server acting as client.
+    *   Discussion arose about the necessity and applicability of the &quot;requested CNF&quot; claim. It's primarily needed when the authorization server acts as the client.
+    *   It was pointed out that binding the authorization grant is different from binding the final access token and involves different facilities.
+    *   Dean Sacks requested clearer labeling/numbering of resource servers, access tokens, and steps in the diagrams for future presentations.
+
+*   **OAuth for First-Party Apps:** A draft focused on improving the user experience for native mobile apps by leveraging existing authorization code flow building blocks.
+    *   A key question was whether to incorporate passkeys into the draft directly or keep them as an extension.
+    *   Dean Sacks suggested keeping WebAuthn separate from the main draft, as the authentication aspect is out of scope.
+    *   There was a debate about whether the first blue arrow represents PAR (Pushed Authorization Requests), and whether it should be a goal to reuse PAR. Concerns were raised about the potential for breaking existing PAR implementations.
+
+*   **Client ID Metadata Document:**  A new approach was presented to allow clients to provide metadata through alternative methods to out-of-band registration or dynamic client registration.
+    *   Neil Jenkins argued that Dynamic Client Registration can be a better approach for some use cases with careful implementation.
+    *   Concerns were raised about using HTTP URLs as client IDs, as it could conflict with existing specifications like OpenID Federation and create potential security issues.
+    *   There was discussion around the UI and whether users will truly understand what they are authorizing based on the domain name displayed.
+    *   Justin Richer highlighted the risks of using URL claiming and shared anecdotes from open ID.
+    *   George noted that DCR can be combined with client attestation and deed to get results close to those.
+
+*   **OAuth 2.1 Update:**  A brief update on the progress of the OAuth 2.1 specification.
+    *   It was noted that the string &quot;bearer&quot; in the token type header is case-insensitive.
+    *   The aim is to get the specification in shape for a working group call at the start of the next year.
+
+## Decisions and Action Items
+
+*   **Identity Chaining:**
+    *   Authors to address feedback on requested CNF, inaccurate diagrams and client terminology and publish a new draft to Datatracker.
+    *   Tony, Aaron, and George volunteered to review the updated draft.
+    *   Document author to include description of assumptions on interapplication access within security considerations.
+*   **OAuth for First-Party Apps:**
+    *   Tim Cappalli to refine the implementation with webauthN.
+    *   Dean, Andy and Kelly to review the draft.
+    *   The question of whether to use PAR or not is tracked as an issue.
+    *   Authors to explore with BlueSky regarding what research has been done for this.
+*   **Client ID Metadata Document:**
+    *   Address feedback and concerns raised about the design.
+
+## Next Steps
+
+*   The Identity Chaining authors will incorporate feedback and publish a revised draft. Reviewers will then provide their input.
+*   Tim Cappalli will be incorporating feedback into the first-party apps draft, and reviewers will look at that.
+*   The First-Party Apps team will track the issue about whether to use PAR or not.
+*   The Client ID Metadata Document team will address the feedback and concerns and continue development.
+*   The OAuth 2.1 team will work through the remaining open issues and aim for a working group last call in early 2024.
+
+
+---
+
+**Session Date/Time:** 07 Nov 2024 09:30
+
+# oauth
+
+## Summary
+
+This OAuth working group meeting covered several topics, including updates on the SD-JOT and SD-JOT-VC drafts, a discussion on a pathing construct, and two presentations on one-time confirmation tokens. A key decision was made to rename the SD-JOT-VC media type to &quot;DC+SDJOT&quot; (D for Digital) to avoid potential conflicts with existing registrations. The meeting also highlighted the need to streamline the SD-JOT-VC draft and potentially remove DID support to accelerate its RFC timeline.
+
+## Key Discussion Points
+
+*   **SD-JOT and SD-JOT-VC Updates (Brian Campbell):**
+    *   SD-JOT: Discussion of recent working group last calls and feedback received. Some unaddressed comments will be noted in the document shepherd write-up.
+    *   SD-JOT-VC: Focus on type metadata, display metadata, and a JSON pathing construct used for identifying claim locations.
+    *   Concerns raised about the re-use of the pathing construct in different specifications (SD-JOT-VC, DUCKL) and potential DRY (Don't Repeat Yourself) violations.
+    *   Discussion on the potential use of JSON Path or JSON Pointer, but reasons for not using them were explained (complexity, security concerns, and lack of certain features). A suggestion was made to document the rationale for using a custom pathing construct in the draft.
+    *   Discussion about the inappropriate use of the well-known URI for Type metadata and that this needs to be addressed
+    *   Discussion on removing DID references to speed up standardization
+    *   Discussion on registration conflicts and possible approaches on registration conflicts and possible media type registrations
+
+*   **One-Time Confirmation Tokens (Dmitri and Neil):**
+    *   Dmitri presented the concept of &quot;confirmation tokens&quot; as credentials required for specific operations (e.g., payments) and outlined the differences between confirmation tokens and access tokens.
+    *   Dmitri suggested using a 403 Forbidden response with a &quot;confirmation_required&quot; error code to signal the need for a confirmation token.
+    *   Concerns raised about the authorization server becoming like &quot;Big Brother&quot;, but the presenter suggested to make an exception for the first party deployments
+    *   Neil presented another approach based on macaroons and discharge tokens, in which an initial OAuth 2 flow authorizes the client to initiate transactions. For each transaction, a third-party service issues a discharge token bound to a specific transaction.
+    *   Neil proposed that the transaction should contain idempotency keys, in case it needs to be retried
+
+*   **General Discussion:**
+    *   Justin Richer suggested that the OAuth WG should consider the differentiation between the initial access token and other &quot;proof of possession&quot;.
+    *   There was an agreement to write down a document presenting the problem of confirmation tokens to make the problem clear.
+
+## Decisions and Action Items
+
+*   **Decision:** The SD-JOT-VC media type will be changed to &quot;DC+SDJOT&quot; (D for Digital).
+*   **Action Item:** Update the SD-JOT-VC draft to reflect the new media type name.
+*   **Action Item:** Document the rationale for not using JSON Path or JSON Pointer for the pathing construct in the SD-JOT-VC draft.
+*   **Action Item:** Remove references to DIDs in the SD-JOT-VC draft.
+*   **Action Item:** Update the well-known URI for Type metadata in the SD-JOT-VC draft
+*   **Action Item:** Ask for provisional registry for media types when making changes
+*   **Action Item:** Interested parties need to present and write a document to make the problem of &quot;confirmation tokens&quot; clear.
+
+## Next Steps
+
+*   The SD-JOT-VC draft will be updated based on the meeting's decisions and action items.
+*   The working group will continue to discuss the one-time confirmation token concepts.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

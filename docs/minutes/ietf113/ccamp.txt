@@ -1,0 +1,113 @@
+**Session Date/Time:** 25 Mar 2022 09:00
+
+# ccamp
+
+## Summary
+
+The ccamp session included updates on various working group documents, status of existing RFCs, and discussions on key technical challenges. Significant discussions revolved around the use of the `empty` YANG type for optional/mandatory attributes, the adoption of the `ancestor` XPath function in YANG models, and the scope and structure of new models like OTN Slicing and Hardware Inventory. The working group also reviewed its aggressive milestone schedule, signaling a period of high activity.
+
+## Key Discussion Points
+
+*   **Working Group Status and Milestones**
+    *   No new RFCs or documents in the editor queue.
+    *   `OTN/BE on 100G` and `Transport NBI Applicability` drafts are awaiting Shepherd write-ups.
+    *   Optical Impairment Topology YANG, RFC 1993bis, OTN Slicing, and FlexiGrid documents are in advanced stages.
+    *   Microwave Topology and WSON Tunnel documents are nearing readiness, pending TEAS dependencies.
+    *   Layer 1 CSM document updated based on YANG doctor review comments; a review by the ops area working group (L2SM, L3SM precedents) was suggested and supported by John Scudder.
+    *   DWM Interface Parameters YANG model expired; authors (Gabriel/Gert) are aligning it with topology and layer zero types.
+    *   Milestones indicate a dense schedule of deadlines for advancing mature documents to Last Call, planning to keep CCAMP active for the next few years.
+    *   An informational communication from ETSI was forwarded, noting that ETSI NFV is working on WEMA (WAN Infrastructure Manager) using NETCONF/YANG models based on IETF standards, relevant to TEAS, OPS, and CCAMP.
+
+*   **Optical Impairment Aware Topology Model** (Sergio Belotti)
+    *   **Updates:** Restructured front page, clarified terminology for WDM node/T-node and switching blocks (ROADM), aligned with ITU-T terminology by substituting OMS/OTS links with OMS/OTS media channel group, added description for Raman amplification (co-propagating and counter-propagating, modeled as two OMS elements).
+    *   **Handling of Mandatory/Optional Attributes (`empty` type):** Introduced `type empty` (from RFC 7951) to distinguish between "value unknown" for mandatory attributes and "not applicable" for optional attributes, to avoid returning strange values during implementation.
+    *   **Discussion on `empty` type:**
+        *   **Rob Wilson (Cisco):** Suggested this might be "over-engineering" and a generic YANG issue. Recommended making attributes optional if values aren't always expected, or raising this as a general question on the netmod mailing list for a consistent solution. Also suggested using an enumeration for clearer semantics if distinctions are needed.
+        *   **Italo Busi:** Agreed to raise the question to netmod, clarifying the client's need to differentiate between a missing attribute because it's not applicable vs. not available/unknown.
+        *   **Chair (Daniele):** Agreed that a more general solution from netmod is preferable, but acknowledged the immediate implementation problem.
+    *   **Status:** Model is considered in "very good shape," aiming for a stable version by end of year (IETF 115).
+
+*   **RFC 1993bis (Layer Zero Type Extension)** (Sergio Belotti)
+    *   **Updates:** This document will obsolete RFC 1993, incorporating Layer Zero Type Extension content. Added `gsnr-merging` (input to path computation) and `estimated-gsnr` (output of path computation), and more line coding identities including `gross-bit-rate`. Applied the `empty` type solution discussed for optical impairments.
+    *   **Discussion on RFC Obsoletion (bis vs. update):**
+        *   **John Scudder:** Confirmed that a "bis" document (obsoleting) is generally preferred when completely replacing a YANG model, as it keeps all material in one document.
+        *   **Robert Wilton:** Concurred, stating "bis" is the best approach for complete replacement.
+
+*   **Framework and Data Model for OTN Slicing** (Ivy Liu)
+    *   **Status:** Working group adopted; significant alignment work with TEAS network slicing framework, network slicing YANG model, and ICTN applicability for network slicing. GitHub repo transferred to ccamp.
+    *   **Conclusions from discussions:**
+        *   IETF network slicing scope includes any technology beyond 5G (e.g., OTN).
+        *   Technology-specific slicing for OTN is in scope.
+        *   OTN slice is an IETF network slice when the IETF network is OTN.
+        *   OTN Slice Controller acts as an IETF net slice realizer for OTN.
+        *   Layer 1 VPN, TE Topology, TE Tunnels can realize an OTN slice.
+        *   OTN Slice NBI is an intent interface for top-down configuration and should augment the IETF Network Slice NBI.
+    *   **Text Updates:** Clarified three options for configuring an OTN slice (direct PNC, via OTN Slice Controller, via OTN OSS/BSS), relationship between intent and realization, and that OTN Slice Control NBI is technology-specific and augments IETF Network Slice NBI.
+    *   **YANG Model Updates:** Minimal formatting updates; additional updates planned pending further clarification on OTN slicing progression.
+    *   **Harmonization:** Analyzing network slice NBI model for required parameters (technology agnostic vs. specific) and resource-based slicing support. Updating TEAS applicability draft figure.
+    *   **Next Steps:** Address working group comments, align/augment IETF network slice YANG, add OTN-specific definitions (SLOs).
+    *   **Discussion:** Igor's concerns about the necessity of OTN slicing are considered addressed. Further slicing-in-general questions to be handled in TEAS.
+
+*   **FlexiGrid Topology and Tunnel Models** (Ajantha Dahanayake)
+    *   **FlexiGrid Topology Document:** Stable, comments addressed, ready for submission if augmentation solution is accepted.
+    *   **FlexiGrid Tunnel Document:** Less mature, dependencies on other documents, further technical discussions needed (e.g., association with OTSIG, tunnel identifiers, path setup). Weekly calls continue, now including path computation.
+    *   **YANG Augmentation Issue (`ancestor` function):**
+        *   **Problem:** CCAMP/TEAS YANG models use numerous augmentations controlled by `when` statements, often with complex relative XPath paths (e.g., `../../../`).
+        *   **Proposed Solution:** Using the `ancestor` XPath function (e.g., `ancestor::nw:network[nw:network-type/nd:l3-unicast-topology]`) makes expressions more concise and readable.
+        *   **Issue:** The `yangling` tool (part of the IETF submission process) failed when using `ancestor` function. Netmod experts had mixed opinions (legitimate use, but tooling might be lacking/not well understood).
+        *   **Decision:** For now, reverted to previous code using relative paths to move forward with the document.
+        *   **Discussion:**
+            *   **Rob Wilson:** Advocated for wider deployability by sticking to simpler, existing methods, even if more verbose, due to potential tooling issues. Suggested raising this as a YANG Next issue.
+            *   **John Scudder:** Agreed on pragmatism for immediate publication but supported using `ancestor` if tooling can catch up and the use is technically correct.
+            *   **Italo Busi:** Emphasized that tool support is crucial for market adoption. Suggested sticking to relative paths for now and revisiting `ancestor` if tool support improves.
+        *   **Next Steps:** Continue with the document using relative paths, highlight the issue with other TEAS/CCAMP authors, and follow up with Netmod for broader discussion.
+
+*   **Hardware Inventory Management YANG Model** (Qichao Zhou)
+    *   **Updates:** Clarified scope for hardware inventory management on a *network scale*. Removed "optical constraint" from name. Replaced "shelf" with "chassis" (more technology agnostic). Highlighted a potential efficiency issue with the current model.
+    *   **Efficiency Issue:** When doing full synchronization in large networks, the current model (defining components as `list network-element-component` distinguished by `class`) leads to:
+        *   Heavy data load for full synchronization (difficult to use pagination).
+        *   Inefficient combination/sorting for relational databases in controllers/upper systems, as components need to be grouped by class from a flat list.
+    *   **Next Steps:** More discussion needed in CCAMP, Netmod, and TEAS to determine final model structure. Analyze more use cases. Believes the draft is ready for WG adoption, with technical issues addressed during WG process.
+    *   **Discussion:**
+        *   **Daniele:** Noted previous presentation in opsawg; if opsawg is content with work in ccamp, WG adoption poll can be run.
+        *   **Rob Wilson:** Hasn't reviewed but raised potential overlap with `entity` YANG model. Suggested looking at OpenConfig platforms YANG model for generic structures and flattening tree-like data into lists with parent/child pointers to address efficiency. Offered to follow up via email.
+        *   **Italo Busi:** Emphasized clarifying scope for "inventory" across WGs. Suggested a split: generic part in opsawg, specific part in ccamp.
+        *   **Ya'akov Stein:** Questioned if OpenConfig models address network-wide scalability vs. single NE. Stressed finding a generic way to deal with network-scale data.
+
+*   **FlexE Configuration Model** (Xiaoping Li)
+    *   **Content:** Provides configuration requirements and models for FlexE Group and FlexE Client based on ITU-T standards and existing IETF drafts.
+    *   **Requirements:** Configuring device FlexE (group, client) via frame configuration, consistency checks, updating usage state, assigning/removing FlexE clients to groups.
+    *   **Proposal:** Merge this draft into the existing `flex-e-config-model` draft and propose for working group adoption.
+    *   **Discussion:**
+        *   **Rob Wilson:** Pleased to see FlexE work resume. Supported merging the two drafts. Suggested placing FlexE client configuration *under* the FlexE container rather than client interface, for better consistency with how FlexE interfaces are set up (e.g., time slot coordination).
+        *   **Chair (Daniele):** Asked for confirmation that this merging strategy addresses any previous competing drafts, which the presenter confirmed.
+
+*   **Optical Network to Access Flow** (Chao Liu)
+    *   **Problem Statement:** Current IT/packet networks suffer from issues (jitter, congestion) for high-quality connections (finance, medicine, OTT). Optical transport networks need to play a more important role but require enhancements: flow identification/priority, guaranteed performance, small granularity, massive dynamic connections.
+    *   **Use Cases:** Multi-point access, high-quality private lines (high bandwidth, low latency, security, reliability), Cloud VR (high specifications, dynamic bandwidth).
+    *   **Requirements for Control & Management:** Support various services (L1, L2, L3), service awareness (start/end time, dynamic SLOs), reliability (fast recovery), sustainability (massive access).
+    *   **Status:** Updates problem statement focusing on optical-specific characteristics and control/management. Calls for interest and contributions.
+    *   **Discussion:**
+        *   **Ajantha Dahanayake:** Suggested deriving specific requirements from high-level use cases. Mentioned potential relevance of findings from the European TerraFlow project (optical underlay for cloud interconnect, terabit packet services) and offered to share details offline.
+        *   **Chair:** Noted awareness of related IRTF/CAMB work on future routing protocols, seeking to identify gaps and next objectives for current protocol stacks.
+
+## Decisions and Action Items
+
+*   **Decision:** For FlexiGrid, revert from using the `ancestor` XPath function to using relative paths in `when` statements for the time being, to avoid tooling issues with `yangling`. The issue will be discussed further within Netmod and across WGs.
+*   **Decision:** The proposal to publish RFC 1993 as a "bis" document (RFC 1993bis) was supported by the working group chairs and IESG liaison as the preferred method for comprehensive updates.
+*   **Decision:** The two FlexE drafts (`flex-e-config-model` and the newly presented `flex-e-configuration-model-requirement`) will be merged into a single document.
+*   **Action Item:** Chairs to raise the `empty` YANG type discussion (for mandatory/optional attributes) with the Netmod working group for a generic solution.
+*   **Action Item:** Authors of the Hardware Inventory Management YANG Model to engage with Rob Wilson and the opsawg working group to ensure broad review, clarify scope, and explore alternative model structures (e.g., OpenConfig platforms model).
+*   **Action Item:** Authors of the Optical Network to Access Flow draft to refine specific requirements from use cases and coordinate with Ajantha Dahanayake regarding potential input from the TerraFlow project.
+*   **Action Item:** Authors of the Layer 1 CSM document to request a review from the ops area working group.
+
+## Next Steps
+
+*   **General:** Progress numerous mature documents to Working Group Last Call in the coming months, in line with the dense milestone schedule.
+*   **Optical Impairment Aware Topology Model:** Address remaining open issues, aim for a stable version by IETF 115, and prepare for YANG doctor review.
+*   **RFC 1993bis:** Reconcile introductions from the original RFC and the extension, complete Appendix A documenting changes, and fix remaining issues.
+*   **OTN Slicing Framework and Data Model:** Continue addressing working group comments, start work on alignment and augmentation with IETF network slice YANG, and add OTN technology-specific definitions.
+*   **FlexiGrid Topology and Tunnel Models:** Finalize the Topology document (with the reverted XPath solution). Continue work on the Tunnel document, focusing on dependencies and technical discussions. Continue wider discussion on the `ancestor` XPath function.
+*   **Hardware Inventory Management YANG Model:** Continue discussions within CCAMP, Netmod, and TEAS to finalize model structure. Analyze more use cases across technologies.
+*   **FlexE Configuration Model:** Complete the merge of the two FlexE drafts.
+*   **Optical Network to Access Flow:** Continue to gather interest and contributions, further analyze problem statements, and refine requirements.

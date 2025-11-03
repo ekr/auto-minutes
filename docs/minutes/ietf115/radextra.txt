@@ -1,0 +1,78 @@
+**Session Date/Time:** 07 Nov 2022 13:00
+
+# radextra
+
+## Summary
+
+This BoF (Birds of a Feather) session, "radextra," was convened to discuss the persistent challenges with Radius security and scalability, and to explore the formation of a new working group to address these issues. Discussions covered operational experiences with existing Radius over TLS/DTLS standards, reasons for the continued widespread use of insecure Radius, and proposed technical solutions, including deprecating insecure transports, extending protocol capabilities, and standardizing TLS usage. There was strong consensus for the formation of a working group to advance proposed drafts and update existing experimental RFCs to Standards Track, focusing on practical deployability and enhanced security.
+
+## Key Discussion Points
+
+*   **Introduction and Agenda:** Stephen Farrell outlined the session's goal: to form a working group ("radextra") after this BoF, rather than holding another BoF. The agenda included background presentations, draft discussions, charter text review, and BoF consensus questions.
+*   **Operational and Implementation Experience with Radius (Alan DeKok):**
+    *   **Challenges with Radius TLS/DTLS Adoption:** Despite being 10 years old, RFC 6614 (Radius over TLS) and RFC 7360 (Radius over DTLS) are not ubiquitous due to implementation issues (e.g., radsecproxy, FreeRADIUS head-of-line blocking), lack of support in some NAS equipment, and difficulties with certificate management and public CAs.
+    *   **Prevalence of Insecure Radius:** Much of roaming (e.g., eduROAM, cloud vendors) still uses UDP Radius, exposing sensitive metadata (e.g., location, device information). TLS PSK is essentially unused, and certificates are hard to manage and obtain for Radius/EAP.
+    *   **Why Radius Persists:** Radius remains "good enough" for most use cases, particularly in enterprises and for lower-cost access points, where Diameter solutions are often too expensive or unavailable in open-source implementations.
+    *   **Radius Shortcomings:** Relies on MD5 (known vulnerabilities), 8-bit IDs (scalability issues), and lacks advanced features like real-time credit control found in Diameter.
+    *   **Proposed Solutions:** Focus on minor, backwards-compatible changes. Key proposals include:
+        *   Moving RFC 6614 (TLS) and RFC 7360 (DTLS) to Standards Track.
+        *   Deprecating insecure UDP/TCP Radius outside secure networks.
+        *   Developing best practices for roaming operators (e.g., ping/traceroute for Radius).
+        *   Radius without MD5 (S-Radius draft).
+        *   Extending the 8-bit ID space.
+        *   Reverse Change of Authorization (CoA) to address firewall/NAT issues and allow user disconnection.
+    *   **Implementation Status:** TLS/DTLS are widely implemented. MD5-less Radius, Status Realm (ping/traceroute), and Reverse CoA (Aruba, Cisco, FreeRADIUS) have existing implementations or drafts.
+    *   **Vendor Support:** Kari Jalonen (Radiator Software) expressed full support for the working group and proposed drafts, emphasizing the need for interoperability in roaming networks.
+    *   **Deployment Concerns (West Hardiker, Stefan Winter, Bernard Aboba, Grant Knott, Margaret Cullen, Tom Franco, Ian Dickinson):** Discussion highlighted that mandating TLS is difficult when deployment is low. Certificates and PSK management are significant hurdles. Downgrade attacks and backwards compatibility during transition periods (e.g., eduROAM with mixed TLS/non-TLS infrastructure) are key concerns. Kerberos authentication in TLS was suggested as an alternative to PKI.
+*   **RFC 6614bis - Radius over TLS (John Frederick):**
+    *   **Status:** RFC 6614 is an Experimental RFC, now 10 years old. Widely deployed in eduROAM, mandatory for federation in Germany.
+    *   **Goals for Update:** Bump to Standards Track, update TLS versions (TLS 1.1/1.2 vs. 1.3), add explicit guidance for TLS PSK identities (missing in current RFC), consider raw public keys, and Server Name Indication (SNI).
+    *   **TLS Version Discussion:** Debate on mandating TLS 1.3 immediately versus TLS 1.2 with 1.3 as optional, considering deployment challenges and the long development cycle. Concern about TLS 1.2 exposing certificate content (e.g., user/realm info) if not carefully managed (Margaret Cullen). Reference to BCP 195 (RFC 7525) for TLS considerations.
+    *   **Session Resumption:** Potential need for clarification on session resumption behavior for long-lived Radius over TLS sessions.
+*   **History of Radius Security (Bernard Aboba):**
+    *   **Long-standing Issues:** Radius security has been "barely adequate" since its inception (1997), with concerns magnified by 802.11 (geographic location leakage) and cloud Radius services.
+    *   **RFC 6421 Crypto Agility:** Initiated in 2006, this RFC outlined a two-stage process for secure Radius: experimental RFCs (completed) and promotion to Standards Track.
+    *   **Deployment Blockers:** Stage two was never completed due to limited market penetration and a lack of documented deployment experience, interoperable implementations, and integration into testing/certification processes (e.g., Wi-Fi Alliance). Getting device vendors on board is crucial.
+*   **Working Group Operations:** Modern IETF practices (interim meetings, GitHub, PRs, issue tracking) could facilitate faster progress for a new Radius WG.
+*   **Charter Text Discussion:** Attendees provided feedback on the draft charter text:
+    *   **Diameter Compatibility:** Consensus to remove reference to "compatibility between Radius and Diameter" as it was not a core focus.
+    *   **RFC 3539:** Consensus to remove the reference to being compatible with RFC 3539 (Crypto Agility Requirements for AAA) as it was considered outdated for this scope.
+    *   **Deprecating Insecure Transport:** Clarified to "deprecating insecure transport" rather than just UDP/TCP, to allow for future secure UDP transports like Quick.
+    *   **TLS Versions:** Charter should mandate "TLS 1.2 or better" and provide guidance on 1.3, without over-prescribing specific versions. Emphasis on avoiding metadata leakage.
+    *   **FIPS Compliance:** Define a Radius variant that is FIPS compliant, focusing on the transport layer without necessarily deprecating existing attributes (like CHAP/MS-CHAP) for the application layer.
+    *   **64-bit Date Type:** Not a charter-level item; can be addressed in specific drafts (e.g., for microsecond resolution in trace route functionality).
+    *   **TLS SNI:** Not a charter-level item.
+    *   **New Work Item:** Add "improve operations for multi-hop proxy networks" including "ping-like" (status server), "trace route-like" functionality, and loop detection/prevention. Margaret Cullen (Painless Security) provided specific text.
+    *   **Charter Conciseness:** General agreement to make the charter concise and avoid over-prescription of technical details.
+    *   **Error Response Packets:** Briefly discussed as a potential future consideration.
+
+## Decisions and Action Items
+
+**Decisions:**
+
+*   **Working Group Formation:** The BoF reached strong consensus to recommend the formation of a working group for "radextra."
+*   **Charter Text Refinements:**
+    *   Remove "compatibility between Radius and Diameter."
+    *   Remove reference to RFC 3539.
+    *   Change "deprecating UDP and TCP" to "deprecating insecure transport."
+    *   Charter to mandate "TLS 1.2 or better" and define how to use TLS 1.3, with careful consideration for metadata leakage (e.g., user/location info).
+    *   Include defining a FIPS-compliant Radius variant as a work item.
+    *   Remove 64-bit date type and TLS SNI from charter-level work items.
+    *   Add "improve operations for multi-hop proxy networks" including ping-like (status server), trace route-like functionality, and loop detection/prevention as a work item.
+    *   Overall charter text to be made more concise and less prescriptive on specific technical solutions.
+
+**Action Items:**
+
+*   **Proponents:** Refine the draft charter text based on the feedback received during the BoF.
+*   **Chairs/ADs:** Circulate the refined charter text on the mailing list for further review.
+*   **ADs:** Initiate the formal working group formation process, assuming positive consensus.
+*   **ADs:** Begin the search for suitable working group chairs (not conflicted as document editors or reviewers).
+*   **Stefan Winter (eduROAM):** Commit to pushing for WFA (Wi-Fi Alliance) certification of finalized RFCs to aid deployment.
+
+## Next Steps
+
+*   The proponents will revise the draft charter text reflecting the BoF discussion and circulate it for community review.
+*   The Area Directors (Paul Wouters, Roman Danyliw) will evaluate the BoF outcome and proceed with the working group formation process.
+*   A call for working group chairs will be issued.
+*   Once formed, the working group will begin work on the chartered items, including adopting relevant drafts (e.g., RFC 6614bis, S-Radius, Status Realm, Reverse CoA).
+*   Efforts will be made to engage device vendors and encourage adoption through certification processes.

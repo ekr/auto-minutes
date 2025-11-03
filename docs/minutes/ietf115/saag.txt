@@ -1,0 +1,105 @@
+**Session Date/Time:** 11 Nov 2022 09:30
+
+# saag
+
+## Summary
+
+The Security Area Advisory Group (SAAG) session covered administrative updates, including working group rechartering and new initiatives, and received an implementation report on Eduroam. Significant discussions took place on the value and challenges of formal verification in IETF protocols, and an overview of the HTTP Message Signatures draft, seeking broader security community review.
+
+## Key Discussion Points
+
+*   **Administrative Updates**
+    *   **Participation Opportunities**: Calls for participation in roles such as Document Shepherd, Working Group Chairs, and Errata resolution. Virtual participation is highly valued.
+    *   **Working Group Status**:
+        *   Consensus reached to **reopen the JOSE working group**, with chartering in flight for ISG review in early December.
+        *   The RadX BoF (reopening RADIUS work) and SATP BoF (new working group) were also held.
+        *   The new **SKIT working group** is meeting for the first time.
+    *   **Virtual Interim BoFs**: The successful use of virtual interim BoFs was highlighted, cutting new work chartering time by roughly half a meeting cycle (e.g., Tigris, Skit, JOSE).
+    *   **Chair Rotations**:
+        *   Mohit and Richard rotated out of SEC Dispatch; Rifat is stepping in.
+        *   A policy for ~4-year terms for standing working group chairs was established for SEC Dispatch.
+        *   Kathleen will rotate out of her SEC Dispatch chair role in IETF 117.
+        *   John and Hannes were thanked for stepping in to chair the new SKIT working group.
+        *   Interest in working group chairing opportunities is always welcome.
+    *   **AD-Sponsored Drafts**: `draft-ietf-legit-sp-cac` and `draft-eastlake-fnv` are awaiting AD sponsorship closure. Reviews from the community are requested as these documents do not go through a working group.
+    *   **Errata Backlog**: The security area has a growing backlog of errata, and working groups are encouraged to assist in burning it down.
+    *   **Post-Quantum Cryptography (PQC) Transition Support**:
+        *   A side meeting and mailing list discussion led to consensus for chartering a **PQC Transition Support working group**.
+        *   This working group will focus on discussing design and transition choices relevant across SEC WGs and the IETF, publishing **informational documents only**, without changing existing protocols or creating standard-track specifications.
+        *   A name and specific deliverables are still being dialed in.
+        *   Discussion points included existing technologies needing PQC agility (SSH, Kerberos, XML Signature) and the need for a dedicated PQC Directorate. Feedback was that a PQC Directorate is **not yet ready**.
+    *   **Security Directorate**: The ADs maintain a running list of common security consideration themes observed during ISG telechats. The security directorate's work in reviewing documents is highly appreciated; new participants are encouraged.
+    *   **Nomcom**: Community feedback is requested for IETF leadership candidates (ISG, IAB, etc.).
+
+*   **Eduroam Implementation Report (Margaret Cullen)**
+    *   **Overview**: An implementation report on a new AWS-based, FreeRADIUS, geographically redundant, load-balanced US Eduroam infrastructure, operating since November 2021. The overall experience has been positive, but areas for modernization were identified.
+    *   **Scale**: Handles up to 100,000 RADIUS messages/minute at peak, with over 12,000 unique authentication requests/minute. Approximately 65% of authentications succeed, 35% are rejected.
+    *   **EAP Method Distribution**: Approximately 75% PEAP, 15% EAP-TLS, 12% TTLS (Q1 2022 data).
+    *   **Request Routing Challenges**:
+        *   The global Eduroam proxy hierarchy relies on daily JSON-formatted lists of enrolled institutions (similar to an 80s host file).
+        *   Inefficient routing can lead to many proxy hops (e.g., 5 hops through 6 servers for a successful authentication) due to round-robin forwarding and lack of dynamic routing.
+        *   No standard mechanisms for loop detection/prevention, leading to discarded packets.
+    *   **Testing and Debugging Challenges**:
+        *   Few tools for multi-level proxy fabrics. Difficult to debug dropped or rejected requests due to silent drops or unhelpful error codes.
+        *   No multi-hop status server (like `ping`) or path tracing (like `traceroute`) functionality, often requiring phone calls between administrators to check logs.
+    *   **Security Challenges**:
+        *   RADIUS message protection is considered antiquated (pairwise shared secrets, MD5 hash, no algorithm agility, often plain-text key entry).
+        *   **Privacy vs. Secondary Credentials Trade-off**: PEAP/TTLS offers good user privacy (anonymous outer identity) but EAP-TLS exposes the username in the unencrypted client certificate, making it less private for roaming.
+        *   A need exists for EAP-TLS 1.3 or RadSec for encryption, or a non-PKI solution that combines both privacy and secondary credentials, which is currently unavailable in widely deployed methods.
+    *   **Operational Challenges**:
+        *   Looping is a frequent cause of dropped requests, with no standard way to signal or prevent it.
+        *   Clients often retry failed connection requests immediately and excessively (e.g., 37,000 requests in 5 minutes for a misconfigured realm).
+        *   High rate of obsolete/expired credentials.
+        *   Supplicants send bogus credentials (e.g., malformed realms, missing realms, expired certificates).
+        *   Receives many requests mistaken for 3GPP carrier networks.
+    *   **Discussion**: Load balancing is currently done based on source IP to maintain state on the same proxy. A significant unaddressed challenge is the **lack of onboarding and provisioning mechanisms for endpoints**, especially as Eduroam expands to K-12 and libraries.
+
+*   **Formal Verification Discussion**
+    *   **Context**: The SEC area frequently relies on external formal verification for critical protocols (TLS 1.3, LIME, IPsec, MLS, OAuth, NAP), finding deep vulnerabilities and increasing confidence. This practice is less common outside the SEC area. An IRTF initiative (PFC) is exploring broader formal specification. The HTTP Message Signatures draft sparked this discussion.
+    *   **Community Feedback**:
+        *   Formal methods encompass diverse tools; clarity is needed on specific properties being verified.
+        *   IETF lacks in-house expertise; **bridging with academic communities** (e.g., grad students) is crucial.
+        *   Challenges in modeling multi-party, stateful protocols and aligning academic models with IETF assumptions.
+        *   **Value of documenting assumptions and desired security properties** (even without full formal proof) was highlighted.
+        *   Need for "how-to" documentation for IETF participants without formal modeling backgrounds.
+        *   Education for consumers of formal proofs is essential to understand assumptions, attacker models, and limitations.
+        *   Formal methods may not be effective for modeling human behavior in protocols.
+        *   Academic engagement depends on finding interested professors, timing, and resources.
+        *   Consideration for **writing IETF protocols conducive to formal verification**.
+        *   **Suggestion**: A "Formal Proof Directorate" or a mechanism to pool interesting IETF work for academics (e.g., Master's projects).
+        *   **Academic Credit**: The IETF needs to address how contributions (e.g., to drafts) can be formally cited for academic credit (e.g., tenure), as this differs from typical academic publishing.
+        *   **Caution**: Formal verification is not a "magic bullet" and should not be seen as a guarantee against all attacks ("out of scope said no attacker ever").
+    *   **Conclusion**: Overall support for using formal verification, but with significant recognition of the need for education, process adjustments, and bridging with external expertise. No strong push for it to be a universal requirement, nor a rejection of its value.
+
+*   **HTTP Message Signatures (Justin Richard)**
+    *   **Goal**: Provide detached, robust signatures for HTTP messages, resilient to common HTTP intermediary changes (e.g., header reordering).
+    *   **Scope**: **Not** message encapsulation (like OHTTP, SHTTP, TLS). It's an application-focused security solution to ensure the authenticity of the sender for a specific message (request or response).
+    *   **Motivation**: Signing HTTP messages is difficult due to the protocol's "weird" nature and legitimate ways intermediaries can alter bytes without changing semantics.
+    *   **Mechanism**: Instead of canonicalization or encapsulation, it relies on creating a **common signature base string** deterministically from the message, both by the signer and verifier. The `Signature-Input` header specifies the ordered list of components signed. Uses **HTTP Structured Fields** for deterministic parsing of signature-related headers.
+    *   **Features**: Supports multiple signatures, enabling intermediaries to validate previous signatures, add their own, and pass along. Works natively with HTTP/2 and HTTP/3.
+    *   **Call for Review**: The draft is in HTTP working group last call. Authors are seeking **broader review from the SEC community** to identify any missed security/privacy considerations, sharpen corners, and test implementations.
+    *   **Implementations**: Exist in Java, Python, Go. There is a desire to integrate this into browser fetch APIs post-RFC.
+    *   **Distinction**: Not wire-compatible with Amazon's SigV4 or the older "cabbage signatures" (used by Mastodon) draft, though it leverages lessons learned.
+    *   **Discussion**:
+        *   **Use Cases**: Authenticity between pre-established client-server relationships. Key establishment is out of scope. Can combine with HTTP Digest for content authenticity.
+        *   **Encapsulation vs. Signatures**: While encapsulation schemes exist and are preferred by some for browser-to-server signing, this draft targets scenarios where signing within the HTTP layer is necessary (e.g., proxies in a data center).
+        *   **Status**: Seeking reviews from the security area.
+
+## Decisions and Action Items
+
+*   **Decision**: Recharter the JOSE working group (in flight for ISG review in early December).
+*   **Decision**: Proceed with chartering the PQC Transition Support working group (name and deliverables to be finalized, focus on informational documents).
+*   **Action Item**: Working groups with a backlog of Errata are requested to assist in its resolution.
+*   **Action Item**: Interested individuals are encouraged to contact the Security ADs regarding working group chairing opportunities.
+*   **Action Item**: The SEC community is urged to **review the HTTP Message Signatures draft** (httpsig.org, currently in HTTP WGLC) for security and privacy considerations.
+*   **Action Item**: Kyle committed to reviewing the HTTP Message Signatures draft.
+*   **Action Item**: The Security ADs will assign at least one additional SEC Directorate review for the HTTP Message Signatures draft.
+
+## Next Steps
+
+*   ISG review of the JOSE working group recharter.
+*   Finalize name and deliverables for the PQC Transition Support working group.
+*   Continue discussion on PQC agility for existing technologies (SSH, Kerberos, XML Signature) on the relevant GitHub site/Wiki.
+*   Provide feedback to the IETF Nomcom for leadership selection.
+*   Consider providing feedback to Colin, IRTF Chair, regarding the formal verification initiative, incorporating SAAG's discussion points.
+*   Continued engagement with the RadX BoF, EAP-GANT, and EMU groups for Eduroam-related issues.

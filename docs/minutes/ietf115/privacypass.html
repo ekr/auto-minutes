@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="privacypass.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-PRIVACYPASS-20221111-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2022 12:00</p>
+<h1>privacypass</h1>
+<h2>Summary</h2>
+<p>The privacypass working group met to discuss the status of its core documents, review updates to the rate-limited issuance draft, and explore related work in the W3C. Key discussions included a newly identified linkability attack in the rate-limited issuance protocol and its proposed mitigation, the potential for new token types based on zero-knowledge proofs, and the critical need for a standardized key consistency mechanism. The group also considered future work areas, including formal verification write-ups and informational drafts on usage models.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Core Documents Status</strong></p>
+<ul>
+<li>The <strong>Architecture</strong> document has completed working group last call and is being held for joint consideration with issuance and authentication documents during IESG review.</li>
+<li>The <strong>Issuance</strong> and <strong>HTTP Auth Scheme</strong> documents are currently in working group last call. Strong review activity is requested, especially for the issuance protocol.</li>
+<li>The <strong>Key Consistency</strong> informational draft was recently adopted, but no presentation was made.</li>
+<li>The <strong>Rate-Limited Issuance</strong> document is making good progress.</li>
+</ul>
+</li>
+<li>
+<p><strong>Rate-Limited Issuance Document Update</strong></p>
+<ul>
+<li><strong>Recap</strong>: This draft is an extension to the basic issuance protocol, based on the publicly verifiable variant (Type 2). It operates in a split attester/issuer model where the attester maintains state for anonymized origin buckets, counting received tokens. The issuer provides a rate limit to the attester, which drops requests if the limit is reached.</li>
+<li><strong>Protocol Differences</strong>: Uses a different token type, includes an HPKE-encrypted inner request (containing origin name) passed to the issuer via the attester, and features an anonymous origin ID from the client to the attester for counting. Signatures are exchanged to prevent client cheating (making one origin appear as two).</li>
+<li><strong>Security Issue (GitHub #6)</strong>: A linkability attack was identified involving a malicious issuer reusing the <code>issuer_origin_secret</code> across different origins. If the attester naively drops requests upon detecting a collision (assuming client cheating), this could leak information, indicating the client previously interacted with a different origin.</li>
+<li><strong>Proposed Fix</strong>: Instead of silently dropping requests, the attester should flag collision events. These patterns should be used to re-evaluate trust in either the issuer (if collisions are widespread) or the client (if singular). The attester should then reject <em>future</em> requests from a misbehaving client or stop using a malicious issuer.</li>
+<li><strong>Attester-Issuer Trust Relationship</strong>: More text is needed in the document to define the trust relationship, including validation criteria for issuer-provided rate limits (e.g., window lengths, rate limit bounds, anonymity set size).</li>
+<li><strong>Zero-Knowledge Proof (ZKP) Alternative</strong>: Nikita suggested using ZKP for client cheating prevention. This would involve new crypto (CFRG work), significantly impact the protocol, and is seen as potentially cool but too large a change for the current basic rate-limited type. It is recommended for consideration in <em>future token types</em>.</li>
+<li><strong>Other Open Issues</strong>: Discussed token key ID length, potential for hiding issuer rate limits from the attester (future work), handling rate limits with multiple origins in <code>origin_info</code>, and expanding the attester-issuer trust relationship text.</li>
+<li><strong>HPKE Key</strong>: The <code>hpke</code> key provided by the origin in a challenge could be a potential tracking vector if not consistently managed. Emphasized consistency, potentially with the help of the attester.</li>
+</ul>
+</li>
+<li>
+<p><strong>W3C Related Work Overview (Stephen, Google)</strong></p>
+<ul>
+<li><strong>Private Access Tokens</strong>: Based on blind RSA and the rate-limited token draft. Minimal deltas from existing privacy pass. Requires W3C Fetch API changes and delegation mechanisms. Likely to be discussed in WICG or Anti-Fraud CG.</li>
+<li><strong>Private State Tokens (formerly Trust Tokens)</strong>: Based on older vopf and PMB tokens. Plans to update to newer RFCs. Moving to Anti-Fraud CG. Websites (first/third party) issue tokens. Redemption records are used to reduce token spending per page. Uses <code>/.well-known/</code> for key commitments (needs standardization, related to key consistency). Runs protocol via HTTP headers on existing fetches. Future plans include Fetch JS API and HTTP authentication.</li>
+<li><strong>Device Attestation</strong>: A need for anonymous credential-style mechanisms to attest to device facts without leaking identity.</li>
+<li><strong>Aggregate Reporting API (Pat CG)</strong>: Potential use of privacy pass for authenticating client reports without direct user identifiers. May require public metadata features.</li>
+<li><strong>WebAuthn/Web Payments</strong>: Interest in blind signatures/anonymous credentials.</li>
+<li><strong>Relationship to IETF Work</strong>: W3C work is nascent; core privacy pass types are seen as a strong foundation, adaptable for new token types as W3C use cases evolve.</li>
+</ul>
+</li>
+<li>
+<p><strong>Future Work Discussion</strong></p>
+<ul>
+<li><strong>Key Consistency</strong>: A strong need exists for a concrete, standardized consistency protocol to ensure privacy guarantees. Discussion is nascent, with ideas like a &quot;CT-like&quot; approach for HTTP resources.</li>
+<li><strong>Formal Verification</strong>: The basic and rate-limited token types have undergone formal verification using <code>ProVerif</code>, which uncovered Issue #6. A public write-up of this verification is expected.</li>
+<li><strong>Attester Compromise</strong>: Concerns were raised about how to identify compromised devices/attesters without violating blinding, and how relying parties assess the strength of attesters/issuers.</li>
+<li><strong>Usage Models/Informational Draft</strong>: An informational draft describing expected privacy pass usage scenarios, potential challenges (e.g., origin draining all tokens), and mitigation strategies could be beneficial.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: For the rate-limited issuance protocol, the attester should <em>not</em> silently drop requests upon collision detection. Instead, it should flag collisions and re-evaluate trust in the issuer or client, leading to future rejection of requests for a misbehaving client or untrusting of a malicious issuer.</li>
+<li><strong>Decision</strong>: The Zero-Knowledge Proof (ZKP) approach for client cheating prevention, while interesting, should be considered for <em>future token types</em> rather than the current basic rate-limited type due to its reliance on new crypto and significant protocol changes.</li>
+<li><strong>Action Item</strong>: Working group members are urged to review and provide comments on the mailing list for the <strong>Issuance</strong> and <strong>HTTP Auth Scheme</strong> documents, currently in working group last call.</li>
+<li><strong>Action Item</strong>: Authors of the rate-limited issuance document will update the draft to incorporate the proposed fix for Issue #6 and expand text on the attester-issuer trust relationship.</li>
+<li><strong>Action Item</strong>: A write-up of the formal verification for the basic and rate-limited privacy pass types will be made public in the coming months.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue refining and advancing the <strong>Rate-Limited Issuance</strong> document based on identified issues and discussions.</li>
+<li>Track the dependency on CFRG for signature key blinding in the rate-limited document.</li>
+<li>Further discussions and potential work on a concrete <strong>Key Consistency</strong> protocol.</li>
+<li>Monitor developments in the W3C related to privacy pass and assess potential areas for IETF contributions (e.g., standardizing key commitment discovery).</li>
+<li>Consider exploring new token types, potentially leveraging ZKP, in future work.</li>
+<li>Explore the creation of an informational draft detailing <strong>privacy pass usage models</strong> and addressing operational concerns.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

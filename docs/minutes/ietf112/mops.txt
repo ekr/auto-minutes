@@ -1,0 +1,65 @@
+**Session Date/Time:** 11 Nov 2021 16:00
+
+# mops
+
+## Summary
+
+The mops session included updates from the Streaming Video Alliance (SVA) on open caching, live streaming latency, distributed tracing, and a QUIC for video streaming Proof of Concept. The working group reviewed the status of the "Operations Considerations for Adaptive Media Streaming" draft, requesting more reviews before IETF-wide last call. An update was provided on the "Media Operations Use Case for an Augmented Reality Application on Edge Computing Infrastructure" draft, leading to a discussion about broadening its scope to general low-latency, interactive applications using edge computing. A new draft on leveraging packet differences for selective dropping in video streams was presented, with feedback focusing on the need for QoE results and comparison with existing mechanisms like Diffserv. The Media Over QUIC (MOCK) side meeting was briefly summarized, highlighting its exploratory nature for various media use cases over QUIC. Finally, a two-year retrospective on the mops working group discussed its achievements as a rendezvous function, the challenges posed by virtual meetings, and its future direction, with the IESG confirming an extension of the working group's charter for another year.
+
+## Key Discussion Points
+
+*   **Streaming Video Alliance (SVA) Update**:
+    *   Released a **testbed for the Open Caching API** to facilitate adoption and compliance.
+    *   Developed **configuration APIs** to complement caching work.
+    *   Conducted **Proof of Concepts (POCs)** for live streaming (measuring latency in ABR streaming) and VR streaming (latency reduction).
+    *   Worked on a **Distributed Request Tracing** framework for end-to-end Quality of Experience (QoE) measurement.
+    *   Initiated a **QUIC for Video Streaming POC** to build a reference architecture, evaluate quick server/player implementations, and develop instrumentation for metrics collection to understand its fit in delivery environments.
+    *   SVA documents are generally available; technical specifications may involve IPR, but POCs/best practices/white papers are typically open and focus on open-source technologies.
+    *   Sanjay and Glendeen highlighted their role as a bridge between SVA and IETF.
+*   **Operations Considerations for Adaptive Media Streaming (ops-cons) Draft Update**:
+    *   The working group last call had low engagement, with only one formal review on the mailing list despite extensive GitHub activity.
+    *   Two minor open issues remain: including DNS as a potential performance problem and suggestions on comparative latency under load, but these are not considered blockers.
+    *   A lingering question concerns the "live document" aspect and how to host it within the IETF domain (currently a TinyURL to a Google Doc).
+*   **Media Operations Use Case for an Augmented Reality Application on Edge Computing Infrastructure Draft Update**:
+    *   Updates include a revised section 3.1 on the **AR data processing pipeline** (tracking, model acquisition, registration) and a new section 5 characterizing **network traffic of AR applications** (upload data dominance, lack of visual features increasing latency, large bursts causing TCP slow start).
+    *   Feedback indicated a need to clarify the relationship between device-side processing and network impact, focusing more on network operator concerns.
+    *   Discussion ensued about **broadening the draft's scope** beyond specific AR applications to encompass general low-latency, interactive applications (e.g., VR, 360-degree streaming, vehicular, IoT) that benefit from edge computing.
+    *   The unique, tighter latency constraints of AR (e.g., 15ms total budget) compared to other applications like gaming were noted.
+    *   The document's justification for edge computing should emphasize factors like battery constraints, heat, synchronization issues, and the need to split compute tasks across device, edge, and cloud.
+    *   A question was raised about quantitative QoE metrics for dynamic quality changes.
+*   **Leveraging Packet Differences for Selective Dropping in Video Streams Draft**:
+    *   Proposed a concept of **selective packet dropping at the individual packet level** based on perceived significance.
+    *   Significance could be determined by **frame type** (I, P, B), **reference relationships** between frames, **movement level** within video samples, and **Region of Interest (ROI)**.
+    *   Applications would reveal this significance metadata to network nodes (e.g., via IPv6 extension headers or IP options).
+    *   Network routers could then selectively drop packets or parts of packets from competing streams, aiming to eliminate retransmissions for less critical packets.
+    *   Discussion highlighted **Diffserv** as an existing mechanism for class-based differential dropping and questioned the quantitative QoE benefits of the proposed approach over current methods.
+    *   Concerns were raised about the complexity of implementation with modern video codecs, security solutions, and framing, requiring concrete QoE results.
+*   **Media Over QUIC (MOCK) Side Meeting Update**:
+    *   The MOCK effort is in an **exploratory phase**, discussing various media use cases (seeking, peer-to-peer, real-time, gaming).
+    *   Existing implementations include **Twitch's QUIC-based video delivery** via WebTransport, **Facebook's QUIC for ingest**, and experiments with **RTP over QUIC** and **SRT proxying over QUIC**.
+    *   Benefits observed include addressing **head-of-line blocking** by enabling parallel downloads and better cancellation.
+    *   It was suggested that mops could provide a venue for early-stage discussions and help mature use cases for MOCK.
+*   **mops 2-Year Retrospective**:
+    *   The working group (formed Nov 2019) has faced challenges due to virtual meetings impacting its "rendezvous" function, hallway conversations, hackathon engagement, and overall new work initiation.
+    *   Achievements include soliciting diverse presentations, attracting new participants, assisting other IETF work (e.g., MOCK, multicast latency), and external community engagement (SMPTE, SVA).
+    *   **IESG Review (Eric)**: The IESG has agreed to **extend the mops charter for another year**. While new work is generally down across IETF in virtual settings, mops is seen as fulfilling its role, becoming an "adjective" for similar new work.
+    *   Discussion affirmed mops' value as a "first destination" for video-related operational issues, bridging the gap between the video community and the IETF.
+    *   A concern was raised about the **quietness of the mailing list** despite meeting discussions, potentially due to changing communication habits and a nascent community culture. The possibility of a Slack channel was mentioned, but the mailing list remains the normative record.
+
+## Decisions and Action Items
+
+*   **Decision**: The mops working group charter will be extended for another year by the IESG.
+*   **Action Item**: Working group participants are urged to **review the "Operations Considerations for Adaptive Media Streaming" draft** (ops-cons) and send a simple "thumbs up" or questions to the mailing list within the next two weeks to confirm consensus for IETF-wide last call. (Sanjay, Renan, and Karen volunteered to review).
+*   **Action Item**: The authors of the "Operations Considerations for Adaptive Media Streaming" draft will explicitly confirm their support for advancing the document and their IPR status on the mailing list.
+*   **Action Item**: The chairs will explore how to address the "live document" issue for the ops-cons draft, potentially during working group or IETF-wide last call.
+*   **Action Item**: Renan (AR Edge Computing draft author) will provide a detailed response to the mailing list comments and incorporate feedback, particularly regarding the scope and the relationship between device-side processing and network impact.
+*   **Action Item**: Working group members are encouraged to be more active on the mailing list to foster a culture of open discussion and engagement, especially for new participants.
+
+## Next Steps
+
+*   **Operations Considerations for Adaptive Media Streaming Draft**: Continue to gather reviews and move towards IETF-wide last call. Address the "live document" hosting issue.
+*   **AR Application on Edge Computing Draft**: Refine the draft to potentially broaden its scope to general low-latency, interactive applications that leverage edge computing, and clarify the technical rationale for edge deployment in this context.
+*   **Packet Differences Draft**: The author is encouraged to provide quantitative QoE results and further address the technical challenges and benefits in comparison to existing mechanisms like Diffserv. The appropriate venue for this work within the IETF needs to be determined.
+*   **Media Over QUIC (MOCK) Effort**: mops will continue to monitor the MOCK effort and provide a venue for early discussions and cross-pollination where appropriate, encouraging engagement with the MOCK mailing list.
+*   **Working Group Engagement**: Chairs and participants will seek ways to increase mailing list engagement and define a clear pathway for new participants and novel topics. Investigating the use of an IETF Slack channel alongside the mailing list may be considered.
+*   **Future Direction of mops**: Explore options for increasing working group efficacy, such as unblocking unmet milestones, soliciting feedback from non-participants, coordinating with other WGs/SDOs, forecasting industry trends, and developing problem statements for the media ecosystem.

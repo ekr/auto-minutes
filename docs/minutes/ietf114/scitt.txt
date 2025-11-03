@@ -1,0 +1,69 @@
+**Session Date/Time:** 28 Jul 2022 17:30
+
+# scitt
+
+## Summary
+The session discussed the proposed SCITT (Supply Chain Integrity, Transparency, and Trust) BoF, focusing on a generalized notary service for attesting claims about artifacts. While initially driven by software supply chain integrity, there was significant debate and eventual consensus to start the working group with a primary focus on software, while designing for broader applicability to other use cases like hardware and firmware. The proposed architecture, terminology, and program of work were presented, followed by extensive discussion and community polls. The community demonstrated strong interest in forming a working group, with many willing to contribute to reviewing and writing documents.
+
+## Key Discussion Points
+
+*   **Problem Statement and Scope**:
+    *   The core idea is a "notary service" that witnesses and records statements (claims) made by an issuer about an artifact, without necessarily validating the *content* of the claim.
+    *   Initially focused on the software supply chain (e.g., Software Bill of Materials - SBOM), but designed for generic application to any supply chain (e.g., hardware, firmware).
+    *   Tension was noted between a generic framing for the charter and a specific focus on software supply chain use cases.
+    *   Several participants advocated for explicitly including hardware/firmware in the scope from the outset, arguing the problem statement is similar and avoiding re-inventing the wheel in other groups. Others argued that software has unique characteristics (e.g., Git integration, AI analysis) that make it distinct and a good starting point.
+    *   Concern was raised regarding the lack of a specific threat model or detailed security problems being solved, beyond general trustworthiness. Proponents suggested this would be developed within the working group as part of the architecture document.
+
+*   **Proposed Architecture and Terminology**:
+    *   **Claim**: Any statement made by an issuer about an artifact, signed by the issuer.
+    *   **Issuer**: Identifiable entity making a claim, providing non-repudiable statements (via signing).
+    *   **Notary/Transparency Service**: Takes signed claims, applies a designated registration policy, registers the claim into a transparency registry, and issues a receipt.
+    *   **Transparency Registry**: An append-only, tamper-evident data structure maintained by the notary. Transparency implies consistency, not necessarily full public access.
+    *   **Receipt**: A universally verifiable proof that a claim has been inserted into the registry, does not expire.
+    *   **Transparent Signed Claim**: A claim with an attached receipt, distributed to verifiers and auditors.
+    *   **Security Properties**: Provides a shared, authenticated data structure; common ground for referencing claims; disincentive for dubious claims; protection against presenting different claims to different relying parties.
+    *   **Related Work**: Acknowledges Certificate Transparency (CT), SBOM efforts, and applied cryptographic techniques (Merkle trees).
+
+*   **Relationship with Existing Work (e.g., Sigstore)**:
+    *   SCITT is seen as complementary to projects like Sigstore and Salsa. Sigstore could generate the content (claims) that SCITT would then notarize and record.
+    *   Existing CT logging implementations were noted as facing scalability challenges, suggesting SCITT could offer a better future solution.
+
+*   **Notary Role and Decentralization**:
+    *   The notary is *not* intended to be a central authority like a Certificate Authority (CA) or to issue claims on behalf of others. Its role is administrative: to register and attest *that a claim was made at a certain time* by an identified issuer.
+    *   The architecture does not presume a single, centralized notary. Multiple, interoperable notary services are expected, potentially run by different entities (e.g., open source, government, industry-specific).
+    *   The question of "who gets to be a notary" is seen as a deployment/policy decision, not a protocol concern for the IETF.
+
+*   **Program of Work and Milestones**:
+    *   Potential milestones include:
+        *   Developing a detailed threat model.
+        *   Defining architecture and terminology.
+        *   Specifying information and interaction models.
+        *   Defining consistent actor identification mechanisms.
+        *   Extending COSE for counter-signing and receipts.
+        *   Defining HTTP-based REST APIs for interactions.
+    *   Emphasis on long-term auditability and accountability.
+    *   Reusing existing IETF technology where possible (e.g., COSE).
+
+*   **Implementation Incentives**:
+    *   Microsoft expressed intent to implement SCITT-based solutions for their software and hardware products, both as an issuer and a consumer, and potentially providing notary services.
+    *   Other companies (e.g., Transmute, 14bis for aircraft components) also expressed interest in implementation.
+    *   The benefit for consumers (e.g., app stores) to verify software trustworthiness was highlighted.
+
+## Decisions and Action Items
+
+*   **Problem Statement Clarity**: The community generally understood the problem statement (56 raised hands vs. 13 not raised). However, some participants still requested more specific details on the security problems being addressed and a clearer threat model.
+*   **Charter Scope**:
+    *   A poll on whether the charter should be focused *exclusively* on the software supply chain resulted in 27 "Yes" and 44 "No", indicating a preference for broader applicability beyond an exclusive software focus.
+    *   A subsequent clarifying poll on whether participants would *still support the work if it was scoped to software to start*, yielded strong consensus (69 "Yes" vs. 4 "No").
+    *   **Decision**: The working group will proceed with a charter primarily focused on software supply chain integrity, but with a design that allows for generalization to other use cases (e.g., hardware, firmware) in the future.
+*   **Community Engagement**:
+    *   Strong willingness to review documents (57 "Yes" vs. 11 "No").
+    *   Significant willingness to write documents (31 "Yes" vs. 31 "No").
+    *   **Decision**: The current draft charter (as discussed) has strong support to move forward (61 "Yes" vs. 9 "No"). Those who did not support are encouraged to provide specific feedback on the mailing list.
+
+## Next Steps
+
+*   The Area Director (Roman) will take the feedback from the BoF, including poll results and discussion points, to the mailing list.
+*   A call for further comments on the proposed charter text will be issued for approximately two weeks.
+*   The chairs and AD will work to refine the charter text based on community feedback, particularly addressing the balance between software-specific focus and generic applicability, and incorporating threat model considerations into the working group's initial tasks.
+*   Participants with specific concerns or suggested text for the charter or other documents are encouraged to engage actively on the mailing list.

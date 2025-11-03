@@ -1,0 +1,55 @@
+**Session Date/Time:** 04 Nov 2024 09:30
+
+# avtcore
+
+## Summary
+
+The AVTcore working group meeting covered several topics: an analysis of SDP negotiation for H.265, an update on RTCP over QUIC, a presentation on RTP payload formats for VDMC, and a discussion on absolute capture timestamps. A new draft proposal was introduced concerning raw public keys in DTLS-SRTP. A key discussion revolved around the interpretation of send-receive lines in SDP and how to best handle asymmetric capabilities. The meeting also addressed concerns about where future SDP related work should be chartered in the IETF given current working group closures.
+
+## Key Discussion Points
+
+*   **H.265 SDP Negotiation (Issue 27):**
+    *   RFC 7798's specification of H.265's profile, tier, and level IDs in SDP offers and answers was discussed, focusing on ambiguities and potential errors in the specification.
+    *   Concerns about whether the responder's level ID should be allowed to be higher than the offerer's, analogous to "level asymmetry allowed" in H.264 were raised.
+    *   The lack of explicit asymmetry expression for bi-directional streams in SDP was identified as a broader issue affecting many codecs.
+    *   The practical interpretation of send-receive lines as primarily receiver capabilities was suggested.
+*   **RTCP over QUIC:**
+    *   An update on merged pull requests related to RTCP over streams, including IP, UDP, and QUIC header size estimations.
+    *   Discussion of challenges in accurately calculating header overhead and handling retransmissions.
+    *   Considerations for queuing RTCP packets and using appropriate APIs to avoid delays were shared.
+    *   Interoperability testing results with BBC's implementation, resolving a "reset stream" issue with the use of FIN bits.
+*   **RTP Payload for VDMC:**
+    *   Overview of VDMC architecture and its four bitstreams: Atlas, Base mesh, Displacement, and Attribute.
+    *   Discussion on RTP payload formats designed for base mesh and displacement.
+    *   Focus on defining the subtype for base mesh and displacement.
+    *   Clarification on the level of synchronization needed between the different VDMC streams at the decoder side.
+    *   Concerns raised about negotiating parameters for VDMC, particularly regarding the semantics of SDP parameters and whether they represent sender or receiver capabilities.
+*   **Absolute Capture Timestamp:**
+    *   Presentation on the Absolute Capture Timestamp RTP header extension, used for AV sync and end-to-end delay estimation in multi-hop systems.
+    *   Explanation of how each hop updates the timestamp with an offset reflecting the clock difference between capture and sending.
+    *   Discussion on the utility and accuracy of the capture clock offset, with some participants questioning its value compared to NTP.
+    *   Concerns about whether clock offset information is really needed and is the multi-hop system clock information useful.
+*   **Raw Public Keys in DTLS-SRTP:**
+    *   Proposal to use raw public keys in DTLS-SRTP to reduce overhead, especially in the post-quantum era.
+    *   Introduction of a new SDP attribute, `raw-key-fingerprint`, alongside the existing `fingerprint` attribute.
+    *   Alternative suggestion to reuse the existing `fingerprint` attribute with a new hash type to indicate a raw key.
+    *   Discussion on the user interface implications of these different approaches.
+    *   Mention of a proposal in the LAMP working group for null signatures to replace self-signed certificates.
+    *   Uncertainty regarding which IETF working group is best suited for defining SDP modifications related to this.
+
+## Decisions and Action Items
+
+*   **H.265 SDP Negotiation:** Bernard to update the draft to quote RFC 7798 and include a warning about potential issues with send-receive lines, after discussing with Harold.
+*   **RTCP over QUIC:** Spencer to continue working on SDP and progressing the draft until IETF 122. Continue interop testing and updating documentation.
+*   **Absolute Capture Timestamp:**
+    *   Harold to revise the draft to provide more clarity on the use cases and how the capture clock offset works. Add more clarity to exactly how the capture offset works in the draft
+    *   Harold to look into the use of clock source in 7273 RFC document.
+    *   Colin to provide an action item of collecting Google data on actual clock offsets seen in practice.
+    *   Prepare a call for adoption on the new draft once revisions are made.
+*   **Raw Public Keys in DTLS-SRTP:** Jonathan to pause work on the draft until there is more clarity regarding the work in the LAMP working group on null signatures.
+
+## Next Steps
+
+*   Authors to revise drafts based on meeting feedback.
+*   Continued interop testing for RTCP over QUIC and VDMC.
+*   Community discussion on the appropriate venue for future SDP-related work within the IETF.

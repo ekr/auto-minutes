@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="alto.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-ALTO-20220323-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 23 Mar 2022 09:00</p>
+<h1>alto</h1>
+<h2>Summary</h2>
+<p>The ALTO session covered significant progress on existing charter items, including moving several drafts to the RFC Editor queue and initiating the adoption call for a new cost model draft. Key discussions centered on the ALTO O&amp;M YANG module, a proposed new transport mechanism using HTTP/2, and the ALTO code base project with updates from the IETF 113 Hackathon. The session also introduced new ideas for socializing ALTO within the IETF and operator communities, the concept of Bottleneck Structures for network optimization, and ALTO's potential role in Computer-Aware Networking (CAN).</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrative and Updates</strong></p>
+<ul>
+<li>Chairs: Ching Wu (remote), Yen Siddharth, Mohammed Boucadair; Judy (in-room coordination).</li>
+<li>Scribes: Danielle King, Richard Yang.</li>
+<li>IPR disclosure and IETF conduct rules reminded.</li>
+<li>Blue Sheets for attendance tracking.</li>
+<li>Mailing list and weekly Webex meetings are primary communication channels.</li>
+<li>Agenda: Charter items (O&amp;M YANG, New Transport), Deployment Experience, New Non-Charter Items (Bottleneck Structures, Computer-Aware Networking).</li>
+<li><strong>Document Updates</strong>:
+<ul>
+<li>Four existing work items moved to the RFC Editor queue.</li>
+<li>One new work item, the &quot;cost model&quot; draft (companion for path vector), was adopted and is now a working group draft (00). Working Group Last Call (WGLC) is planned immediately after this meeting.</li>
+<li>Four new errata related to the ALTO base protocol were identified, requiring verification by the IESG.</li>
+</ul>
+</li>
+<li><strong>Milestone Update</strong>: Chairs proposed updating existing milestones due to extended timelines for current work and the addition of the new cost model specification.</li>
+<li><strong>Socializing ALTO</strong>: Initiatives discussed to increase ALTO's visibility within the IETF (e.g., IETF Journal paper, tutorials in other areas like OPS/HOT) and with operator/developer communities. Telefónica suggested surveying potential target working groups in IETF and IRTF during weekly calls.</li>
+</ul>
+</li>
+<li>
+<p><strong>ALTO OAM and Management YANG Module (Presented by Jason Wu)</strong></p>
+<ul>
+<li><strong>Goal</strong>: Provide a YANG data module for Operations, Administration, and Maintenance (OAM) of ALTO protocols.</li>
+<li><strong>Major Changes</strong>:
+<ul>
+<li>Document title changed from &quot;O&amp;M&quot; to &quot;OAM and Management&quot; to align with RFC 6291 guidelines.</li>
+<li>Scope and requirements aligned with RFC 7285 and RFC 7971.</li>
+<li>Initial YANG code is ready for review.</li>
+</ul>
+</li>
+<li><strong>Requirements</strong>: Based on RFC 7285/7971, with an additional requirement for extensibility to support future expansions.</li>
+<li><strong>Progress</strong>: Initial proposals are in place for server management, information resource management, performance monitoring, logging, and fault management. Work is ongoing for specific requirements.</li>
+<li><strong>Open Questions/Discussion Points</strong>:
+<ul>
+<li><strong>ANA Registries</strong>: Best practice for defining identities and enumerations managed by IANA registries (separate IANA management data model vs. integrated). This issue has been posted to the mailing list and YANG doctors.</li>
+<li><strong>Parameter Definition</strong>: Principles for deciding which parameters should be defined in the standard basic module versus delegated to algorithm extensions. Focus on basic parameters specified by ALTO base protocol.</li>
+<li><strong>ALTO Client OAM</strong>: Scope of the document for ALTO client OAM (e.g., caching, server discovery, multi-server choice). Concerns raised about the suitability of YANG models for typical ALTO client devices (applications often don't use NETCONF/RESTCONF). The AD suggested reducing scope if no strong support, but ensuring extensibility. It was also noted that a YANG model could serve as an information model. Use cases for proxies and load balancers were mentioned as potential ALTO client deployment scenarios.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>ALTO New Transport (HTTP/2) (Presented by Roland Schott)</strong></p>
+<ul>
+<li><strong>Motivation</strong>: Make HTTP/2 usable for ALTO, specifically adapting the ALTO Server-Sent Events (SSE) mechanism (currently for HTTP/1) to HTTP/2.</li>
+<li><strong>Design Overview</strong>:
+<ul>
+<li>Leverages HTTP/2 push promise mechanism for optimization.</li>
+<li>Aims for a single HTTP/2 connection between client and server.</li>
+<li>Introduces an &quot;intermediate layer&quot; with the concept of a &quot;transport queue&quot; to manage incremental updates.</li>
+<li>Client-ops identify the transport queue; client mainly has read capabilities and can request status. Server pushes updates.</li>
+</ul>
+</li>
+<li><strong>Operations</strong>: Create, read, and delete transport queues are defined. Incremental updates are read-only and associated automatically with transport queues. Server push uses HTTP/2 push promise.</li>
+<li><strong>Stream Management</strong>: Utilizes HTTP/2 stream IDs and dependencies to manage concurrency. Stream dependencies are used for transport queue creation and closure.</li>
+<li><strong>Open Points/Discussion</strong>:
+<ul>
+<li>Missing functionality: Generic message creation, client publishing info to other clients, capability negotiation, calendar semantics.</li>
+<li><strong>HTTP/3 (QUIC) Compatibility</strong>: Discussion arose regarding the design's dependency on HTTP/2 specific features (e.g., single TCP stream, in-order delivery within a stream) and the implications for HTTP/3 (QUIC), which uses UDP and might not guarantee stream-level order.</li>
+<li><strong>AD Feedback (Martin Duke)</strong>: Encouraged analysis of HTTP/3 impact. If significant re-engineering is needed, it's acceptable to ship the current draft as an HTTP/2 RFC and address HTTP/3 separately. However, a complete lack of analysis would be concerning. Roland confirmed that initial focus was on HTTP/2, but analysis for HTTP/3 is necessary.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>ALTO Code Base Project &amp; Deployment Experience (Presented by Jody and Kai Yin)</strong></p>
+<ul>
+<li><strong>Motivation</strong>: Increase ALTO visibility and adoption through a community-driven open-source code base, bringing existing efforts together. Emphasizes &quot;visibility, intelligence, and controllability&quot; for applications like edge computing.</li>
+<li><strong>Architecture</strong>: Open-source ALTO server and client components with northbound APIs (for applications like XR, V2X, IoT, CDNs, Rucio) and southbound API plugins (for SDN controllers like Mininet, OpenDaylight).</li>
+<li><strong>Methodology</strong>: Parallel track to standardization. IETF Hackathons (3 times a year) to be used as checkpoints for interoperability, new features, demos, and feedback on running code. Focus on production use cases.</li>
+<li><strong>Community</strong>: Call for participation from developers (students from universities) and mentors (experienced IETF participants). Leveraging GitHub for project resources and management.</li>
+<li><strong>Deployment Update</strong>:
+<ul>
+<li>Existing deployments: Comcast (P4P predecessor), Binox/Deutsche Telekom (SDN northbound API).</li>
+<li>New work with Telefonica (CDN deployments) and Rucio/Pacific Research Platform (5G, network slicing, SRv6). Noted a shift in use cases from P2P to CDN, 5G, and large-scale data management.</li>
+</ul>
+</li>
+<li><strong>IETF 113 Hackathon Demo</strong>:
+<ul>
+<li>Simulated network using Mininet and Docker containers.</li>
+<li>Demonstrated ALTO's capability for source selection based on network map and cost map, using two performance metrics (one-way delay, available bandwidth).</li>
+<li>Integrated ALTO client functionality into the Rucio scientific data management system for replica selection.</li>
+<li>Developed a new Python client library.</li>
+<li>Achieved 2 out of 3 planned demos (single client download showed 4-5x throughput improvement with ALTO over random selection). The third demo (multiple concurrent downloads with throughput prediction) is partially complete and targeted for the next hackathon.</li>
+<li>Demonstrated ALTO's network visibility exposure to the Rucio client.</li>
+</ul>
+</li>
+<li><strong>Rucio Historical Context (Richard Yang)</strong>: Clarified that Rucio did not have ALTO support prior to this project. The current integration is primarily for the &quot;manual workload&quot; (user downloads), with plans to integrate into the &quot;automatic workload&quot; (data replication) via database schema modifications.</li>
+</ul>
+</li>
+<li>
+<p><strong>Bottleneck Structures in ALTO (Presented by Jody)</strong></p>
+<ul>
+<li><strong>Concept</strong>: Introduced &quot;bottleneck structures&quot; as a compact way to summarize the state of a network, including topology, routing, and flow information, in a single directed graph. This concept moves beyond simply identifying a bottleneck link to revealing system-wide performance relationships.</li>
+<li><strong>Mechanism</strong>: The graph reveals how perturbations (e.g., changes in link capacity, flow rates) propagate through the system and allows for quantifying changes (derivatives). This can be used for optimizing application performance.</li>
+<li><strong>Use Cases</strong>: Network design, traffic engineering, AI applications (bottleneck structures as computational graphs).</li>
+<li><strong>ALTO Connection</strong>: Proposed as a foundational element that ALTO could leverage to empower applications with better routing, traffic shaping, and rate limiting (e.g., for XR).</li>
+<li><strong>Requirements (Preliminary)</strong>: Structured into four groups: BSGS abstraction (as an ALTO object), information needed from the network to compute BSGS, information passed to applications, and features for a potential BSGS service.</li>
+<li><strong>Status</strong>: This is an informational draft, and discussion is encouraged to understand connections and next steps.</li>
+</ul>
+</li>
+<li>
+<p><strong>Computer-Aware Networking (CAN) and ALTO (Presented by Luis M. Contreras)</strong></p>
+<ul>
+<li><strong>Problem Statement</strong>: Operators are increasingly adding compute capabilities (cloud, centralized data centers, edge). There is a need to understand where and how these capabilities are connected and to extract metrics (latency, throughput to CPUs) to optimize service delivery, management, and planning. This requires breaking silos between compute and network information.</li>
+<li><strong>ALTO's Role</strong>: The CAN BOF (at IETF 113) addressed this from a routing perspective. ALTO can complement this from a different engineering angle, by exposing combined information between network and compute capabilities (metrics, topology, reachability).</li>
+<li><strong>Goal</strong>: Explore how ALTO can contribute to this problem space, potentially proposing this as a subject for future working group re-chartering.</li>
+<li><strong>Status</strong>: Two existing drafts on the subject.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Cost Model Draft</strong>: The ALTO WG will immediately initiate a Working Group Last Call (WGLC) for the &quot;cost model&quot; draft following this meeting.</li>
+<li><strong>ALTO OAM and Management YANG Module</strong>: The ALTO WG will initiate an adoption call for this draft following this meeting.</li>
+<li><strong>ALTO OAM and Management YANG Module</strong>: Authors to continue discussions on the mailing list and with YANG doctors regarding IANA registry types and principles for parameter definition.</li>
+<li><strong>ALTO New Transport (HTTP/2) Draft</strong>: Authors to analyze the impact and implications of HTTP/3 (QUIC) on the proposed design. The analysis should be documented. Further detailed discussion of open issues to move to the mailing list.</li>
+<li><strong>ALTO Code Base Project</strong>: Continue with the planned Hackathon checkpoints and community engagement.</li>
+<li><strong>Bottleneck Structures</strong>: Authors to continue discussion on the mailing list and ALTO weekly Webex meetings to explore connections with ALTO and refine requirements.</li>
+<li><strong>Computer-Aware Networking (CAN)</strong>: Continue discussion on the mailing list and with Luis M. Contreras to explore ALTO's potential contributions and future chartering possibilities.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Proceed with WGLC for the cost model draft.</li>
+<li>Initiate adoption call for the ALTO OAM and Management YANG module draft.</li>
+<li>Continue technical discussions on the mailing list for all drafts, especially for open issues in the ALTO New Transport and ALTO OAM YANG modules.</li>
+<li>Conduct the requested analysis on HTTP/3 compatibility for the ALTO New Transport draft.</li>
+<li>Leverage future IETF Hackathons to continue development, testing, and demonstration of the ALTO code base project, focusing on production use cases.</li>
+<li>Explore cross-working group collaborations for topics like Bottleneck Structures and Computer-Aware Networking.</li>
+<li>Continue efforts to socialize ALTO within the IETF and operator/developer communities through various venues and initiatives.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

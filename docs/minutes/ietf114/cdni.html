@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="cdni.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-CDNI-20220729-1630">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 29 Jul 2022 16:30</p>
+<h1>cdni Session Minutes</h1>
+<h2>Summary</h2>
+<p>The cdni working group reviewed the status of several drafts, with a focus on updates to existing specifications and proposals for new work. Key discussions included the adoption of <code>draft-ietf-cdni-subcert-delegation</code>, the WGLC status of <code>draft-ietf-cdni-footprint-types</code>, and a significant refactoring of <code>draft-ietf-cdni-triggers-update</code> for improved extensibility. The extensive <code>draft-ietf-cdni-metadata-model</code> is planned for splitting into multiple, more manageable drafts. An update on the CTA Wave Common Access Token (CWT) was provided, discussing its features and potential interaction with CDNI. Finally, the group decided to proceed with the adoption of <code>draft-ietf-cdni-capacity-advertisement</code>, pending further discussion on specific technical points.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Milestone Updates:</strong> RFC 9246 (URI Signing) has been published. <code>draft-ietf-cdni-subcert-delegation</code> has been adopted as a working group milestone after a successful call for adoption.</li>
+<li><strong>Footprint Types (<code>draft-ietf-cdni-footprint-types</code>):</strong>
+<ul>
+<li>The draft proposes adding subdivision codes (ISO 3166-2) to RFC 8006 for more granular delegation (e.g., US-NY).</li>
+<li>Discussion on providing even finer precision (e.g., earth-based coordinates) concluded that the current approach meets known requirements, and more complex solutions should be addressed in future work if strong use cases emerge.</li>
+<li>The method for registering the new <code>subdivision</code> footprint type was discussed, with a preference for including the IANA registration directly in the current draft for efficiency.</li>
+</ul>
+</li>
+<li><strong>Triggers Update (<code>draft-ietf-cdni-triggers-update</code> - RFC 8007 bis):</strong>
+<ul>
+<li>The draft aims to extend RFC 8007 with error propagation, time/location policies, and content selection flexibility.</li>
+<li>A major issue identified was the need for new version numbers (v2, v3, etc.) for every extension.</li>
+<li>A significant reformatting is proposed to introduce a generic <code>trigger spec</code> object and an <code>action</code> trigger type, making the specification extensible without requiring new versions for future additions. This primarily involves re-arranging existing content.</li>
+</ul>
+</li>
+<li><strong>ACME Star and Subcert Delegation (<code>draft-ietf-cdni-subcert-delegation</code>):</strong>
+<ul>
+<li>The draft is nearing Working Group Last Call (WGLC).</li>
+<li>Recent comments from the chair and co-authors need to be addressed, particularly regarding the necessity of a new FCI object versus using existing metadata FCI, cleanup of introductory sections, and re-adding some context to security concerns.</li>
+</ul>
+</li>
+<li><strong>Dedicated Credentials (<code>draft-ietf-cdni-dedicated-credentials</code>):</strong>
+<ul>
+<li>Now a working group draft, it defines FCI and MI objects for dedicated credentials.</li>
+<li>The mechanism for fetching credentials via HTTP GET was removed from the draft, focusing instead on DCDN requests (FCI) and UCDN pushes (MI).</li>
+<li>A key open question is whether a new FCI object is the correct approach or if existing metadata objects can suffice, and how to manage the renewal of expiring credentials.</li>
+</ul>
+</li>
+<li><strong>CDNI Metadata and Draft Splitting (<code>draft-ietf-cdni-metadata-model</code>):</strong>
+<ul>
+<li>The current draft, which mirrors SVA Open Caching standards, has become very large and unwieldy.</li>
+<li>A proposal to split the draft into multiple, more focused documents (e.g., Metadata Expression Language, Processing Stages, Cache Control Metadata, Source Access Control, Client Access Control, Edge Control Metadata) was generally supported to improve manageability.</li>
+<li>Discussion arose about whether some of the new work, such as the Metadata Expression Language, falls within the current CDNI charter and whether YANG could be considered as a modeling/expression language.</li>
+<li>The placement of new FCI objects (alongside the metadata object they describe vs. in a separate FCI spec) was debated, with a preference for co-location in the same document.</li>
+<li>The concept of &quot;named footprints&quot; was introduced to allow UCDNs to refer to specific, DCDN-defined subsets of their network for purposes like targeted pre-caching. Suggestions included adding an opaque label to existing footprint definitions or leveraging a &quot;named metadata&quot; mechanism from the proposed Advanced API.</li>
+</ul>
+</li>
+<li><strong>CTA Wave Common Access Token (CAT):</strong>
+<ul>
+<li>An update was provided on the progress of the CWT-based token designed for streaming media.</li>
+<li>CAT is binary (CWT), offers faster decoding, more &quot;must&quot; claims for receivers, and no built-in CDNI delegation (though it could be added).</li>
+<li>Key features include network claims (supporting IP addresses, CIDs, ASNs, with granular claims &gt; /24 or /56 <em>requiring</em> encryption), geographic restrictions, and a TLS public key claim for DPOP-style usage.</li>
+<li>Composition claims (encrypted, boolean logic) and action claims (renewal, if-control response) were detailed.</li>
+<li>The impact on CDNI's existing URI signing token was discussed, concluding that CAT does not obsolete it but could benefit from CDNI defining delegation support for CAT if adoption is high.</li>
+</ul>
+</li>
+<li><strong>Capacity Advertisement (<code>draft-ietf-cdni-capacity-advertisement</code>):</strong>
+<ul>
+<li>A call for adoption was previously requested, receiving support and no dissents.</li>
+<li>The chairs confirmed proceeding with adoption.</li>
+<li>A key open question for the working group is how the draft handles footprint and sub-footprint representation, and members are encouraged to review and comment on this specific aspect.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>URI Signing:</strong> RFC 9246 has been published.</li>
+<li><strong>Subcert Delegation:</strong> Adopted as a CDNI Working Group milestone.</li>
+<li><strong>Footprint Types:</strong>
+<ul>
+<li><strong>Decision:</strong> No immediate action on more granular precision for footprint types; may be revisited in a future draft if requirements emerge.</li>
+<li><strong>Action Item:</strong> Sanjay to consult with Nir regarding the IANA registration for the <code>subdivision</code> footprint type and incorporate it directly into the <code>draft-ietf-cdni-footprint-types</code> for efficiency. Editorial cleanup and updates from Kevin's comments will also be integrated.</li>
+<li><strong>Action Item:</strong> Publish the updated <code>draft-ietf-cdni-footprint-types</code> well before IETF 115 for working group review.</li>
+</ul>
+</li>
+<li><strong>Triggers Update:</strong>
+<ul>
+<li><strong>Action Item:</strong> Sanjay and co-authors to perform a broad editorial review and cleanup of <code>draft-ietf-cdni-triggers-update</code>, including standardizing data structure forms (e.g., dictionary form).</li>
+<li><strong>Action Item:</strong> Publish the updated <code>draft-ietf-cdni-triggers-update</code> well before IETF 115 for working group review.</li>
+</ul>
+</li>
+<li><strong>ACME Star and Subcert Delegation:</strong>
+<ul>
+<li><strong>Action Item:</strong> Frederic to review and address recent comments from Kevin and Thomas on <code>draft-ietf-cdni-subcert-delegation</code> (especially regarding FCI usage and security text).</li>
+<li><strong>Action Item:</strong> Chris Lemons to note for future slide presentations to avoid using &quot;orange restricted&quot; markings for slides intended for unlimited distribution.</li>
+</ul>
+</li>
+<li><strong>Dedicated Credentials:</strong>
+<ul>
+<li><strong>Action Item:</strong> Kristoff to review comments from Kevin and Sanjay on <code>draft-ietf-cdni-dedicated-credentials</code> and continue discussion on the mailing list, specifically on the FCI vs. metadata approach and credential renewal mechanisms.</li>
+</ul>
+</li>
+<li><strong>CDNI Metadata:</strong>
+<ul>
+<li><strong>Action Item:</strong> Glenn to proceed with splitting <code>draft-ietf-cdni-metadata-model</code> into multiple, more focused drafts, taking into account the discussions on charter scope and technical organization.</li>
+<li><strong>Action Item:</strong> Mailing list discussions to commence on the use of YANG, the optimal placement of FCI objects, and the proposed concept of named footprints.</li>
+</ul>
+</li>
+<li><strong>Capacity Advertisement:</strong>
+<ul>
+<li><strong>Decision:</strong> The working group will proceed with the adoption of <code>draft-ietf-cdni-capacity-advertisement</code>.</li>
+<li><strong>Action Item:</strong> Working group members are encouraged to read the <code>draft-ietf-cdni-capacity-advertisement</code> and provide feedback on the mailing list, particularly regarding the handling of footprint and sub-footprint representation.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>All working group members are encouraged to actively review the upcoming versions of the <code>footprint-types</code>, <code>triggers-update</code>, <code>subcert-delegation</code>, <code>dedicated-credentials</code>, and <code>capacity-advertisement</code> drafts.</li>
+<li>Continue technical discussions on the mailing list regarding YANG's applicability, the structure of FCI objects, and the implementation of named footprints.</li>
+<li>The chairs aim to advance several drafts to WGLC or publication before IETF 115.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

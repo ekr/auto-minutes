@@ -1,0 +1,101 @@
+**Session Date/Time:** 28 Jul 2022 17:30
+
+# avtcore
+
+## Summary
+
+The avtcore working group held its session, beginning with a tribute to Steve Casner, a long-time contributor and former AVT chair, for his foundational work on RTP and multimedia networking. The session then proceeded to review the status of several drafts, including Cryptex, VVC, SKIP, and 7983bis, addressing IESG and Working Group Last Call comments. Significant discussion revolved around the adoption of Game State over RTP, the ongoing development of RTP over QUIC, and initial presentations for the V3C Payload Format and Green Metadata RTCP messages. Key decisions included advancing Cryptex and 7983bis, clarifying IANA registration for SKIP, and proposing a call for adoption for the V3C payload format.
+
+## Key Discussion Points
+
+*   **Tribute to Steve Casner:** Eve, Magnus, and Colin Perkins shared memories and highlighted Steve Casner's instrumental contributions to packet voice (NVP), video, RTP, the M-Bone, and his role as an exemplary IETF working group chair.
+*   **Game State over RTP:** The call for adoption received limited interest.
+*   **Cryptex Association:**
+    *   Feedback incorporated from 39 directorate comments.
+    *   The term "master key" is difficult to change due to its reference in RFC 3711.
+    *   No existing IANA registry for `definetby` profile values; proceeding without blocking the draft, but a registry might be considered later.
+    *   Clarified that a parameter supports both session and media levels.
+    *   IPR issues previously addressed.
+    *   Decision not to formally update RFC 3711, but rather to include an informative reference to Cryptex.
+    *   Discussion on deprecating RFC 6904: Decided against deprecation. If both RFC 6904 and Cryptex are supported, the sender *should* prefer Cryptex for enhanced security, with "should" vs. "must" to be further clarified regarding exceptions.
+    *   Mandatory Cryptex: If an application considers Cryptex mandatory, receiving RTP packets without Cryptex headers "MUST" stop processing.
+*   **VVC Payload Format:**
+    *   Addressed 2 of 3 IESG discusses, remaining one related to "sender properties" (RFC 3984) and SDP semantics.
+    *   Resolution: Add informative language to explain the SDP behavior.
+*   **SKIP (Secure Key Information Protocol):**
+    *   Awaiting external review resolution; Gen Art review was adequate, Art Art said "not ready."
+    *   References to `skip 214` and `210` were reaffirmed as informational, as the document specifies SDP, not the Skip protocol itself.
+    *   Discussion on removing `skip 214` reference from the document, with IANA registration to be updated to point to the new RFC.
+    *   Clarified process for IANA registration update to explicitly state the new RFC updates previous references.
+    *   Narrative comments from reviewers (intro, abstract, background) were not incorporated as they did not impact technical information.
+*   **7983bis (Demultiplexing Quick, SRTP, DTLS):**
+    *   Working Group Last Call comments addressed.
+    *   Removed explicit Quick version dependencies, referring generically to "forward to Quick."
+    *   Mandated against sending the Quick greasing transport parameter.
+    *   Clarified multiplexing of Turn channels and Quick: The overlap is not an issue if Turn server IP addresses and ports are tracked, as Turn channel packets originate from the Turn server.
+*   **RTP over QUIC (Working Group Draft):**
+    *   **Scope:** Draft describes minimal RTP over QUIC usage, expecting standard QUIC, benefiting from QUIC extensions, without changing QUIC or RTP itself. Signaling is separate.
+    *   **ALPN:** `rtpmux-quick` defined for multiplexing different flows. Discussion about the need for ALPN in SDP vs. QUIC connection setup.
+    *   **API Considerations:** Suggested QUIC implementations expose information (MDU size, ACKs, stream states) and methods (cancel streams, set congestion controllers) to RTP applications for optimization.
+    *   **Restrictions:** Current draft restricts RTP sessions to use *either* QUIC streams *or* datagrams, not both simultaneously (with intent to potentially loosen this later).
+    *   **Open Issues:**
+        *   RTP packets on QUIC streams potentially exceeding UDP MTU when translated.
+        *   Guidance needed on stream concurrency (receiver credit management).
+        *   Negotiation if datagrams are not enabled (ALPN, transport parameters, SDP). It was suggested to require datagram support in QUIC transport parameters.
+*   **RTP over QUIC SDP (Individual Draft):**
+    *   Proposed `quick/rtp/avpf` profiles.
+    *   Discussion on including `stream`, `datagram`, and `shared` capabilities in SDP profile registration.
+    *   **TCP/ICE Fallback:** Roman raised a concern about fallback to TCP if ICE TCP candidates are used, proposing registering `tcp/quick/rtp/avpf` profiles. Concerns were raised about multiple layers of congestion control (QUIC over TCP) and the complexity with ICE.
+    *   **QUIC Congestion Control Feedback:** Discussion on enabling transport layer feedback from QUIC for RTCP, potentially using Quick timestamps.
+*   **V3C Payload Format (New Draft):**
+    *   Encodes volumetric video using existing 2D codecs. Decomposes 3D frames into video components and Atlas (metadata).
+    *   Proposed encapsulation for Atlas NAL units into RTP packets, V3C-specific payload format parameters, and a new grouping type for streams.
+    *   Stefan offered to provide private access to the relevant ISO standard document for reviewers.
+*   **Green Metadata (New Draft):**
+    *   Addresses ISO 23001-11 for energy-efficient media consumption, focusing on decoder feedback to the encoder.
+    *   Proposed two new RTCP messages: Resolution Request (decoder to encoder) and Resolution Notification (encoder to decoder).
+    *   Messages are similar to AVPF payload-specific feedback, not time-critical, and require integrity protection/authentication.
+    *   Discussion on RTCP reliability for feedback and IPR disclosure (Qualcomm).
+
+## Decisions and Action Items
+
+*   **Game State over RTP:**
+    *   **Decision:** Call for adoption extended until September.
+    *   **Action Item:** Colin Jennings (proponent) to engage the interested community to express interest in the document.
+*   **Cryptex Association:**
+    *   **Decision:** `definetby` values will not require a dedicated IANA registry for this draft.
+    *   **Decision:** The draft will be updated to allow a parameter to be used at both session and media levels.
+    *   **Decision:** The draft will refer informatively to Cryptex rather than formally updating RFC 3711.
+    *   **Decision:** RFC 6904 will *not* be deprecated.
+    *   **Decision:** Text will be updated to state that if an application considers Cryptex mandatory, it "MUST" stop processing RTP packets that do not include Cryptex headers.
+    *   **Action Item:** Sergio to create a Pull Request (PR) for the remaining changes and publish a new draft.
+    *   **Action Item:** Chairs to shepherd the updated Cryptex draft to the IESG without another working group last call.
+*   **VVC Payload Format:**
+    *   **Action Item:** Stefan to publish Version 18 of the draft with informative language explaining the SDP "sender properties" behavior.
+*   **SKIP:**
+    *   **Decision:** References to `skip 214` and `210` will remain informational.
+    *   **Decision:** The explicit reference to `skip 214` will be removed from the document text.
+    *   **Action Item:** Mike/Dan to update the draft's IANA registration section to explicitly state it updates existing registrations (from `214.2`) to point to this RFC, rather than repeating them.
+    *   **Action Item:** Mike/Dan to update the draft to reflect these changes, targeting version 2 next week.
+    *   **Action Item:** Shepherd write-up to commence once IETF shepherding procedures are stable.
+*   **7983bis (Demultiplexing):**
+    *   **Decision:** Draft is considered ready for IESG processing.
+    *   **Action Item:** Chair to take over shepherding the draft to the IESG.
+*   **V3C Payload Format:**
+    *   **Action Item:** Chairs to issue a call for adoption on the mailing list for the V3C payload format draft.
+*   **RTP over QUIC / RTP over QUIC SDP:**
+    *   **Action Item:** Continued mailing list discussion on TCP/ICE fallback and the implications of using ALPNs in SDP.
+    *   **Action Item:** More detailed discussion needed on how to specify/negotiate transport layer feedback from QUIC for RTCP.
+    *   **Action Item:** Participants interested in QUIC timestamp extensions for media congestion control should express support on the Quick list.
+
+## Next Steps
+
+*   **Cryptex:** New draft will be published and submitted to IESG.
+*   **VVC Payload Format:** New draft (version 18) will be published with informative language.
+*   **SKIP:** Updated draft (version 2) will be published and shepherding process will begin.
+*   **7983bis:** Draft will be shepherded to the IESG.
+*   **RTP over QUIC:** Continue working with Spencer on SDP signaling.
+*   **RTP over QUIC SDP:** Spencer will keep the draft synchronized with the working group draft and aim for working group adoption at the next avtcore meeting.
+*   **V3C Payload Format:** A call for adoption will be initiated on the mailing list.
+*   **Green Metadata:** Authors will incorporate feedback and gather more comments before seeking working group adoption.
+*   **Working Group:** The chairs will discuss whether an interim meeting is needed before the next IETF session.

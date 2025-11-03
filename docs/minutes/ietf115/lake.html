@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lake.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-LAKE-20221108-1630">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2022 16:30</p>
+<h1>lake</h1>
+<h2>Summary</h2>
+<p>The Lake working group meeting focused primarily on reviewing and addressing the Working Group Last Call (WGLC) comments for the AD-HOC specification. Key updates to the draft, particularly regarding wire format changes from security analysis, were presented. The hackathon report showcased successful interoperability testing of AD-HOC v17 and the readiness of the traces draft. Finally, the group discussed potential future work items, including lightweight authorization (vouchers) using EAD, certificate revocation via OCSP stapling with EAD, and a draft on AD-HOC implementation guidance.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>AD-HOC Specification WGLC Comments Review:</strong></p>
+<ul>
+<li><strong>Version 17 Updates:</strong> Noted small but significant wire format changes driven by security analysis, leading to updates in the traces document.</li>
+<li><strong>Security Considerations:</strong> Clarified 128-bit security for 64-bit MACs via multiple verifications and added awareness for message 4. The key update function was moved to an appendix, changing from recommended to optional.</li>
+<li><strong>Terminology:</strong> Discussed clarifying the relationship between &quot;session key&quot; and &quot;PRK_out&quot;.</li>
+<li><strong>Signature Verification:</strong> Corrected text regarding detection of changes for non-strongly unforgeable signatures, clarifying that verification might occur in the next message.</li>
+<li><strong>Key Update Protocol:</strong> Proposed not to define a specific protocol for key update in AD-HOC, as it leverages mechanisms from the core working group.</li>
+<li><strong>Transcript Hash 2 (TH2) Encoding:</strong> Addressed confusion regarding <code>th2</code> being described as CBOR-encoded, while it's used as a raw byte string in the salt for key derivation. Consensus was to clarify the text to allow raw byte strings and explicitly note when CBOR wrapping is required.</li>
+<li><strong>State Machine Figure:</strong> Discussed the utility of adding a state machine figure to an appendix for AD-HOC, similar to TLS. Concerns were raised about the effort and precision required to avoid ambiguity.</li>
+<li><strong>EAD Error Handling:</strong> Clarified that the EAD specification should define error message handling for EAD processing failures, and AD-HOC should adapt to those rules.</li>
+<li><strong>Connection Identifier (CID) Encoding:</strong> Proposed to use <code>0x</code> notation instead of CBOR diagnostic notation (<code>H'</code>) when referring to raw byte string representations of CIDs.</li>
+<li><strong>Security Analysis References:</strong> Decided to update the document with references to additional security analyses, with further details to be handled by the RFC editor.</li>
+<li><strong>AES-CTR Stream Derivation:</strong> Discussed an option to derive a key stream from AAD instead of H-MAC within the AD-HOC KDF. This was deemed too late a change due to potential security analysis reruns.</li>
+</ul>
+</li>
+<li>
+<p><strong>Hackathon Report and Traces Draft Update:</strong></p>
+<ul>
+<li>The <code>lake-traces</code> draft version 03 is aligned with AD-HOC v17, with new test vectors reflecting protocol changes (K3, PS3, TH4).</li>
+<li>Successful interoperability testing was conducted between Marco and Milica's implementations, including role swapping (initiator/responder).</li>
+<li>Other implementations (Marek, David) are progressing, with more interoperability tests planned.</li>
+<li>The traces draft is considered stable for WGLC, but its publication should follow AD-HOC's stability to avoid further changes.</li>
+</ul>
+</li>
+<li>
+<p><strong>Unchartered Items / Future Work:</strong></p>
+<ul>
+<li><strong>Lightweight Authorization for AD-HOC (Vouchers):</strong> A draft was presented proposing the use of External Authorization Data (EAD) to carry voucher-based authorization protocols within the AD-HOC handshake, reducing latency and bandwidth in constrained environments.</li>
+<li><strong>Certificate Revocation in Resource-Constrained Environments (OCSP Stapling):</strong> A proposal to integrate OCSP stapling into AD-HOC using EAD was presented. This includes a &quot;tiny OCSP response&quot; profile to minimize message size for constrained nodes.</li>
+<li><strong>Implementation Guidance for AD-HOC:</strong> Marco proposed an informational document providing guidelines on challenges faced by implementers, such as session/key invalidation, trust models for new credentials, and integrating AD-HOC processing with application callbacks.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> The proposal to not define a specific protocol for the key update function in AD-HOC, as it leverages mechanisms from the core working group, was accepted without objection.</li>
+<li><strong>Decision:</strong> For Transcript Hash 2 (TH2) encoding, the sentence stating &quot;transcript hash is a CBOR encoded byte string&quot; will be removed. Explicit clarification will be added regarding when CBOR wrapping is needed versus when raw byte strings are used.
+<ul>
+<li><strong>Action Item:</strong> Chairs to note this text clarification for <code>th2</code> encoding.</li>
+</ul>
+</li>
+<li><strong>Decision:</strong> Authors will sketch a state machine figure for AD-HOC in an appendix and circulate a fragment to the list. The group will then decide whether to include it based on its usefulness and impact on the publication timeline.
+<ul>
+<li><strong>Action Item:</strong> Milica to provide feedback/fragment for the state machine figure. Authors to sketch the figure.</li>
+</ul>
+</li>
+<li><strong>Decision:</strong> The AD-HOC specification will be clarified to state that EAD specifications define error message handling for EAD processing failures, and AD-HOC adapts to these rules. The term &quot;processing fails&quot; will explicitly cover EAD items.</li>
+<li><strong>Decision:</strong> Connection Identifier (CID) examples in the document will be updated to use <code>0x</code> notation (e.g., <code>0x21</code>) for raw byte strings, instead of CBOR diagnostic notation (<code>H'21'</code>).</li>
+<li><strong>Decision:</strong> The AD-HOC specification will be updated to include references to the additional security analyses performed.</li>
+<li><strong>Decision:</strong> The proposed change to derive the AES-CTR key stream from AAD instead of H-MAC within the AD-HOC KDF will <em>not</em> be implemented at this late stage. The discussion will be documented.</li>
+<li><strong>Decision:</strong> The <code>lake-traces</code> draft will proceed to WGLC once the AD-HOC specification has reached a stable state and is submitted for publication requested.
+<ul>
+<li><strong>Action Item:</strong> Validate Trace #1 with another implementation before <code>lake-traces</code> WGLC.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The AD-HOC specification authors will address the WGLC comments and submit an updated version for publication requested, targeting early December if the state machine discussion is resolved quickly.</li>
+<li>An interim meeting will be scheduled to discuss the proposed future work items (Lightweight Authorization, OCSP Stapling, Implementation Guidance) <em>after</em> the AD-HOC specification has been submitted for publication, allowing the group to focus on chartered work first.</li>
+<li>Göran is encouraged to submit a new version of the Lightweight Authorization for AD-HOC draft based on received comments.</li>
+<li>Yusuf is encouraged to consider submitting the Certificate Revocation in Resource-Constrained Environments work as an IETF draft.</li>
+<li>Marco is encouraged to further develop the concept for an informational document on AD-HOC implementation guidelines.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

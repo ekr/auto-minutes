@@ -1,0 +1,125 @@
+**Session Date/Time:** 22 Jul 2025 07:30
+
+# lamps
+
+## Summary
+
+The LAMPS working group meeting covered several active documents, including CSR attestation, attestation freshness, CRL key usage validation, related certificate descriptors, and a new CA security tag. The group also discussed a draft for EST certificate renewal recommendations. Discussions focused on refining document content, addressing feedback, and ensuring practical implementability. A significant portion of the session was dedicated to debating the "hint" field within the CSR attestation document, revealing differing perspectives on its necessity and specificity.
+
+## Key Discussion Points
+
+*   **CSR Attestation:**
+    *   Addition of an optional 'certs' field to the attestation result payload to match the evidence payload structure.
+    *   Debate over the necessity and format of the "hint" field within the EvidenceStatement structure. Concerns raised about its vagueness, normative status, and impact on implementability.
+    *   Discussion of whether the "hint" field should be a URL.
+    *   Suggestion to move the "hint" field down into the contained evidence statement for container-based stuff.
+    *   Concerns about the hint field being in every single evidence.
+    *   Arguments about whether the existing optional hint field is optional, non-normative, or informative.
+*   **Attestation Freshness:**
+    *   Progress made in incorporating support for CMP, EST, and CMC protocols for nonce requests.
+*   **CRL Key Usage Validation:**
+    *   Discussion on the proposed fix for CRL key usage validation.
+    *   Scope CRL issue certificate is Version 3 and that the key usage extension is present and verify that the CRLSign bit is set.
+*   **Related Certificate Descriptors:**
+    *   Overview of the draft, including support for certificate references and discovery purpose IDs.
+*   **CA Security Tag:**
+    *   Updates on the draft, including addressing security considerations and providing additional DNS record examples.
+
+*   **EST Certificate Renewal Recommendation:**
+    *   Presentation of a draft for an EST resource to query renewal information.
+    *   Debate on why the CA knows the client's circumstances in what he asks for here is a CSR fixed for me.
+
+## Decisions and Action Items
+
+*   **CSR Attestation:**
+    *   Add the optional 'certs' field to the attestation result payload.
+    *   Authors to add a reference in the document for attestation result.
+    *   Authors to work through the WebAuthn example to assess the "hint" field usage and determine a way forward.
+    *   Authors to modify the IANA registry table to provide both the oid and the name of the ASN1 structure that that OID belongs to.
+    *   Retain in Working Group Last Call for the attribution at the attestation result.
+*   **Attestation Freshness:**
+    *   Merge the PR to have a fresh document version to look at.
+    *   Drop a mail to the list asking for review once we got the other document under control and and then updated with the new content.
+*   **CRL Key Usage Validation:**
+    *   Wrap up the last call in the next week or so.
+*   **Related Certificate Descriptors:**
+    *   Seek feedback on the purpose IDs and the use cases for the draft.
+*   **EST Certificate Renewal Recommendation:**
+    *   Look at RFC 8295 to see if the problem is already solved.
+
+## Next Steps
+
+*   Continue discussions on the "hint" field in the CSR Attestation draft to reach a consensus.
+*   Authors of various drafts to address feedback and prepare updated versions.
+*   Request further reviews of the CRL Key Usage Validation draft.
+*   Authors to implement the IANA registry table.
+
+
+---
+
+**Session Date/Time:** 23 Jul 2025 09:30
+
+# lamps
+
+## Summary
+
+The LAMPS working group meeting focused primarily on the composite signatures and KEMs drafts.  Significant time was spent discussing encoding formats, especially concerning the public and private keys. Decisions were made regarding the explicit inclusion of length tags in public keys and to proceed with a seed-only format for private keys.  The discussion then shifted to the encoding of the traditional part of the composite key, specifically whether to mandate a single encoding. The meeting concluded with a brief discussion of certificate status drafts, where concerns were raised about their necessity.
+
+## Key Discussion Points
+
+*   **Composite Signatures and KEMs Updates:**
+    *   Secret keys now use only seeds.
+    *   Reference implementation is available, generating tables and test vectors.
+    *   CMS-related sections have been removed from the core drafts to focus on core functionality.
+    *   Additional composite combinations (MLDSA/RSA and ML-KEM/RSA) were added.
+    *   The pure mode was removed, reducing the number of composite combinations from 30 to 17.
+    *   Debate ensued regarding the inclusion of a randomizer ("R") in the signature value and its impact on determinism and perceived security.
+
+*   **Randomizer Discussion:**
+    *   Concern raised that the randomizer's presence might lead to unnecessary adoption elsewhere.
+    *   Questioned whether the random number generation method provides any evidence for security gains.
+
+*   **Binding the Composite Public Key:**
+    *   Discussion on whether to bind the composite public key into the signature combiner.
+    *   The idea was rejected due to potential problems related to the availability of the public key during message digest production.
+    *   Suggestion of binding the OID instead was dismissed as the domain separator already serves that purpose.
+
+*   **HKDF Combiner Changes (KEMs):**
+    *   HKDF combiner was replaced with a direct HMAC construction for clarity and efficiency.
+    *   SHA-384 was removed, relying solely on SHA-256 and SHA-512.
+    *   Added length tag to the secret key.
+
+*   **Traditional Public Key in Secret Key Format (KEMs):**
+    *   Requirement for traditional public key to be present during decaps was identified.
+    *   Decision to include the traditional public key in the secret key format.
+
+*   **Encoding Discussion:**
+    *   Debate about the encoding format, particularly whether to mandate a single encoding or allow existing options.
+    *   HSM concerns raised re: need for software to perform lookup on component lengths.
+
+*   **Private Key Encoding (Seed vs. Expanded):**
+    *   Discussion on whether to support only seeds or also expanded keys in the private key format.
+    *   Concerns were raised about HSMs not supporting seeds and the need for interop with them.
+
+*   **Traditional Part Encoding:**
+    *   Discussion on whether to pick a single encoding for the traditional part of the composite key.
+
+*   **Certificate Status Drafts:**
+    *   Discussion of a draft updating references in RFC 5280 for certificate status information, with concerns about its necessity.
+    *   A second draft on digital certificate guidelines for web servers was briefly presented.
+
+## Decisions and Action Items
+
+*   **Public Key Encoding:** Adopt explicit length tags. Authors to grab version 4.
+*   **Private Key Encoding:** Proceed with the seed-only private key format.
+*   **Traditional Public Key in Secret Key:** Take the discussion of including or not including the traditional public key in secret key to the mailing list.
+*   **Encoding Format:** Authors will pick a single format for public keys; take discussion to the mailing list to decide which one.
+*   **Single Format Selection:** For the traditional private key, the document authors have free rein, with input from the mailing list to follow.
+*   **Tighten Combiner Section:** Authors to tighten up the combiner section regarding converting keys to format before hashing it.
+*   **Call for Adoption (Working Group Last Call):** Once the authors make the agreed upon changes, working group will proceed with call for working group last call.
+
+## Next Steps
+
+*   Authors will implement the decisions made during the meeting and publish an updated draft.
+*   Further discussion on the remaining open issues will continue on the mailing list.
+*   The working group will proceed with a call for working group last call on the updated drafts.

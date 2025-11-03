@@ -1,0 +1,118 @@
+**Session Date/Time:** 22 Mar 2022 13:30
+
+# cdni
+
+## Summary
+The cdni session at IETF 113 covered updates on several drafts, including extensions to CDNI footprints and the control interface (triggers), HTTPS delegation, and a new draft on delegated credentials subsets. A presentation on the Common Access Token (CAT) from the CTA Wave project spurred discussion on its relation to CDNI URI signing. Authors provided updates on metadata extensions and capacity insights, prompting discussions on draft scope and adoption. The working group agreed to move forward with a Working Group Last Call for the footprint extensions and to initiate the adoption process for the delegated credentials subsets draft.
+
+## Key Discussion Points
+
+*   **Administrative:**
+    *   Notewell reminder and IETF policies.
+    *   Hybrid meeting etiquette (video/audio off when not presenting, Meetecho for queueing).
+    *   Francesca volunteered as Jabber scribe.
+    *   Milestones updated: re-adoption of triggers, adoption of footprint draft. Remaining on list: URI signing, ACME star (HTTPS delegation).
+*   **CDNI Footprint Extensions (draft-ietf-cdni-footprint-extensions) - Near Sofer:**
+    *   Recap of RFC 8006 and 8008, defining footprint types and their use.
+    *   Proposed two new footprint types:
+        *   AS 3166-2 code (subdivision code, e.g., US states) for finer granularity than country code.
+        *   Footprint Union for additive semantics between different footprint types.
+    *   The draft is straightforward, registering new IANA types, with no apparent contention.
+    *   **Decision:** The chairs will initiate a Working Group Last Call for this draft.
+*   **CDNI Control Interface and Triggers (draft-sofer-cdni-control-interface) - Near Sofer:**
+    *   Recap of the controller interface for managing content/metadata (e.g., pre-positioning, invalidation).
+    *   Proposed Trigger V2 object additions:
+        *   Trigger extension list (generic items, e.g., time policy).
+        *   Content selection methods (content regexes, content playlists).
+    *   Redefined the trigger object to use a list of generic objects for metadata/content selection (Trigger Specs).
+    *   Proposed renaming the `trigger-type` field to `action`.
+    *   Discussion on the error object (`Error V2`) structure and semantics:
+        *   It relates to the `Trigger Spec List`, listing only specs relevant to the error.
+        *   Rajiv raised questions about implicit recursion for metadata/content paths and the handling of errors for items not explicitly in the original request (e.g., subtitle files within a playlist).
+        *   Rajiv suggested rolling error reporting into a generic status object that mirrors the request structure to reduce state maintenance for upstream CDNs.
+    *   Proposed changes to the Footprint Capability Interface (FCI) to state supported actions, subjects, extensions (e.g., time policy), and target selection methods (e.g., playlists).
+*   **HTTPS Delegation (draft-ietf-cdni-https-delegation) - Sanjay Mishra (for Fred Templin):**
+    *   Fred Templin was unwell; Sanjay presented the update.
+    *   Version 8 of the draft has been simplified and aligned with RFC 9115.
+    *   The document now focuses on identifying the location from where the downstream CDN fetches certificate information, assuming pre-CDN conversations (account creation, key exchange) happen via RFC 9115.
+    *   Security and privacy concerns were discussed, noting that this draft doesn't add new metadata exposure and relies on RFC 9115 and RFC 8006 for independent security concerns.
+    *   **Action Item:** The working group is requested to review version 8 of the draft for any security/privacy concerns.
+*   **Delegated Credentials Subsets (draft-wordpeak-cdni-delegated-credentials-subsets) - Kristoff Wordpeak:**
+    *   This draft is a split from the previous HTTPS delegation work, focusing on delegated credentials as ongoing work in the TLS WG.
+    *   Defines two MI objects: `confDelegatedCredential` (URL) and `DelegatedCredential` (actual credentials and key material).
+    *   Open issues include:
+        *   Aligning advertisement with certificate delegation (FCI object).
+        *   Adding privacy and security sections.
+        *   The `DelegatedCredential` object is not a "normal" MI object. Discussion on fetching mechanisms: FCI-based push (not dynamic enough for short-lived credentials) vs. dedicated interface (e.g., trigger interface) vs. ACME extension.
+        *   Supporting downstream CDN key generation.
+    *   Sanjay noted the draft refers to "subcerts" from the TLS WG, which might apply to DTLS, and suggested clarifying the focus on TLS WG work.
+    *   Kevin expressed concern about retrieving key material and potential pushback from the Security Area if CDNI specifies this, though specifying format might be acceptable.
+    *   **Decision:** The chairs will initiate a Working Group adoption call for this draft.
+*   **Common Access Token (CAT) - Chris Lemons:**
+    *   Work from the CTA Wave project, primarily for streaming media, but general.
+    *   Comparison to CDNI URI signing:
+        *   CWT-based (smaller, faster to parse for CDNs).
+        *   More "musts" for intermediaries, strong guarantees for issuers.
+        *   No built-in delegation.
+        *   More claims with greater complexity.
+    *   Features:
+        *   Encrypted claims using COSE objects directly for privacy, saving space/processing.
+        *   Additional claims: HTTP method, ALPN, arbitrary headers (with regex support), geography, TLS public key binding (for client authentication).
+        *   Nestable compositions (AND/OR/NOR) for flexibility.
+        *   Actions modifying rejection (specific status codes/headers on token rejection).
+    *   Strong types on claims (e.g., critical claim as array of claim numbers).
+    *   Chris suggested overlapping utility, potential for general usefulness of these claims, and a possible liaison between CDNI and CTA Wave.
+    *   Discussion confirmed strong industry interest in CAT due to ecosystem fragmentation, flexibility, and conciseness for performance.
+*   **URI Signing (draft-ietf-cdni-uri-signing) - Phil Shafer:**
+    *   Phil reconnected and provided an update.
+    *   Addressed Ben Kaduk's comments, including a minor clarification.
+    *   Main issue: delegated shared keys (UCDN to DCDN). Phil had removed explanation of "how to do it" and added "should not do this" text.
+    *   Ben Kaduk prefers "must not" due to security concerns.
+    *   Francesca commented that "should not" requires clear description of consequences and acceptable corner cases, which may not exist here. A stronger stance of "must not" might be appropriate for security.
+    *   Phil acknowledged the dilemma and indicated openness to changing to "must not" if the WG advises.
+    *   **Action Item:** Phil will review the text and consider changing "should not" to "must not" regarding delegated shared keys, potentially after further mailing list discussion.
+*   **Metadata Extensions (draft-ippolito-cdni-metadata-extensions) - Alfonso Ippolito:**
+    *   This draft stems from the SVA Open Caching Working Group to address gaps in CDNI metadata for video delivery.
+    *   Version 2 changes:
+        *   Categorization of generic metadata objects (e.g., Cache Control, Origin Access, Edge Control, Processing Stages, Client Access Control).
+        *   Added examples for each generic metadata object.
+        *   Minor changes to metadata expression language syntax.
+        *   More detailed description for processing stages.
+        *   Removed `mi-requested-capacity-limits` (moved to Andrew's capacity draft).
+    *   Clarifications on specific objects:
+        *   `allowCompress`: The name is confusing; it intends for upstream CDN to enforce downstream CDN compression of responses, regardless of origin. Proposed renaming to "edge compress" or "force compress."
+        *   Cache Policies (`cachePolicy`, `negativeCachePolicy`): Allows upstream to dictate downstream CDN caching behavior (e.g., TTL) independently of `Cache-Control` headers sent to the end-user.
+        *   Cross-Origin Policy: Clarified its relation to HTTP Fetch standard and how origin headers relate to client access URLs vs. delegated host matches.
+    *   Discussion on private features (point-to-point, not needing public registry) and generic traffic types.
+    *   Kevin suggested breaking the 90-page draft into multiple, smaller drafts to accelerate progress, especially for well-fleshed-out metadata vs. complex stages.
+    *   **Action Item:** Alfonso and co-authors will discuss breaking the draft into smaller pieces.
+*   **Capacity Insights (draft-ietf-cdni-capacity-insights-extension) - Andrew W.:**
+    *   Version 2 of the draft simplifies the approach.
+    *   Removed `mi-requested-capacity-limits` object, as it wasn't clear how upstream could effectively ask downstream to reconsider adjustments.
+    *   `capacityLimits` object: Main driver for downstream to communicate utilization goals. Now uses generic `limits` objects with a `subscope` (e.g., `published-host`) for more granular capacity definition within a CDNI footprint.
+    *   `telemetrySourceCapabilities` object (unchanged): Lays foundation for correlating capacity limits with telemetry sources for unambiguous measurement.
+    *   Overview of anticipated workflow: upstream polls downstream for capabilities/limits, consumes telemetry, combines data for delegation decisions.
+    *   Andrew encouraged review of the updated draft.
+
+## Decisions and Action Items
+
+**Decisions:**
+*   The chairs will initiate a Working Group Last Call for `draft-ietf-cdni-footprint-extensions`.
+*   The chairs will initiate a Working Group adoption call for `draft-wordpeak-cdni-delegated-credentials-subsets`.
+
+**Action Items:**
+*   **All Working Group Members:** Review `draft-ietf-cdni-https-delegation`, `draft-wordpeak-cdni-delegated-credentials-subsets`, `draft-ippolito-cdni-metadata-extensions`, and `draft-ietf-cdni-capacity-insights-extension` and provide feedback on the mailing list.
+*   **Phil Shafer (URI Signing author):** Review the text regarding delegated shared keys in `draft-ietf-cdni-uri-signing` and consider changing "should not" to "must not" based on WG discussion and security best practices.
+*   **Alfonso Ippolito and co-authors (Metadata Extensions):** Discuss breaking `draft-ippolito-cdni-metadata-extensions` into smaller, more manageable drafts to facilitate progression.
+*   **Rajiv:** Post questions about metadata/content recursion and error object structure (`draft-sofer-cdni-control-interface`) to the mailing list for further discussion.
+*   **Near Sofer (Control Interface/Triggers author):** Engage in mailing list discussion regarding the error object structure and content selection recursion.
+*   **Sanjay Mishra (HTTPS Delegation presenter):** Perform the shepherd pre-review for `draft-ietf-cdni-https-delegation`.
+*   **Chris Lemons (CAT presenter):** Keep the cdni WG updated on the progress and implementation of the Common Access Token (CAT) work, and potential liaison opportunities.
+
+## Next Steps
+
+*   Continue active discussions on all presented drafts on the mailing list.
+*   Chairs to follow through on initiating the Working Group Last Call for `draft-ietf-cdni-footprint-extensions`.
+*   Chairs to follow through on initiating the Working Group adoption call for `draft-wordpeak-cdni-delegated-credentials-subsets`.
+*   Aim for further progress and potentially a Working Group Last Call for `draft-ietf-cdni-https-delegation` by IETF 114.
+*   The next IETF meeting (IETF 114) will be held in Philadelphia in the third week of July.

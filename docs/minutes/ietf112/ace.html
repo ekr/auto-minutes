@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ace.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-ACE-20211109-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 09 Nov 2021 14:30</p>
+<h1>ace</h1>
+<h2>Summary</h2>
+<p>The ACE Working Group meeting focused on the progression of existing documents towards RFC status, with several drafts nearing or entering Working Group Last Call (WGLC) or IESG review. Key technical discussions revolved around refining CoAP-EEP with OSCORE integration, aligning Group Communication documents, and proposing new work items for token revocation and TLS applicability. Two new drafts, &quot;Token Revocation List&quot; and &quot;DTLS/TLS OSCORE Profile,&quot; were proposed for adoption and will proceed with calls for adoption.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Document Status:</strong></p>
+<ul>
+<li><code>coap-east</code>, <code>dtls-authorized-oauth-os-os-params</code>, and <code>osco-profiles</code> are in the RFC Queue.</li>
+<li><code>aif</code>, <code>cmpv2</code>, and <code>mqtt-tls-profile</code> are in IESG evaluation. The <code>cmpv2</code> draft requires parallel progression with Lamps documents due to a shared IANA registry.</li>
+<li><code>keygroup-coms</code> and <code>coap-eep</code> are in Working Group Last Call (WGLC).</li>
+<li><code>keygroup-combo-osco</code> is expected to move to WGLC shortly.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>ace-coap-eep</code> Document Update:</strong></p>
+<ul>
+<li>Integrated comments from Christian Carsten, restructured the document, and added an annex for TLS usage.</li>
+<li><strong>Key modifications:</strong>
+<ul>
+<li>Discovery of the authenticator is left out of scope, with discussion on CoAP resource discovery and IP layer approaches (DHCP, mDNS).</li>
+<li>Optimization to send the resource URI in the first message from the e-pier to the authenticator to save bytes.</li>
+<li><code>sender-id</code> and <code>recipient-id</code> for OSCORE are sent in the second and third messages, reusable as <code>key-id</code> for TLS.</li>
+<li>Confirmed OSCORE usage for key confirmation and establishing an OSCORE Security Association (SA). An incomplete OSCORE security context is used, completed upon successful authentication, with the first OSCORE message acting as a success indication.</li>
+<li>Considerations for proxies due to role reversal in CoAP (client to server).</li>
+<li>A CBOR structure was defined to carry negotiation information (<code>cypher-suite-negotiation</code>, <code>sender-id</code>, <code>recipient-id</code>, <code>session-lifetime</code>), designed to be extensible.</li>
+<li>The annex detailed using DTLS for SA establishment, including crypto suite negotiation and <code>key-id</code> generation from concatenated IDs.</li>
+</ul>
+</li>
+<li>The document is deemed ready to be shipped to the IESG.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>ace-keygroup-coms</code> Document Update:</strong></p>
+<ul>
+<li>Addressed WGLC reviews, including general terminology, parameter semantics, and message flows.</li>
+<li>Text organization was improved, with error handling grouped.</li>
+<li><strong>Design changes:</strong> Moved parameter definitions from <code>keygroup-common-oscor</code> to this document.</li>
+<li>Introduced new parameters for KDC control messages (multicast for advanced group re-keying).</li>
+<li>Enforced categorization of parameters (<code>MUST</code>/<code>SHOULD</code>/<code>MAY</code>) and functionalities (minimal/additional support) for profiles.</li>
+<li>Provided guidelines for error handling consistent with the main ACE framework.</li>
+<li>Group re-keying section: Included an optimization for public keys of newly joined members in re-keying messages and high-level guidelines for different approaches (1-to-1, 1-to-many).</li>
+<li>The document is considered ready for shepherd review and IESG submission.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>ace-keygroup-com-osco</code> Document Update:</strong></p>
+<ul>
+<li>This profile document was updated to be consistent with the <code>ace-keygroup-coms</code> draft (parameter definitions, terminology, optimizations, categorization).</li>
+<li>Clarifications were made on resource access, error handling, and IANA considerations.</li>
+<li>Version 12 is stable and aligned with <code>keygroup-coms</code> and <code>group-oscore</code>.</li>
+<li>An implementation exists for Eclipse Californium.</li>
+<li>Ready for WGLC.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>ace-authz-trl</code> (Token Revocation List) Presentation:</strong></p>
+<ul>
+<li><strong>Problem:</strong> Access tokens can be revoked before expiration, requiring a mechanism to inform clients and resource servers beyond pull-based introspection.</li>
+<li><strong>Solution:</strong> Defines a new service at the Authorization Server (AS) with a single resource: the Token Revocation List (TRL).</li>
+<li>The TRL contains short, hash-based identifiers (using RFC 6920) of revoked but not-yet-expired tokens.</li>
+<li>Clients and Resource Servers can register, GET, or CoAP Observe the TRL endpoint to receive notifications about pertaining revoked tokens.</li>
+<li><strong>Operation Modes:</strong>
+<ol>
+<li>Simple polling (mandatory for AS).</li>
+<li>Query for N most recent updates.</li>
+<li>STP-based mode (currently an appendix, proposed for document body) for updates after a resumption point.</li>
+</ol>
+</li>
+<li>The document is considered stable, with an ongoing implementation.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>ace-dtls-tls-profile</code> (DTLS/TLS OSCORE Profile) Presentation:</strong></p>
+<ul>
+<li><strong>Purpose:</strong> To state the applicability of the <code>ace-dtls-authorized</code> draft to TLS, not just DTLS. This would allow using the same access token and profile.</li>
+<li><strong>Rationale:</strong> To address scenarios where UDP might be blocked (NAT/firewall traversal) and 3GPP use cases (CoAP in service-based architecture with TLS 1.3 and OAuth 2.0).</li>
+<li><strong>Discussion on approach:</strong> The AD (Ben Kaduk) advised against modifying <code>ace-dtls-authorized</code> (currently in AUTH48) due to the significant overhead of pulling it back and re-doing last call/IESG review. He recommended adopting this new, short document.</li>
+<li>The document states that the <code>ace-dtls-authorized</code> profile applies to TLS as well.</li>
+</ul>
+</li>
+<li>
+<p><strong><code>ace-oscore-gm-admin</code> (OSCORE Group Manager Admin) Document Update:</strong></p>
+<ul>
+<li>This draft defines a RESTful interface at the OSCORE Group Manager for administrator users to create, delete, configure, and reconfigure OSCORE groups.</li>
+<li>Supports interactions based on link-format and CBOR/CoRL.</li>
+<li><strong>Functionalities:</strong> Create new groups, retrieve lists, retrieve/override/selectively update (via PATCH) group configurations, delete groups.</li>
+<li><strong>Updates:</strong> Improved error handling; concept of multiple administrators (primary and secondary) with defined scope semantics (work in progress); introduced PATCH for selective updates; refined default value handling; added parameters for OSCORE groups supporting cachability of protected responses (referencing <code>core-cacheable-oscore</code> informatively).</li>
+<li>Further work is needed on defining scope semantics for multiple administrators.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong><code>ace-coap-eep</code></strong>: The document is considered ready and will be shipped to the IESG.</li>
+<li><strong><code>ace-keygroup-coms</code></strong>: The document is considered ready and will proceed to shepherd review and IESG write-up.</li>
+<li><strong><code>ace-keygroup-com-osco</code></strong>: A Working Group Last Call (WGLC) will be issued shortly for a two-week review period.
+<ul>
+<li><strong>Action Item:</strong> Goran to review the <code>ace-keygroup-com-osco</code> document.</li>
+</ul>
+</li>
+<li><strong><code>ace-authz-trl</code> (Token Revocation List)</strong>: A call for adoption will be initiated.
+<ul>
+<li><strong>Action Item:</strong> Christian to review the <code>ace-authz-trl</code> document if adopted.</li>
+</ul>
+</li>
+<li><strong><code>ace-dtls-tls-profile</code> (DTLS/TLS OSCORE Profile)</strong>: A call for adoption will be initiated for this document, with a goal for fast progression.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Working Group Chairs</strong>: Issue WGLC for <code>ace-keygroup-com-osco</code> and initiate calls for adoption for <code>ace-authz-trl</code> and <code>ace-dtls-tls-profile</code>.</li>
+<li><strong>Document Authors</strong>: Address any feedback from WGLC and adoption calls.</li>
+<li><strong>AD (Ben Kaduk)</strong>: Review the newly published revision of <code>mqtt-tls-profile</code> with the aim of moving it directly to IETF Last Call.</li>
+<li><strong><code>ace-oscore-gm-admin</code> Authors</strong>: Continue work on defining detailed scope semantics for multiple administrators, with plans for discussion at a future interim meeting.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

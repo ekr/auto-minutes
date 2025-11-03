@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="6lo.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-6LO-20220323-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 23 Mar 2022 09:00</p>
+<h1>6lo Meeting Minutes - IETF 113</h1>
+<h2>Summary</h2>
+<p>The 6lo working group met to discuss the status of existing drafts, recent RFC publications, and new proposals. Key discussions revolved around the progress of drafts like &quot;IPv6 over NFC&quot; and &quot;IPv6 over PLC,&quot; potential extensions of 6lo technologies to broader network environments (including ND unicast lookup and prefix registration in EVPN/RPL contexts), and the application of SCHC (Static Context Header Compression) for efficient packet transmission over 802.15.4. A demonstration of the Native Short Address (NSA) allocation function was also presented, highlighting its efficiency and sparking discussion on redundancy requirements in constrained networks.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Document Status:</strong>
+<ul>
+<li>RFC 9159 (IPv6 Mesh over BLE) was published.</li>
+<li><strong>IPv6 over NFC draft:</strong> Currently with the AD for scheduling a review, potentially a second last call given the time elapsed.</li>
+<li><strong>IPv6 over PLC draft:</strong> Two ISG discuss ballots have been cleared. Authors need to address remaining comments from Benjamin's review in a new revision (-11) before proceeding to the RFC editor.</li>
+<li><strong>6lo Use Cases draft:</strong> Now in IETF Last Call, with AD comments to be addressed in future updates.</li>
+<li><strong>IPv6 ND Multicast Address Listener Registration:</strong> Presented with latest updates.</li>
+</ul>
+</li>
+<li><strong>IPv6 over PLC Status Update (Paolo Volpato):</strong>
+<ul>
+<li>The draft addressed previous discusses regarding the use of interface ID bits and security considerations.</li>
+<li>Section 8 (security) was expanded to cover interface ID entropy, address generation, and broader security aspects including application layer and end-to-end security.</li>
+<li>A significant discuss from Benjamin was demoted to comments, which authors plan to address in a subsequent revision.</li>
+</ul>
+</li>
+<li><strong>ND Multicast Address Listener Registration (Pascal Thubert):</strong>
+<ul>
+<li>Document updated to include &quot;all nodes multicast learning scope&quot; (ff02::1), refined RFC 8928 usage, and proposed registering IPv6 addresses (unicast, anycast, multicast) in EVPN environments via BGP using RFC 8545.</li>
+<li>Repurposed the status field in the HEAD message for DART flags (anycast/multicast).</li>
+<li>The primary impact is on RPL (RFC 9010), requiring a new Mode 5 for non-storing multicast.</li>
+<li>Discussed potential relation to the <code>constraint-cast</code> document, which will be explored offline.</li>
+</ul>
+</li>
+<li><strong>ND Unicast Lookup (Pascal Thubert):</strong>
+<ul>
+<li>Proposes standardizing the placement of the 6LBR on the backbone and using it for unicast lookups to avoid Broadcast, Unknown, and Multicast (BUM) traffic.</li>
+<li>Extends the DAD/DAC exchange with &quot;slave options&quot; for this purpose.</li>
+<li>This is seen as an evolution of efficient ND, enabling 6loWPAN devices to benefit from ND proxy services on the backbone.</li>
+</ul>
+</li>
+<li><strong>6lo ND Outside IoT / Prefix Registration (Pascal Thubert):</strong>
+<ul>
+<li>Explored the abstract nature of the 6LBR and its potential deployment in BGP-driven EVPN networks, where BGP tables effectively act as the 6LBR.</li>
+<li>Highlight the challenge of SLAAC in traditional enterprise/cloud networks (IPv4-centric, DHCPv6) that require deterministic state for EVPN, unlike IPv6's dynamic address management.</li>
+<li>RFC 8505 (stateful ND) and RFC 8928 (address protection) can provide the necessary deterministic state for redistribution into routing, offering address protection and deterministic state.</li>
+<li>Proposed extending ND with a &quot;Stub Registration Option&quot; within Router Solicitation (RS) messages to allow stub networks (e.g., IoT gateways, virtual routers in cloud) to advertise prefixes, not just host addresses.</li>
+<li>This mechanism would be agnostic to the underlying routing protocol and would require prefix-level Duplicate Address Detection (DAD), considering aggregation and sub-prefix delegation.</li>
+<li>Discussion covered the applicability to 6lo charter (IoT gateways mapping devices to IPv6 prefixes), potential overlaps with ANIMA's ACP, and &quot;Compute and Networking&quot; group's work on metrics for load balancing.</li>
+<li>The need for clarity on the relationship between advertised prefixes in a mesh/RPL environment was discussed.</li>
+</ul>
+</li>
+<li><strong>Transmission of SCHC Compressed Packets over IEEE 802.15.4 (Carlos Gomez):</strong>
+<ul>
+<li>Motivation: SCHC (RFC 8724) offers superior header compression compared to 6loWPAN HC (RFC 6282) for IPv6/UDP/CoAP, leading to significant theoretical battery life improvements.</li>
+<li>Updates in revision 02:
+<ul>
+<li>Recommended Rule ID size changed from fixed 8 bits to 1-16 bits for flexibility.</li>
+<li>Addressed the &quot;Dev/App&quot; role definition in mesh topologies (where both endpoints could be 'Dev'). Proposed to establish Dev/App roles in advance per endpoint pair when rules are installed.</li>
+<li>Clarified that App ID (compression decompression action) can be used in 15.4 due to source/destination fields in L2 headers.</li>
+<li>Emphasized that existing SCHC security considerations (RFC 8724, 8824) and cryptographic integrity protection (supported by 15.4 L2 encryption/auth) apply.</li>
+</ul>
+</li>
+<li>Next steps include stabilizing Dev/App role definitions, rule storage strategies, and clarifying the scope (1-hop, mesh-under vs. route-over).</li>
+</ul>
+</li>
+<li><strong>Native Short Address for LLN Expansion (Luigi Iannone, Li Yan for demo):</strong>
+<ul>
+<li>The draft clarifies scope for static deployments with stateless forwarding and addresses, and the address allocation function.</li>
+<li>Two new ND options were introduced: &quot;NSA Request Address Option&quot; and &quot;NSA Assign Address Option,&quot; for address request and assignment by parent nodes.</li>
+<li>A demonstration showcased the NSA allocation function's efficiency, generating addresses with short lengths (e.g., average 4 bits for a 4-layer tree, max 6 bits). It allows nodes to calculate next hops without a separate routing table.</li>
+<li>Discussion highlighted the current tree-based addressing model's limitation in redundancy (a single node failure disconnects a subtree) and the need to consider more robust, redundant topologies (e.g., two non-congruent trees, multiple addresses per device) for safety-critical and IoT environments.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>IPv6 over PLC draft:</strong> Authors to incorporate Benjamin's latest comments into a new draft revision (-11), after which the document can proceed to the RFC editor.</li>
+<li><strong>ND Multicast Address Listener Registration:</strong> Pascal Thubert to discuss offline with Carsten about the constraint-cast document. The working group is asked to review the draft and provide comments on the mailing list to signal readiness to pass the document's token to the ROLL working group.</li>
+<li><strong>ND Unicast Lookup:</strong> Discussion and a call for adoption on the mailing list are requested.</li>
+<li><strong>Prefix Registration:</strong> Discussion on the mailing list is requested to assess interest and determine a go/no-go decision for starting a new draft on this topic.</li>
+<li><strong>Transmission of SCHC Compressed Packets over IEEE 802.15.4:</strong> Authors to continue working on clarifying Dev/App role definitions, rule storage mechanisms, and the scope of applicability (e.g., defer route-over scenarios). It was suggested to make 1-2 more rounds of revisions as authors before formally requesting working group adoption, potentially targeting IETF 114.</li>
+<li><strong>Native Short Address for LLN Expansion:</strong> Authors to incorporate feedback received after the last submission and consider exploring how to build redundant topologies (e.g., two non-congruent trees with multiple addresses per device) in future revisions, particularly for safety-critical IoT applications.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>IPv6 over NFC:</strong> AD Eric Klein will follow up with Lars and schedule it for an AD chat in late April or May.</li>
+<li><strong>IPv6 over PLC:</strong> Submit a -11 version addressing Benjamin's comments.</li>
+<li><strong>ND Multicast Address Listener Registration:</strong> Engage with ROLL working group.</li>
+<li><strong>Prefix Registration:</strong> Further discussion on the mailing list to gauge interest in formalizing this work into a draft.</li>
+<li><strong>SCHC over 15.4:</strong> Authors to refine the draft's architecture based on feedback.</li>
+<li><strong>Native Short Address:</strong> Authors to address redundancy concerns and prepare for a potential working group adoption call after the next revision.</li>
+<li>The working group will continue discussions on the mailing list for several topics and aims to meet again, in person or virtually, at the next IETF.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,77 @@
+**Session Date/Time:** 21 Mar 2022 09:00
+
+# TEEP (Trusted Execution Environment Provisioning)
+
+## Summary
+The TEEP session at IETF 113 focused primarily on the status of the TEEP Architecture and TEEP Transport documents, which are now in IETF Last Call following updates to address IESG feedback. Key technical discussions revolved around clarifying TEE trust models, handling Denial of Service concerns, refining cipher suite selections, and defining an EAT profile for TEEP. The hackathon report highlighted implementation experiences with EAT and COSE. A new presentation introduced the concept of a Confidential Computing Aware Network (CAN) and its potential integration with TEEP and RATS.
+
+## Key Discussion Points
+
+### TEEP Architecture Document (draft-ietf-teep-architecture-16)
+- **IESG Feedback on RFC 8890 (Internet is for End-Users):**
+    - The document was updated to clarify that TEEs protect assets from unauthorized entities, potentially including the device owner, by establishing a "hybrid device" model with local and remote users. Examples like gaming consoles and cloud hosting were cited.
+    - **Discussion (Brendan Morin):** Raised concerns about user rights, proposing local attestation for users to verify TEE software. Dave explained that some TEE use cases (confidential code) intentionally prevent local users from vetting code; it's an opt-in business model. Brendan also questioned the "remote user" concept, arguing the person holding the device is the end-user.
+- **Denial of Service (DoS) by REE:**
+    - Text was added clarifying that a compromised Rich Execution Environment (REE) can prevent TEEs from receiving policy updates. Mitigation involves using attestation to reject non-compliant TEEs.
+- **HTTPS Certificate Validation (OCSP/CRLs):**
+    - It was decided not to mandate OCSP/CRLs for HTTPS certificates in TEEP, citing scalability concerns for constrained devices and TEEP's internal end-to-end keying.
+- **Bundling Examples & Abstract APIs:**
+    - The document expanded bundling examples to cover five scenarios and clarified the editorial distinction between `ProcessConnect` (new session) and `ProcessTeepMessage` (existing session) abstract APIs.
+- **Same Key for Signing and Encryption:**
+    - Text was added to acknowledge the academic discussion around using the same key for both signing and encryption for TEE and TAM pairs.
+
+### TEEP Transport Document
+- The document was updated to reference the Architecture document's security considerations regarding REE DoS.
+- HTTP references were updated to current Internet Drafts/RFCs.
+- Obsolete text regarding multiple media types (JSON/CBOR) was removed, as only CBOR is now supported.
+- Consistency updates were made for the `UnrequestTa` API.
+
+### Hackathon Report (Akira)
+- **Attestation Model:** The hackathon implementation primarily focused on the "Background Check Model" for EAT, where the TAM verifies directly with the attestation verifier. This is suitable for constrained devices. Discussion arose on making the TEEP EAT profile more generic to allow the "Passport Model" in the future.
+- **CBOR/JSON for EAT:** While EAT supports both, the implementation found it clearer for the `evidence-format` to explicitly indicate JSON or CBOR.
+    - **Hannes:** Suggested TEEP only support CBOR for EATs, for consistency with the TEEP protocol's CBOR-only encoding.
+    - **Dave:** Noted TEEP treats EATs as opaque payloads, so the protocol doesn't strictly depend on the internal format. Also suggested RATS WG define more specific EAT media types (e.g., `application/eat+jwt`).
+- **COSE for Signatures and Algorithms:** Decision was made to use COSE for signatures and CBOR objects, aligning with SUIT for implementation ease.
+    - **Required Ciphersuites:** SHA-256 (SUIT requirement), ES256 or EdDSA for device-side signing (TAM must implement both).
+    - **Recommended/Optional:** HSS-LMS (quantum resistance), RSA, AES Symmetric (GCM/CCM). RSA key length specification (e.g., 2048/4096) was highlighted as needing expert input.
+    - **Russ Housley:** Recommended adding HSS-LMS to the MAY list for TEEP, but not as a mandatory requirement, citing differences in firmware update contexts.
+
+### TEEP Protocol Document
+- **Cipher Suites:** The document now references the COSE algorithms registry. A table of mandatory and optional signing, encryption, and MAC algorithms was presented. Discussion re-confirmed HSS-LMS should be considered a "MAY" or "recommended" algorithm.
+- **EAT Profile (Issue 171):**
+    - A preliminary EAT profile for TEEP was outlined, including placeholders for profile labels, CBOR encoding rules (definite length arrays/maps/strings, preferred serialization), and allowing detached EAT bundles.
+    - **Hannes:** Suggested this TEEP EAT profile could serve as a "core EAT" for the RATS working group, given its minimal requirements.
+    - **Verification Key ID:** Text initially specified key ID as a hash of the public key. **Hannes & Ben Kaduk:** Highlighted that key IDs can be more generic (e.g., UUIDs or single bytes) and not necessarily tied to key material.
+- **Claims (Issue 165):**
+    - All relevant claims are currently optional in the TEEP EAT profile.
+    - **Attestation Results vs. Evidence:** The TAM (relying party) consumes attestation *results*, not evidence. Claims in results are often derived from evidence.
+    - **Hannes (critical discussion):** Strongly objected to text implying that "claims in attestation results might be copied from evidence" without explicit policy and provenance. He argued that copying raw evidence values into attestation results without clear semantics breaks trust and is a design flaw. Dave argued TEEP, as a relying party, cannot know the source of claims in results. This point requires further extensive discussion.
+- **Manifest & Software Evidence Claims:** The software name claim in RATS will refer to the *canonical URI of the SUIT manifest* for a component.
+
+### Confidential Computing Aware Network (CAN) (Pengling Wei)
+- **Introduction:** Proposed a novel "Confidential Computing Aware Network" (CAN) architecture, aiming for joint optimization of computing and network resources, with network-layer awareness. This differs from traditional cloud computing.
+- **Motivation for CC:** To enable trust in third-party (e.g., edge) or even central compute resources within the CAN. Requires TEE-enabled CPUs and TEEP/RATS at the execution/management layer.
+- **Architecture:** Introduced "middleware" and "middleware repository" components to provide convenient, transparent access to confidential computing for applications, abstracting TEEP/RATS functions.
+    - TEEP is used for provisioning middleware into a trusted execution environment (e.g., guest VM with TEEP Agent).
+    - RATS is used for remote attestation of the deployed middleware and application, allowing the application owner to verify trustworthiness.
+- **Next Steps:** Proposed to further specify TEEP/RATS use cases within CAN and explore a unified tool/specification for app owners for remote attestation/provisioning.
+- **Discussion:** Hannes sought clarification on the architectural diagrams and component mappings, suggesting concrete instantiation examples. Gary inquired about encryption of VR/AR context in CAN, clarified that processing often occurs in plaintext *within* the secure TEE. Ben Kaduk noted the upcoming CAN BoF session at IETF, suggesting Pengling share these ideas there.
+
+## Decisions and Action Items
+
+- **Decision:** Specific wording suggestions for privacy considerations in the TEEP Architecture document should be submitted to the mailing list during IETF Last Call.
+- **Decision:** The TEEP Transport document's logic to treat TAM receiving its own content type as an error (SHOULD, not MUST) was maintained.
+- **Decision:** For TEEP Protocol cipher suites, HSS-LMS will be added to the "MAY" (or "recommended/optional" in COSE terms) list.
+- **Action Item (Hannes):** Propose text changes for the EAT profile regarding "Verification Key Identification" to allow for more generic key IDs (e.g., UUIDs), not just public key hashes.
+- **Action Item (Dave & Hannes):** Follow up extensively on the critical issue of copying claims from evidence to attestation results and its implications for provenance and policy. Document this as an issue for visibility. Hannes will refer to relevant ongoing work in RATS.
+- **Action Item (Brendan Morin):** Review the text in the TEEP Protocol document's appendix for example SUIT reports to ensure accuracy.
+- **Action Item (Akira):** Post the link to the open-source TEEP implementation (GitHub/Docker images) on the mailing list once available before IETF 114.
+
+## Next Steps
+
+- **TEEP Architecture and Transport:** Continue with IETF Last Call and address any remaining comments.
+- **TEEP Protocol:**
+    - Update the document with feedback from the hackathon and meeting discussions, including cipher suite adjustments and key ID clarifications.
+    - The next revision aims to be ready for Working Group Last Call.
+- **Early Reviews:** Nancy (Chair) will trigger early reviews to the IOT and SEC directorates once a new version of the TEEP Protocol document is generated.
+- **Confidential Computing Aware Network (CAN):** Pengling Wei is encouraged to share the CAN architecture and its integration with TEEP/RATS at the upcoming CAN BoF session and solicit further feedback on the mailing list.

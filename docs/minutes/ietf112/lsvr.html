@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lsvr.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-LSVR-20211109-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 09 Nov 2021 14:30</p>
+<h1>lsvr</h1>
+<h2>Summary</h2>
+<p>The LSVR working group convened to address the status of its foundational drafts, discuss a new proposal for BGP SPF flooding reduction, receive an update on the IEEE LLDPv2 standard, and outline plans for re-chartering. The BGP SPF draft (version 15) was presented as ready for IESG submission, having addressed all review comments. The IEEE LLDPv2 standard, crucial for advanced neighbor discovery, is nearing publication. A significant outcome was the decision to initiate the re-chartering process for the working group, explicitly to include neighbor discovery mechanisms, particularly within data center contexts.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Document Status:</strong></p>
+<ul>
+<li><strong>BGP SPF Draft (version 15):</strong> The document has been updated based on feedback from the Area Director (AD) and the working group. It includes consistent &quot;BGP SPF speaker&quot; terminology, clarifications on NLRI packing, ensuring only one status TLV per update, and enhanced error handling. Detailed deterministic ECMP next-hop selection and link matching criteria were added to the SPF algorithm section. Error handling for IPv4 prefix length TLVs was beefed up to ensure correct dropping and handling of associated NLRIs. The draft is considered stable with multiple existing implementations, including an open-source one in FRR.</li>
+<li><strong>LSVR Applicability Draft (version 8):</strong> This draft was also reviewed by the AD, leading to version 8. The chair noted potential inconsistencies between the extensive list of AD comments and the updates reflected in the new version.</li>
+<li><strong>L3DL Drafts:</strong> These drafts have been refreshed but are in a pending state. Their progression requires an explicit mention in the working group's charter due to similar technologies being developed within IEEE, to avoid procedural conflicts.</li>
+</ul>
+</li>
+<li>
+<p><strong>BGP SPF Flooding Reduction (New Draft Introduction by Mo):</strong></p>
+<ul>
+<li><strong>Problem:</strong> Existing BGP SPF flooding in both Route Reflector (RR) and node connection modes results in redundant link state updates.</li>
+<li><strong>Proposed Solutions:</strong>
+<ul>
+<li><strong>RR Model:</strong> Node A sends its link states to only a <em>subset</em> of RRs (e.g., one RR), which then forwards them, ensuring other nodes receive only one copy. An alternative suggests dividing nodes into groups, each assigned to a dedicated RR for balanced load.</li>
+<li><strong>Node Connection Mode:</strong> Similar to IGP flooding reduction, nodes would operate on a computed &quot;flooding topology&quot; (either distributed or centrally distributed by a leader). Link state updates would be flooded only along this topology, significantly reducing overall flooding. The algorithm considers nodes that do not support transit for leader election and connection minimization.</li>
+</ul>
+</li>
+<li><strong>Protocol Extensions:</strong> The draft proposes several new TLVs (<code>Node Flood</code>, <code>Leader Preference</code>, <code>Algorithms Support</code>, <code>Node ID</code>, <code>Paths</code>, <code>Connection Used For Flooding</code>) to facilitate these mechanisms.</li>
+<li><strong>Discussion:</strong> Concerns were raised regarding the complexity of implementing IGP-like dynamic flooding algorithms in BGP SPF, especially given BGP's reliable session model, which differs from IGP. A suggestion was made to initially focus on simpler RR preference or splitting mechanisms.</li>
+</ul>
+</li>
+<li>
+<p><strong>IEEE LLDPv2 (802.1ABdh) Update (Paul Congdon):</strong></p>
+<ul>
+<li><strong>Motivation:</strong> The original LLDP's single-frame limitation was insufficient for modern requirements like L3DL (e.g., 60-100KB of data). The 802.1ABdh project aimed to enable multi-frame Protocol Data Unit (PDU) support.</li>
+<li><strong>Timeline &amp; Status:</strong> The project, initiated in Sept 2019, has completed all balloting phases (Task Group, Working Group, Standards Association) and is currently in &quot;revcom approval.&quot; Publication is anticipated by the end of the year, with no further substantive technical changes expected.</li>
+<li><strong>Key Features:</strong> Supports sending more information beyond a single frame, allows for smaller LLDP frame sizes (beneficial for Time-Sensitive Networking), maintains backward compatibility with older LLDP implementations, incorporates receiver-paced data transfer to avoid overloading lightweight receivers, and uses unicast addressing for extension messages to minimize network traffic.</li>
+<li><strong>Mechanism:</strong> A new <code>Manifest TLV</code> in a standard LLDP frame indicates the availability of more data. The receiver then uses <code>Extension Request</code> frames to fetch specific data, which the sender provides via <code>Extension PDUs</code>.</li>
+<li><strong>Security:</strong> Direct security mechanisms within LLDPv2 were not implemented; the standard relies on underlying 802.1 security frameworks (e.g., MACsec) to provide link-level protection.</li>
+<li><strong>Next Steps:</strong> Await publication, consider revisiting a previous draft on L3DL TLVs for LLDP formatting, and encourage open-source implementations.</li>
+</ul>
+</li>
+<li>
+<p><strong>Working Group Re-chartering Discussion:</strong></p>
+<ul>
+<li>As the working group approaches completion of its initial BGP SPF tasks, there is a need to evolve the charter to maintain and enhance the technology.</li>
+<li>Specifically, the re-charter aims to formally include accompanying technologies like L3DL and LLDPv2 for neighbor discovery, which are essential supplements to BGP SPF in data center environments.</li>
+<li>The chairs plan to share a draft re-charter text soon after the BGP SPF draft is submitted to the IESG.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>The <strong>BGP SPF draft (version 15)</strong> and the <strong>LSVR Applicability draft (version 8)</strong> will be submitted to the IESG concurrently once the formal Working Group Last Call for BGP SPF is closed.</li>
+<li>The chairs will proceed with formally closing the Working Group Last Call for the <strong>BGP SPF draft</strong>.</li>
+<li>The chairs will prepare and circulate a <strong>re-charter draft text</strong> on the mailing list for discussion soon after the BGP SPF draft is submitted to the IESG.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>For the Working Group:</strong>
+<ul>
+<li>Actively discuss the proposed BGP SPF Flooding Reduction draft, considering the balance between its complexity and the potential benefits, as well as the unique dynamics of BGP vs. IGP flooding.</li>
+<li>Provide feedback on the re-charter text on the mailing list to shape the future direction of the working group.</li>
+<li>The re-chartering effort will focus on explicitly incorporating neighbor discovery technologies (such as the L3DL or LLDPv2 framework) into the working group's scope, with an initial emphasis on data center applications.</li>
+<li>The aim is to complete the re-chartering process and obtain approval before IETF 113.</li>
+</ul>
+</li>
+<li><strong>For IEEE LLDPv2:</strong>
+<ul>
+<li>Await the formal publication of the IEEE 802.1ABdh standard, expected by the end of the year.</li>
+<li>Consider reactivating efforts to define L3DL TLVs formatted for LLDP.</li>
+<li>Encourage the development of open-source implementations of LLDPv2.</li>
+</ul>
+</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,97 @@
+**Session Date/Time:** 25 Jul 2022 17:30
+
+# 6lo
+
+## Summary
+
+The 6lo working group session addressed the status of several existing drafts, including IPv6 over NFC, IPv6 over PLC, 6lo Use Cases, and Multicast Address Listener Registration. Presentations provided updates on the 6lo Use Cases draft, the Multicast Address Listener Registration draft (including a new RA option for router uptime), the transmission of CHIC compressed packets over 802.15.4 networks, and a pair of documents on the Native Short Addressing (NSA) scheme (base document and a new reliability considerations draft). Key discussions focused on addressing security comments, clarifying roles in header compression, and handling router reboots and network reliability. A call for working group adoption for the NSA base document will be issued.
+
+## Key Discussion Points
+
+### Working Group Document Status
+
+*   **IPv6 over NFC draft:** Has been stuck for two years. AD Eric Klein acknowledged the delay, stating he would work to demonstrate specification access to reviewers and add clarifying security text before bringing it back to the ISG. Access for reviewers is sufficient, without broad distribution to respect NFC SDO policies.
+*   **IPv6 over PLC draft:** Discuss ballots cleared, authors updated. AD Eric Klein noted ISG membership changes require new ballots; he needs two more "no objection" or "yes" ballots before sending to the RFC editor.
+*   **6lo Use Cases draft:** Passed last call, updated after Security AD and General Area reviews. AD Eric Klein plans to issue the ballot and bring it to telechat by the end of August.
+*   **Multicast Address Listener Registration draft:** Updated multiple times following reviews and IANA input.
+
+### 6lo Use Cases Draft (Presented by Hong)
+
+*   **Security Considerations (Section 7):** Robert Sparks (Security AD) commented that the original text stating security considerations were "not directly applicable" was insufficient. The presenter added text addressing privacy implications for L2 address-derived IPv6 addresses, requiring L2 security, and the desirability of application-level security. However, Robert Sparks was still not satisfied, indicating further refinement is needed. Eric Klein suggested pointing to existing RFC 8200 security considerations and related IPv6 ND security documents.
+*   **Table 2 (Security Requirements):** Content was deemed unclear, leading to the removal of specific "roles" from the table.
+*   **Appendix A (Design Space Dimension):** This appendix, originally a section in the main body, was moved to shorten the document. Robert Sparks noted it was not introduced or referenced. The presenter suggested removing it. However, the chair (Carlos Gomez) and another attendee suggested keeping it if it contains useful information, adding a forward reference from the main body, as it relates to a comparison table in the document.
+*   **Misuse of Marketing Words:** Robert Sparks suggested replacing terms like "superior range" with more technical phrasing such as "better than" or "goes further." The presenter agreed to make these changes.
+
+### Multicast Address Listener Registration Draft (Presented by Pascal Thubert)
+
+*   **Motivation:** Developed from smart grid use cases (White Sand alliance) requiring an mld-equivalent "pull from device" mechanism for low-power nodes.
+*   **Scope:** The draft addresses both 6lo and non-storing mode RPL multicast.
+*   **Key Updates:**
+    *   Clarified that the mechanism is a "push from device" when it wakes, suitable for low-power devices, unlike mld's "pull from router."
+    *   The TID (sequence number) in RA options and RPL is not used for freshness assertions, as sources may not be synchronized. State cleanup relies on lifetime timeouts.
+    *   **Router Reboot Detection:** Two mechanisms were introduced:
+        *   **Multicast RA Status:** Routers can send asynchronous Neighbor Advertisements (N_A) to signal lost state due to reboot, prompting device re-registration. This is a "pull by router" and might be missed by low-power devices without specific periodic multicast windows.
+        *   **New RA Option - Node Uptime Option:** A new RA option conveying router uptime was proposed. Devices could use this to determine if a router rebooted since their last registration and re-register accordingly. This is considered a 6MAN working group concern.
+    *   IANA section wording was revised based on Amanda Barber's comments.
+*   **Discussion on Node Uptime Option:**
+    *   Eric Klein (AD) expressed concerns about its intended use case and the requirement for RA information to be consumable by all multicast recipients. He suggested it might have broader applicability (e.g., slack renumbering).
+    *   A discussion ensued on whether this option should be a separate draft, as it's a recent addition and the core document could progress without it. Pascal indicated willingness to separate it if preferred, acknowledging it was initially packaged to consolidate related work.
+    *   Tim Winters suggested consulting 6MAN, and potentially Pin/Mbone WGs due to multicast aspects, though Pascal clarified that for non-storing RPL, multicast is often handled by ingress replication at the root rather than in-network multicast routing.
+
+### Transmission of CHIC Compressed Packets over 802.15.4 Networks (Presented by Carlos Gomez)
+
+*   **Motivation:** CHIC (Compressed Header over IPv6 over CoAP) offers potentially greater compression ratios than 6LoWPAN, especially for application protocols like CoAP.
+*   **Key Updates (Revision 03):**
+    *   **CHIC `dev` and `up` roles:** CHIC compression relies on roles (`dev` for constrained device, `up` for network infrastructure), not source/destination. This allows single compression rules for both directions.
+    *   **Problem in Mesh Topologies:** In peer-to-peer mesh scenarios, determining who is `dev` or `up` for address/port compression can be ambiguous.
+    *   **Resolution:** The `dev` and `up` roles for each rule must be known and provisioned *in advance* before communication.
+    *   The draft now references the LPWAN architecture draft, which aims to address `dev/up` definition in scenarios beyond the original LPWAN architecture.
+    *   **Multi-hop Communication:**
+        *   **Route-over (IP layer routing):** A straightforward approach would require all nodes to store all rules (scalability issue). An alternative leveraging RPL in non-storing mode (RFC 9038) allows endpoints to store only their own rules, with the root handling decompression/recompression.
+        *   **Mesh-under:** No particular challenges; endpoints only need their own rules.
+        *   **Optimization Idea:** Rule ID reuse across disjoint pairs was suggested but noted as increasing complexity.
+    *   **Recommendation:** Use a router virtual reassembly buffer.
+
+### Native Short Addressing (NSA) Base Document (Presented by Luigi Iannone)
+
+*   **Status:** Revision 03 (June 2022).
+*   **Key Updates:**
+    *   Fixed typos and minor changes.
+    *   **Reliability:** Considerations for reliability were moved to a *separate companion document* (presented next).
+    *   Clarified checksum calculation for the transport layer.
+    *   The document is considered stable.
+*   **Working Group Adoption:** An initial show of hands indicated 9 participants had read at least one version of the draft. The chairs will issue a call for working group adoption on the mailing list.
+
+### Native Short Addressing (NSA) Reliability Considerations (Presented by Luigi Iannone)
+
+*   **New Draft:** Companion document to the NSA base draft.
+*   **Core Idea:** Reliability requires redundant links and can be achieved through different solution classes.
+*   **Solution Class 1: Multiple Addresses:**
+    *   Nodes are assigned secondary addresses, building orthogonal (secondary) tree topologies.
+    *   If a node detects a failure in the primary path, it can use the secondary topology to inform the root via ICMP, allowing the root to redirect traffic.
+    *   Pascal Thubert raised concerns that this approach, particularly detecting failures and updating state at the root, begins to resemble a routing protocol, potentially undermining NSA's stateless forwarding goal. Luigi acknowledged trade-offs, where for few failures, it works with low state, but for more dynamic environments, it moves closer to routing.
+*   **Solution Class 2: Single Address:**
+    *   Nodes retain a single address but store alternate neighbors (e.g., an alternate parent).
+    *   The root maintains a more complete topology knowledge (higher state at the root).
+    *   Nodes have low state (neighborhood info).
+    *   This approach offers higher robustness due to centralized coordination at the root.
+*   **Trade-offs:** Multiple addresses offer low root state and low node state but potentially less guaranteed path feasibility with more failures. Single address offers higher root state but higher robustness and more effective failure handling. The presenter concluded that for unstable networks, using a full routing protocol might be necessary.
+*   Discussion was cut short due to time constraints.
+
+## Decisions and Action Items
+
+*   **Decision:** The 6lo working group will issue a call for working group adoption for the Native Short Addressing (NSA) base document on the mailing list.
+*   **Action Item (Eric Klein):** Initiate an email thread with the 6MAN chairs to discuss the proposed Node Uptime Option (currently in the Multicast Address Listener Registration draft). This discussion will determine if it should be a separate, short draft or remain in the current document.
+*   **Action Item (6lo Chairs, RPL Chairs):** Coordinate a Working Group Last Call (WGLC) for the Multicast Address Listener Registration document in both the 6lo and RPL working groups. The WGLC will be held until a resolution on the Node Uptime Option is reached with 6MAN.
+*   **Action Item (Hong):** Further enhance the security considerations section of the 6lo Use Cases draft to fully address Robert Sparks' comments, possibly by referencing existing security RFCs.
+*   **Action Item (Carlos Gomez):** Elaborate on the details of using RPL (specifically non-storing mode) for CHIC compressed packet transmission over 802.15.4 networks in subsequent versions of the draft.
+
+## Next Steps
+
+*   **6lo Use Cases Draft:** Eric Klein to issue the ballot and bring it to telechat by the end of August. Further discussion on Appendix A and security text might occur on the mailing list.
+*   **IPv6 over NFC Draft:** Eric Klein to prioritize, clarify security considerations, and bring it back to the ISG for further progression.
+*   **IPv6 over PLC Draft:** Eric Klein to secure two more ISG "no objection" or "yes" ballots for the current ISG members, then send the document to the RFC editor.
+*   **Multicast Address Listener Registration Draft:** Proceed with a coordinated WGLC in 6lo and RPL WGs once the disposition of the Node Uptime Option is resolved with 6MAN.
+*   **Transmission of CHIC Compressed Packets over 15.4 Networks Draft:** Continue discussions and elaborations on the mailing list.
+*   **Native Short Addressing (NSA) Base Document:** A call for working group adoption will be issued on the mailing list.
+*   **Native Short Addressing (NSA) Reliability Considerations Draft:** Continue technical discussions on the mailing list.

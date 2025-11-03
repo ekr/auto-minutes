@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="iotops.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-IOTOPS-20220324-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 24 Mar 2022 09:00</p>
+<h1>iotops</h1>
+<h2>Summary</h2>
+<p>The iotops session covered a range of technical topics relevant to IoT operations, including secure browsing for local IoT devices, virtualization of Programmable Logic Controllers (PLCs) in industrial networks, a proposed architecture for restructuring industrial control networks, and profiles for DTLS 1.3 in IoT contexts. The session concluded with a discussion on a potential Working Group deliverable concerning a high-level IoT security architecture, aiming to integrate existing IETF standards.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Secure Usable Internet Browsing for IoT Devices (Michael Richardson, IoT Security Foundation)</strong></p>
+<ul>
+<li><strong>Problem Statement:</strong> Securely browsing to local IoT devices (e.g., printers, refrigerators) is challenging due to lack of device names, certificates, or mismatches between certificate content and IP addresses. The goal is &quot;HTTPS everywhere&quot; for such devices.</li>
+<li><strong>Proposed Solutions (&quot;Hacks&quot;):</strong>
+<ul>
+<li><strong>Relaxed Browser Warnings for Local Addresses:</strong> Suggests browsers could offer less alarming warnings for certificates on RFC 1918 or ULA addresses, potentially accepting a &quot;trust on first use&quot; model. This is politically challenging for the CA Browser Forum and browser vendors.</li>
+<li><strong>Wildcard Certificates with DNS Redirect:</strong> Devices ship with a wildcard certificate rooted in a manufacturer's DNS zone. A local HTTP server redirects to an HTTPS name (e.g., <code>*.fo.crypto.1d</code>), where the DNS resolves to the device's local IP based on a hex encoding in the name. This method is relatively stateless for the vendor and is already in use by some manufacturers, though OpenWrt may filter RFC 1918 replies.</li>
+<li><strong>Dynamic DNS Updates:</strong> Devices report their local IP address to a vendor-controlled DNS server, which updates DNS records (e.g., via RFC 3007 or proprietary HTTP). Requires the vendor to maintain state (device-to-IP mapping). Common for dynamic DNS, but less clear for HTTPS.</li>
+<li><strong>Onboarding with Private PKI (Phone/App or Gateway-based):</strong> An app or gateway performs device onboarding, collecting a Certificate Signing Request (CSR) and enrolling the device into a private PKI (e.g., building on RFC 8995, Matter/Chip, DPP, Brewski). A key challenge is propagating trust anchors and local names across various devices in a home or enterprise.</li>
+</ul>
+</li>
+<li><strong>Discussion:</strong> Concerns were raised about each solution introducing new attack surfaces, such as sharing IP address information with vendors or potential for malicious insertion of trust anchors. The need for enterprise-level PKI management versus consumer-grade solutions was highlighted.</li>
+</ul>
+</li>
+<li>
+<p><strong>Virtualization of Programmable Logic Controllers (PLCs) in Industry Networks (Kiran Ijaz)</strong></p>
+<ul>
+<li><strong>Motivation:</strong> Physical PLCs are costly, occupy significant factory floor space, and are difficult to scale. Virtualizing PLCs (abstracting control unit and memory functions) could address these issues, serving as a major step towards IT/OT convergence.</li>
+<li><strong>Benefits:</strong> Enhanced scaling, elastic resource allocation, simplified data movement, tighter application integration, enabling edge compute and multi-tenant solutions, protection from hostile environments, and easier digital twin realization.</li>
+<li><strong>Realization Approaches:</strong> Discussed three degrees of disaggregation from integrating CU/IO on commodity hardware to separating them across WANs and cloud boundaries, noting that the latter challenges the Purdue model's security hierarchy.</li>
+<li><strong>Challenges:</strong> Defining common interfaces for virtual PLCs to I/O modules, authentication and association mechanisms for virtual PLCs, programming security policies, transitioning from hierarchical to disaggregated network models, and supporting legacy industrial protocols (e.g., Profibus, Modbus). Leveraging DetNet and TSN was suggested for network performance.</li>
+<li><strong>Discussion:</strong> The complexity of managing legacy fieldbuses and the real-time requirements of industrial systems were emphasized. The need to engage industrial manufacturers (e.g., Siemens) was noted, as off-the-shelf hardware often doesn't meet the stringent real-time demands, leading to custom processor designs and software stacks.</li>
+</ul>
+</li>
+<li>
+<p><strong>Tableau: Restructuring Industrial Networks (Pierre L. L. Sprecher)</strong></p>
+<ul>
+<li><strong>Problem:</strong> Traditional hierarchical industrial networks (Purdue model) are challenged by IT/OT convergence, SDN/TSN technologies, virtualization of automation functions (soft PLCs), changing information flows (field-to-cloud), evolving threat models (attackers from middle/bottom of network), and remote operations.</li>
+<li><strong>Tableau Proposal:</strong> A clean-slate architecture that flattens the network hierarchy by separating end-host and transit functionality. Each end-host zone connects to a central transit network via a &quot;transition point.&quot; A central controller defines traffic flow policies between zones, with tunneled (encrypted/authenticated) traffic between transition points.</li>
+<li><strong>Benefits:</strong> Greater flexibility for hybrid plant-cloud deployments, multi-homing, and partial deployments. Simplifies policy management and facilitates automated network verification.</li>
+<li><strong>Defense-in-Depth:</strong> Argued that defense-in-depth requires a security-oriented mindset, not just layered firewalls or heterogeneity. Tableau aims to improve security through policy simplification and fine-grained zoning. Heterogeneity can be reintroduced by standardizing interfaces between Tableau components.</li>
+<li><strong>Discussion:</strong> Request for more technical detail on how Tableau operates (e.g., distributed firewalls). The difficulty of obtaining real-world data from industrial plants to validate architectural changes was highlighted.</li>
+</ul>
+</li>
+<li>
+<p><strong>Communication Architecture for Future Energy Grid Operation Systems (Marcus Voss and Hannes Gredler)</strong></p>
+<ul>
+<li><strong>Project VENUS:</strong> A research project aiming to adapt protection technology for future energy grids, which face volatile, multi-directional power flows from distributed renewable generation. Traditional static protection systems are inadequate.</li>
+<li><strong>Solution:</strong> An adaptive, interconnected grid protection system where a central control center calculates dynamic protection parameters and transmits them to field stations.</li>
+<li><strong>Communication Requirements:</strong> Low latency (simultaneous action at multiple stations), high reliability (no lost control messages), and strong security.</li>
+<li><strong>Proposed Technologies:</strong> SDN for path reservation and failure handling, multi-path technologies (MPTCP, QUIC) for latency/reliability, and Trust Execution Environments (TEE), TEEP/SUIT, and RATS for security.</li>
+<li><strong>Ask to IETF:</strong> Sought guidance on suitable IETF solutions, relevant Working Groups, and potential contributions from the project.</li>
+<li><strong>Discussion:</strong> Need for clearer use case definition (e.g., edge vs. synchrophaser grids). Encouraged VENUS to contribute specific use cases to relevant IETF WGs (RATS, DetNet, IRTF) to validate existing work and identify gaps. The challenge of &quot;simultaneous action&quot; was raised, suggesting it might require application-level design (e.g., pre-negotiated, time-synchronized actions) rather than solely network protocol solutions.</li>
+</ul>
+</li>
+<li>
+<p><strong>DTLS 1.3 Profile for IoT (Hannes Gredler)</strong></p>
+<ul>
+<li><strong>Context:</strong> Follow-up to RFC 7925 (DTLS 1.2 profiles for IoT). This new work in the UTA WG provides guidance for DTLS 1.3 in IoT deployments.</li>
+<li><strong>Key Aspects:</strong> Incorporates recent algorithm recommendations, addresses post-handshake resumption, Connection ID, Encrypted Client Hello (ECH) for privacy, and provides an application profile for CoAP with 0-RTT to ensure replay protection.</li>
+<li><strong>Controversial Recommendation:</strong> The draft currently discourages AES-CCM8 (shorter authentication tag) in favor of GCM and CCM with longer tags, which contrasts with previous preferences in IoT circles.</li>
+<li><strong>Ask:</strong> Solicited feedback from deployers of TLS 1.3 in IoT regarding their experiences and the usefulness of the profile's recommendations, particularly concerning the CCM8 discussion.</li>
+<li><strong>Discussion:</strong> The slow adoption of new TLS versions in low-end embedded IoT equipment was noted as a concern for mandating TLS 1.3. However, commercial, high-quality DTLS 1.3 stacks are becoming available for the embedded space.</li>
+</ul>
+</li>
+<li>
+<p><strong>Working Group Deliverable: IoT Security Architecture (Brendan Moran)</strong></p>
+<ul>
+<li><strong>Background:</strong> Referenced an earlier, expired IoT nets draft. Argued that security documents tend to be architectures, threat models, or requirements/mitigations. His previous draft focused on requirements/mitigations without a clear architecture or threat model, making justification difficult.</li>
+<li><strong>Proposal:</strong> Rather than a top-down approach (architecture -&gt; threat model -&gt; mitigations), which would be tightly coupled and complex, proposed a unified approach. The new deliverable should:
+<ul>
+<li>Leverage and reference existing work from other IETF security WGs.</li>
+<li>Focus on cross-standard considerations and useful combinations of standards (e.g., CoRIM, SUIT, RATS for attestation).</li>
+<li>Describe relationships between entities from different standards, providing documented guidance for implementers.</li>
+<li>Describe various IoT architectures (centralized, peer-to-peer, and hybrid), focusing on their benefits and drawbacks.</li>
+</ul>
+</li>
+<li><strong>Discussion:</strong> The proposal was met with enthusiasm. It was suggested that the architecture should also address networking and connectivity aspects (e.g., IPv6 backbone with NAT64 for v4 devices) alongside security. A prior iteration of Brendan's work was seen as a good starting point. Concerns about the &quot;Voldemort problem&quot; (firewalls) in IETF were raised, emphasizing that firewall-like functions are central to IoT security and need direct architectural consideration. A quick draft on &quot;why this is a firewall&quot; could be useful.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>Michael Richardson volunteered to be the minute taker, with Alexey (co-chair) as a fallback.</li>
+<li>The chairs will work to &quot;mold a deliverable&quot; based on Brendan Moran's proposal for an IoT security architecture, aiming for further discussion and adoption at the next meeting.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The chairs plan to schedule an interim meeting for iotops.</li>
+<li>The Working Group will continue discussions on specific deliverables, with a particular focus on shaping the proposed IoT security architecture document.</li>
+<li>Presenters from Project VENUS (Marcus Voss and Hannes Gredler) are encouraged to engage with relevant IETF Working Groups (e.g., RATS, DetNet, IRTF) to contribute their use cases and gather feedback.</li>
+<li>Hannes Gredler encouraged feedback on the DTLS 1.3 profile for IoT directly to the UTA Working Group, especially concerning the AES-CCM8 discussion.</li>
+<li>Karl-Heinz offers to share a document comparing industrial security standards for potential use in the IoT security architecture discussion.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

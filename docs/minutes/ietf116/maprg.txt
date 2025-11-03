@@ -1,0 +1,54 @@
+**Session Date/Time:** 29 Mar 2023 06:30
+
+# maprg
+
+## Summary
+
+The maprg meeting covered several topics related to internet measurements and performance, including QUIC handshake performance, route variability in LEO satellite networks, anomalies in internet measurements, the impact of vantage points and destinations on measurement accuracy, efficient latency monitoring using eBPF, and challenges in IPv6-only resolution. Discussions highlighted the complexities of network behavior and the importance of careful measurement methodology.
+
+## Key Discussion Points
+
+*   **QUIC Handshake Performance:**
+    *   Observed that a significant percentage of QUIC handshakes result in amplification exceeding the intended 3x limit.
+    *   Cloudflare purposefully ignores the amplification limit, employing a 4x amplification factor for faster RTT estimation.
+    *   TLS certificate chains frequently exceed the amplification limit, impacting QUIC performance. Moving to smaller key sizes or certificate compression were suggested.
+    *   Incomplete QUIC handshakes, resembling amplification attacks, require adherence to amplification limits.
+*   **Route Variability in LEO Satellite Networks:**
+    *   Significant route churn in LEO satellite networks, often without substantial performance gains.
+    *   Round-trip time (RTT) variability can be significant, with potential changes up to 2.5x, exhibiting a spatial structure.
+    *   Simulations assumed shortest path routing and a full mesh network in space, potentially overstating RTT variances compared to a hot-potato earth infrastructure.
+    *   The study computed routes every second which is not implemented in current LEO sat networks.
+*   **Anomalies in Internet Measurements:**
+    *   Middlebox behavior can alter packets, presenting challenges for accurate measurements (e.g., identical hop IPs in traceroutes).
+    *   Unexpected IP address usage (e.g., packets originating from 192.0.0.0/8).
+    *   Geolocation inaccuracies can skew measurement results.
+    *   Inconsistencies in reported probe locations and unusually fast packet delivery times indicate potential measurement errors.
+*   **Measurement Methodology Considerations:**
+    *   Cloud providers can interfere with measurements.
+    *   Diversity in vantage points (edge vs. core) is crucial for accurate results.
+    *   Top-1 million domain lists may not be diverse enough for representative measurements.
+    *   Combining active and passive measurements is recommended.
+    *   Different upper-layer protocols can influence network behavior.
+    *   Load balancing can be disrupted by extension headers
+*   **Efficient Latency Monitoring with eBPF:**
+    *   eBPF-based passive latency monitoring offers improved performance compared to packet capturing methods like tcpdump/wireshark.
+    *   The eBPF tool can monitor packets at rates exceeding one million packets per second.
+    *   Internal sampling and aggregation can mitigate overhead associated with high reporting rates.
+*   **Performance of Apple's iCloud Private Relay:**
+    *   iCloud Private Relay impacts network performance, often resulting in lower throughput and increased page load times.
+    *   The performance depends on the chosen proxy server.
+    *   Single vs. Multi Flow Mode impact the speeds of the service.
+*   **IPv6-Only Resolution Challenges:**
+    *   Domains with cloud-a records (indicating IPv6 support) are not always resolvable via IPv6-only resolvers.
+    *   Inconsistencies in DNS records can hinder IPv6 adoption.
+
+## Decisions and Action Items
+
+*   The QUIC working group was advised to update the three x amplification limit to a four x limit.
+
+## Next Steps
+
+*   Further evaluation of eBPF-based latency monitoring from an ISP perspective.
+*   Explore supporting additional protocols, such as QUIC spin bit, in the eBPF latency monitoring tool.
+*   Investigate mp-quick as a way to expand the number of flows in iCloud Private Relay.
+*   Offline discussion between Apple and researchers to further investigate the issues identified with the iCloud Private Relay and measurement methodology.

@@ -1,0 +1,58 @@
+**Session Date/Time:** 25 Jul 2022 17:30
+
+# jwp Session Minutes
+
+## Summary
+
+The jwp (JSON Web Proofs) Birds of a Feather (BoF) session discussed the need for new JSON-based cryptographic formats within the JOSE family to enable advanced identity use cases such as selective disclosure, zero-knowledge proofs (ZKPs), predicate proofs, and unlinkability, which are not adequately supported by existing JOSE and JWT specifications. The session featured presentations on the motivation, use cases (including explicit dependency from W3C Verifiable Credentials v2), and an overview of the proposed jwp drafts and compatible algorithms like BBS signatures. While strong interest was expressed, the BoF concluded without formal decisions, emphasizing the need for further detailed discussion on design choices, security properties, and the scope of a potential re-chartered JOSE working group.
+
+## Key Discussion Points
+
+*   **Initial Technical Issues**: The session began with significant technical difficulties related to AV display, which were eventually resolved.
+*   **BoF Introduction**: Co-chairs John Bradley and Karen O'Donoghue welcomed participants and covered administrative items, including the Note Well, calling for a scribe (Chris volunteered), and a reminder about the mask policy.
+*   **Motivation for jwp (Mike Jones, Microsoft)**:
+    *   JOSE and JWT have been successful but were designed for a two-role model (issuer, recipient) where all claims are disclosed.
+    *   New industry developments introduce a three-role model (issuer, holder/wallet, recipient/verifier) and demand advanced cryptographic capabilities.
+    *   These capabilities include:
+        *   **Selective Disclosure**: Holder reissues a subset of claims.
+        *   **Predicate Proofs**: Disclosing a proof about a claim (e.g., over 18) instead of the claim itself (e.g., exact age).
+        *   **Unlinkability**: Deriving tokens for multiple recipients that cannot be linked back to the original issued token or each other.
+    *   Existing JOTS/JOSE cannot natively represent these new cryptographic techniques (e.g., pairing-friendly curves, ZKPs).
+    *   The W3C Verifiable Credentials v2 working group explicitly depends on the jwp work becoming an IETF standard.
+    *   Proposal: Re-charter the JOSE working group to develop new JSON-based cryptographic encoding formats for these advanced techniques, leveraging existing JOSE expertise.
+    *   Proposed charter deliverables include non-normative use cases/requirements, standards-track cryptographic formats, claims/proofs documents, algorithm usage/identifiers, key representation, test vectors, and eventual CBOR equivalence.
+*   **Clarifying Questions on Motivation/Scope**:
+    *   **Scope of re-chartered JOSE**: Clarified that the "jwp" BoF name was for data tracker purposes; the proposal is for a re-chartered JOSE WG. Question was raised if new algorithms for JWS/JWE would be in scope for a re-chartered JOSE WG (proponents suggested potentially yes, if chartered).
+    *   **Minimizing Reinvention**: Concern was raised about creating entirely new constructs versus reusing JWS for signing and embedding new proof types. Proponents argued that certain advanced cryptographic techniques (e.g., one signature over many selectively disclosed claims with unlinkability) are fundamentally not representable with current JWS formats.
+*   **Use Cases and Industry Demand (Christina, W3C Verifiable Credentials Co-chair)**:
+    *   W3C Verifiable Credentials v2 needs jwp for advanced capabilities, driven by an emerging architecture that decouples credential issuance from presentation.
+    *   This enables holder consent and real-time presentation of only requested claims, prevents verifier-user unlinkability, and supports predicate proofs.
+    *   The ISO Mobile Driving License (mDL) specification faced similar challenges, implementing less efficient solutions (hash-based selective disclosure, batch issuance for unlinkability, pre-issuing boolean claims for predicates). A standardized jwp solution would be beneficial.
+    *   The re-chartered W3C VC V2 working group has a conditional normative dependency on jwp, planning to define how jwp would be used in the application layer.
+    *   **jwp vs. JWT Selective Disclosure (SD-JWT)**: Christina clarified that SD-JWT focuses on providing a simple selective disclosure solution with existing JWT/JWS and does not address advanced cryptography, unlinkability, or predicate proofs. jwp is complementary, addressing these more complex, urgent problems in the ecosystem.
+*   **jwp Draft Overview (Jeremy, jwp Draft Author)**:
+    *   jwp aims to be a new container format within the JOSE family that introduces the role of a "holder" and supports new algorithms.
+    *   Key properties are selective disclosure, multiple uses of a credential, answering predicates, and proof of possession.
+    *   Unlinkability goal: After issuance, a holder can present proofs such that presentations are not linkable to each other or the original credential, without the container format forcing linkability.
+    *   The jwp core draft proposes a structure similar to JWS but with a payload divided into multiple messages (separated by tilde `~`). Presentations can omit payloads, which alters the signature. A "presentation header" allows the holder to add context (e.g., a nonce for replay protection).
+*   **BBS Algorithm Overview (Tobias)**:
+    *   BBS (Boneh-Boyen-Shacham) signatures were presented as an example of a compatible algorithm.
+    *   BBS provides two cryptographic structures: a signature over a set of messages and a presented proof.
+    *   Use cases include privacy-preserving anonymous credentials, proof of possession, and non-correlating security token proofs (unlinkable presentations).
+*   **Open Discussion and Concerns**:
+    *   **Issuer Knowledge**: Question on whether the issuer knows all attributes being signed in BBS. Tobias confirmed the issuer typically knows the values but schemes like BBS can also support pre-committed or blind attributes.
+    *   **"Mashup" Concern**: A participant expressed concern that the jwp draft includes mechanisms for selective disclosure using existing JOSE algorithms, which might create confusion because such "jwp" objects would lack the advanced properties (like unlinkability) of those using newer crypto. Suggestion to focus jwp solely on capabilities Jose cannot represent.
+    *   **Unlinkability Complexity**: A participant viewed unlinkability as a "terrifying" and very different problem from selective disclosure, requiring new cryptography and potentially CFRG vetting. Questions were raised if existing JWS couldn't be transformed with specific algorithms to achieve needed properties. More comfort was expressed for charting selective disclosure than unlinkability.
+    *   **Industry Need**: A participant from industry emphasized their company's immediate need for jwp's capabilities (selective disclosure and unlinkability) that JOT cannot provide, stating this need motivated their first attendance at IETF.
+    *   **Cross-WG Awareness**: Questions about discussions with Privacy Pass (IETF) and Trust Tokens (W3C) groups. Proponents acknowledged relevance and confirmed more engagement is needed. Christina clarified that W3C VC is consuming jwp, not developing similar primitives.
+
+## Decisions and Action Items
+
+No formal decisions were made during the BoF due to time constraints.
+
+## Next Steps
+
+*   **Continue Discussion**: Further conversation is needed to better understand the underlying design choices, assumptions, and approaches to realize the desired security properties.
+*   **Mailing List**: The conversation will continue on the JOSE mailing list. Participants were encouraged to subscribe.
+*   **Potential Virtual BoF**: The chairs will explore organizing a virtual BoF to provide more time for discussion. Any such announcement would be made to the IETF community.
+*   **W3C/IETF Relationship**: There is a recognized need to better define the relationship between the W3C and IETF for this work to avoid confusion and ensure smooth progress.

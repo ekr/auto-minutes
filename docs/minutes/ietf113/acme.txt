@@ -1,0 +1,49 @@
+**Session Date/Time:** 21 Mar 2022 12:00
+
+# acme Session Minutes
+
+## Summary
+
+The acme working group meeting at IETF 113 covered updates on existing drafts, including two documents stuck in ISG evaluation. Presentations were given for "DTN Node ID," "ACME Renewal Information (ARI)," "ACME Integrations," and "ACME Subdomains." Key discussions included proposed changes to DTN Node ID for algorithm agility and alignment with existing RFCs, and the introduction of a "renewal complete" endpoint in ARI. Decisions were made to move "ACME Integrations" and "ACME Subdomains" towards Working Group Last Call, and to issue a Call for Adoption for the "ACME Renewal Information" draft.
+
+## Key Discussion Points
+
+*   **ACME Authority Token / ACME Authority Token TN off list:** Both drafts remain in ISG evaluation with "Revised ID Needed" for several months. Roman asked how to expedite the process, suggesting authors (John Peterson) be pinged.
+*   **DTN Node ID (draft-ietf-acme-dtn-node-id):**
+    *   Version -09 was recently published.
+    *   Referenced DTN documents are now published RFCs.
+    *   Major changes include:
+        *   Improved explanation of DTN terminology.
+        *   Separation of tokens from the challenge identifier to avoid overlaps and align with RFC 8823 (email validation).
+        *   Introduction of algorithm agility for the key authorization digest: the ACME server will provide a list of acceptable algorithms, from which the client chooses one. SHA-256 remains mandatory to be present in this list.
+    *   A known issue is that the referenced hash algorithms registry is still in Auth48.
+    *   Reviewers were requested.
+*   **ACME Client:** No traffic on the mailing list since the last IETF. Kathleen noted that upcoming supply chain security efforts (S-BOMs, code signing signatures) are expected to drive new traffic. She specifically mentioned Sigstore's workflow, which currently differs from ACME, and expressed intent to collaborate to see if ACME can be used to further secure Sigstore.
+*   **ACME Renewal Information (ARI) (draft-ietf-acme-renewal-info):**
+    *   Version -02 is pending publication after IETF 113 due to a publication freeze.
+    *   **URL Construction:** Now based on the `cert id` ASN.1 sequence from OCSP (certificate serial number, hashes of issuer name/key, hash algorithm), encoded as DER, then base64url, with padding stripped. This forms the path component for GET requests.
+    *   **Renewal Complete Endpoint:** A new utility added, allowing clients to send a POST as GET request to inform the ACME server that a certificate has been renewed and replaced.
+        *   Payload includes the `cert id` and metadata (e.g., `replaced: true`).
+        *   Must be signed by the original subscriber's key.
+        *   Benefits: Avoids sending renewal reminders, allows servers to stop polling, enables safer revocation during mass re-issuance events.
+    *   **Open Questions:**
+        *   What other metadata might be useful in the "renewal complete" update (e.g., serial/cert ID of the replacement cert)? This could help with complex certificate mappings.
+        *   **Explanation URI:** The draft proposes including a URL in the renewal info response that points to a human-readable web document explaining the rationale behind the suggested renewal window (e.g., dynamic load balancing, mass re-issuance events). This is intended for human consumption, not mechanical processing.
+*   **ACME Integrations (draft-ietf-acme-integrations):** Version -06 mainly included editorial changes, aligning terminology (e.g., DNS), and adding missing acronyms. Authors believe the document is ready for Working Group Last Call.
+*   **ACME Subdomains (draft-ietf-acme-subdomains):** This document was adopted before the last IETF and split from "Integrations." Terminology was fixed to be consistent with ACME, and JSON examples for order parts were clarified, specifically changing `domainNamespace` to `subdomains` for authorization. Authors believe the document is ready for Working Group Last Call.
+
+## Decisions and Action Items
+
+*   **Action Item:** Roman to ping John Peterson regarding the status of "ACME Authority Token" and "ACME Authority Token TN off list" documents in ISG evaluation.
+*   **Action Item:** Brian to seek more volunteers for reviewing `draft-ietf-acme-dtn-node-id`. Alexei volunteered during the meeting.
+*   **Decision:** The ACME Working Group chairs will issue a Call for Adoption for `draft-ietf-acme-renewal-info` (ARI) after IETF 113, once version -02 is published. This call will combine a request for review of the updated draft with the adoption decision.
+*   **Decision:** `draft-ietf-acme-integrations` will proceed to Working Group Last Call after version -07 is published.
+*   **Decision:** `draft-ietf-acme-subdomains` will proceed to Working Group Last Call after version -03 is published, likely concurrently with `draft-ietf-acme-integrations`.
+
+## Next Steps
+
+*   Publication of `draft-ietf-acme-renewal-info-02`.
+*   Chairs to initiate a Call for Adoption for `draft-ietf-acme-renewal-info`.
+*   Publication of `draft-ietf-acme-integrations-07` and `draft-ietf-acme-subdomains-03`.
+*   Chairs to initiate Working Group Last Calls for `draft-ietf-acme-integrations` and `draft-ietf-acme-subdomains`.
+*   Depending on the success of these Last Calls and the adoption of ARI, the working group may review its future work content.

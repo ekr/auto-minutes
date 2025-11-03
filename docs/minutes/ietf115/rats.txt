@@ -1,0 +1,121 @@
+**Session Date/Time:** 07 Nov 2022 15:30
+
+# rats
+
+## Summary
+
+The rats working group session covered updates on several key drafts: EAT, AR4SI, EAT Media Types, Secure Routing, Attestation in TLS, Conceptual Message Wrapper, and Unencrypted CCS (UCCS). Significant discussion occurred on the EAT draft, leading to the closure of several open issues and a decision to rename a secure boot claim. The AR4SI draft is seeking broader community feedback on its trustworthiness vector. A request for early IANA allocation for EAT media types was raised, and the UCCS draft was approved to move to Working Group Last Call after merging recent revisions. Discussions on secure routing, attestation in TLS, and a conceptual message wrapper highlighted initial design considerations and calls for community engagement.
+
+## Key Discussion Points
+
+*   **Logistics**:
+    *   A second note-taker and Jabber scribe (Michael) were recruited.
+    *   Additional agenda items were requested: 5 minutes for UCCS update (added at end) and 5 minutes for SUIT reports update (slides sent late, did not get to present due to time constraints).
+
+*   **EAT Update (draft-ietf-rats-eat-07)**:
+    *   **Draft 17 Changes**:
+        *   Nonce made optional (allowing time-based freshness).
+        *   Improved specification for sub-module detached digest input.
+        *   Cleaner identification of sub-module digests for CBOR/JSON.
+        *   "Security Level" claim removed.
+        *   Wording clarifications: EAT described as a framework using profiles, sub-module section rewritten, CTI/JTI advice removed, sub-mods for evidence/results clarified, non-normative reference to UCCS added.
+        *   Security and privacy considerations updated (freshness, claim trustworthiness, CTI/JTI).
+    *   **Issue Review**:
+        *   **Issue 8 (Software Name)**: Clarified as free-form field. No objections. **Decision: Closed.**
+        *   **Issue 9 (Security Level)**: Claim removed. **Decision: Closed.**
+        *   **Issue 10 (DLoA's Claim)**: Wording improved in draft 14. No further action needed. **Decision: Closed.**
+        *   **Issue 11 (Manifest Claims - SPDX/CycloneDX)**: Claims for SPDX and CycloneDX added in draft 14, including CoAP content types. No comments since July. **Decision: Closed.**
+        *   **Issue 12 (Section 9.2 / IANA)**: Text on claim characteristics moved to a non-normative appendix from the IANA section. **Decision: Closed.**
+        *   **Issue 13 (Minor Issues/Nits - Introduction)**: Introduction rewritten in drafts 14, 15, 17 to clarify EAT as a framework and security model. **Decision: Closed.**
+        *   **Issues 14/15 (Comment Blocks - Thomas/Michael)**: Many wording clarifications and other changes made; remaining issues moved to GitHub.
+        *   **Issue 16 (CDDL Socket for Message Types)**: Resolved by requiring new EAT message types to be IETF standards. **Decision: Closed.**
+        *   **Issue 17 (Security Level)**: Claim removed. **Decision: Closed.**
+        *   **Issue 18 (Attestations/Endorsements Confusion)**: Hank raised concerns about 'attestation' being confused with an action vs. a message, and potential confusion with endorsements. Discussion clarified EAT's specific usage and its relation to the RATS architecture. Specific text in the 'intended use claim' (certificate issuance requiring attestations) to be reviewed for clarity.
+        *   **Nonce and Freshness Text**: Open for comments; Hank suggested decoupling replay protection from freshness, as nonces provide freshness by circumstance, not as a primary mechanism against replay.
+        *   **Secure Boot Claim**: Discussion on the definition of "secure boot" requiring OEM control. Concerns raised about scenarios where Enterprises, not OEMs, control secure boot. **Decision: Rename the existing "secure boot" claim to "OEM authorized boot" (or similar) to clearly indicate its scope. All three instances of the term in the document should be updated.**
+
+*   **EAT IANA Registry Column**:
+    *   Discussion on potentially adding a column to the CBOR Web Token (CWT) registry to specifically identify EAT-related claims for expert reviewers.
+    *   Michael Jones (DE) argued existing mechanisms (reading claim definitions) are sufficient and a special case for EAT is not needed, as this characteristic is common for other third-party claim registrations (e.g., ACE).
+    *   No consensus to pursue this immediately due to perceived complexity and potential delays.
+
+*   **AR4SI (draft-ietf-rats-ar4si-03)**:
+    *   **Status**: Main building blocks are in place. The document defines an information model for attestation results, centered on a "Trustworthiness Vector."
+    *   **Feedback Request**: Seeking community feedback on the defined appraisal categories (trustworthiness vector), potential gaps, and additional needed categories.
+    *   **Core Concepts**: Trustworthiness Vector has four horizontal tiers (affirming, warning, contraindicated, unknown) and two vertical subspaces (positive/standard, negative/private).
+    *   **AR4SI Claim Set**: While AR4SI provides the semantic core, a broader "AR4SI Claim Set" (a type of EAT profile) provides contextual metadata (verifier identity, appraisal time, policies, evidence).
+    *   **Dave's Comment**: Suggested clarification for interpreting the "private" space (negative numbers) in the trustworthiness vector, possibly by linking it to an OEM ID in a profile.
+
+*   **EAT Media Types (draft-ietf-rats-eat-media-types-02)**:
+    *   Defines media types for EAT's six productions (signed, unsigned, bundled).
+    *   **Naming Changes**: `eat-damper` renamed to `eat-bun`; `eat-profile` for consistency.
+    *   **CoAP Issue**: Difficulty in specifying profiles with CoAP content formats due to their compressed nature; a separate draft is proposed for generic transfer of media type parameters.
+    *   **Early IANA Allocation Request**: Requested early IANA allocation for the media types due to document stability.
+
+*   **Secure Routing (New Draft)**:
+    *   **Problem**: Existing routing protocols prioritize reachability, separating routing from security.
+    *   **Proposed Solution**: Develop secure routing to provide security services for user data. Collect node security capabilities (e.g., IPS, IDS), form routes based on user security requirements, and distribute these routes (e.g., via Segment Routing V6).
+    *   **Mechanism**: Extend BGP-LS (RFC 7752) to carry node, link, and prefix security capabilities.
+    *   **Process**: Collect capabilities -> Configure security devices -> Distribute routing paths.
+    *   **Recommendation**: Present this work at the SEC Dispatch Working Group for broader security routing discussions due to potential lack of direct connection to RATS core work. Potential overlap with Trusted Path Routing work.
+
+*   **Attestation in TLS (New Draft)**:
+    *   **Goal**: Bind EAT tokens to a key, providing proof of possession within a secure channel like TLS.
+    *   **Mechanism**: Client generates an identity key pair, obtains a nonce from the server, creates a bundle of a Platform Attestation Token (PAT) and a Key Attestation Token (KAT). This bundle, including the public identity key, is sent in a TLS Certificate message, and possession of the private key is proven via a CertificateVerify message.
+    *   **Benefits**: Server gains knowledge of platform software state, firmware integrity, and assurance that the private key is securely stored and unexportable.
+    *   Hackathon code available for demonstration.
+    *   **Recommendation**: Coordinate with TCG terminology for better alignment, as the draft uses much TCG-like terminology.
+
+*   **Conceptual Message Wrapper (New Draft)**:
+    *   **Goal**: Provide a uniform encapsulation for any RATS conceptual message (evidence, results, endorsements, ref values) for various protocols.
+    *   **Use Cases**: Embedding in certificates/CRLs, TLS handshakes, RESTful APIs, long-term archival.
+    *   **Design**: A simple structure with `type` and `value`. `type` can be a media type string (for JSON) or a CoAP content format code point (for CBOR). `value` is either a CBOR byte string or base64url-encoded string.
+    *   Relies on existing media type/CoAP content format IANA registries for typing information, making registration lightweight.
+    *   **Status**: Draft-01 is readable and short.
+
+*   **Unencrypted CCS (UCCS) (draft-ietf-rats-unencrypted-cwt-claim-sets-02)**:
+    *   **Status**: Draft is considered stable, having addressed feedback from a year ago and aligned with EAT. Some very recent comments from Thomas will be addressed.
+    *   **Proposal**: Move to Working Group Last Call (WG LC).
+    *   **Room Poll**: A poll showed 21 out of 22 participants (remote and in-room) were in favor of moving to WG LC after the recent revisions are merged.
+
+*   **SUIT**: No time for presentation.
+*   **COTS (Concise Trusted Anchor)**: Call for adoption is forthcoming.
+
+## Decisions and Action Items
+
+*   **EAT Draft**:
+    *   **Decision**: Issue 8 (Software Name), Issue 9 (Security Level), Issue 10 (DLoA's Claim), Issue 11 (Manifest Claims), Issue 12 (Section 9.2/IANA), Issue 13 (Minor Issues/Intro), Issue 16 (Message Types/CDDL Socket), Issue 17 (Security Level) are **closed**.
+    *   **Decision**: The "secure boot" claim will be **renamed to "OEM authorized boot" or similar** to clarify its scope, and all instances in the document updated.
+    *   **Action Item**: Authors to clarify text regarding 'attestations' vs 'activities' and the intended use claim.
+    *   **Action Item**: Authors to improve text regarding nonce, freshness, and the decoupling of replay protection from freshness.
+
+*   **AR4SI Draft**:
+    *   **Action Item**: Chairs (Thomas, Eric, Ned, Kathleen) to discuss and decide on the best mechanism to solicit broader community feedback on the trustworthiness vector (e.g., virtual interim, design team, mailing list call for comments).
+    *   **Action Item**: Authors to consider adding guidance on interpreting "private space" (negative numbers) in the trustworthiness vector, potentially linking it to an OEM ID or similar in a profile.
+
+*   **EAT Media Types Draft**:
+    *   **Action Item**: Chairs will **poll the mailing list** to gauge working group consensus for requesting early IANA allocation for the defined EAT media types.
+
+*   **Secure Routing Draft**:
+    *   **Action Item**: Authors are advised to **present this work at the SEC Dispatch Working Group** for broader discussion on secure routing, as its connections to RATS are not immediately clear.
+
+*   **Attestation in TLS Draft**:
+    *   **Action Item**: Authors to consider **coordinating with TCG terminology** for improved alignment and reduced friction.
+
+*   **Conceptual Message Wrapper Draft**:
+    *   **Action Item**: Authors to **solicit feedback on the mailing list** regarding interest in adopting the draft.
+
+*   **Unencrypted CCS (UCCS) Draft**:
+    *   **Decision**: The working group agrees to proceed with a **Working Group Last Call** for the UCCS draft, contingent on merging the latest revisions (including Thomas's recent comments).
+
+## Next Steps
+
+*   **EAT**: Authors to finalize text on attestations/freshness/nonce and implement the renaming of the "secure boot" claim to "OEM authorized boot."
+*   **AR4SI**: Chairs will organize a mechanism for collecting wider community feedback on the trustworthiness vector and appraisal categories.
+*   **EAT Media Types**: Chairs will initiate a mailing list poll for early IANA allocation.
+*   **Secure Routing**: Present at SEC Dispatch WG.
+*   **Attestation in TLS**: Engage with TCG community.
+*   **Conceptual Message Wrapper**: Seek adoption feedback on the mailing list.
+*   **UCCS**: Authors to merge latest revisions, then proceed to Working Group Last Call.
+*   **COTS**: Expect a Call for Adoption soon.
+*   The working group will continue discussions on the mailing list and may schedule another virtual interim meeting if needed. Additional information on SUIT and other attestation topics can be found at the SUIT and TEEP meetings.

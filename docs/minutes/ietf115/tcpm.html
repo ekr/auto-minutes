@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="tcpm.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-TCPM-20221109-1300">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 09 Nov 2022 13:00</p>
+<h1>tcpm</h1>
+<h2>Summary</h2>
+<p>The tcpm session included a working group status update, followed by in-depth discussions on several drafts. Key topics included the status of Accurate ECN, a retrospective on Appropriate Byte Counting (ABC) in relation to RFC 3465 and Highstart++, a proposal for a TCP ACK Rate Request option, and a presentation on the differences between standard congestion control schemes. The working group voted to adopt the TCP ACK Rate Request draft and will continue discussions on the future of ABC and the proposed TCP EDO standard status.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Status Update</strong></p>
+<ul>
+<li><strong>TCP Base Spec</strong>: Now RFC 9293, thanks to Wes.</li>
+<li><strong>Yang Document</strong>: In RFC Editor Queue, currently in a misref state.</li>
+<li><strong>Highstart++</strong>: Under AD review. Editorial questions and a substantive question regarding the 'L' value (ABC limit) have been raised. A new revision specifies <code>L=8</code> if not pacing, <code>L=infinity</code> if pacing. This change will require a short working group last call (WGLC) once finalized with the AD.</li>
+<li><strong>CUBIC</strong>: Submitted as an individual submission, awaiting a revised version for further processing.</li>
+<li><strong>PRR</strong>: Currently in WGLC; comments have been received and responses are being drafted. WGLC will close soon, so urgent feedback is encouraged.</li>
+<li><strong>Accurate ECN (draft-ietf-tcpm-accurate-ecn)</strong>: Next in line for WGLC. I.N. has been assigned as document shepherd.</li>
+<li><strong>Generalized ECN (draft-ietf-tcpm-generalized-ecn)</strong>: I.N. has been assigned as document shepherd.</li>
+<li><strong>TCP EDO (draft-ietf-tcpm-edo)</strong>: Milestones updated to December 2023. Authors believe it's ready for WGLC. Discussion centered on implementation experience for a Proposed Standard (PS) track document.
+<ul>
+<li>Concern raised about standardizing without implementation experience, suggesting Experimental (EXP) status might be more appropriate.</li>
+<li>It was noted that past IETF practices sometimes allowed PS without implementations, but a preference for at least intent to implement was expressed.</li>
+<li>Another related document for extending the SYN segment is being discussed by chairs.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Accurate ECN Feedback in TCP (draft-ietf-tcpm-accurate-ecn)</strong></p>
+<ul>
+<li><strong>Updates (v22)</strong>: Substantive change regarding feedback for multiple SYNs: feedback should be for the latest SYN.</li>
+<li><strong>Goal &amp; Approach</strong>: To feed back the <em>extent</em> of congestion (not just existence) within a RTT to achieve very low queuing delay. RFC 3168 only signalled congestion existence.</li>
+<li><strong>Solution</strong>: Re-purposes two TCP header bits and a third bit (historically for ucn nonce) into a 3-bit counter. An optional TCP option provides extra precision with 24-bit counters for bytes/ACE fields.</li>
+<li><strong>Relation to other activities</strong>:
+<ul>
+<li><strong>DCTCP</strong>: Accurate ECN provides negotiation lacking in DCTCP, allowing fallback and public internet deployment.</li>
+<li><strong>Congestion Control</strong>: It's an architectural replacement for existing TCP ECN feedback, usable by any CC algorithm (Reno, CUBIC, etc.).</li>
+<li><strong>L4S</strong>: The L4S experiment uses Accurate ECN as generic feedback.</li>
+<li><strong>ECN++</strong>: Accurate ECN recommends ECN++ for using ECN on control packets/retransmissions, despite ECN++ being experimental.</li>
+</ul>
+</li>
+<li><strong>Stack Placement</strong>: Fits below congestion control, at the TCP layer, using IP header ECN fields. No network dependency.</li>
+<li><strong>Key Review Areas for WGLC</strong>: Negotiation phase (mangling, backward/forward compatibility, fallback), resilience (ACK loss/coalescing), TCP wire protocol changes, interaction with TCP variants, security considerations (flooding, integrity, downgrade attacks).</li>
+<li><strong>Implementation Status</strong>:
+<ul>
+<li>Linux: Updated to kernel 5.15 base, pull request pending for L4S repo.</li>
+<li>FreeBSD: Implemented in FreeBSD 14 (without optional TCP option), passed packet drill tests (except option-related ones). Some path testing shows AE bit clearing by <code>net.module</code> in IPFW.</li>
+<li>Apple platforms: Reflector side implemented (off by default), allows testing against senders.</li>
+<li>Extensive interoperability testing occurred in hackathon.</li>
+<li>TCPdump and Wireshark 4.0 now support correct Accurate ECN flag display.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>: No current data on deployment ratio of the optional TCP option on the public internet. Concerns about path changes leading to ecn mangling after handshake were discussed, noting current checks are at handshake and implementations <em>may</em> continue to check.</li>
+</ul>
+</li>
+<li>
+<p><strong>Appropriate Byte Counting and RFC 3465 (ABC)</strong></p>
+<ul>
+<li><strong>Background</strong>: RFC 3465 (experimental) defined ABC. RFC 5681 (standards track) adopted the congestion avoidance part of ABC and limited slow start 'L' to 1. Linux default uses L &gt; 1.</li>
+<li><strong>Highstart++ Impact</strong>: The Highstart++ draft, currently in AD review, proposes standardizing <code>L=infinity</code> (with pacing) or <code>L=8</code> (without pacing) when used in conjunction with Highstart++. This raises questions about the status of RFC 3465 and other ABC uses.</li>
+<li><strong>Current Status Implications</strong>: Depending on 'L' value and CC algorithm, ABC use could be standards track, experimental, or outside IETF specifications.</li>
+<li><strong>Proposed Options</strong>:
+<ol>
+<li>Do nothing (ignore non-interoperable issues).</li>
+<li>Initiate a document action to make RFC 3465 Historic (with references to where its components were standardized).</li>
+<li>Create a new, tiny Proposed Standard document to sanctify ABC with <code>L &gt; 1</code> without Highstart++.</li>
+</ol>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Concern about future CCs (e.g., BBR) needing similar updates, suggesting that linking ABC to specific algorithms might be brittle.</li>
+<li>A broader discussion on specifying principles vs. specific implementations for slow start was proposed.</li>
+<li>The idea of a &quot;5681-bis&quot; document was floated as a larger-scale solution but was deemed a significant effort.</li>
+<li>A poll was conducted on whether the working group would like a new PS document (option 3), with 9 in favor and 3 against (out of 12 participants). This was considered insufficient consensus for a definitive decision.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>TCP ACK Rate Request (draft-ietf-tcpm-ack-rate-request)</strong></p>
+<ul>
+<li><strong>Motivation</strong>: Address sub-optimal performance due to delayed ACKs in large/small congestion windows, asymmetric paths, or for reducing computational/network load. Allows sender to request an immediate ACK or a specific ACK rate.</li>
+<li><strong>Status Update (v06)</strong>:
+<ul>
+<li><strong>Option Format</strong>: Changed from 6 to 5 bytes, with a 7-bit 'R' field (max 127) for the requested ACK rate. One reserved bit remains.</li>
+<li><strong>Appendix A</strong>: Added comparison with RFC 5690 (ACC), clarifying differences in goals, status (TAR intended EXP), complexity, and option definition (TAR uses a single experimental option kind, ACC uses two).</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Authors requested working group adoption.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Query about why existing mechanisms like the PUSH flag are insufficient (receiver side is not specified to send an immediate ACK for PUSH, and implementations differ).</li>
+<li>Concern about interaction with RFC 3449 (ACK mangling) and TCP offload. Data and discussion on the mailing list requested.</li>
+<li>Suggestion to align common concepts with Quick's delayed ACK option for building common experience.</li>
+</ul>
+</li>
+<li><strong>Decision</strong>: A poll was conducted for working group adoption. 21 participants voted in favor, 3 against. The working group will adopt this draft.</li>
+</ul>
+</li>
+<li>
+<p><strong>Differences between Standard Congestion Control Schemes (draft-yoshi-tcpm-standard-cc-diff)</strong></p>
+<ul>
+<li><strong>Motivation</strong>: Document differences observed during CUBIC discussions, provide a reference for future CC principle discussions, and encourage further analysis. Focus is on listing differences, not evaluating their impact.</li>
+<li><strong>Differences highlighted</strong>:
+<ul>
+<li><strong>Reno (RFC 5681) vs. Quick Reno (RFC 9002)</strong>: Initial Window, Loss Window, Loss Detection Scheme, Packet Loss Threshold (CWND/FlightSize), Window Growth in Slow Start (1 segment vs. multiple acknowledged bytes), Loss Recovery Algorithm definition.</li>
+<li><strong>Reno (RFC 5681) vs. CUBIC (draft-ietf-tcpm-cubic)</strong>: Multiplicative Window Decrease Factor (0.5 vs. 0.7), Linear Friendly Model (validity skepticism).</li>
+</ul>
+</li>
+<li><strong>Discussion Points</strong>:
+<ul>
+<li>Are these differences acceptable?</li>
+<li>What needs to be sorted out, and how (e.g., update RFC 5681)?</li>
+<li>Is this document worth publishing as a reference?</li>
+</ul>
+</li>
+<li><strong>Feedback</strong>: RFC 9002 (Quick Reno) was suggested as reflecting more current best practices. The creation of a dedicated Congestion Control Working Group could help ensure consistency moving forward.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: The working group voted to <strong>adopt <code>draft-ietf-tcpm-ack-rate-request</code></strong>.</li>
+<li><strong>Action Item</strong>: Chairs to further discuss the consensus and next steps for <strong>Appropriate Byte Counting / RFC 3465</strong> given the inconclusive poll results.</li>
+<li><strong>Action Item</strong>: Authors of <strong>TCP EDO</strong> to consider implementation experience feedback and engage with the chairs regarding Proposed Standard vs. Experimental status.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Accurate ECN</strong>: Proceed towards working group last call (WGLC).</li>
+<li><strong>Highstart++</strong>: Authors and AD to finalize changes, then initiate a short WGLC for the document.</li>
+<li><strong>CUBIC</strong>: Await a revised version of the individual submission.</li>
+<li><strong>PRR</strong>: WGLC to close soon; comments and responses to be finalized.</li>
+<li><strong>TCP ACK Rate Request</strong>: Begin working group efforts for this newly adopted draft.</li>
+<li><strong>Differences between Standard Congestion Control Schemes</strong>: Feedback on publishing as a reference document is requested. Discussion on potential consistency alignment (e.g., updating RFC 5681) will continue.</li>
+<li>The idea of a dedicated Congestion Control Working Group was mentioned as a potential long-term solution for consistency across CC algorithms.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

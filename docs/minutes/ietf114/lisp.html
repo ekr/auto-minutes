@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lisp.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-LISP-20220727-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 27 Jul 2022 17:30</p>
+<h1>lisp</h1>
+<h2>Summary</h2>
+<p>The LISP Working Group meeting provided an update on the significant progress of LISP core documents, with eight drafts now in the RFC Editor Queue, benefiting from expedited processing for ICAO. Key technical discussions revolved around the &quot;LISP Reliable Transport&quot; draft, focusing on its transition mechanisms, protocol selection (including QUIC), and IANA considerations, with a decision to make TCP mandatory. The &quot;Distinguished Name Encoding&quot; draft, critical for several LISP features, was discussed for its path to Working Group adoption and last call, including considerations for character encoding. Finally, a new &quot;LISP for Satellite Networks&quot; draft was introduced, exploring LISP as an overlay over satellite underlays, highlighting its applicability for mobility and traffic engineering in such environments.</p>
+<h2>Key Discussion Points</h2>
+<h3>Working Group Status Update</h3>
+<ul>
+<li><strong>RFC Editor Queue</strong>: Eight documents are currently in the RFC Editor Queue, including the BEAST cluster, LISP-TE, and the introduction document.</li>
+<li><strong>Expedited Processing</strong>: Expedited processing for the entire cluster (7-8 documents) was requested at the behest of ICAO. Authors are urged to respond to AUTH48 reviews promptly, ideally within 48 hours.</li>
+<li><strong>Working Group Last Call (WGLC)</strong>: Two additional documents have passed WGLC, with the YANG model highlighted as needing particular attention for progression.</li>
+<li><strong>Future Focus</strong>: With the core BEAST documents nearing publication, the working group will shift focus to other pending drafts.</li>
+</ul>
+<h3>LISP Reliable Transport (Mark)</h3>
+<ul>
+<li><strong>Updates to the Draft</strong>:
+<ul>
+<li>Further details on the transition from UDP to reliable transport.</li>
+<li>Incorporation of a &quot;reliable transport bit&quot; for ETR/Map Server communication.</li>
+<li>Addition of QUIC as an alternative reliable transport protocol.</li>
+<li>Discussion on protocol selection when multiple options are available.</li>
+</ul>
+</li>
+<li><strong>UDP to Reliable Transfer Mechanism</strong>:
+<ul>
+<li>ETRs <em>must</em> first register successfully via UDP.</li>
+<li>Map servers will only accept reliable transport connections from an ETR after a successful UDP registration where the ETR expresses intent to switch.</li>
+<li>If a reliable transport session goes down, the ETR should revert to UDP before attempting reliable transport again.</li>
+</ul>
+</li>
+<li><strong>Reliable Transport Bit</strong>: A bit in the Map-Register indicates ETR intent; the Map-Notify reflects Map Server's acceptance.</li>
+<li><strong>Protocols and Streams</strong>:
+<ul>
+<li>QUIC has been added to the list of supported protocols.</li>
+<li>All reliable transport sessions are expected to be long-lived to maintain synchronized state.</li>
+<li>The draft currently specifies a single stream for QUIC and SCTP, but the authors are open to discussion on supporting multiple streams if necessary.</li>
+</ul>
+</li>
+<li><strong>Protocol Selection</strong>: A suggested (MAY) order for protocol preference is provided, but ETRs should continue sending complete mapping information via UDP until reliable transport is established to avoid delays.</li>
+<li><strong>Port Allocations</strong>:
+<ul>
+<li>TCP can reuse port 4342.</li>
+<li>New IANA port requests are needed for QUIC and potentially SCTP. The IANA procedure has been initiated, with action expected closer to WG Last Call.</li>
+</ul>
+</li>
+</ul>
+<h3>Distinguished Name Encoding (Dino)</h3>
+<ul>
+<li><strong>Overview</strong>:
+<ul>
+<li>Allows encoding of distinguished names (character strings) in LISP EID or RLOC records using AFI 17.</li>
+<li>Uses a 2-byte AFI 17 value followed by a null-terminated ASCII string.</li>
+<li>Provides self-documenting mapping records and allows for grouping entities.</li>
+<li>Supports hierarchical lookups similar to power-of-2 addresses, compatible with DDT/LISP-DEC, using arbitrary boundaries (e.g., slashes).</li>
+</ul>
+</li>
+<li><strong>Current Use Cases</strong>: Utilized in drafts for ECDSA authentication, predictive RLOCs, geo-coordinates, policy distribution, simple NAT, and LISP multicast.</li>
+<li><strong>Updates</strong>: Collision commentary from Joel has been addressed in the latest draft version (-15).</li>
+<li><strong>Character Encoding</strong>: The draft currently specifies ASCII. Using UTF-8 would require a fundamental redesign due to reliance on null-termination. The working group opted to keep ASCII for now, with the understanding that this point will likely be raised during IETF review.</li>
+<li><strong>Charter Discussion</strong>: Sharon requested adding use cases for routed namespaces to the charter. Chairs noted that rechartering would be a discussion for after the BEAST documents are published (within approximately one month).</li>
+</ul>
+<h3>LISP for Satellite Networks (Dino)</h3>
+<ul>
+<li><strong>High-Level Goals</strong>: To run LISP as an overlay over any IP packet delivery underlay, including satellite networks. The satellite network functions as a transparent IP delivery mechanism, unaware of LISP.</li>
+<li><strong>Architecture</strong>: Overlay nodes (XTRs) and the mapping system are assumed to be on ground stations. Satellites and Inter-Satellite Links (ISLs) form the underlay for IP packet delivery between ground stations.</li>
+<li><strong>Key Features</strong>:
+<ul>
+<li><strong>EID Mobility</strong>: Supports EID mobility for devices roaming between ground station XTRs, leveraging existing LISP mechanisms. Also covers cases where an XTR's RLOC may change due to satellite movement.</li>
+<li><strong>Traffic Management</strong>: Load splitting across different RLOCs (terrestrial or satellite-based), LISP crypto for security, and traffic engineering capabilities (e.g., encapsulating to an RTR for alternative paths) are supported.</li>
+<li><strong>Telemetry</strong>: LISP telemetry could be used to test satellite network paths, measuring latency and hop counts.</li>
+<li><strong>Multicast</strong>: EID multicast service can be offered via head-end replication, potentially using underlay multicast if available.</li>
+<li><strong>Interworking</strong>: Full interworking with non-LISP sites via PXTs and other LISP mechanisms.</li>
+</ul>
+</li>
+<li><strong>Open Questions/Future Work</strong>:
+<ul>
+<li>Whether LISP nodes should be deployed directly on satellites (as routers) to reduce latency.</li>
+<li>Investigation of MTU limitations in satellite links.</li>
+<li>The availability of multicast services within satellite networks.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>: The draft focuses on using existing satellite infrastructure as an underlay, without needing modifications. Dino plans prototyping with existing satellite providers (e.g., Starlink, Amazon). The role of the control plane (mapping system) location (ground vs. space) was discussed, with ground-based being the initial assumption due to reliability and latency.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>LISP Reliable Transport</strong>:
+<ul>
+<li><strong>Decision</strong>: TCP will be a mandatory protocol for LISP Reliable Transport.</li>
+<li><strong>Decision</strong>: The ordering of protocol selection for reliable transport does not need to be mandated in the draft.</li>
+<li><strong>Action Item</strong>: Mark to update the draft to reflect TCP as mandatory and potentially clarify SCTP port usage.</li>
+</ul>
+</li>
+<li><strong>Distinguished Name Encoding</strong>:
+<ul>
+<li><strong>Decision</strong>: The draft will proceed with Working Group adoption, followed by a Working Group Last Call.</li>
+<li><strong>Action Item</strong>: Dino to re-post the draft with the <code>ietf-lisp-</code> prefix after adoption.</li>
+<li><strong>Decision</strong>: Early reviews from the Security and Transport areas will be requested after the draft is adopted.</li>
+<li><strong>Decision</strong>: The document will aim for Proposed Standard status.</li>
+<li><strong>Decision</strong>: The draft will retain ASCII encoding for distinguished names; authors will be prepared to address questions regarding UTF-8 during review.</li>
+</ul>
+</li>
+<li><strong>LISP for Satellite Networks</strong>:
+<ul>
+<li><strong>Action Item</strong>: Dino to clarify in the draft how load-splitting across &quot;RLOCs in space&quot; actually refers to different ground-based RLOCs accessible via satellite.</li>
+<li><strong>Action Item</strong>: Dino to investigate MTU limitations on satellite links and consider their implications for the draft.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>LISP Reliable Transport</strong>: Continue refining the draft based on working group feedback, especially regarding IANA port requests and stream usage for QUIC/SCTP.</li>
+<li><strong>Distinguished Name Encoding</strong>: Initiate the Working Group adoption call (anticipated 2-3 weeks due to August), then proceed to Last Call once the draft is reposted with the correct name and early reviews are obtained.</li>
+<li><strong>LISP for Satellite Networks</strong>: Further investigate satellite network capabilities, including MTU and multicast services. Dino plans prototyping to validate the concepts. Continued discussion on the mailing list is encouraged.</li>
+<li><strong>Working Group Charter</strong>: Discussion on potential rechartering to broaden the scope (e.g., explicit mention of use cases like routed namespaces) will begin after the core LISP BEAST documents are published.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

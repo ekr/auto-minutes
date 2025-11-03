@@ -1,0 +1,102 @@
+**Session Date/Time:** 09 Nov 2021 12:00
+
+# secdispatch
+
+## Summary
+
+This session provided an update on NIST's Post-Quantum Cryptography (PQC) standardization project, followed by presentations and dispatch discussions for two new proposals: "Private Access Tokens" and "Multicast Security and Privacy Considerations".
+
+NIST announced finalists for PQC algorithms and outlined next steps towards standardization by 2024, including a new call for additional signature schemes. The "Private Access Tokens" draft proposes a privacy-preserving mechanism for rate-limiting client access without relying on IP addresses, and it was dispatched to the Privacy Pass Working Group. The "Multicast Security and Privacy Considerations" draft aimed to secure multicast traffic for scalable content delivery, and further discussion on its scope and approach will continue on an appropriate mailing list.
+
+## Key Discussion Points
+
+### NIST Post-Quantum Cryptography (PQC) Update (Dustin Moody, NIST)
+
+*   **Motivation for PQC**: Shor's algorithm poses a threat to current public-key cryptography (RSA, ECDSA, Diffie-Hellman), while Grover's algorithm has a less dramatic impact on symmetric-key crypto (mitigated by increased key sizes). NIST's focus is on classical computers implementing quantum-resistant algorithms, distinct from Quantum Key Distribution (QKD).
+*   **Project Timeline & Status**: The NIST PQC project began in 2016, receiving 82 proposals (69 accepted into Round 1). It is currently in Round 3, with 7 finalists and 8 alternates selected for further study. Standardization is targeted for completion by 2024.
+*   **Evaluation Criteria**: Algorithms are judged on Security (paramount, defined in 5 levels relating to symmetric key effort), Performance (efficiency, key/signature/ciphertext sizes), and other properties (perfect forward secrecy, side-channel resistance, simplicity).
+*   **Round 3 Finalists & Alternates**:
+    *   **Key Encapsulation Mechanisms (KEMs)**:
+        *   Finalists: Kyber, Saber, NTRU (lattice-based), Classic McEliece (code-based). These are generally good all-around candidates.
+        *   Alternates: NTRU Prime, FrodoKEM (conservative security, larger keys), BIKE, HQC (code-based, potential for 4th round), SIKE (isogeny-based, very small keys but slower).
+    *   **Digital Signatures**:
+        *   Finalists: Dilithium, Falcon (lattice-based, efficient).
+        *   Alternates: SPHINCS+ (symmetric-key based, well-understood security, but larger/slower), Picnic (novel design), Rainbow, GeMSS (multivariate, large public keys, small signatures, but recent cryptanalysis concerns).
+*   **Next Steps for NIST**:
+    *   Announce first set of standardized algorithms in early 2022.
+    *   Draft standards to be developed with submitters (target 1 year).
+    *   Final publication targeted by 2024.
+    *   **Signature "On-Ramp"**: A new call for proposals for signature schemes will be issued. This is a smaller, scoped project to diversify the signature portfolio, seeking general-purpose algorithms not based on structured lattices, and potentially schemes with very short signatures.
+*   **IPR Issues**: NIST acknowledges the significant impact of IPR on adoption and is actively engaging to resolve known issues, but cannot guarantee resolution of all third-party IPR. The focus for IETF should be on the impact of IPR on adoption.
+*   **Transition Guidance**: NIST will issue guidance for the transition to PQC. Hybrid modes (combining classical and PQC algorithms) are a recognized approach for migration. The NCCoE has a project dedicated to PQC transition and migration.
+*   **Recommendations for Organizations**: Inventory current cryptographic usage, plan for crypto agility, raise staff awareness, track PQC developments, and test candidate algorithms.
+*   **Q&A Highlights**:
+    *   Only minor tweaks are expected for algorithms selected for standardization.
+    *   NIST plans to continue PQC research and standardization beyond the initial set, with a fourth round and signature on-ramp.
+    *   Threshold cryptography is not a primary focus but could be a future adaptation for some lattice-based schemes.
+    *   NIST's primary focus is on KEMs, as direct NIKE (Non-Interactive Key Exchange) analogues were not prevalent in submissions. KEMs can be adapted.
+    *   NIST aims to standardize more than one algorithm per category but keep the number as small as possible to aid adoption.
+    *   Key size expansion is expected; general-purpose KEMs around 1000 bytes, signatures 1000-2000 bytes for Category 1, with trade-offs for smaller keys (e.g., SIKE).
+
+### SAG Open Mic (PQC Coordination)
+
+*   An informal coordination effort by ADs is underway for PQC work within the IETF.
+*   A proposed "PQC Agility/Maintenance Group" on the mailing list aims to address orphaned protocols and facilitate general PQC discussion. Work within existing working groups (e.g., LAMS, TLS, IPsec) for chartered items would remain within those WGs.
+
+---
+
+### Private Access Tokens (Tommy Pauly)
+
+*   **Problem Statement**: Current reliance on client IP addresses for server functions (rate-limiting, metered access) creates privacy issues (tracking, shared fate), especially as privacy services (VPNs, Private Relay) anonymize IP. This leads to use cases potentially shifting towards stronger, more intrusive identity requirements.
+*   **Proposed Solution**: Private Access Tokens (PATs) enable anonymous clients to prove limited state (e.g., fewer than N accesses in a time window) to an origin without revealing their identity or browsing history. This aims to fill the gap between truly anonymous and authenticated access.
+*   **Architecture**:
+    *   A new HTTP authentication method `Challenge` asks clients for a token.
+    *   Clients obtain unlinkable, origin-specific tokens via an asynchronous issuance protocol.
+    *   The protocol uses a split model:
+        *   **Mediator**: Chosen by the client, authenticates the client, but does *not* see the target origin. It tracks token counts for anonymous origins within a policy window.
+        *   **Issuer**: Chosen by the origin, vends tokens, enforces policies (e.g., rate limits), but does *not* see client identity. The actual origin name is encrypted from client to issuer.
+    *   **Cryptographic Primitives**: RSA blind signatures for tokens, HPKE for origin encryption, blinded Diffie-Hellman with Schnorr proof for mediator-client proof of knowledge.
+*   **Deployment Considerations**:
+    *   Clients choose trusted mediators (e.g., based on device hardware assert, verified account).
+    *   Origins choose trusted issuers (e.g., CDNs, web hosting, captcha services).
+    *   A degree of mutual trust between mediators and issuers is necessary; they should be distinct entities.
+    *   Decentralization is a key goal, avoiding a single handful of dominant mediators/issuers.
+*   **Comparison to Privacy Pass**: PATs differ by incorporating per-client and per-origin state, scoping tokens to specific origins (preventing cross-origin spending), using an online challenge (preventing token hoarding), and providing publicly verifiable tokens (no origin backend communication needed). This aims for higher utility for IP-replacement use cases.
+*   **Discussion**:
+    *   **IPR Concerns**: A similar proposal from 2003 by Verisign (Philip H) was noted as potentially patented, with a suggestion for hardware integration for mediators.
+    *   **Dispatch to Privacy Pass WG**: Ben Schwartz (Privacy Pass chair) suggested the work is appropriate for Privacy Pass WG, advocating for addressing the use cases within the existing WG framework, potentially adapting its scope, rather than parallel efforts. Emphasized the need for a unified privacy analysis and capability negotiation for different token types.
+    *   **Complexity & Trust**: Concerns were raised about the increased complexity and reliance on "tricky partial trust relationships" compared to Privacy Pass, and the "chokepoint effect" if only a few large players become mediators/issuers (Ecker).
+    *   **Use Case Clarity**: A need for more concrete analysis of use cases was expressed, questioning whether the complexity introduced by origin-specific rate-limiting is sufficiently motivated, especially given that some assertions (e.g., "is human") can be covered by Privacy Pass (Ecker).
+    *   **Collusion & Proof of Work**: Andrew raised concerns about preventing collusion between mediators and issuers, and reiterated the general avoidance of proof-of-work mechanisms.
+
+---
+
+### Multicast Security and Privacy Considerations (Jake Holland)
+
+*   **Problem Statement**: Congestion at ISP access layers due to duplicated unicast traffic for popular content (e.g., large game downloads, sporting events). Multicast offers a scalable delivery solution to avoid this, unlike peer-to-peer or application-level multicast which worsen or don't address access layer congestion.
+*   **Current IETF Work**: The MBO&D (Multicast Backbone and Overlay Discussion) Working Group has been exploring viability, conducting proof-of-concept implementations, and developing adopted drafts for addressing, including work on AMT and Dryad.
+*   **Outreach & Trials**: Extensive engagement with ISPs (largely positive feedback, lab trials successful using existing ISP gear for multicast forwarding) and content owners.
+*   **Application Layer Focus**: Work aims to support both web and non-web traffic. A W3C Community Group is incubating web-related work, aiming to integrate with WebTransport. Early feedback from Chromium highlighted the need for *confidentiality* as a design principle, driving the current security considerations draft.
+*   **Security & Privacy Goals**:
+    *   Separate integrity/authenticity from confidentiality concerns, as these are driven by different threat models.
+    *   Multicast's inherent property of many receivers decoding the same packets creates content discoverability implications, but the removal of destination IP increases anonymity at network locations.
+    *   Current threat models for confidentiality often focus on personalized data; popular content traffic analysis is already prevalent. The draft seeks to articulate the security model and discuss if multicast introduces fundamentally new, unsolvable privacy issues.
+*   **Existing & Future Documents**: `draft-holland-multicast-security` is the current security considerations document. Adopted MBO&D drafts would benefit from security expertise. Future documents would address integration with WebTransport and other APIs (e.g., Fetch, Download).
+*   **Dispatch Question**: Is this work suitable for the IETF, and if so, where? Suggestions included reopening MSEC (Multicast Security) Working Group with a recharter, or a new working group.
+*   **Discussion**:
+    *   **Scope & Security Model**: Clarification sought on whether the key question is a security model compatible with web traffic for safe end-user delivery, or a broader security framework applicable to various multicast use cases (Ben Kadek). Web security is seen as a complex, but important target.
+    *   **Browser/Web Integration**: Ecker expressed skepticism about mapping multicast into the "true" web origin security model due to fundamental differences and complexity. He suggested the WebTransport model (less tied to origins) might be more feasible but questioned if the IETF is the right venue for web-specific mapping challenges.
+    *   **Chromium Stance**: Acknowledged Chromium's skepticism, but argued the problems are not fundamentally unsolvable.
+    *   **Protocol vs. Properties**: Need for clarity on whether the primary goal is defining security properties or developing a protocol to meet them (Watson).
+    *   **Work Scope**: Ben suggested the work is too large to tackle at once and proposed starting with the protocol problem, excluding browsers initially. He specifically suggested dispatching to the CDNI (Content Distribution Network Interconnection) WG, treating it as a CDN-to-CDN multicast use case (application layer multicast component). The author believed the CDN-to-CDN problem was already solved and irrelevant.
+
+## Decisions and Action Items
+
+*   **Private Access Tokens**: The `draft-pauly-dispatch-private-access-tokens` document is **dispatched to the Privacy Pass Working Group**. The Privacy Pass WG will discuss how to integrate this work, considering potential scope changes, or if it warrants a separate approach.
+*   **Multicast Security and Privacy Considerations**: The `draft-holland-multicast-security` document's discussion will **continue on a mailing list**. The Sec ADs will determine the appropriate mailing list (e.g., MSEC or a new list) for further refinement of the problem statement, use cases, and technical approach (e.g., CDN-to-CDN vs. browser-specific).
+
+## Next Steps
+
+*   **Private Access Tokens**: Authors to engage with the Privacy Pass Working Group to integrate their proposed work, address concerns raised during the dispatch session, and determine the path forward within that WG.
+*   **Multicast Security**: Authors and interested parties to continue discussions on the designated mailing list, focusing on clarifying the scope, technical approach, and IETF's role in addressing multicast security and privacy.
+*   **NIST PQC Project**: Await NIST's announcement of initial PQC algorithms (early 2022) and subsequent draft standards. Prepare for the new "on-ramp" call for signatures.

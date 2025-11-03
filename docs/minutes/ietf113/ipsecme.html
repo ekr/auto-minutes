@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ipsecme.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-IPSECME-20220325-1130">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Mar 2022 11:30</p>
+<h1>ipsecme</h1>
+<h2>Summary</h2>
+<p>The ipsecme working group session focused on the status of existing drafts, particularly Group Key Management for IKEv2 (GKM-IKEv2) and Optional SA and TS Payloads in CHILD_SA Exchange. A significant portion of the meeting was dedicated to a detailed discussion of unresolved issues in the GKM-IKEv2 draft, leading to several provisional decisions on authentication methods, port usage, and SA modes. The group also discussed the readiness of the Optional SA and TS Payloads draft for working group adoption. Calls for review were made for several drafts, including the multi-SA document and the &quot;Beyond 64K&quot; draft for large IKE payloads.</p>
+<h2>Key Discussion Points</h2>
+<h3>Working Group Status Update</h3>
+<ul>
+<li><strong>Draft Progression</strong>:
+<ul>
+<li>IKEv2 Intermediate: Approved, in RFC Editor Queue.</li>
+<li>IPTFS base, YANG document: In IESG <code>AD_QUEUE</code>.</li>
+<li>RFC8229bis: Publication requested.</li>
+<li>IKEv1 algorithms to Historic, Labeled IPsec: Nearing completion.</li>
+<li>Multiple Key Exchange: Write-up in progress.</li>
+</ul>
+</li>
+<li><strong>AD Transition</strong>: The responsible AD has shifted from Benjamin Kaduk to Roman Danyliw. Christian briefly inquired about the impact on draft processing queues, with chairs noting Roman might prioritize long-standing drafts.</li>
+<li><strong>GKM-IKEv2 (draft-ietf-ipsecme-gkm-ikev2)</strong>:
+<ul>
+<li><strong>Current Status</strong>: Version 05 published. Review by the AD (Tara) led to significant changes. The document was held in working group last call (WGLC) due to low review engagement.</li>
+<li><strong>Resolved Issues (in v05)</strong>:
+<ul>
+<li>Added a terminology section.</li>
+<li>Clarified that GSA-AUTH exchanges inherit IKEv2 extensions applicable to IKE-AUTH.</li>
+<li>Renamed keys (e.g., from SK_w to GSK_w) for clarity.</li>
+<li>Prohibited changing authentication methods or keys for the lifetime of a Group SA (GSA).</li>
+<li>Clarified use of Sender IDs and detailed group disbandment/rejoin scenarios.</li>
+<li>Improved overall document consistency.</li>
+</ul>
+</li>
+<li><strong>Unresolved Issues / Discussion Points (Valeriy Smyslov, Presenter)</strong>:
+<ul>
+<li><strong>Changing Authentication Key for KSA</strong>: Currently prohibited. No immediate opinion from attendees to change this.</li>
+<li><strong>Using Ports 848 vs. 4500</strong>: IKEv2 GKM allows port 848 (from GDOI compatibility). Brian had suggested using standard IKEv2 ports (500/4500).
+<ul>
+<li><em>Discussion</em>: The chair noted the need to move to port 4500 for NATT (Non-IKE Non-ESP prefix). Valeriy suggested that if NATT is detected, unicast IKE SAs should switch from 848 to 4500 for consistency.</li>
+<li><em>Consensus</em>: To move to port 4500 for consistency, especially if NATT is detected.</li>
+</ul>
+</li>
+<li><strong>Group Member Deregistration</strong>: Question of allowing explicit group member deregistration.
+<ul>
+<li><em>Discussion</em>: Could be useful for resource management (e.g., for LKH) but is unreliable as members can just leave.</li>
+<li><em>Consensus</em>: No strong opinion, keep as is (optional, no explicit mechanism defined).</li>
+</ul>
+</li>
+<li><strong>Error Notifications</strong>: Clarifying <code>AUTHORIZATION_FAILED</code> vs. <code>REGISTRATION_FAILED</code>.
+<ul>
+<li><em>Interpretation (in draft)</em>: <code>AUTHORIZATION_FAILED</code> for member-specific issues, <code>REGISTRATION_FAILED</code> for group-specific issues (e.g., capacity exceeded).</li>
+<li><em>Consensus</em>: This interpretation was accepted without objection.</li>
+</ul>
+</li>
+<li><strong>Implicit vs. Explicit Shared Key Authentication</strong>: GKM-IKEv2 defines two shared key authentication modes. Tara suggested removing explicit shared key authentication.
+<ul>
+<li><em>Discussion</em>: Explicit has a dedicated symmetric key; implicit uses keys derived from current operations. Chair argued for simplicity, stating no significant benefit from explicit and potential complication.</li>
+<li><em>Consensus</em>: To eliminate explicit shared key authentication in the next version, keeping only implicit.</li>
+</ul>
+</li>
+<li><strong>Extended Sequence Numbers (ESN) in Multicast SAs</strong>:
+<ul>
+<li><em>Challenge</em>: High-order 32 bits are not transmitted. Late-joining members lack ESN context. RFC3302/303 algorithms for guessing are resource-consuming.</li>
+<li><em>Discussion</em>:
+<ul>
+<li>Chair suggested including ESN high-order bits in key material updates. Valeriy noted the Key Controller might not be a sender and thus doesn't know.</li>
+<li>Christian cautioned against &quot;must not,&quot; suggesting applications might rely on it; suggested clarifying the resource-consuming nature.</li>
+<li>Scott suggested &quot;must not&quot; or a defined mechanism, as guessing leads to interoperability issues. Highlighted that unicast SAs assume synchronization, while group SAs allow mid-stream joins.</li>
+<li>Chair suggested group members could notify the Key Manager of ESN high-order bit increments (e.g., every 4 billion packets) to aid new joiners.</li>
+<li>Valeriy pointed out ESN is less useful with multiple senders, as each would increment independently, hindering replay protection.</li>
+</ul>
+</li>
+<li><em>Decision</em>: To be brought to the mailing list for further discussion. Potential to recommend against ESN for multi-sender scenarios, or define a mechanism for single-sender scenarios.</li>
+</ul>
+</li>
+<li><strong>PPK Integration</strong>:
+<ul>
+<li><em>Issue</em>: While multicast keys are encrypted with PPK-dependent keys, authentication is at the IKE message level, which may not be quantum-safe during initial IKE SA. An attacker could manipulate keys without knowing them.</li>
+<li><em>Discussion</em>: Chair suggested that if PPK protection is critical for the application, re-keying the IKE SA immediately after creation could protect against this, as mentioned in PPK RFCs. This would add complexity to the registration procedure (more message exchanges).</li>
+<li><em>Consensus</em>: The existing re-key mechanism is sufficient; clarify that applications concerned about this threat should re-key the IKE SA.</li>
+</ul>
+</li>
+<li><strong>Tunnel Mode with Address Preservation</strong>: RFC 5374 defines tunnel mode with address preservation (inner/outer IP addresses are same).
+<ul>
+<li><em>Question</em>: Is this mode needed? It adds complexity without clear benefits, especially as GKC doesn't provide tunnel addresses. How does GKC know if gateways require it?</li>
+<li><em>Discussion</em>: Chair suggested simplifying to transport mode only initially. Louie suggested that if a mode from a base RFC (5374) is not supported, a &quot;bis&quot; document might be needed. He offered to review.</li>
+<li><em>Consensus</em>: Keep support for both transport mode and tunnel mode with address preservation, as defined in RFC 5374, given the base RFC status.</li>
+</ul>
+</li>
+<li><strong>UDP Encapsulation for Multicast Data SAs</strong>:
+<ul>
+<li><em>Question</em>: Needed for NAT traversal? Or for networks filtering Protocol 50? How to signal (transform type vs. port 4500)?</li>
+<li><em>Discussion</em>: Chair doubted NAT relevance for multicast but acknowledged filtering of Protocol 50. Noted that multicast data SAs require a consistent encapsulation mode for all members.</li>
+<li><em>Consensus</em>: To defer adding UDP encapsulation for multicast data SAs for now. If a strong need arises, it can be added via an extension document.</li>
+</ul>
+</li>
+<li><strong>Transport Mode Signaling</strong>: How to signal which SAs are in transport mode when some are transport and some are tunnel?
+<ul>
+<li><em>Current Draft</em>: Changes semantics of <code>USE_TRANSPORT_MODE</code> notify, using SPI/protocol fields to identify specific SAs, allowing multiple instances. Tara questioned this semantic change.</li>
+<li><em>Options</em>: New notification, new transform type, or prohibit mixing modes within a single GSA.</li>
+<li><em>Discussion</em>: Chair argued for simplicity: prohibit mixing transport and tunnel modes within a single GSA. If mixing is needed, use separate GSAs (different groups). This prioritizes getting the draft out.</li>
+<li><em>Consensus</em>: Prohibit mixing transport and tunnel modes within a single GSA to simplify the document. If an application needs this, it can use separate GSAs or an extension can be made later.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Next Steps for GKM-IKEv2</strong>: Valeriy will issue a new version incorporating these changes. <strong>Dan York</strong> volunteered to review the updated document. More reviews are strongly requested.</li>
+</ul>
+</li>
+</ul>
+<h3>Optional SA and TS Payloads in CHILD_SA Exchange (draft-ietf-ipsecme-optional-sa-ts-payloads)</h3>
+<ul>
+<li><strong>Presenter</strong>: Weipan</li>
+<li><strong>Solution Recap</strong>:
+<ul>
+<li>Initiator and Responder negotiate support for optimization.</li>
+<li>During IKE SA rekey, an &quot;optimized rekey notification&quot; is sent with new SPI.</li>
+<li>During CHILD SA rekey, an &quot;optimized rekey notification&quot; is sent with current SPI in the notification payload.</li>
+</ul>
+</li>
+<li><strong>Updates (v07 to v08)</strong>: Mostly editorial changes, updated diagrams and text for clarity on how new/old SPIs are included.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Valeriy asked about the format of the new SPI in the notify payload (in SPI/protocol fields or data field?). Chair clarified it should be in the data field as it refers to <em>another</em> SA, not the IKE SA carrying the notification.</li>
+<li>Chair noted this is a minor extension fitting the charter.</li>
+</ul>
+</li>
+<li><strong>Working Group Adoption</strong>: Weipan believes the draft is clear and mature, and requested working group adoption.</li>
+<li><em>Consensus</em>: No objections to starting a working group adoption call.</li>
+</ul>
+<h3>Any Other Business / Open Discussion</h3>
+<ul>
+<li><strong>Multi-SA Document (draft-ietf-ipsecme-multi-sa-ike)</strong>: Paul Wouters reminded the group about this document, noting a Linux implementation exists but is blocked from mainline merge until the draft progresses. He requested reviews, especially since QoS items were removed to simplify it.</li>
+<li><strong>Beyond 64K Draft (draft-ietf-ipsecme-beyond-64k)</strong>: Valeriy Smyslov inquired about interest in this draft, which describes transferring large IKE payloads (e.g., for key exchange, AUTH payloads) and mixed transport mode (IKE over TCP, ESP over UDP/IP). He noted a new draft on hybrid authentication (combining post-quantum algorithms) might make IKE payloads very large, increasing the relevance of &quot;Beyond 64K&quot;. He asked if a discussion for adoption should be initiated.
+<ul>
+<li><em>Action</em>: Chair encouraged Valeriy to initiate a discussion on the mailing list to gauge interest and assess charter alignment, especially regarding post-quantum issues.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>GKM-IKEv2 (draft-ietf-ipsecme-gkm-ikev2)</strong>:
+<ul>
+<li><strong>Decision</strong>: Transition to port 4500 (if NATT detected) for unicast IKE SAs when using port 848.</li>
+<li><strong>Decision</strong>: Accept the distinction between <code>AUTHORIZATION_FAILED</code> and <code>REGISTRATION_FAILED</code> error notifications as defined in the draft.</li>
+<li><strong>Decision</strong>: Eliminate explicit shared key authentication, retaining only implicit, to simplify the document.</li>
+<li><strong>Decision</strong>: For PPK integration, clarify that applications concerned about key manipulation should re-key the IKE SA immediately.</li>
+<li><strong>Decision</strong>: Prohibit mixing transport mode and tunnel mode within a single Group SA. Applications needing both should use separate GSAs.</li>
+<li><strong>Decision</strong>: Defer adding UDP encapsulation for multicast data SAs; can be added as an extension later if needed.</li>
+<li><strong>Action</strong>: Valeriy Smyslov to publish a new version of the GKM-IKEv2 draft incorporating these decisions.</li>
+<li><strong>Action</strong>: <strong>Dan York</strong> to review the updated GKM-IKEv2 draft.</li>
+<li><strong>Action</strong>: The working group chairs will keep the GKM-IKEv2 draft in WGLC until a new revision is published and further reviews are received.</li>
+<li><strong>Action</strong>: <strong>Valeriy Smyslov</strong> to initiate mailing list discussion on Extended Sequence Numbers (ESN) in multicast SAs.</li>
+</ul>
+</li>
+<li><strong>Optional SA and TS Payloads in CHILD_SA Exchange (draft-ietf-ipsecme-optional-sa-ts-payloads)</strong>:
+<ul>
+<li><strong>Decision</strong>: Working group to move towards adoption.</li>
+<li><strong>Action</strong>: Chairs to initiate a working group adoption call for this draft.</li>
+</ul>
+</li>
+<li><strong>Multi-SA Document (draft-ietf-ipsecme-multi-sa-ike)</strong>:
+<ul>
+<li><strong>Action</strong>: <strong>Paul Wouters</strong> to send a reminder to the mailing list requesting reviews.</li>
+</ul>
+</li>
+<li><strong>Beyond 64K Draft (draft-ietf-ipsecme-beyond-64k)</strong>:
+<ul>
+<li><strong>Action</strong>: <strong>Valeriy Smyslov</strong> to initiate a discussion on the mailing list to gauge interest and charter alignment.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>GKM-IKEv2</strong>: A new version of the draft will be published. Further reviews are requested, especially from <strong>Dan York</strong>. A mailing list discussion on ESN will be initiated.</li>
+<li><strong>Optional SA and TS Payloads in CHILD_SA Exchange</strong>: A working group adoption call will be initiated by the chairs.</li>
+<li><strong>Multi-SA Document</strong>: Community review is encouraged to move this draft forward.</li>
+<li><strong>Beyond 64K Draft</strong>: Discussion to assess interest and fit within the working group's charter.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

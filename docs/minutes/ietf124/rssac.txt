@@ -1,0 +1,68 @@
+**Session Date/Time:** 02 Nov 2025 21:00
+
+# RSSAC Session Minutes
+
+## Summary
+
+The RSSAC session featured three lightning talks covering diverse topics: an early look into second-level domain (SLD) query data, an investigation into persistent old J-Root traffic attributed to resolver priming failures, and a proposal for a Delta CDDS service to dramatically reduce bandwidth for ICANN's zone data service. Key discussions included defining future work items for the caucus (to be moved to the mailing list) and the importance of metrics for the root server system, specifically the interpretation of latency and peering relationships. A new work item suggestion to investigate sources of "junk traffic" to root servers was well-received.
+
+## Key Discussion Points
+
+*   **Second-Level Domain (SLD) Query Data Exploration:**
+    *   Paul Hoffman presented initial, exploratory data on SLD queries under various TLDs, leveraging "magnitude data" to account for single-resolver querying patterns.
+    *   Observations included varied SLD query numbers across TLDs and unexpected uses for special-use domains like `.local` (e.g., `com.com.com`, `retracker`) and `.example` (e.g., `imageeditor.example`, `bundleassets.example` queried more than the TLD itself).
+    *   This data is not yet public or considered "useful," but provides hints for future analysis. More tooling is needed before public release.
+
+*   **Persistent Old J-Root Query Traffic:**
+    *   Duane Wessels detailed the ongoing traffic to the retired J-Root IP address (changed in 2002 for Anycast), which still receives approximately 350 queries per second in April 2025.
+    *   Research indicates that Bind versions from 2001 to 2017 (specifically up to ~9.12) fail to learn new root server IP addresses during priming, especially when using outdated hints files. A fix was implemented in 2017.
+    *   The issue is often linked to how OS packages manage and update root hints files, rather than Bind itself.
+
+*   **Delta CCDS Service Proposal:**
+    *   Leo Angelo and Hafiz Farooq presented a proposal for a Delta CDDS service to optimize ICANN's Centralized Zone Data Service (CDDS).
+    *   The current system requires daily downloads of entire TLD zone files (e.g., 24 GB for .com) to extract minimal changes, leading to massive bandwidth waste (~70 TB daily aggregate for ~100 MB of changes).
+    *   The Delta CDDS would provide incremental updates, reducing bandwidth consumption (e.g., 99.98% for .com), processing time (<1 minute), and enabling near real-time detection of zone changes (addressing the "window of invisibility").
+    *   The proposed architecture includes a Delta engine to generate simple, self-documenting Delta files with SHA-256 checksums, ensuring backward compatibility and optional adoption.
+    *   Security benefits include rapid detection of impersonation and squatting.
+    *   A proof-of-concept demo showcased quick parsing and searching of delta data.
+    *   Success metrics target 50% bandwidth reduction within 12 months and increased access for bandwidth-constrained regions.
+
+*   **Potential RSSAC Caucus Work Items:**
+    *   The session attempted to discuss suggestions from the annual caucus survey for future work items.
+    *   Due to time constraints and the detailed nature of prior discussions, it was **decided to move the discussion of potential work items to the mailing list.**
+
+*   **Caucus Engagement and Statement of Interest (SOI) Updates:**
+    *   A reminder was given for caucus members to keep their Statement of Interest (SOI) updated, particularly regarding employment changes, to ensure accurate representation.
+
+*   **RSSAC 002 (Expectations for Root Server Operators) Update:**
+    *   The work group for RSSAC 002, which outlines technical expectations for root server operators, is currently on hold.
+    *   The plan is to draft a request to ARSAC to clarify the scope of the document before resuming normal operations. The document is due for its biennial review this year.
+
+*   **Document Repository Update:**
+    *   Hafiz Farooq provided an update on the RSSAC caucus document repository, which is being regularly populated with root server-related research papers, blog articles, and talks (e.g., a recent paper on routing measurements recommending the FENDr framework).
+    *   Community members were encouraged to utilize and subscribe to the repository.
+
+*   **Metrics for the Root Server System:**
+    *   Ken Renard introduced a potential work item focused on defining the importance and interpretation of metrics for the root server system, such as latency and the number of local root server instances.
+    *   Discussion highlighted that while latency can be a proxy for locality, actual peering relationships and network topology are more critical than mere physical proximity due to Anycast. Examples from Africa showed root servers being ineffective without proper peering by national carriers.
+    *   This is currently a brainstorming idea, and if pursued, would lead to a formal Statement of Work. Ray Willis expressed interest in contributing.
+
+*   **"Junk Traffic" at Root Servers:**
+    *   Joe Abley proposed a new work item to investigate the sources of "junk traffic" landing at root servers. While not a new problem (documented in 2001), modern mechanisms like aggressive NSEC caching and local root servers *should* reduce it.
+    *   The question is: "Who's sending these queries? If it's not actual resolvers, who is it?" This could uncover new bugs or misconfigurations. The chair expressed strong interest in this work group.
+
+## Decisions and Action Items
+
+*   **Decision:** Discussion of potential RSSAC Caucus work items from the annual survey will be moved to the mailing list to allow for more detailed input and avoid time overruns.
+*   **Action Item:** RSSAC Caucus members are requested to keep their Statement of Interest (SOI) up-to-date, especially regarding employment changes.
+*   **Action Item:** The work group for RSSAC 002 will draft a request to ARSAC to clarify the scope of the document.
+*   **Action Item:** Hafiz Farooq will share the link to the RSSAC caucus document repository in the chat (offline) and encourages community subscription.
+
+## Next Steps
+
+*   **RSSAC Caucus Work Items:** Members are encouraged to submit and discuss potential work items on the RSSAC mailing list.
+*   **Delta CCDS Service:** Seeking technical review and feedback on the Delta format specification. Volunteers are needed for the testing phase, and engagement with ICANN's technical team will continue. Exploration of hourly updates for near real-time zone change detection.
+*   **RSSAC 002:** Draft request to ARSAC to clarify scope. Continued review of the document text is encouraged.
+*   **Root Server Metrics:** Further discussion on the mailing list regarding a potential work item to create a document interpreting root server system metrics (latency, peering, etc.).
+*   **Junk Traffic Investigation:** The proposed work item to investigate the sources of junk traffic at root servers will be added to the list of potential caucus work.
+*   **Next Meeting:** IETF 126 in Vienna.

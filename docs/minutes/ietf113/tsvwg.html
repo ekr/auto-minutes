@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="tsvwg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-TSVWG-20220321-1200">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-TSVWG-20220325-0900">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2022 12:00</p>
+<h1>tsvwg</h1>
+<h2>Summary</h2>
+<p>The tsvwg session covered several key documents and administrative updates. Discussions focused on the long-standing SCTP NAT draft, potential ways forward for DTLS over SCTP in light of IPR concerns and updates to RFC 6083, and the status and future of the L4S Operational Guidance draft. While no firm technical decisions were made during the session for the main drafts, chairs committed to soliciting further input on the mailing list to determine paths forward.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrative Updates</strong></p>
+<ul>
+<li>Stewart Cheshire volunteered as note-taker.</li>
+<li>Attendees were reminded to scan the QR code for blue sheets and use the Meetecho queue for comments.</li>
+<li>Importance of document reviews was highlighted, specifically for UDP Options and DSCP Considerations drafts.</li>
+<li><strong>RFCs and Draft Status</strong>:
+<ul>
+<li>No RFCs published since IETF 112.</li>
+<li>One ID at RFC Editor (496 obis).</li>
+<li>Five IDs with working group chairs/authors, progressing to AD.</li>
+<li>ECN NULs and ECN for tunnels: Text refinement pending, no further WG input anticipated, changes to be sent to list for confirmation.</li>
+<li>Three L4S IDs: Post-WGLC, close to AD submission after addressing comments and shepherd write-ups (Wes will manage).</li>
+<li>Remaining WGLC items: L4S Ops Guidance, NQB, UDP Options, DPLPMTUD for UDP Options, DTLS/SCTP, SCTP NAT, DSCP, MPDCCP (some to be discussed Friday).</li>
+<li>Milestones are being refreshed and kept sensible as useful targets.</li>
+</ul>
+</li>
+<li><strong>Liaisons and Announcements</strong>:
+<ul>
+<li>WBA liaison (DSCP usage coordination): No updates since response a year ago, likely to be removed from future agendas.</li>
+<li>DTLS liaison (encouragement to publish for 3GPP reference): No new updates.</li>
+<li>GSMA liaison (MPDCCP expectations): Discussed previously, no new updates.</li>
+</ul>
+</li>
+<li><strong>New Work Coordination</strong>:
+<ul>
+<li><strong>DCCP CCID for BBR</strong>: Proposed new CCID for DCCP related to BBR. TSVWG will await BBR algorithm approval in ICCRG before determining if a CCID is appropriate.</li>
+<li><strong>HPCC++</strong>: Agenda slot in RTGWG; noted as having routing relationship but potentially belonging in Transport/ICCRG for data center congestion control.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>SCTP NAT Draft (draft-ietf-tsvwg-sctp-nat)</strong></p>
+<ul>
+<li><strong>Problem Statement</strong>: SCTP multi-homing allows multiple IP addresses but only a single port, leading to port number collisions in NAT environments. UDP/TCP NATs remap ports, but SCTP cannot easily do this without consistent mapping across all paths. The draft proposes using the verification tag as a connection identifier to handle collisions.</li>
+<li><strong>AD Comments/Issues Raised</strong>:
+<ul>
+<li>IP fragmentation handling.</li>
+<li>Controlling NAT-friendly behavior (socket option vs. private address detection).</li>
+<li>Improved multi-homing support (more examples, multiple external addresses).</li>
+<li>Re-include remote address in NAT binding table (was removed for simplification based on research).</li>
+<li>Simplify SCTP packet processing at NAT (avoid parsing chunk types).</li>
+<li>Clarify when NAT state is added and if NAT should send packets.</li>
+<li>Address SCTP association notion to support multiple associations with same port using verification tag.</li>
+</ul>
+</li>
+<li><strong>Proposed Ways Forward</strong>:
+<ol>
+<li><strong>Stick with current method</strong>: Address issues 2-5 (fragmentation is wording), adds complexity.</li>
+<li><strong>Fallback to SCTP-unaware NAT</strong>: Remove SCTP-specific features (no verification tag, no restart disable), add external remote addresses to binding table. Drawback: Cannot resolve local port collisions, association establishment can fail. Does not change endpoint association definition. (Michael's preferred option)</li>
+<li><strong>Drop document and use Ericsson proposal</strong>: Ericsson has an alternative proposal. (Claudio is prototyping this option).</li>
+<li><strong>Drop work entirely</strong>: If the outcome is an &quot;almost SCTP-unaware NAT,&quot; it might not require SCTP-specific work.</li>
+</ol>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Claudio noted a growing need for SCTP NAT in cloud environments with virtual machines.</li>
+<li>Martin Duke (AD hat off) asked Michael's preferred option; Michael favored option 2 for addressing more issues.</li>
+<li>Claudio mentioned prototyping option 3 (Ericsson proposal) in open source (Linux, FreeBSD user space SCTP) and will share results.</li>
+<li>Magnus suggested considering trade-offs between multi-homing support, number of concurrent sessions, and solution complexity.</li>
+<li>Colin Jenkins expressed concerns about option 2's viability, citing UDP NAT issues with 1:1 mappings and DDoS risks, questioning how conflicts would be resolved without dropping packets. Michael clarified that the NAT box would notify the internal host of port collision.</li>
+</ul>
+</li>
+<li><strong>Outcome</strong>: No immediate decision. Chairs will follow up on the mailing list to gather consensus on a path forward.</li>
+</ul>
+</li>
+<li>
+<p><strong>DTLS over SCTP (draft-ietf-tsvwg-dtls-over-sctp)</strong></p>
+<ul>
+<li><strong>Problem Statement</strong>: Addressing user message limits in RFC 6083 and 3GPP requirements for various RAT protocols.</li>
+<li><strong>Recent Updates</strong>: Significant clarifications, especially around message length limitations (up to 2^64-1 bytes), stream usage, shutdown procedures, and SCTP API considerations.</li>
+<li><strong>Differences from RFC 6083</strong>:
+<ul>
+<li>Addresses message length.</li>
+<li>SCTP association handshake negotiates DTLS over SCTP support.</li>
+<li>Minimizes impact on ULP protocols, wider feature support.</li>
+<li>RFC 6083's limitations with DTLS 1.2/1.3 (e.g., renegotiation security issues, key update limits, session length limits).</li>
+<li>SCTP Auth (HMAC-SHA1 aging) considerations.</li>
+</ul>
+</li>
+<li><strong>Proposed Ways Forward</strong>:
+<ol>
+<li>Obsolete RFC 6083. (Default, but IPR issues).</li>
+<li>Publish as an alternative RFC to 6083 (without obsoleting). (Magnus's preferred option).</li>
+</ol>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Michael expressed concerns about obsoleting RFC 6083 (an open-source implementable standard) with a document backed by company IPR, making open-source implementations difficult. Suggested working on an update to RFC 6083 if community interest.</li>
+<li>Magnus stressed the need for progress for 3GPP and that having no progress is not productive.</li>
+<li>Martin Duke (AD) acknowledged the IPR problem for BSD implementations. Noted lack of energy for an IPR-free version of RFC 6083. It seems inevitable there will be parallel specifications. Also noted RFC 6083 may need maintenance for security reasons anyway.</li>
+<li>Magnus clarified interoperability: The new draft clearly defines negotiation in the association handshake, distinct from RFC 6083's detection via SCTP Auth and DTLS handshake. Defined fallback mechanism prevents misinterpretation.</li>
+</ul>
+</li>
+<li><strong>Outcome</strong>: No immediate decision. Chairs will work with speakers to formulate a proposal for the mailing list to decide between obsoleting RFC 6083 or publishing the new draft as an alternative, considering the IPR implications.</li>
+</ul>
+</li>
+<li>
+<p><strong>L4S Operational Guidance (draft-ietf-tsvwg-l4s-ops)</strong></p>
+<ul>
+<li><strong>Status</strong>: One To-Do item remaining. Draft is stable, primarily typo fixes since last IETF. New contributions would be accepted.</li>
+<li><strong>Question</strong>: Should the document remain a draft during the l4s experiment, or should it be finished and published as an RFC?</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>David Black suggested publishing it as an RFC soon (possibly with other L4S drafts) and immediately opening a <code>bis</code> draft to capture lessons learned during the experiment. He argued that the draft is stable, and broader dissemination would be beneficial.</li>
+<li>Martin Duke noted that &quot;during the L4S experiment&quot; could mean years due to slow deployment and operational experience. He leaned towards David's solution of publishing now and a <code>bis</code> later.</li>
+<li>Mirja K. provided a quick plus one to publish now.</li>
+</ul>
+</li>
+<li><strong>Outcome</strong>: No immediate decision. Chairs will seek further feedback on the mailing list regarding whether to publish as an RFC now and create a <code>bis</code> draft later, or to keep it as an evolving draft during the anticipated long L4S experiment phase.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: Stewart Cheshire volunteered to be the note-taker for this session.</li>
+<li><strong>Action Item</strong>: Chairs to post to the mailing list to solicit further input and propose a way forward for the SCTP NAT draft, considering options 1, 2, 3, or 4.</li>
+<li><strong>Action Item</strong>: Chairs to post to the mailing list to solicit further input and propose a way forward for the DTLS over SCTP draft, specifically addressing whether to obsolete RFC 6083 or publish as an alternative, in light of IPR and community interest.</li>
+<li><strong>Action Item</strong>: Chairs to post to the mailing list to solicit further input regarding the L4S Ops Guidance draft: whether to publish it as an RFC now and open a <code>bis</code> draft, or keep it as a draft during the L4S experiment.</li>
+<li><strong>Action Item</strong>: Wes to finalize the shepherd write-ups for the three L4S IDs and submit them to the Area Director within approximately one week.</li>
+<li><strong>Action Item</strong>: Chairs to continue reviewing and updating working group milestones to ensure they remain relevant.</li>
+<li><strong>Action Item</strong>: Chairs to send announcements to the mailing list with details about the ATSS side meeting following the Friday session.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussions on the SCTP NAT, DTLS over SCTP, and L4S Ops Guidance drafts on the tsvwg mailing list.</li>
+<li>The second tsvwg session will be held on Friday, covering additional topics as per the agenda.</li>
+<li>An ATSS side meeting is tentatively scheduled following the Friday session; details will be announced on the mailing list.</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 25 Mar 2022 09:00</p>
+<h1>tsvwg Meeting Minutes</h1>
+<h2>Summary</h2>
+<p>The tsvwg session covered updates on several drafts, including Multi-Path DCCP, Differentiated Services Code Point (DSCP) considerations, NQB (Network Queueing Behavior), UDP Options, and DPLPMTUD (Datagram Packetization Layer Path MTU Discovery) for UDP Options. A detailed technical overview of Internet checksum implementations was also provided as background for the UDP Options work. Key discussions revolved around the maturity and adoption of MPDCCCP, the implications of &quot;TOS precedence bleaching&quot; on DSCP assignments, and the path to Working Group Last Call for the NQB and UDP Options related drafts. Calls for review and community engagement were made across several topics.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>TSVWG Status Update</strong></p>
+<ul>
+<li>Five Internet-Drafts are with working group chairs and authors, having passed Working Group Last Call (WGLC).
+<ul>
+<li>ECN for CUPS (shepherded by David Black) needs text replacement.</li>
+<li>ECN for Tunnels using Shim Headers has similar issues resolved.</li>
+<li>Both are ready for shepherd write-up and will be passed up to the IESG before the next IETF.</li>
+</ul>
+</li>
+<li>Three L4S drafts (architecture, identifier, AQM) completed WGLC some time ago and are undergoing extended review and shepherd write-up.</li>
+<li>All these drafts are progressing.</li>
+</ul>
+</li>
+<li>
+<p><strong>Multi-Path DCCP (MPDCCCP)</strong></p>
+<ul>
+<li>Marcus Armbrust (Deutsche Telekom) presented on the progress of the Multi-Path DCCP draft.</li>
+<li><strong>Key Changes since last IETF</strong>:
+<ul>
+<li><strong>Handshaking Procedure</strong>: Finalized to a four-way design, similar to Multi-Path TCP.</li>
+<li><strong>MPPRio Option</strong>: Introduced for fine-granular path management (enable/disable paths, set backup mode, path prioritization for scheduling).</li>
+<li><strong>Maximum Packet Size</strong>: Defined a strategy for multi-pass context, maintaining compatibility with single-pass DCCP.</li>
+<li><strong>Closing Procedures</strong>: Defined two new options: <code>MP_FAST_CLOSE</code> (abrupt shutdown using a new DCCP reset code 12) and <code>MP_CLOSE</code> (regular shutdown following DCCP closing procedure, sent on all paths). Both use key material for authentication to prevent misuse.</li>
+<li><strong>Congestion Control</strong>: Added considerations for bottleneck fairness with single-pass.</li>
+</ul>
+</li>
+<li><strong>Implementation Status</strong>: Draft maintained on GitHub with individual pull requests. An open-source Linux reference implementation for out-of-tree Multi-Path DCCP is available and updated with recent changes.</li>
+<li><strong>3GPP ATSSS Relation</strong>: MPDCCCP is proposed as a solution for non-TCP multi-path transport in 5G systems. The prototype includes encapsulation, scheduling, reordering, multiple Congestion Control IDs (CCID 2, 3, and a new CCID5 following BBR), and path management functionalities.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Lars Eggert asked about upstreaming to Linux netdev community. Marcus stated it's currently an out-of-tree implementation, with some user-space implementation work at Karlstad University. Acknowledged the need for kernel inclusion for broader adoption.</li>
+<li>Michael Tusche inquired about IPRs. Marcus confirmed the protocol implementation is GPL-based and free, with no IPRs for use.</li>
+<li>MPDCCCP is currently the only solution for non-TCP splitting support in the 3GPP SA2 technical report.</li>
+<li>A Proof-of-Concept (POC) with a major terminal vendor is underway to integrate MPDCCCP into Android systems.</li>
+<li>Hackathon Demo: Demonstrated seamless handover between Wi-Fi and 4G using MPDCCCP on a Google Pixel 4 during a Skype call, showing no interruption.</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Draft version 4 is considered feature-complete. Marcus requested reviewers to join the effort. Goal is to keep pace with 3GPP Release 18 timelines.</li>
+<li><strong>Side Meeting</strong>: An informal side meeting was announced for further discussion on 3GPP ATSSS, emphasizing it's for information distribution only, with no remote participation.</li>
+</ul>
+</li>
+<li>
+<p><strong>Differentiated Services: Considerations for Assigning DSCPs</strong></p>
+<ul>
+<li>Anna Forès presented on the &quot;Considerations for assigning Diffserv Code Points&quot; draft.</li>
+<li><strong>Revision 01 Updates</strong>:
+<ul>
+<li>Clarifications on different pathologies affecting DSCPs, including a new one: clearing the least significant bits (LSBs).</li>
+<li>Incorporated comments from Brian Carpenter and Rudy Gurbhaye regarding RFC 3086 (PHBs), RFC 2474 (remarking at domain boundaries), management code points, and the non-binding nature of GSMA IR34.</li>
+</ul>
+</li>
+<li><strong>Problem: TOS Precedence Bleaching</strong>:
+<ul>
+<li>Measurement data shows a significant number of &quot;routers&quot; bleach the three most significant bits (MSBs) of a DSCP, effectively reducing it to a value between 0 and 7. This happens on up to 20% of paths.</li>
+<li>This &quot;bleaching&quot; pollutes lower DSCP values (e.g., AF11, EF bleach to 2 or 6), making them unusable for new specific assignments due to aggregation with diverse traffic.</li>
+<li>DSCP 4 has historical issues (SSH bug). DSCP 5 is provisionally allocated to NQB.</li>
+</ul>
+</li>
+<li><strong>Network Behaviors</strong>: Categorized into transparent (pass DSCPs as is), managed (operators police/remark, support new code points), and unmanaged/weird (e.g., TOS precedence bleaching, inconsistent remarking).</li>
+<li><strong>Call for Input</strong>: What recommendations should be made regarding &quot;unmanaged&quot; networks? Should the currently informational draft make recommendations for future assignments?</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Martin Duke thanked Anna for the draft, highlighting the clarity of the DSCP grid and the issue of &quot;burning&quot; generally useful code points. Suggested presenting to OPS Area.</li>
+<li>Gorry Fergus clarified the draft is currently informational but could potentially lead to a BCP/Standards Track document if it updates existing 20-year-old RFCs and architecture.</li>
+<li>Rudiger provided operational experience, desiring &quot;default transport&quot; in the backbone but service differentiation in access, emphasizing fair resource sharing.</li>
+<li>Jonathan Morton supported efforts to discourage bleaching.</li>
+<li>Suggestions to present to IEPC (informal operator group) and MAPRG (Measurement and Analysis for Protocols Research Group).</li>
+</ul>
+</li>
+<li><strong>Action Items</strong>: Anna will revise the draft, prepare a presentation for OPS Area (and potentially IEPC/MAPRG) at the next IETF, and initiate discussion on the mailing list about potential recommendations for future DSCP assignments.</li>
+</ul>
+</li>
+<li>
+<p><strong>Differentiated Services: NQB (Network Queueing Behavior)</strong></p>
+<ul>
+<li>Greg White presented updates to the NQB draft.</li>
+<li><strong>Draft-10 Updates</strong>:
+<ul>
+<li>Clarified compatible senders for NQB marking (low-rate flows of sports applications).</li>
+<li>Added rationale for the choice of DSCP 45.</li>
+<li>Discussed implications of EDCA (Enhanced Distributed Channel Access) manipulation for Wi-Fi compatibility, noting it converts a priority queue to best-effort priority.</li>
+<li>IANA section reformatted; proposed unique names: <code>NQB-Edge</code> (for DSCP 45) and <code>NQB-Core</code> (for DSCP 5).</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Gorry Fergus questioned the need for clarity on the aggregate meaning of DSCP 5 when other DSCPs in the same column might bleach to it.</li>
+<li>David Black noted Diffserv historically aimed for both domain-specific and end-to-end services, but end-to-end has proven challenging (referencing Anna's presentation).</li>
+<li>A question was raised about the long-term need for DSCP 45 vs. 5, considering potential ubiquitous NQB support or Wi-Fi equipment updates. Greg stated DSCP 45 is currently seen as long-term for endpoints.</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Chairs will work with Greg to address remaining comments, particularly around remarking guidance and the naming of the code points, before moving to Working Group Last Call.</li>
+</ul>
+</li>
+<li>
+<p><strong>UDP Options Update</strong></p>
+<ul>
+<li>Gorry Fergus (proxying for Joe Touch) presented updates to the UDP Options draft.</li>
+<li><strong>Core Updates (v13-15)</strong>:
+<ul>
+<li>New option area structure, including an Option Checksum (OCS) field for the options area.</li>
+<li>Integration of <code>unsafe kind</code> option.</li>
+<li>Updated fragmentation text.</li>
+<li><code>Request/Response</code> option is now required.</li>
+</ul>
+</li>
+<li><strong>v16 Updates</strong>:
+<ul>
+<li>Corrected limits on options, updated terminology, refined table of contents.</li>
+<li><strong>OCS Checksum Optionality</strong>: The OCS field is now optional <em>only</em> when the UDP checksum is zero; otherwise, it is mandatory. This ensures it does not affect NAT traversal.</li>
+</ul>
+</li>
+<li><strong>Implementation Status</strong>: Earlier versions were implemented (e.g., for DPLPMTUD), but the latest version requires new implementation efforts. Call for hackathon activities and implementation experiences.</li>
+<li><strong>Next Steps</strong>: Invited expert reviewers (Tommy Pauly, Colin Perkins) for a full read-through. Expects further revisions based on their feedback, followed by Working Group Last Call.</li>
+</ul>
+</li>
+<li>
+<p><strong>Internet Checksum (Background)</strong></p>
+<ul>
+<li>Tom Herbert provided a detailed overview of the Internet checksum, its implementation, and performance considerations. This served as a background for the UDP Options work.</li>
+<li><strong>Overview</strong>: Pervasive (TCP, UDP, IPv4, GRE), simple 16-bit one's complement sum. Weak verification but computationally expensive if not optimized.</li>
+<li><strong>Arithmetic Properties</strong>: Commutative, associative, FFFF equivalent to zero, allows for folding larger word sizes and checksum deltas (efficient updates).</li>
+<li><strong>Implementations</strong>:
+<ul>
+<li><strong>Small Data (e.g., IP header)</strong>: Optimized with specialized CPU instructions (e.g., x86 <code>ADDC</code>).</li>
+<li><strong>Large Payloads (e.g., TCP/UDP)</strong>: Offloaded to Network Interface Controllers (NICs) for hardware acceleration.</li>
+</ul>
+</li>
+<li><strong>Checksum Offload (Tx/Rx)</strong>: Protocol-agnostic offload is preferred. Host computes pseudo-header sum; NIC completes the packet sum. Receive side returns a full packet sum to the host, which then derives specific protocol checksums.</li>
+<li><strong>Large Send/Receive Offloads (TSO/GSO/LRO)</strong>: Checksum handling is critical for performance when processing large packets.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Checksum errors are rare (e.g., once a year per customer base due to old hardware without ECC memory).</li>
+<li>Internet checksum is end-to-end, unlike Ethernet CRC (hop-by-hop).</li>
+<li><strong>Misconception</strong>: Disabling UDP checksum (setting to 0) is <strong>not</strong> a performance advantage for hosts and can even be a disadvantage. Host still needs to process inner TCP checksums, and legacy offload algorithms may force host CPU computation if UDP checksum is zero. Offload already absorbs the cost of UDP/TCP checksums. The problem is when new protocols or combinations accidentally force host CPU checksum computation.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>DPLPMTUD UDP Options</strong></p>
+<ul>
+<li>Tom Herbert presented an update on the DPLPMTUD UDP Options document.</li>
+<li><strong>Purpose</strong>: Provides additional text to integrate DPLPMTUD requirements into the UDP Options framework.</li>
+<li><strong>Changes</strong>: Aligned with the UDP Options base specification (e.g., <code>probe token</code> changed to <code>nonce value</code>), clarified that the two kinds of options cannot be sent more than once per datagram, and refined text on probing with data.</li>
+<li><strong>Maturity</strong>: The document is considered finished, pending minor terminology changes from the UDP Options base spec.</li>
+<li><strong>Discussion</strong>: Chris Heard asked if DPLPMTUD could be implemented as a shim on top of UDP Options. Tom clarified it's a protocol action rather than a shim, providing a small service set to the upper layer.</li>
+<li><strong>Next Steps</strong>: Call for review; if no further issues, the working group will be asked to initiate Working Group Last Call, likely synchronized with the UDP Options base specification.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>MPDCCCP</strong>:
+<ul>
+<li><strong>Decision</strong>: Draft version 4 is considered feature-complete.</li>
+<li><strong>Action</strong>: Marcus Armbrust and co-authors to solicit reviewers.</li>
+<li><strong>Action</strong>: Continue work on upstreaming the Linux implementation.</li>
+</ul>
+</li>
+<li><strong>DSCP Considerations</strong>:
+<ul>
+<li><strong>Decision</strong>: The draft is currently informational.</li>
+<li><strong>Action</strong>: Anna Forès to revise the draft based on feedback, incorporating clarifications and discussions.</li>
+<li><strong>Action</strong>: Anna Forès to prepare a presentation for the OPS Area (and potentially IEPC and MAPRG) at the next IETF to discuss TOS Precedence Bleaching and its implications.</li>
+<li><strong>Action</strong>: Anna Forès to initiate discussion on the mailing list regarding potential recommendations for future DSCP assignments and whether a BCP/Standards Track document for architecture updates is needed.</li>
+</ul>
+</li>
+<li><strong>NQB</strong>:
+<ul>
+<li><strong>Action</strong>: Greg White to address remaining comments on the mailing list, particularly regarding remarking guidance and the naming of the <code>NQB-Edge</code> (45) and <code>NQB-Core</code> (5) DSCP values.</li>
+</ul>
+</li>
+<li><strong>UDP Options</strong>:
+<ul>
+<li><strong>Action</strong>: Chairs to facilitate reviews by Tommy Pauly and Colin Perkins.</li>
+<li><strong>Action</strong>: Joe Touch (via Gorry Fergus) to produce a further revision based on review feedback.</li>
+<li><strong>Action</strong>: Community encouraged to undertake implementation work (e.g., hackathon).</li>
+</ul>
+</li>
+<li><strong>DPLPMTUD UDP Options</strong>:
+<ul>
+<li><strong>Decision</strong>: Document considered finished, pending minor alignment with UDP Options base spec.</li>
+<li><strong>Action</strong>: Working Group to review the document. If no further issues are raised, the co-chairs will be asked to initiate Working Group Last Call, synchronized with the UDP Options base spec.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>MPDCCCP</strong>: Seek reviewers, continue implementation and 3GPP alignment.</li>
+<li><strong>DSCP Considerations</strong>: Draft revision, prepare for cross-area presentations, foster mailing list discussion on recommendations.</li>
+<li><strong>NQB</strong>: Address comments, prepare for Working Group Last Call.</li>
+<li><strong>UDP Options</strong>: Complete expert review, revise, and proceed to Working Group Last Call.</li>
+<li><strong>DPLPMTUD UDP Options</strong>: Final review by the working group, proceed to Working Group Last Call.</li>
+<li><strong>General</strong>: Encourage further participation and discussion on the mailing list for all ongoing work items.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

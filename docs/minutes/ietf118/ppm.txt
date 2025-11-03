@@ -1,0 +1,40 @@
+**Session Date/Time:** 07 Nov 2023 12:00
+
+# ppm
+
+## Summary
+
+This meeting covered several key issues related to the DAP protocol, including batch selection logic, support for drill-down queries, agreement on task parameters, handling batch mismatches, and adherence to TLS syntax. Presentations were given on applying differential privacy to DAP and on the Task Provisioning extension. Decisions were made on some issues, while others require further discussion and refinement.
+
+## Key Discussion Points
+
+*   **Multiple Collection Queries:** Discussed the support for collecting batches of reports multiple times with different aggregation parameters. Concerns were raised about the lack of implementations and potential bugs.
+*   **Batch Selection Logic:**  Explored simplifying the protocol by removing time interval queries and relying solely on fixed-size queries. The complexity for implementations and the potential impact on existing deployments were debated.
+*   **Supporting Drill Down:**  Addressed the addition of labels to reports for drill-down queries and the privacy implications, including potential fingerprinting. A new VDAF called Mastic, which allows partitioning aggregates by label without revealing client labels, was introduced.
+*   **Agreement on Task Parameters:** Discussed mechanisms to ensure honest parties agree on task parameters such as minimum batch size. Proposals included leveraging task provisioning or adding parameters to the AAD for HPK encryption. Concerns about honest aggregators lying about parameters and the complexity of task parameter negotiation were raised.
+*   **Batch Mismatch Handling:**  Addressed the detection and potential correction of batch mismatches. A proposal to do nothing beyond detection was debated.
+*   **Checksum mechanism:** Discussed options to make it cheaper or optional.
+*   **TLS syntax compliance:** Discussed options regarding deviating from TLS syntax.
+*   **Differential Privacy on DAP:** Jinyu presented on applying differential privacy to DAP, covering DP definitions, trust models, DP mechanisms, and DP policies. The usefulness of this work and whether PPM should adopt the draft were discussed.
+*   **Task Provisioning Extension:** Saket presented on the Task Provisioning extension, highlighting its benefits for automated task configuration, transparency, and mitigation of cross-protocol attacks. Concerns were raised about bandwidth waste, potential for malicious clients to pollute aggregator storage, and the privacy implications of using unique task configs.
+
+## Decisions and Action Items
+
+*   **Multiple Collection Queries:** Proposal 1 was accepted. Unless someone objects, the working group will plan to implement multiple collection queries
+*   **Batch Selection Logic:** Proposal 2 was accepted: implementations may implement query types.
+*   **Supporting Drill Down:** The group agreed to work toward adding labels as a report extension, allowing labels to appear so that implementations could make use of them.
+*   **Agreement on Task Parameters:** The group agreed to take the no-op approach and proceed without making any changes to core DAP. Implementations and extensions like Task Provisioning are free to provide this functionality.
+*   **Batch Mismatch Handling:** The group agreed to do nothing but have the ability to detect it.
+*   **Checksum mechanism:** The group agreed to do nothing and keep checksum.
+*   **TLS syntax compliance:** Chris will take an action item to take a stab at creating a PR that would change the wire format of DAP to support quick syntax.
+*   **Report ID method change:**  Changes to make it a put and add report ID to the path will be taken offline.
+*   **Differential Privacy on DAP:** Further discussion on whether the working group should adopt this presentation will take place offline.
+*   **Task Provisioning Extension:** The group will use the polling tool to gauge support.
+
+## Next Steps
+
+*   Discuss drill-down as a report extension on the mailing list.
+*   Chris to provide a PR regarding the wire format.
+*   Discuss report ID method change on the mailing list.
+*   Discuss Differential Privacy on DAP and related aspects of a possible AD charter change.
+*   Continue discussion of Task Provisioning Extension

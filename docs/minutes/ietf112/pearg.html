@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="pearg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-PEARG-20211111-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 14:30</p>
+<h1>pearg</h1>
+<h2>Summary</h2>
+<p>The pearg session covered three main technical discussions: Antoine Frasenko presented an overview of privacy protection approaches, distinguishing between &quot;over-the-top&quot; (evolutionary) solutions relying on trusted parties and &quot;built-in&quot; (academic/future internet) solutions that rethink network protocols, advocating for source routing at the network layer. Gary M. Hamalian discussed the application of confidential computing (Trusted Execution Environments) to enhance DNS privacy by protecting user data even from the service operator. Finally, Matthew Finkel provided an update on the &quot;IP Address Privacy Considerations&quot; draft, outlining its shift towards a holistic view of IP address use cases, potential replacement signals, and upcoming group adoption.</p>
+<h2>Key Discussion Points</h2>
+<h3>Privacy Protection Approaches (Antoine Frasenko)</h3>
+<ul>
+<li><strong>Introduction</strong>: Highlighted increasing global demand for privacy, limitations of current web solutions (e.g., pixel tracking), and the need to eliminate identity-linking identifiers at the network layer.</li>
+<li><strong>Network Privacy Definition</strong>: Defined privacy from a network perspective as the inability for a third-party observer to link source and destination of a packet.</li>
+<li><strong>Protection Approaches</strong>:
+<ul>
+<li><strong>Over-the-top (Evolutionary)</strong>: Hides source addresses using increasingly complex means, often relying on trusted third parties. Examples include Google's IP Blinding in Chrome (Near Pass + willful IP blindness), Apple's Private Relay (two-proxy chain, Private Access Token), and Tor (three-relay circuits, known weaknesses against traffic analysis).</li>
+<li><strong>Built-in (Academic/Future Internet)</strong>: Rethinks network protocols to protect against powerful attackers, aiming to reduce reliance on third-party trust.</li>
+</ul>
+</li>
+<li><strong>Academic Research Examples</strong>:
+<ul>
+<li><strong>Fee (Lightweight Anonymizing Protocol)</strong>: Uses a helper node to build low-stretch paths, avoiding observation of source/destination by on-path ASes. Employs a fixed-size path segment vector and public key encryption for destination revelation.</li>
+<li><strong>Sphinx (Mixnet)</strong>: A messaging-focused project using a chain of mixes to shuffle and reorder messages, providing strong anonymity but with high cryptographic overhead.</li>
+</ul>
+</li>
+<li><strong>Call to Action</strong>: Encouraged the community to investigate source routing concepts for network-layer privacy, reducing dependence on trusted parties, and adapting these academic ideas for the current internet.</li>
+<li><strong>Discussion on &quot;Network Layer&quot;</strong>:
+<ul>
+<li>Compared to Tor, network-layer solutions were argued to need faster cryptography and offer stronger resistance to traffic analysis attacks (e.g., through pacing and padding).</li>
+<li>Deploying AS-based source routing would require more computational effort from transit ASes, which could be a necessary cost for enhanced privacy.</li>
+<li>A need for a more solid analytical framework to compare privacy solutions based on factors like overhead, security guarantees, and attacker models was identified.</li>
+<li>The distinction between &quot;network layer&quot; and &quot;overlay&quot; was debated, with some arguing that many solutions, including Tor and Private Relay, already involve client-side source routing, and the choice of solution, number of hops, and trust model are more critical than the specific layer of implementation.</li>
+</ul>
+</li>
+</ul>
+<h3>Confidential Computing for DNS Privacy (Gary M. Hamalian)</h3>
+<ul>
+<li><strong>Problem Statement</strong>: Even with current encryption (DoH/DoT), DNS resolvers can still see user browsing history, making them attractive targets. The goal is to protect user data <em>in use</em>, beyond just in-flight and at-rest.</li>
+<li><strong>Proposed Solution</strong>: Run the DNS resolver process inside a Trusted Execution Environment (TEE), such as Intel SGX. This prevents user-specific query data from being accessible even to the DNS operator or the underlying cloud provider.</li>
+<li><strong>TEE Overview</strong>: TEEs are secure enclaves where code runs with integrity and confidentiality guarantees. &quot;Attestation&quot; is used to remotely verify that a specific, untampered software is running in a TEE.</li>
+<li><strong>Experimental Setup</strong>: Clients send encrypted DNS queries (DoH/DoT) to a resolver. The encryption is terminated <em>inside</em> the TEE. To mitigate external observation, caching is used, and timing obfuscation and random background traffic are implemented for upstream queries.</li>
+<li><strong>Upsides</strong>: Hides all user-related information, provides technical evidence of compliance (trust-verify model), creates a marketing advantage for privacy-focused services, and allows for aggregate statistics (similar to DPF/P-DPI) and complex services (e.g., geolocation) to operate without leaking individual user data.</li>
+<li><strong>Downsides/Challenges</strong>: Operational impacts on scaling, monitoring, debugging, and DDoS protection need careful consideration (can be addressed by TEE-internal aggregate reporting). Hardware dependency on specific CPUs and manufacturers for attestation. Significant effort for software verification. Performance impact can vary, from negligible to significant context-switching overhead.</li>
+<li><strong>Limitations</strong>: TEEs are not a panacea; they introduce an additional hurdle but are susceptible to various known side-channel and software attacks (e.g., memory access patterns in SGX can reveal information, key extraction).</li>
+<li><strong>Conclusion</strong>: Emphasized the importance of protecting data held by servers. While current TEE technology has known vulnerabilities, it presents a valuable additional layer of protection, and future hardware generations are expected to improve. This approach is complementary to other DNS privacy efforts.</li>
+</ul>
+<h3>IP Address Privacy Considerations Draft Update (Matthew Finkel)</h3>
+<ul>
+<li><strong>Origin</strong>: The draft stemmed from the IP privacy interim, addressing the contentious nature of IP addresses and their role in IP reputation systems.</li>
+<li><strong>Evolution</strong>: Initially, the draft aimed to replace IP reputation, but it has since broadened its scope. It now takes a holistic view of IP address use cases and explores replacement signals.</li>
+<li><strong>Current Draft Status</strong>: The updated draft categorizes various use cases (with a heavy focus on anti-abuse), outlines legislative restrictions worldwide, sketches potential replacement signals, and documents interaction categories. The explicit focus on a reputation <em>system</em> has been reduced.</li>
+<li><strong>Next Steps</strong>: Continue stakeholder engagement to understand diverse IP address use cases (beyond Tor's perspective) and identify blockers for adopting private IP connections. The draft will be iterated upon, potentially refactored for clarity and conciseness due to its growing length, and contributions to other SDOs (IETF, W3C, e.g., Anti-Fraud Community Group) will continue.</li>
+<li><strong>Open Questions</strong>: Scope of the draft for <code>pearg</code>, utility of various sections, the contentious issue of &quot;mandatory signals&quot; (balancing privacy with the need to identify malicious behavior), and other general GitHub issues.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>The <code>pearg</code> chairs announced their intention to <strong>seek group adoption for the &quot;IP Address Privacy Considerations&quot; draft</strong>.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><code>pearg</code> participants are encouraged to read the &quot;IP Address Privacy Considerations&quot; draft and provide feedback.</li>
+<li>The <code>pearg</code> chairs will follow up on the mailing list to <strong>start an adoption call</strong> for the &quot;IP Address Privacy Considerations&quot; draft.</li>
+<li>The community is invited to explore and contribute to alternative network-layer privacy approaches using source routing, as proposed by Antoine Frasenko.</li>
+<li>Further research and development are needed on the operational impacts and optimal attestation models for confidential computing in privacy-sensitive services.</li>
+<li>Matthew Finkel and co-authors will continue to engage with diverse parties to gather feedback, iterate on replacement signals, and refine the &quot;IP Address Privacy Considerations&quot; draft, while also collaborating with other relevant standards development organizations.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

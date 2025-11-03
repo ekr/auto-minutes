@@ -1,0 +1,153 @@
+**Session Date/Time:** 22 Jul 2024 20:00
+
+# oauth
+
+## Summary
+
+This OAuth working group meeting covered several topics, including SD-JOT, SD-JOT-based Verifiable Credentials, Transaction Tokens, OAuth for First Party Apps, Client ID Metadata, and Encrypted Authorization Response. Discussions included updates on draft specifications, open issues, potential security concerns, and future directions.  The group agreed to a working group last call for the SD-JOT draft.
+
+## Key Discussion Points
+
+*   **SD-JOT:**
+    *   Clarified distinction between SD-JOT and SD-JOT plus KB.
+    *   Provided ABNF notation for SD-JOT and related parts.
+    *   Updated structure for JSON serialization (JIS).
+    *   Discussed privacy impacts, particularly the visibility of disclosed information and location.
+*   **SD-JOT-based Verifiable Credentials:**
+    *   Described the data format and validation rules for expressing verifiable credentials with JSON payloads, with and without selective disclosure using SD-JOT.
+    *   Introduced the concept of typing metadata for individual verifiable credential types, including schema documents and display information.
+    *   Highlighted the importance of alignment with query languages for requesting specific claims.
+    *   Addressed media type conflicts with W3C's verifiable credentials working group.
+*   **Transaction Tokens:**
+    *   Explained the purpose of transaction tokens for representing work that needs to be done across multiple workloads.
+    *   Clarified the valid scope of transaction tokens within a logical trust domain.
+    *   Discussed privacy considerations related to transaction details.
+    *   Addressed modifications and replacements of transaction tokens.
+    *   Clarified the role of the audience claim in representing the trust domain.
+    *   Debated the use of self-signed JWTs as subject tokens for internal requests.
+    *   Addressed the usage of the authorization details (AZD) claim.
+    *   Discussed the requirement of a valid transaction identifier (TXN) in the token.
+*   **OAuth for First Party Apps:**
+    *   Addressed the problem of developing first-party apps with a better user experience.
+    *   Introduced the Authorization Challenge endpoint.
+    *   Addressed the use of this mechanism in the context of credential or verifiable credential world for presentation of a credential during issuance code flow.
+*   **Client ID Metadata Document:**
+    *   Addressed the need for a better mechanism for clients to register themselves with OAuth authorization servers.
+    *   Proposed a new method to define a client ID by publishing metadata on web servers.
+    *   Discussed various security implications of arbitrary client ID retrieval over the internet.
+*   **Encrypted Authorization Response:**
+    *   Discussed the possibility of encrypting the authorization response to avoid the round trip to the token endpoint.
+    *   Identified several security concerns including credential leakage, access token injection, redirect URI validation, and refresh token fraud.
+
+## Decisions and Action Items
+
+*   **SD-JOT:** Start working group last call next week.
+*   **OAuth for First Party Apps:** Call for adoption passed, follow up on the list next week. Publish revised draft with 00 version.
+*   **Client ID Metadata Document:** Add restriction that all hostnames in the metadata document match the hostname of the document itself.
+*   **Encrypted Authorization Response:** Peter Kasselman may write up an individual draft.
+
+## Next Steps
+
+*   SD-JOT authors to initiate working group last call and address any editorial comments as feedback.
+*   OAuth for First Party Apps authors to follow up on the mailing list regarding adoption and publish a revised draft.
+*   Client ID Metadata Document authors to incorporate the security concerns in the existing draft.
+*   Continue discussions on open issues and solicit feedback from the community.
+
+
+---
+
+**Session Date/Time:** 23 Jul 2024 22:30
+
+# oauth
+
+## Summary
+
+The OAuth working group held a meeting to discuss several draft specifications related to OAuth 2.0. The topics included identity and authorization chaining across domains, an OAuth profile for open public clients, and status attestations for verifiable credentials. The discussions focused on the technical details, security considerations, and potential adoption of these specifications.
+
+## Key Discussion Points
+
+*   **Identity Assertion Authorization Grant Profile:** Aaron Paragi presented a profile of the identity and authorization chaining draft, focusing on enterprise use cases where applications need to access data from each other. The profile uses token exchange with an identity assertion (ID token or SAML assertion) to obtain a JOT authorization grant, which is then used to get an access token from the target application. Key discussion points included:
+    *   Binding the JOT authorization grant to the client.
+    *   Scope requests in token exchange.
+    *   Clarifying the subject identifier in the JOT.
+    *   Security implications of minting authorization grants.
+*   **OAuth Profile for Open Public Clients:** Neil presented a draft specification for an OAuth profile intended for native clients (e.g., email and calendar applications). It aims to standardize OAuth usage in scenarios where username/password authentication is currently prevalent. Key discussion points included:
+    *   The use of dynamic client registration (DCR). Some participants expressed concerns about the complexity and lack of proven implementations of DCR. A suggestion was made to use a well-known client ID instead.
+    *   The target audience of the profile (native apps vs. web apps).
+    *   Security considerations related to allowing any client to access user mail.
+    *   The relationship to existing work on email and OAuth.
+*   **Status Attestations for Verifiable Credentials:** Leif presented work by Giuseppe on a method for checking the status of digital credentials, similar to OCSP for X.509 certificates. The holder of the credential requests the status directly from the issuer. Key discussion points included:
+    *   Whether a credential can have multiple statuses simultaneously.
+    *   How to verify the status of a credential at a specific point in time.
+    *   The relationship to the existing status list draft.
+    *   Privacy implications of leaking credential use to the issuer.
+    *   The need for authentication of the requester.
+    *   Stapling status attestations to credentials.
+    *   Compatibility with zero-knowledge proofs.
+*   **Identity and Authorization Chaining Across Domains:** Brian, presented the document on OAuth identity and authorization change across domains. Focus was on discussion on sender constrained tokens. Key discussion points included:
+    *   Checking the binding on the inbound token of token exchange
+    *   The impact that the AS acting as client throws into the works.
+
+## Decisions and Action Items
+
+*   **OAuth Profile for Open Public Clients:** It was decided that it was premature to adopt the draft. It was decided to keep the discussion going. Hannes suggested scheduling an interim virtual meeting to further discuss the topic, involve more people, and get relevant players together.
+*   **Status Attestations for Verifiable Credentials:** Leif and Giuseppe will continue working on the draft, addressing the open issues and incorporating feedback from the working group. There are ongoing discussions around including depop binding. 
+*   Brian will work on pull requests regarding depop sender constraining, and key constraining.
+
+## Next Steps
+
+*   The OAuth working group will schedule an interim virtual meeting to continue the discussion on the OAuth profile for open public clients.
+*   Leif and Giuseppe will continue to develop the status attestations draft and aim for working group adoption after addressing the outstanding issues.
+*   The various groups with draft publications should make sure to reference existing work.
+
+
+---
+
+**Session Date/Time:** 26 Jul 2024 20:00
+
+# oauth
+
+## Summary
+
+This meeting covered several key topics in the OAuth working group, including updates on attestation-based client authentication, token status lists, FedCM integration with OAuth, PICA (Proof of Issuer Key Authority) for offline key validation, and a proposed OAuth profile for Al-Zan (Authorization). The discussions involved security considerations, optimization strategies, and the potential for new work items within the IETF.
+
+## Key Discussion Points
+
+*   **Attestation-Based Client Authentication:**
+    *   Discussed an optimization for combining attestation-based client authentication with DPoP (Demonstrating Proof-of-Possession at the Application Layer) by using the same key for both, potentially reducing the number of JOTs in the request.
+    *   Addressed concerns about the security implications of key reuse and the optionality of the optimization.
+    *   Naming discussion for attestation. Some feel that the term is confusing.
+*   **Token Status List:**
+    *   Reviewed recent changes to the token status list draft, including validation rules and a status list aggregation mechanism.
+    *   Discussed the removal of the unsigned option for status lists and the complexities arising from supporting multiple encoding formats (CBOR, JSON, JOTT, CWT).
+*   **FedCM Profile for OAuth:**
+    *   Explored the use of FedCM (Federated Credential Management) as a privacy-preserving alternative to third-party cookies for federated identity flows.
+    *   Discussed how to integrate OAuth with FedCM by using the assertion endpoint to return an authorization code instead of an ID token.
+    *   Addressed the challenge of passing OAuth parameters through the FedCM API and the need for a standardized approach (e.g., namespacing).
+*   **Proof of Issuer Key Authority (PICA):**
+    *   Presented the PICA draft, which aims to provide a persistent and verifiable record of issuer keys to enable offline validation of JOTs.
+    *   Discussed security considerations related to the use of X.509 certificates in PICA and potential mitigations, such as using a prefix for the issuer domain name in the certificate.
+    *   Acknowledged the need to address certificate revocation in the draft.
+*   **Al-Zan Profile of OAuth:**
+    *   Propose an OAuth profile for Al-Zan, a policy decision protocol to standardize authorization requests and responses.
+    *   Discussed potential integration points between OAuth and Al-Zan, such as using RAR (Rich Authorization Requests) to convey Al-Zan requests to the authorization server.
+    *   Concerns raised that Al-Zan profile could be seen to dictate policy.
+*   **Authorization Policy Language (Alpha 2.0):**
+    *   Discussed a proposal for Alpha 2.0, a new authorization policy language intended to simplify existing standards and promote reuse across different environments.
+    *   Feedback indicated that OAuth would not be the appropriate venue for such a language.
+    *   It was noted that this language could work with OAuth tech.
+
+## Decisions and Action Items
+
+*   **Attestation-Based Client Authentication:** The mailing list to continue the discussion on the trade-offs around DPoP optimization and security considerations.
+*   **Token Status List:** Authors will consider feedback regarding unsigned option.
+*   **PICA:**
+    *   The chairs will make a call for adoption on the mailing list.
+    *   The author will address the certificate revocation and security properties for using WebPKI certificates.
+
+## Next Steps
+
+*   Continue discussions on the mailing lists for attestation-based client authentication, token status lists and PICA.
+*   Richard to address the negative votes to PICA adoption.
+*   Continue development and stabilization of the FedCM spec and exploration of its integration with OAuth.
+*   David Hayes to engage with the dispatch group.

@@ -1,0 +1,91 @@
+**Session Date/Time:** 09 Nov 2022 13:00
+
+# Session: suit
+
+## Summary
+
+The SUIT working group session covered updates and discussions across several key drafts: SUIT Manifest, Multiple Trust Domains, Update Management, Encrypted Payloads, MUD Integration, MTI Cryptography, and SUIT Report. Key themes included editorial refinements, handling complex trust relationships, optimizing for constrained devices, and integrating with other IETF protocols like TEEP, MUD, and RATS/EAT. Significant decisions were made regarding IANA registry expert review, the preferred method for storing dependent manifests, and the future adoption of the MTI Cryptography draft.
+
+## Key Discussion Points
+
+*   **SUIT Manifest (`draft-ietf-suit-manifest-20`)**
+    *   Primarily editorial changes: Renamed `run` to `invoke` and `common sequence` to `shared sequence` for clarity.
+    *   Added clarifying text for `run sequence` behavior when strict order is false, `suit invoke` for image verification, and `try-each` stop conditions.
+    *   Introduced a minor technical change: `direct-write` and `direct-content-check` commands to allow small payloads (e.g., 32 bytes) to be written directly without needing a separate hash argument.
+    *   **IANA Early Review Discussion:** A comment from IANA regarding requiring expert review for standards track ranges in the registry. Discussion favored requiring expert review, citing the need for long-term registry maintenance and avoiding issues encountered in other registries (e.g., COSE).
+*   **SUIT Multiple Trust Domains (`draft-ietf-suit-trust-domains-02`)**
+    *   Highlights three key features: key delegation (using CWTs), mutually distrustful signers, and expressing software dependencies.
+    *   Updates include merging index lists for dependencies and components to simplify handling. This created an issue where the digest of manifests could be incorrect if the envelope was treated as a component.
+    *   Proposed solutions: A separate command for verifying the manifest digest and a test to distinguish manifests from other components for batch processing.
+    *   Added `process-dependency` command and an `uninstall` command sequence to support TEEP and local uninstallation scenarios.
+    *   **Open Issue:** Security consideration section needs updating.
+    *   **Open Issue: Component ID for Root Manifest:** Discussed the challenge of where dependent manifests should be stored, especially in systems with multiple independent manifest trees (e.g., trusted applications signed by different parties).
+        *   Two options considered: "override" (outer manifest defines location) vs. "concatenation" (dependency's ID concatenated with outer manifest's).
+        *   Consensus was reached on the *override* model, which allows greater control and supports scenarios where the same dependency needs to be installed in multiple locations (e.g., different TEEs).
+    *   Requested CWT experts to review the CWT aspects of the document.
+*   **SUIT Update Management (`draft-ietf-suit-update-management-01`)**
+    *   Extends SUIT with CoSWID (with a preference for CoRIM), version comparison, deployment constraints (timing, priority, authorization), and commands for compact encoding.
+    *   Changes include adding `override-multiple` command (saves 2 bytes/component) and `copy-parameters` command (reduces encoding for parameters like hashes that are reused across components).
+    *   **Open Issue:** Call for missing update management actions/use cases.
+    *   **Open Question:** Whether to use a manifest sequence number for version comparison.
+    *   Michael Richardson suggested shifting from CoSWID to CoRIM but acknowledged that waiting for CoRIM could block progress.
+*   **SUIT Encrypted Payloads (`draft-ietf-suit-encrypted-payloads-01`)**
+    *   Renamed from "software encryption" to "encrypted payloads" to reflect its use for both code and configuration data (as needed by TEEP).
+    *   New example approach: Encryption information is placed inside the `install` command, signed by the Manifest Creator, simplifying distribution.
+    *   A more complex scenario was presented for multiple trust domains, where a distribution system encrypts firmware and creates its own manifest, alongside the author's manifest. This introduces new security considerations, as both the author and device must trust the distribution system.
+    *   Brennan noted that a more distributable version using a key distribution mechanism (rather than dependencies) could be explored if requested.
+*   **SUIT-MUD Integration (`draft-ietf-suit-mud-00`)**
+    *   Provides a mechanism to report MUD URLs and signer keys (or full MUD files) via SUIT. This aims to inform network infrastructure of device access requirements proactively and securely, and to link with attestation.
+    *   Discussion with Michael Richardson led to the conclusion that delivering the *full text* of a MUD file within SUIT is undesirable; the document should focus on reporting a URI and signer. Update paths for MUD files can be handled by related work in OptoAWG.
+    *   Hank clarified that the draft points to MUD URIs rather than defining MUD file content.
+*   **SUIT MTI (Mandatory to Implement) (`draft-brennan-suit-mt-crypto-01`)**
+    *   An individual draft proposed for working group adoption, focused on defining a minimal crypto suite specifically for *constrained node firmware update*.
+    *   Emphasizes an asymmetric MTI: authors and intermediaries must implement all, but processors only need one.
+    *   Defines four profiles: symmetric, post-quantum asymmetric (HSS-LMS hybrid), classical asymmetric (ES-256 and EdDSA with HPKE).
+    *   Discussion on HSS-LMS availability: Michael Richardson raised concerns about the perceived lack of implementations and the potential for anxiety to hinder adoption of PQ algorithms.
+    *   Current encryption algorithms: AES-GCM (considering AES-CTR/CBC).
+    *   **Open Question:** Should symmetric algorithm suite be mandatory for authors/intermediaries? (Consensus suggests no, if only public firmware is distributed).
+    *   Suggested adding Chacha20-Poly1305 as a common IoT algorithm.
+    *   **Open Issue:** Security considerations need to be elaborated, particularly on scenarios where encryption is not required.
+*   **SUIT Report (`draft-ietf-suit-report-01`)**
+    *   Defines a mechanism for devices to report on installation procedures or secure boot outcomes, including decisions made and critical information.
+    *   Covers `invoke`, `install`, and `uninstall` procedures.
+    *   Relates to RATS: Provides attestation evidence for verifiers to build device state, but needs translation into EAT values.
+    *   Changes: Merged system property claims and SUIT manifest records into a single append-only log, simplifying processing for constrained devices.
+    *   Added SUIT capability reports, listing what a manifest processor can do.
+    *   **Discussion on EAT Integration:** Proposed defining a new EAT claim specifically for SUIT reports.
+        *   Security consideration: How to encrypt sensitive SUIT report data (either encrypt the report itself or encrypt the EAT containing it). Russ suggested this discussion belongs in the EAT document.
+    *   **Discussion on Report Transport:** Michael Richardson suggested that this document highlights the need for an IETF standard status tracker with encryption, potentially leveraging the TEEP protocol beyond TEE environments.
+    *   Clarified that "supported component identifiers" for non-constrained devices could include wildcard paths.
+
+## Decisions and Action Items
+
+*   **SUIT Manifest (`draft-ietf-suit-manifest-20`)**
+    *   **Decision:** The working group will adopt a Cozy-style hybrid (standards track + expert review) model for IANA registry for standards track ranges.
+    *   **Action Item:** Brennan to add text to `draft-ietf-suit-manifest` specifying the standards track + expert review model for IANA registry.
+    *   **Action Item:** IESG will designate experts, welcoming recommendations from the WG.
+*   **SUIT Multiple Trust Domains (`draft-ietf-suit-trust-domains-02`)**
+    *   **Decision:** The override model will be adopted for dependent manifest storage (outer manifest defines the installation location).
+    *   **Action Item:** Carson and Hank to review the CWT aspects of the document.
+    *   **Action Item:** Brennan to update the security considerations section.
+*   **SUIT-MUD Integration (`draft-ietf-suit-mud-00`)**
+    *   **Decision:** The document will remove the option to deliver the full text of a MUD file; it will only report a URI and signer.
+    *   **Action Item:** Brennan to implement this change before Working Group Last Call.
+    *   **Action Item:** The document requires an update to reflect this change before proceeding to WGLC.
+*   **SUIT MTI (Mandatory to Implement) (`draft-brennan-suit-mt-crypto-01`)**
+    *   **Decision:** The working group intends to adopt `draft-brennan-suit-mt-crypto` as a working group document (`draft-ietf-suit-mt-crypto`). A formal adoption call will be made on the mailing list.
+    *   **Action Item:** Brennan to update the draft (e.g., consider adding Chacha20-Poly1305, elaborate on security considerations regarding encryption requirements) before it becomes a WG document.
+    *   **Action Item:** Brennan to post the next version as `draft-ietf-suit-mt-crypto`.
+*   **SUIT Report (`draft-ietf-suit-report-01`)**
+    *   **Action Item:** Brennan to define a new EAT claim specifically for SUIT reports.
+    *   **Action Item:** Discussion on how to encrypt sensitive SUIT report data (either within the report or as part of an EAT) will be conducted, possibly in the EAT document.
+    *   **Action Item:** The working group will explore using the TEEP protocol as a generic status tracker for SUIT reports.
+
+## Next Steps
+
+*   **Document Revisions:** Authors to incorporate discussed changes and action items into their respective drafts.
+*   **Working Group Last Call (WGLC):** `draft-ietf-suit-manifest` and `draft-ietf-suit-mud` to proceed towards WGLC after their specified updates are completed.
+*   **MTI Draft Adoption:** Formalize the adoption of `draft-brennan-suit-mt-crypto` via the mailing list, followed by its renaming and revisions as a WG document.
+*   **Reviews:** Solicit expert reviews for CWT aspects of `suit-trust-domains` and general reviews for `suit-update-management` and `suit-report`.
+*   **Interoperability and Integration:** Continue discussions on SUIT Report's integration with EAT and potential use of TEEP for report transport.
+*   **Open Issues:** Address remaining open issues in drafts, particularly updating security considerations.

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="tsvarea.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-TSVAREA-20220322-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 22 Mar 2022 12:00</p>
+<h1>tsvarea</h1>
+<h2>Summary</h2>
+<p>The tsvarea session included an update from the Transport Area Directors on working group status, chair changes, and document progress. The core of the session was dedicated to a two-part invited talk on the Stream Control Transmission Protocol (SCTP). Michael Tüxen provided a historical overview of SCTP's design motivations, features, and evolution, including its use in WebRTC. Claudio Porfiri then detailed SCTP's critical role and specific deployment characteristics within 4G and 5G Radio Access Networks (RANs). The open mic discussion touched upon the lessons learned from SCTP influencing QUIC, the need for use-case driven development for future SCTP extensions, and the challenges of transport protocols like SCTP in cloud-native environments like Kubernetes.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Transport Area Directors' Update</strong>
+<ul>
+<li><strong>Working Group Status</strong>:
+<ul>
+<li>ALTO: New chair Muhammad Bukader.</li>
+<li>TCPM: New chair Ian Sweat. Request for editor/authors for RFC 5681bis (TCP core loss recovery) document; Lars Eggert volunteered as editor.</li>
+<li>DTN: Re-chartering completed, new work on &quot;green stuff&quot; forthcoming.</li>
+<li>QUIC: Championing deliverables, MP-QUIC extensions in progress, several drafts submitted to RFC Editor, new IDs on load balancing and path negotiation.</li>
+<li>ARMCAT: One working group document in last call.</li>
+<li>TAPS: Discussing mapping over QUIC.</li>
+</ul>
+</li>
+<li><strong>Document Progress</strong>:
+<ul>
+<li><strong>To RFC Editor</strong>: SCTP 4960bis, IOM data (in-band telemetry), four ALTO documents, QUIC datagram.</li>
+<li><strong>Published RFCs</strong>: DTN last charter documents, IAPPM documents, and RFC 9187 (Joe Touch's secret number extension) noted for its transport flavor.</li>
+</ul>
+</li>
+<li><strong>TSVART (Transport Area Review Team)</strong>: Appreciation for reviewers, and a call for new reviewers to join the rotation to help with document volume and provide broader IETF perspective.</li>
+</ul>
+</li>
+<li><strong>SCTP: History, Evolution, and WebRTC (Michael Tüxen)</strong>
+<ul>
+<li><strong>Original Use Case</strong>: SS7 signaling over IP (20+ years ago) with specific requirements:
+<ul>
+<li>Small, reliable messages.</li>
+<li>Partial ordering (per-stream).</li>
+<li>Strict time limits, minimizing Head-of-Line Blocking (HOLB).</li>
+<li>Long communication lifetime and high reliability.</li>
+<li>Fault tolerance via multi-homing.</li>
+</ul>
+</li>
+<li><strong>Base Protocol Features</strong>: Message-oriented, message bundling, multiple streams (ordered/unordered), reliable transport, multi-homing for network resilience (path supervision), fine-grained configurability, support for large user messages (though not initial focus).</li>
+<li><strong>Evolution/Extensions</strong>: Dynamic address reconfiguration, dynamic stream management (increase/reset), partial reliability, concrete API specifications, improved failover, UDP/DTLS encapsulation, improved large message handling (to avoid HOLB), stream schedulers, TLS/DTLS integration.</li>
+<li><strong>WebRTC Use Case</strong>: SCTP used to multiplex data channels, providing configurable ordered/unordered and reliable/unreliable properties (retransmission limits, message lifetime limits).</li>
+<li><strong>Unachieved Goals</strong>: Parametrization guidelines for signaling networks, conformance tests, non-renegable ACK scheme, multi-homing for load sharing, ECN support.</li>
+<li><strong>Current/Potential Future Work</strong>:
+<ul>
+<li>Maintenance: NAT traversal document (relevant for Linux containers), DTLS over SCTP update (for DTLS 1.2/1.3), UDP encapsulation bis, SCTP auth algorithm update (e.g., obsoleting SHA-1).</li>
+<li>New Features: WebRTC improvements (checksum removal, fast open), association forwarding (anycast-like), full mesh multi-homing model.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>: Gary Fergus suggested revisiting multipath and ECN for SCTP. Jonna questioned current SS7 usage, which is still active and evolving (e.g., 5G signaling). Jake inquired about SCTP's role in video transport vs. SRT, with no definitive answer given. Lars Eggert highlighted historical challenges with finding reviewers for SCTP extensions due to a small community; Michael confirmed multiple SCTP implementations exist beyond a single vendor, including telco-specific and WebRTC-focused ones.</li>
+</ul>
+</li>
+<li><strong>SCTP in 4G/5G Radio Access Networks (Claudio Porfiri)</strong>
+<ul>
+<li><strong>Ubiquitous Use</strong>: SCTP is widely deployed in RANs for control plane signaling (e.g., user equipment bandwidth requests).</li>
+<li><strong>RAN Environment</strong>: Not public internet, often VPN-based, IPsec encapsulated, statically routed, manual IP address assignment.</li>
+<li><strong>Key Drivers</strong>: Multi-homing for redundancy is critical for network resilience. Inter-generation communication (4G-5G) also uses SCTP. Vendor interoperability is high.</li>
+<li><strong>Specific Usage Patterns</strong>: Semi-permanent connections, typically two streams (one for generic control, one for independent signaling to avoid HOLB), in-sequence delivery (always used), strong encryption (IPsec/DTLS), active path monitoring (level path MTU discovery).</li>
+<li><strong>Implementation Specifics (unofficial)</strong>: Much faster timers (millisecond accuracy) than IETF recommendations, SCTP used for link supervision.</li>
+<li><strong>Latency Requirements</strong>: Critical for user experience (e.g., UE idle-to-active transition must complete 5-signal handshake in &lt;100ms).</li>
+<li><strong>Link Supervision for Radio Shutdown</strong>: Rapid detection of control plane loss and radio shutdown (&lt;20s) to prevent interference and enable handover.</li>
+<li><strong>Weaknesses</strong>: Difficulties with NAT traversal, cloud/Kubernetes deployments, non-native encryption. Scalability issues with single associations due to single-core CPU bottleneck (lack of offload, difficulty spreading computation).</li>
+<li><strong>Discussion</strong>: Confirmed the capacity issue stems from the inability to offload SCTP processing to NICs and distribute a single association's workload across multiple CPU cores, leading to saturation.</li>
+</ul>
+</li>
+<li><strong>Open Mic Discussion</strong>
+<ul>
+<li><strong>Jonna</strong>: Acknowledged SCTP's influence on QUIC development. Stressed that future SCTP extensions should be driven by concrete use cases, which also helps identify suitable reviewers and implementers.</li>
+<li><strong>Zaheed Sarker (AD)</strong>: Agreed that maintenance is important, but new features must be justified by identifiable users and use cases.</li>
+<li><strong>Mirja Kühlewind</strong>: Pointed out a disconnect between the IETF's traditional transport perspective and the HTTP/REST-centric transport paradigm prevalent in cloud environments like Kubernetes, which poses challenges for protocols like SCTP.</li>
+<li><strong>Michael Tüxen</strong>: Reaffirmed that recent SCTP feature developments have indeed been in response to requests from other entities or working groups.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: Lars Eggert volunteered to act as an editor for a revision of RFC 5681 (TCP core loss recovery).</li>
+<li><strong>Action Item</strong>: Individuals interested in contributing as authors to the RFC 5681bis document should contact Lars Eggert, Martin Duke, or the TCPM chairs.</li>
+<li><strong>Action Item</strong>: Members of the IETF community interested in reviewing documents for the Transport Area (TSVART) should contact Magnus Westerlund to be added to the rotation.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue maintenance and updates for existing SCTP specifications, particularly regarding NAT traversal and DTLS versions.</li>
+<li>For any new SCTP feature proposals, actively seek out and involve the specific user communities to drive development and provide necessary review.</li>
+<li>Further explore the interaction and potential challenges of transport protocols, including SCTP, within cloud-native and Kubernetes environments.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+**Session Date/Time:** 08 Nov 2021 12:00
+
+# sidrops
+
+## Summary
+
+The sidrops session covered updates on current RPKI drafts and featured two main technical presentations. Ben presented RPKI-Mancer, a Python library for creating, signing, reading, and validating RPKI objects, highlighting its utility for testing and bug discovery. Oliver then discussed a hackathon project on developing tools and data sets for testing ASPA (AS Path Attestation) verification, including generating large-scale test data and a testing framework, along with preliminary results and future work. Discussions focused on the practical application of these tools, data source limitations, and community contributions.
+
+## Key Discussion Points
+
+*   **Administrative Updates**
+    *   The `6486bis` and `LTA use cases` documents have been forwarded to the IESG.
+    *   Group Last Call is pending for `RPKI ROV timing` and `RPKI Max-length` drafts.
+    *   Group Last Calls need to be issued for `has no identity` and `8210bis` after recent updates are reviewed and accepted.
+    *   The chairs noted the need for a volunteer note-taker, which was subsequently filled.
+
+*   **RPKI-Mancer: A Tool for RPKI Object Creation, Signing, and Reading (Ben)**
+    *   **Motivation**: Addressed the difficulty of reading RPKI objects using standard tools (e.g., OpenSSL CLI) and the need for a robust ASN.1 validation tool for RPKI drafts in CI pipelines.
+    *   **Technical Implementation**:
+        *   Leverages `pycrate` (ASN.1 to Python compiler) to overcome challenges with existing ASN.1 compilers failing on RPKI-specific dependencies.
+        *   Achieves runtime ASN.1 module discovery and compilation, allowing objects to be instantiated with minimal boilerplate.
+        *   Performance is a known limitation due to the interpreted nature of Python and runtime compilation.
+        *   Unique feature: Auto-discovery of instance definitions for content types, requiring Python 3.8+.
+    *   **Features**: Includes implementations for TA and EE certificates, TAL files, Manifests, ROAs, and Ghostbuster Records.
+        *   A CLI tool with `rpkimancer conjure` (creates local publication points with default objects) and `rpkimancer perceive` (decodes and dumps signed objects in ASN.1 value syntax or JSON).
+        *   Supports a plugin architecture for new signed object types (e.g., RSC, ASPA).
+    *   **Use Cases & Discoveries**:
+        *   **Module Validation**: Successfully used to validate ASN.1 modules in drafts (e.g., signed checklist).
+        *   **Object Prototyping**: Facilitates quick generation of example objects for interoperability testing (e.g., confirmed RPKI-Mancer objects readable by RPKI-Client, Tom Harrison's prototype, and Krill for ASPA).
+        *   **Bug Finding**: Identified two real-world bugs:
+            *   A manifest listing itself, causing a double-free crash in Fort (and potentially other RPs).
+            *   A common name attribute exceeding 64 characters, revealing an obscure constraint not commonly checked.
+    *   **Future Work**: Implement BGPSEC certificates, develop a pluggable directory structure for RP output, synthesize local RDP services, create a structure-aware diff tool for signed objects, and provide plugin templates.
+    *   **Feedback/Contributions Sought**: Input from CA/RP implementers on convenient ways to serve generated data (rsync/RDP vs. cache dirs), improving RP logging for debugging, and authors of new signed objects to write RPKI-Mancer plugins for their drafts.
+    *   **Discussion**: Appreciation for the tool's utility. A desire for a diff tool that can show temporal changes in RPKI objects, acknowledged as challenging due to the large data volume and duplication.
+
+*   **Hackathon Project: Tools and Data Sets for Testing ASPA Verification (Oliver)**
+    *   **Objective**: Develop tools and data sets to test route leak mitigation techniques, specifically ASPA verification.
+    *   **Implementation**: Integrated ASPA verification (based on 8210bis and algorithm corrections from IETF 110) into the NES-BGP SRx software suite.
+    *   **Data Generation**:
+        *   **ASPA Data**: Generated ~72,000 ASPA PDUs (representing ~150,000 customer-provider relations) using CADATA (inferred peering relationships) as input.
+        *   **BGP Updates**: Created synthetic BGP updates from RouteViews MRT table dumps, focusing on unique AS paths with synthetic prefixes.
+        *   Developed scripts to generate large-scale, down-selectable test data sets.
+    *   **Testing Framework**:
+        *   Automated setup using shell scripts to start SRx server (validation), Quagga router, and BGPsec-IO (traffic generator).
+        *   Utilizes Gnome Terminal for interactive control and debugging across multiple tabs.
+        *   Provides output of validation states (valid, invalid, unknown) and AS paths.
+    *   **Preliminary Results**: Demonstrated initial validation results with CADATA, cautioning that deep analysis of these specific results requires further refinement and data selection. Noted a high number of "unknowns" partly due to missing AS0 ASPAs for Tier-1 ASes in the current data.
+    *   **Future Work**: Clean up and publish code on GitHub; experiment with gradual ASPA deployment; extend to multiple peering sessions for performance testing; address a segmentation fault in scaling tests; encourage testing with other ASPA implementations; generate input data for validation caches.
+    *   **Discussion**:
+        *   **ASPA Syntax**: Question regarding the use of `+` vs `*` for provider sets in ASPA data (current draft uses `+` meaning at least one provider; `*` would allow empty). Oliver to verify and correct if needed.
+        *   **CADATA Limitations**: Concerns raised about CADATA's accuracy, noise, and potential exclusion of Tier-1 providers from customer-provider sets, leading to a high number of "unknowns." Suggestion to use a top-down approach with explicit AS0 ASPAs for Tier-1s.
+        *   **AS0 ASPA**: Confirmed that the draft specifies AS0 for ASes with no providers (e.g., Tier-1s), not an "empty ASPA." This fix is planned for the testing data to reduce "unknowns" to "invalid" in certain scenarios.
+        *   **Availability**: Small, synthetic ASPA test data is already available with the BGP-SRx experimentation set.
+
+## Decisions and Action Items
+
+*   **Draft Status**:
+    *   `6486bis` and `LTA use cases` have been sent to the IESG.
+    *   Group Last Calls are pending for `RPKI ROV timing` and `RPKI Max-length`.
+    *   Working Group Last Calls need to be issued for `has no identity` and `8210bis` after reviewing recent updates.
+*   **RPKI-Mancer (Ben)**:
+    *   Continue development and seek community feedback on desired features (e.g., serving data to RPs, improved RP logging, plugin contributions).
+*   **ASPA Testing Tools (Oliver/Sriram)**:
+    *   Clean up and publish the hackathon code to GitHub (either the hackathon repo or the BGP-SRx GitHub page). An email will be sent to the mailing list when available.
+    *   Address the segmentation fault found during scaling tests.
+    *   Implement AS0 ASPAs for Tier-1 ASes in the CADATA processing to improve the accuracy of validation results.
+    *   Verify and correct the ASPA provider set syntax if the current implementation doesn't align with the draft's `+` (at least one provider) requirement.
+
+## Next Steps
+
+*   The sidrops WG will continue monitoring the progress of drafts currently in IESG review and prepare for the upcoming Group Last Calls.
+*   Ben will continue to develop RPKI-Mancer, encouraging community contributions and feedback on its utility and future enhancements, particularly for integration testing with RP/CA implementations.
+*   Oliver and Sriram will finalize the ASPA testing tools and datasets, publish the code, and pursue further research into gradual deployment, performance testing, and integration with other ASPA implementations and validation caches.

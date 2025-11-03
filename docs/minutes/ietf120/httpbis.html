@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="httpbis.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF120-HTTPBIS-20240722-2000">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF120-HTTPBIS-20240724-2000">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 22 Jul 2024 20:00</p>
+<h1>httpbis</h1>
+<h2>Summary</h2>
+<p>The httpbis working group meeting covered three active drafts: resumable uploads, identifying query results, and cache groups. There was also a presentation about communicating proxy configuration and provisioning domains in the <code>int</code> area, and a discussion about it's relevance to the group.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Resumable Uploads:</strong>
+<ul>
+<li>Discussion on discovering upload limits upfront using OPTIONS requests and its potential integration with CORS pre-flight requests.</li>
+<li>Debate about including an advisory <code>Upload-Length</code> header in creation requests to inform the server of the total upload size. Concerns about backward compatibility with existing servers were raised.</li>
+<li>Discussion on integrity checks using the <code>Digest</code> field and whether its use aligns with the intended purpose of the integrity preference fields defined in RFC.</li>
+</ul>
+</li>
+<li><strong>Identifying Query Results:</strong>
+<ul>
+<li>Debate on whether to use <code>Location</code> or <code>Content-Location</code> headers to identify a gettable resource for a query and it's caching behavior. A proposal to allow both <code>Location</code> and <code>Content-Location</code> headers, each serving distinct purposes, was discussed and generally favored.</li>
+<li>Discussion on whether or not to allow cached query responses to be reused for subsequent requests, similar to the behaviour already allowed with <code>POST</code> requests. Concerns were raised around security implications.</li>
+</ul>
+</li>
+<li><strong>Cache Groups:</strong>
+<ul>
+<li>Discussion regarding a revision that removes speculative invalidation. A request for review and a call for implementation were made.</li>
+</ul>
+</li>
+<li><strong>Communicating Proxy Configuration and Provisioning Domains (Int Area Presentation):</strong>
+<ul>
+<li>Overview of the <code>int</code> area document about discovering proxy configurations using provisioning domains. The document leverages an HPS-protected JSON file associated with a way to reach a network.</li>
+<li>Discussion on how to handle the <code>protocol</code> field, and consider a HTTP-prefix.</li>
+<li>Discussion on the two bootstrapping mechanisms, and network discovery.</li>
+<li>Discussion about integrating legacy types of authentication, like &quot;unprompt off.&quot;</li>
+<li>Concern was raised about the use cases for pack files that defines exceptions, and discussed how the document allows the same, through the split DNS config.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Resumable Uploads:</strong> Marius to follow up with Lucas on the use of integrity preference fields. Marius will add a hint about backward compatibility with existing servers.</li>
+<li><strong>Identifying Query Results:</strong> Julian and Mike to work on a proposal that defines the behavior of both <code>Content-Location</code> and <code>Location</code> headers. The chairs will add Mike to the draft's authors.</li>
+<li><strong>Cache Groups:</strong>  Working group to review the draft for last call.</li>
+<li><strong>Communicating Proxy Configuration and Provisioning Domains:</strong> Consider using <code>HTTP</code> prefix to better distinguish it from socks.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussion and refinement of the Resumable Uploads and Identifying Query Results drafts.</li>
+<li>Proceed with working group last call for the Cache Groups draft pending review.</li>
+<li>Follow up on action items and continue work on open issues.</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 24 Jul 2024 20:00</p>
+<pre><code class="language-markdown"># httpbis
+
+## Summary
+
+This httpbis session covered a range of topics, including security considerations for HTTP upgrade, server certificate authentication, privacy proxy enhancements, cache performance improvements, and resource versioning. Discussions focused on technical details, implementation challenges, and the potential for standardization.
+
+## Key Discussion Points
+
+*   **Optimistic HTTP Upgrade:**  Debate over deprecating the HTTP upgrade token in the IANA registry and whether the draft should address this. The group also discussed extending the scope to include HTTP Connect. Recommendations to restrict upgrade tokens to GET and avoid request bodies. Concerns about TLS upgrade token safety and the potential for misinterpretation of TCP streams.
+
+*   **Secondary Certificate Authentication:**  Discussion regarding the ability for clients and servers to agree on the used certificate. The group also addressed the ability to send exported authenticators in multiple frames for HTTP/2 and potential solutions like continuation flags or certificate compression.  A decision to rename the frame from &quot;certificate&quot; to &quot;server certificate&quot;.
+
+*   **Privacy Proxy Wrap-up Capsule:** Presentation of a new capsule type to signal clients to switch privacy proxies gracefully during maintenance or resource exhaustion.  Discussions centered on distinguishing between relays and use cases beyond privacy proxies, with proposals to leverage go-away signals.
+
+*   **No Very Search:**  Presentation of the No Very Search header for optimizing cache performance by allowing servers to indicate which query parameters do not affect the response. Discussion included data on performance improvements and potential adoption by CDNs.
+
+*   **Revised Cookies:** Presentation on the Cookie Store and refactoring cookies for better integration with browser specs (HTML and Fetch) rather than describing browser behavior.
+
+*   **HTTP Resource Versioning:** Proposal for a general versioning architecture for HTTP resources, including headers for specifying versions and parents to track history. Discussions focused on use cases like incremental RSS updates, Git repository hosting, and resumable uploads, as well as compatibility with existing HTTP features and potential implementation challenges.
+
+## Decisions and Action Items
+
+*   **Optimistic HTTP Upgrade:** The group will rework the section regarding TLS upgrade token to avoid strong claims, suggesting it be reworked. Ben will update the text and bring it to the group.
+*   **Secondary Certificate Authentication:** The group will follow up on the GitHub issue regarding sending exported authenticators in multiple frames. Decision to rename the &quot;certificate&quot; frame to &quot;server certificate&quot;.
+*   **Privacy Proxy Wrap-up Capsule:** Discussions to continue and David to modify his draft a bit.
+*   **No Very Search:** The group will take the proposal to the mailing list for further discussion, and potential CDN adoption.
+
+## Next Steps
+
+*   **Optimistic HTTP Upgrade:** Ben will update the TLS upgrade token section of the draft.
+*   **Secondary Certificate Authentication:** Follow up on GitHub issue and update draft to rename frame.
+*   **Privacy Proxy Wrap-up Capsule:** Continued discussion and draft revisions.
+*   **No Very Search:** Discussion on the mailing list regarding CDN adoption.
+*   **Revised Cookies:**  Chairs to reach out and determine next steps for cookies.
+*   **HTTP Resource Versioning:** Participants to review the draft and provide feedback on the mailing list. Michael will consider the suggested framework and testing recommendations.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

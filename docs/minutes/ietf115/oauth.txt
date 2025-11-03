@@ -1,0 +1,192 @@
+**Session Date/Time:** 07 Nov 2022 09:30
+
+# oauth
+
+## Summary
+
+The OAuth working group session covered updates on several active drafts, including OAuth 2.1, Browser-Based Apps, SD-JWT, Step-Up Authentication, and a new proposal for Interactive Authentication. Key discussions revolved around consolidating best practices into OAuth 2.1, managing CORS behavior for various OAuth endpoints, refining token storage recommendations for browser applications, addressing encoding and algorithm agility in SD-JWT, and exploring challenges in standardizing interactive authentication for non-web HTTP clients. Several action items and decisions were made regarding the direction and required clarity for these specifications.
+
+## Key Discussion Points
+
+*   **Work Group Updates:**
+    *   **JWK Thumbprint URI** (Mike Jones, Christina Paquin) published as an RFC.
+    *   **JWT Response for OAuth Token Introspection** (Roman) is in the RFC Editor queue, awaiting resolution of a misreference related to the Security Best Practices document.
+    *   **DPoP document** is in revised I-D.
+    *   **Security Best Practices** document is awaiting comments from Daniel Fett and Mike Jones.
+    *   **Side Meeting for DPoP:** Will focus on Algorithm Agility, with Roman documenting the rationale for supporting more than five algorithms in the shepherd's write-up.
+
+*   **OAuth 2.1 (Aaron Parecki):**
+    *   **Consolidation:** Aims to merge existing OAuth 2.0 RFCs and best practices into a single, updated document.
+    *   **Updates:** Abstract updated to remove "third-party", added multi-factor and passwordless authentication as motivations, mentioned Pushed Authorization Requests (PAR) for on-the-fly redirect URL registration, and noted CORS support for token endpoints for browser-based apps.
+    *   **CORS Recommendations:** Discussion centered on adding a dedicated section on Cross-Origin Resource Sharing (CORS).
+        *   **Authorization Endpoint:** Should *not* allow CORS.
+        *   **Other Endpoints (Token, Metadata, PAR):** *Should* support CORS for browser-based applications.
+        *   **Terminology:** Agreed to use "browser-based apps" instead of "JavaScript apps" to include WebAssembly (WASM).
+        *   **Clarity:** Emphasized the need to distinguish between direct browser use (navigation) and JavaScript/WASM making HTTP requests.
+    *   **`redirect_uri` at Token Endpoint:** Discussion on whether the `redirect_uri` parameter is still required for authorization code exchange, given its redundancy with PKCE for mix-up attacks.
+        *   Concern was raised that removing it could create a new compatibility level for 2.1 clients interacting with 2.0 Authorization Servers (AS) that follow best practices but don't explicitly declare 2.1 compliance.
+        *   The group acknowledged that if a client opts into 2.1 behavior, it might not expect perfect compatibility with older 2.0 servers.
+
+*   **Browser-Based Apps Best Current Practice (Aaron Parecki):**
+    *   **Purpose:** Provides recommendations for applications executing in a browser (SPAs) with or without a backend.
+    *   **Architectural Patterns:** Four patterns are described: Single Domain, Backend-for-Frontend Proxy, Token Mediating Backend (newly added), and Token Acquisition in Browser.
+    *   **Service Workers:** A subsection was added for token management within service workers.
+    *   **Token Storage:** More notes added about storing tokens in local storage. Discussion arose about not using the browser's raw cookie API as a general token storage mechanism for JavaScript applications.
+    *   **Future Updates:** Planned sections on various token storage techniques (in-memory, local/session storage, cookies) with their respective considerations, consistency review with the Security BCP, and a dedicated CORS section mirroring the 2.1 recommendations.
+
+*   **SD-JWT (Selective Disclosure for JWTs) (Daniel Fett, Christina Paquin):**
+    *   **Goal:** Simple implementation and usage for selective disclosure of claims in JWTs.
+    *   **Terminology:** Updated to clarify objects: `Issuer Issued Disclosures` (II Disclosures - unsigned JSON object) and `Holder Selected Disclosures JWT` (HS Disclosures - signed or unsigned JWT).
+    *   **Combined Format:** Defined for both issuance and presentation.
+    *   **Digest Derivation Algorithms:** Expanded to allow algorithms beyond basic hashing (e.g., HMAC), with SHA-256 remaining mandatory-to-implement.
+        *   Concerns were raised regarding the clarity and interoperability of supporting HMAC, especially regarding the treatment of salt/key and the underlying byte string derivation. The term "digest derivation algorithm" itself was noted as being non-standard and lengthy.
+    *   **Signature Validation:** Clarified verifier policies for HS Disclosures, specifying whether signing (holder binding) is required or if unsigned disclosures are acceptable.
+    *   **Encoding/Canonicalization:** Discussed the challenge of JSON's undefined element order and whitespace leading to inconsistent byte strings for hashing.
+        *   The draft's approach of "source string encoding" (encoding complex JSON claims as JSON strings to be hashed) was presented as simpler than full canonicalization.
+        *   Concerns were raised about the *precision* required for this approach, particularly with Unicode and escape characters, to ensure consistent byte string extraction across implementations.
+    *   **Claim Name Blinding:** A new feature to replace claim names with random strings for selective disclosure, with the original name provided in the disclosure object.
+    *   **Processing Model:** Described a model where an SD-JWT library handles the complexity to output a standard JWT for applications.
+    *   **Implementations:** Five running implementations.
+
+*   **Step-Up Authentication Challenge Protocol (Brian Campbell):**
+    *   **Problem:** Resource Servers (RS) often need stronger or more recent authentication (e.g., for high-value operations) than the current access token provides. No standardized mechanism for RS to communicate these requirements to the client, and for the client to convey them to the Authorization Server (AS).
+    *   **Approach:** Extends RFC 6750 with a new `insufficient_user_authentication` error and `acr_values`/`max_age` parameters in the `WWW-Authenticate` header. Clients use existing `acr_values`/`max_age` authorization request parameters to the AS. RS obtains `acr` and `auth_time` via introspection or JWT claims.
+    *   **Current Status:** WGLC completed, editorial updates, explicit clarification that authorization requests are via the user agent. Draft 6 was published just prior to the meeting.
+    *   **Feedback:** Addressed Taka's feedback on clarity, confirming no protocol changes.
+    *   **Structural Fields:** Suggestion to review alignment with HTTP Structured Fields work for `WWW-Authenticate` header parameters.
+
+*   **Interactive Authentication (Ben Campbell):**
+    *   **Problem:** Non-web HTTP clients (e.g., CalDAV, proxies, CLIs) are limited to older authentication methods, unable to leverage modern OAuth, SSO, and 2FA. OAuth typically assumes the client knows the AS in advance. This draft addresses clients accessing *any* HTTP resource that requires an authentication prompt.
+    *   **Proposed UX:** A device notification triggers a browser pop-up for login (potentially OAuth-driven SSO), which closes upon successful authentication, allowing the non-interactive client to proceed using copied credentials (cookies/Authorization headers).
+    *   **Protocol Overview:** Server challenges with `WWW-Authenticate: location=/login`. Client opens browser to this location. Browser performs authentication. Upon success, client copies headers (cookies/Authorization) from the successful browser request for subsequent non-interactive use.
+    *   **Input Sought:** How can components be shared with the OAuth ecosystem? Where should this draft's adoption live?
+    *   **Concerns Raised:**
+        *   **Fishing Risk:** Historically, RS advertising AS was avoided due to phishing concerns; this model requires deep security review.
+        *   **Browser Security:** Copying headers out of a browser may conflict with modern browser and OS security mechanisms (e.g., WebAuthn, proof-of-possession for cookies).
+        *   **Orchestration:** Clarity needed on whether orchestration is by the client application or the user agent.
+
+## Decisions and Action Items
+
+*   **JWT Response for OAuth Token Introspection:**
+    *   **Decision:** Will wait for the Security Best Practices document to be released before pushing this document further in the RFC Editor queue.
+*   **DPoP A.D. Review:**
+    *   **Action:** Roman to document the rationale for supporting more than five algorithms in the shepherd's write-up for algorithm agility.
+*   **Security Best Practices Document:**
+    *   **Action:** Daniel Fett and Mike Jones to contribute their comments to the document as soon as possible.
+*   **OAuth 2.1 - CORS Section:**
+    *   **Decision:** Add a dedicated CORS section to OAuth 2.1.
+        *   Explicitly state that the Authorization Endpoint should *not* allow CORS.
+        *   Specify that the Token, Metadata, and PAR endpoints *should* support CORS.
+        *   Use "browser-based apps" instead of "JavaScript apps" for broader applicability.
+    *   **Action:** Aaron Parecki to add this section.
+*   **OAuth 2.1 - `redirect_uri` at Token Endpoint:**
+    *   **Decision:** A 2.1 compliant Authorization Server should accept and verify the `redirect_uri` parameter if present, but *not* require it.
+    *   **Action:** Aaron Parecki to document this decision, including the potential breaking behavior for 2.1 clients interacting with 2.0+BCP Authorization Servers, in the "differences" section of OAuth 2.1. The group will revisit this decision after the full "differences" section is complete for broader context.
+*   **Browser-Based Apps - Cookie API for Token Storage:**
+    *   **Decision:** The document should explicitly recommend *against* using the browser's raw cookie API as a general token storage mechanism for JavaScript applications.
+    *   **Action:** Aaron Parecki to add this to the document.
+*   **SD-JWT - Digest Derivation Algorithms:**
+    *   **Action:** A GitHub issue will be opened for a detailed discussion on the `digest derivation algorithm` terminology and the interoperability/specification requirements for supporting HMAC.
+*   **SD-JWT - Holder Binding and Device Binding:**
+    *   **Action:** Clarify the relationship between holder binding and device binding in the SD-JWT document.
+*   **SD-JWT - Encoding/Canonicalization Precision:**
+    *   **Action:** Authors to add precise guidance to the spec on *how* byte streams are extracted from JSON strings for hashing, addressing subtleties in JSON parsing and Unicode encoding to ensure interoperability and robustness in corner cases.
+
+## Next Steps
+
+*   **OAuth 2.1:**
+    *   Aaron Parecki to continue incorporating Justin Richer's write-ups, moving normative language to core sections, and adding an explicit section detailing core differences from OAuth 2.0.
+    *   Aaron Parecki to complete the new CORS section and update `redirect_uri` behavior documentation.
+*   **Browser-Based Apps:**
+    *   Aaron Parecki to add dedicated sections on general token storage techniques (in-memory, local/session storage, cookies) and a CORS recommendations section.
+    *   Aim for mailing list discussion on these new sections over the next couple of months to prepare for pushing the draft to completion.
+*   **SD-JWT:**
+    *   Consider the implications and potential mappings to other existing credential formats.
+    *   Add comprehensive security and privacy considerations.
+    *   Plan for interoperability testing between implementations, which can be conducted offline.
+    *   Discuss separating the HS Disclosures (unsigned JSON object) from the holder binding (optional signed JWT).
+*   **Step-Up Authentication:**
+    *   Await the shepherd's review for draft 6.
+*   **Interactive Authentication:**
+    *   Ben Campbell to continue discussions on the mailing list and with relevant working groups (e.g., HTTP API, Privacy Pass) regarding the protocol's components, potential integration with existing OAuth mechanisms, and addressing security concerns related to phishing, browser limitations, and cookie exfiltration. Seeking workgroup adoption.
+
+---
+
+**Session Date/Time:** 09 Nov 2022 13:00
+
+# oauth
+
+## Summary
+
+The oauth session covered three key topics: an update on JOT Embedded Tokens, a discussion on the proposed charter for fine-grained transactional authorization, and an in-depth presentation on cross-device flows and client ID for anonymous clients. Discussions centered on proposed architectural changes, security implications, and potential new work items for the working group. The chairs announced a call for adoption for the cross-device flows document.
+
+## Key Discussion Points
+
+### JOT Embedded Tokens (formerly Multiple Subject JOT)
+
+*   **Motivation:** Focus shifted to use cases requiring binding multiple tokens from *multiple issuers* into a new token, showing their relationship. Use cases involving a single issuer will be addressed separately.
+*   **Use Cases:**
+    *   **Access Token:** STIR/SHAKEN for telephone call redirection, where an intermediate party embeds an original token into a new one to demonstrate call lineage.
+    *   **ID Token:** Linking claims from disparate issuers (e.g., date of birth from one, education certification from another).
+*   **Proposed Mechanism:** Utilize the existing OAuth 2.0 Token Exchange mechanism with an extension to request the embedding of a provided token into the newly issued token.
+*   **New Claim:** A `tokens` claim is proposed, which is a list of objects, each containing a `type` (e.g., "access_token", "id_token") and the `token` string itself.
+*   **Discussion:**
+    *   The need to explicitly define the *semantics* of embedded tokens was raised to prevent unintended repurposing across different use cases.
+    *   Feedback suggested exploring the `token_type` parameter in Token Exchange for indicating embedding semantics, rather than new parameters.
+    *   The observation was made that embedding a token implies full delegation and control to the recipient.
+    *   Clarification was sought on whether this mechanism operates within or across trust boundaries; it is intended for *cross-boundary* scenarios involving different issuers.
+
+### Fine-Grained Transactional Authorization
+
+*   **Motivation:** To secure communication between microservices, both within a single trust domain and across different trust domains (e.g., multi-cloud, hybrid). The aim is to prevent privilege escalation or user impersonation in the event of a software supply chain attack or VPC compromise, relying on open standards.
+*   **Prior Work Reviewed:** Netflix "passports," Athens decentralized authorization, George's short-lived transaction tokens, Kelly's token chaining, and Atul's generic problem architecture.
+*   **Problem Architecture:** Illustrated scenarios involving external APIs, pass-through microservices, and resource microservices across multiple VPCs, emphasizing the need to preserve identity, authorization, and context throughout call chains.
+*   **Proposed Scope/Charter:**
+    *   Cover interactive/batch and synchronous/asynchronous invocations.
+    *   Address various trust boundaries (on-prem to cloud, different cloud tenants).
+    *   Define mechanisms to convey authentication immutably, provide least-privilege authorization, and maintain immutable context information (e.g., transaction details).
+    *   Focus on a framework for *communicating* identities securely, leveraging existing work where possible (e.g., IETF SEC Events), rather than defining new identity formats.
+*   **Information to Preserve:** Principal identity, identities of services in the call chain, authorization scope (initial and downscoped), and invocation context.
+*   **Discussion for Future:** Efficiency considerations (given high frequency for RPCs), short-lived tokens, and call chain verification will be discussed in further detail.
+
+### Cross Device Flows
+
+*   **Problem Statement:** Attackers exploit social engineering and unauthenticated channels between devices (e.g., device authorization grant using QR codes) to gain access tokens, bypassing strong authentication. The issue is user decision-making rather than protocol flaws.
+*   **Attack Flow:** Session initiation by attacker, social engineering to mislead the user, user authenticates on their device, attacker gains tokens.
+*   **Draft Proposal:** A document detailing concepts, scenarios (6 identified, 2 more found), and mitigation strategies (approx. 12, categorized as preventative, disruptive, recovery).
+*   **Alternative Protocols:** The draft provides guidance on alternative protocols (e.g., FIDO2 WebAuthn) and their trade-offs, emphasizing WebAuthn as a highly secure option when device capabilities permit.
+*   **Foundational Pillars:** Calls for more robust formal analysis of user decision-making in security protocols.
+*   **Discussion:**
+    *   Strong support for the work was expressed, highlighting its importance in addressing user-facing security gaps.
+    *   The idea of developing *consistent user experience (UX) guidance* or "design patterns" for security-sensitive user interactions was raised, potentially by engaging UX research communities.
+    *   While WebAuthn is very secure, its technical classification as a "cross-device flow" was debated, with Peter clarifying its inclusion as a secure *alternative* to traditional cross-device OAuth, aimed at steering implementers towards better options.
+    *   The document's utility for implementers, architects, and security professionals was affirmed.
+
+### Client ID for Anonymous Clients
+
+*   **Problem:** RFC 6749 requires the Authorization Server (AS) to issue client IDs and clients to register. Many emerging use cases (e.g., OpenID for Verifiable Credentials, Open Banking, Education Federation) involve a large number of clients interacting with ASs where pre-registration for every client is impractical or undesirable ("anonymous clients").
+*   **Current Workarounds:** Some ASs, constrained by current RFCs, are issuing and publishing a single client ID for multiple disparate clients to use, leading to potential impersonation or shared client context.
+*   **Prior Art/Proposed Solutions:**
+    *   **OpenID Federation:** Allows clients to define their own `client_id` as a URI, with metadata discovered from a `.well-known` endpoint. This approach deviates from RFC 6749 but is implemented.
+    *   **OpenID for Verifiable Presentation (OIDC4VP):** Offers options like `client_id` being the `redirect_uri`, passing `client_metadata` directly in the authorization request (signed), or external metadata hosting.
+    *   **OpenID for Verifiable Credential Issuance (OIDC4VCI):** Defines a new grant type that can allow `client_id` to be *omitted* from the token request, effectively supporting truly anonymous clients.
+*   **Key Questions:** Who should determine `client_id`? Who should manage client metadata?
+*   **Purpose of Client ID:** Identified uses include binding to redirect URIs, retrieving client metadata, customizing user experience, and applying specific permissions (plus, a record of authorization grants).
+*   **Discussion:**
+    *   OAuth 2.1 already relaxed language to allow client IDs issued by "trusted third parties," with a suggestion to remove "trusted" to broaden scope further.
+    *   Concerns were raised about the Security BCP's advice against clients influencing their own `client_id`, given these new use cases.
+    *   The "open web" use case (e.g., IndieAuth) was highlighted as an existing, widely deployed model since 2014 where client IDs are URLs and metadata is self-discovered.
+    *   It was emphasized that many listed needs for `client_id` are actually about the underlying *client registration record* at the AS, which the `client_id` references.
+    *   The potential for Pushed Authorization Requests (PAR) to alleviate some `client_id` requirements was mentioned, but not all deployment models support PAR.
+    *   Strong support for further work was voiced, with a focus on defining how clients can communicate their metadata (self-attested or third-party assigned) to an AS.
+
+## Decisions and Action Items
+
+*   **Decision:** The chairs will issue a call for adoption on the mailing list for the Cross Device Flows document (draft-ietf-oauth-cross-device-flows-bcp).
+*   **Action Item:** Peter Gietz to update the Cross Device Flows draft before the call for adoption.
+
+## Next Steps
+
+*   **JOT Embedded Tokens:** The draft will be updated with the discussed details and technical aspects will be further explored.
+*   **Fine-Grained Transactional Authorization:** A deeper discussion will be held at tomorrow's side meeting.
+*   **Client ID for Anonymous Clients:** The discussion will continue on the mailing list. Tobias has published an individual draft ("OAuth Client Discovery") that is conceptually aligned, and Aaron will provide links to relevant work (e.g., IndieAuth). The working group is encouraged to explore combining the client metadata idea with mechanisms like OpenID Federation.

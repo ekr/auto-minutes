@@ -1,0 +1,74 @@
+**Session Date/Time:** 22 Mar 2022 12:00
+
+# ace
+
+## Summary
+The ACE working group session covered the status of various documents in the publication pipeline, including RFCs in queue, drafts under AD review, and those in Working Group Last Call. Key discussions focused on updates and proposed changes for the `keygroup-com-oscore` and `gm-admin` drafts, including scope definition and administration interfaces. The `revoked-token-notification` draft, recently adopted, was also discussed, detailing modes of operation, error handling improvements, and payload representation. The Pub Sub Profile was removed from the agenda due to lack of updates. Paul Vargas was confirmed as the incoming AD for ACE.
+
+## Key Discussion Points
+
+*   **Document Status Update**
+    *   **RFCS in Queue**: `draft-ietf-ace-oauth-coap-est`, `draft-ietf-ace-dtls-authorize`, `draft-ietf-ace-oauth-permissive`, `draft-ietf-ace-oscore-profile` are awaiting publication by the RFC Editor.
+    *   **Under AD Review**: `draft-ietf-ace-cmpv2-coap-transport`, `draft-ietf-ace-mqtt-profile`, and `draft-ietf-ace-keygroup-com` are undergoing AD review. Ben Kaduk indicated he would try to get the `mqtt-profile` sent to the RFC Editor before his term expires and would look at `coap-est`.
+    *   **Working Group Last Call (WGLC)**:
+        *   `draft-ietf-ace-coap-eep`: Experienced a shepherd issue preventing ISG submission, which is being fixed.
+        *   `draft-ietf-ace-extended-dtls-authorize`: Awaiting a shepherd volunteer.
+        *   `draft-ietf-ace-keygroup-com-oscore`: Receiving comments during a long WGLC process.
+    *   **Newer Documents/Next Steps**: `gm-admin` and `revoked-token-notification` are targeted for potential ISG submission by July.
+    *   **Pub Sub Profile**: Was initially on the agenda but removed as there were no updates or co-authors present for discussion.
+
+*   **`draft-ietf-ace-keygroup-com-oscore` (Marco Tiloca)**
+    *   **Updates**: Mostly editorial or editorial-plus changes to align with the `group-oscore` document in CORE.
+        *   Group Manager functionalities are now declared as optional.
+        *   Clear distinction made between public key and authentication credential concepts, with related parameter renaming.
+        *   IANA registrations updated, aligning with the `aif` document.
+    *   **Status**: Document is formally under WGLC and received a review from Goran. Marco plans to restructure the content based on this review.
+    *   **Coordination**: Changes related to parameter names will be addressed in `ace-keygroup-com` during its AD review. A request for coordinated publication of three documents (this draft and two related CORE drafts: `group-oscore` and another approaching WGLC) will be made to the ISG for convenience.
+
+*   **`draft-ietf-ace-gm-admin` (Marco Tiloca)**
+    *   **Goal**: Define a RESTful interface for ACE clients acting as administrators to create, configure, and delete OSCORE groups at a Group Manager.
+    *   **Resource Model**: Defined `group-collection` resource (for listing/creating groups) and `group-configuration` resources (for managing specific group settings).
+    *   **Updates**:
+        *   Similar editorial and parameter renaming changes as `keygroup-com-oscore` to distinguish public key and authentication credential.
+        *   Simplified group creation: Administrator can suggest a name, but the Group Manager retains the final decision. This change simplifies scope format design.
+        *   **Group Member Notification**: The Group Manager's process for informing group members about configuration updates is now more specific, reusing `keygroup-com-oscore` content and message formats.
+        *   **Group ID Recycling**: Proposed addition to allow administrators to explicitly choose if a Group Manager recycles group identifiers (if the GM supports this). No objections were raised.
+    *   **Scope Format**: A significant update defines the exact format for scope in token requests/responses and access tokens, using an evolution of the AIF data model.
+        *   `to_id` in AIF scope entries is now a pattern of group names (rather than exact group names as in `keygroup-com-oscore`).
+        *   `t_perm` (an integer bitmap) encodes administrative permissions (e.g., retrieve, create, read config, update config, delete group) on any group matching the `to_id` pattern.
+        *   This addresses scenarios like administrators requesting new tokens for groups they previously created (without changing AS policies) and supporting different classes of administrators with varying permissions/name patterns.
+    *   **Discussion on Group Naming**: Daniel raised a question about using an opaque ID for groups rather than a text string name, which could change. Ben highlighted the importance of using name structure (wildcarding) for efficient permission encoding and that it should be intrinsic. Marco noted `aif` expects text strings and diverging from `keygroup-oscore`'s use of string names would add complexity.
+    *   **Access Control Checks**: The document details how the Resource Server checks access tokens and how the Authorization Server makes decisions when granting scope. It was proposed to move the very detailed Authorization Server judgment procedure to an appendix as an example, rather than in the main body. No objections were raised.
+    *   **Mixed Scope Entries**: A proposal was made to allow a single access token to contain both member-specific and administrator-specific scope entries. This is achieved by using the least significant bit of `t_perm` to distinguish between member (0) and administrator (1) entries. This provides the advantage of using a single access token per client. No objections were raised.
+    *   **Next Steps**: Marco plans to produce a revision incorporating these changes and aim for a WG Last Call.
+
+*   **`draft-ietf-ace-revoked-token-notification` (Marco Tiloca)**
+    *   **Goal**: Define an optional mechanism for an Authorization Server (AS) to inform clients and Resource Servers (RS) about tokens that have been revoked but are not yet expired. This complements, but does not replace, optional token introspection.
+    *   **Mechanism**: The AS maintains a list of such tokens. Clients/RS can access or observe this resource (using CoAP observation) to retrieve notifications pertaining specifically to their issued/consumed tokens.
+    *   **Modes of Operation**: Three modes are defined:
+        *   **Full Query**: Retrieves all pertaining revoked tokens.
+        *   **Diff Query**: Retrieves a list of recent updates to the set of revoked tokens.
+        *   **Cursor Pattern**: An extension of the Diff Query, building on Ben Kaduk's suggestion, which allows transferring updates in chunks, potentially resuming from a specific point.
+    *   **Status**: The document was recently adopted. A new version was submitted, addressing most of a review from Marco Azori (CNR), adding more text on error handling and token processing.
+    *   **Updates from Review**:
+        *   **Client/RS Actions**: Explicit text was added detailing how clients and Resource Servers should act upon learning that a token is revoked (e.g., expunge it; RS should remember the revoked status until the token's original expiration to prevent reposting).
+        *   **Error Handling**: Introduced a standardized format for error response messages, reusing ACE framework semantics (integer error ID, optional text string), and registering new error cases.
+    *   **Open Point: Cursor Pattern Integration**: Currently, the cursor pattern is described in an appendix. The plan is to move this content into the main document body, merging it with the Diff Query section, as it's an extension of that mode. Christian Amsüss questioned the value of a standalone Diff Query if the Cursor extension is available; Marco clarified it offers flexibility for AS implementations that may not support the Cursor pattern.
+    *   **Payload Representation**: Error responses will be CBOR maps. For successful responses, the proposal is to make the payload format dependent on whether the AS supports the cursor pattern. If the AS supports cursor, all successful responses would be CBOR maps (clients can ignore cursor info if not understood). If the AS does not support cursor, successful responses would fall back to CBOR arrays to prevent unnecessary overhead. Marco will propose text for this approach.
+
+## Decisions and Action Items
+
+*   **Decision**: The "Pub Sub Profile" document was removed from the agenda due to no updates.
+*   **Decision (GM Admin)**: The proposal to allow administrators to explicitly choose if the Group Manager recycles group identifiers (if supported by GM) was accepted.
+*   **Decision (GM Admin)**: The proposal to move the detailed Authorization Server judgment procedure from the main body to an appendix as an example was accepted.
+*   **Decision (GM Admin)**: The proposal to allow a single access token to contain a mix of scope entries for both group members and administrators, distinguished by a specific bit in `t_perm`, was accepted.
+*   **Action Item (Marco Tiloca - `revoked-token-notification`)**: Merge the content describing the "Cursor Pattern" from Appendix B into the main document body, specifically integrating it with the "Diff Query" section.
+*   **Action Item (Marco Tiloca - `revoked-token-notification`)**: Propose specific text for the payload representation strategy that conditionally uses CBOR maps or arrays for successful responses based on the Authorization Server's support for the cursor pattern.
+
+## Next Steps
+
+*   **Ben Kaduk**: Will follow up on `draft-ietf-ace-coap-est` and `draft-ietf-ace-mqtt-profile` to try and get them sent to the RFC Editor before his AD term fully expires.
+*   **Marco Tiloca (`keygroup-com-oscore`)**: Produce a new revision addressing Goran's review comments (especially restructuring), coordinate parameter changes with `ace-keygroup-com`, and plan for synchronized publication requests with related CORE documents.
+*   **Marco Tiloca (`gm-admin`)**: Produce a new revision incorporating the discussed changes and aiming for a Working Group Last Call.
+*   **Marco Tiloca (`revoked-token-notification`)**: Produce a new revision incorporating the review comments, merging the cursor pattern description, and detailing the payload representation strategy.
+*   **Paul Vargas (Incoming AD)**: Catch up on reading and understanding the various documents and ongoing activities within the ACE working group.

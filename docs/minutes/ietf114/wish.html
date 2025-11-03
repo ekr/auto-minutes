@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="wish.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-WISH-20220727-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 27 Jul 2022 17:30</p>
+<h1>wish</h1>
+<h2>Summary</h2>
+<p>The <code>wish</code> working group met to review and resolve outstanding Working Group Last Call (WGLC) comments for the <code>web</code> (WebRTC HTTP Ingest Protocol) draft (version 04). The session involved detailed discussions on several proposed changes and issues that were deemed resolved. Key updates to the draft include clarifications on ICE, authentication, and IANA considerations. Significant discussions occurred regarding error codes for multi-track offers and the process for providing TURN/STUN credentials. The working group also discussed its future, with a general consensus to finalize the <code>web</code> draft and then likely go dormant, allowing for practical experience with the protocol before pursuing extensions. A new draft, WHEP (WebRTC HTTP Egress Protocol), was briefly introduced as potential future work, though its discussion was cut short due to time constraints.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong><code>web</code> Draft v04 Updates (Addressed WGLC Comments):</strong>
+<ul>
+<li>Rewritten abstract and introduction.</li>
+<li>Added samples for SDP offer/answer.</li>
+<li>Clarified support for trickle ICE / ICE restart (one but not both).</li>
+<li>Included bundle support.</li>
+<li>Added a section on handling multiple audio/video tracks in SDP offers from clients for future WHEP compatibility.</li>
+<li>Clarified the term &quot;i-service&quot; (sourced from WCC standard).</li>
+<li>Addressed IANA feedback regarding missing registration for extension superspace.</li>
+</ul>
+</li>
+<li><strong>Issues Not Fixed (and Rationale - Considered Closed):</strong>
+<ul>
+<li><strong>Normative Language</strong>: Protocol operations and normative language are inherited from WebRTC; explicit re-statement is unnecessary and helps avoid inconsistencies.</li>
+<li><strong>307 Error for Redirection</strong>: Mandating HTTP 307 for redirection ensures proper behavior with HTTP POST, as other redirection codes are not consistently implemented for POST.</li>
+<li><strong>Bearer Token Authentication</strong>: Basic authentication is not recommended. Bearer tokens allow flexible authentication, and future HTTP authentication methods would require spec updates anyway.</li>
+<li><strong>&quot;Endpoints&quot; Terminology</strong>: The use of &quot;endpoints&quot; for TURN is consistent with REST API concepts, where they represent entry points for the API.</li>
+</ul>
+</li>
+<li><strong>Proposed Changes Needing Consensus (and Outcomes):</strong>
+<ul>
+<li><strong>Trickle ICE / ICE Restart Support with PATCH</strong>:
+<ul>
+<li>Proposal for error codes when a server doesn't support trickle ICE, ICE restart, or both in a PATCH request.</li>
+<li><strong>Feedback</strong>: Adam Roach suggested the proposed 405/501 error codes might be technically correct in sentiment but confusing in wording, and potentially reversed in application.</li>
+<li><strong>Outcome</strong>: The general approach was accepted. Adam Roach agreed to provide a Pull Request (PR) for clearer language on the specific 405/501 error codes.</li>
+</ul>
+</li>
+<li><strong>TURN/STUN Credentials in OPTIONS</strong>:
+<ul>
+<li>Proposal to remove authentication requirement for OPTIONS requests to retrieve STUN/TURN credentials, with a note regarding CORS preflight options.</li>
+<li><strong>Feedback</strong>: Julias expressed concern that making i-server provision in OPTIONS optional could lead to inconsistent client behaviors, especially on restrictive networks, making debugging difficult. Julias requested a strong recommendation for a specific client behavior. Adam Roach noted that providing i-servers in OPTIONS might require server resource allocation, which could be an issue. Cullen noted that the IETF can mandate behavior if the working group desires it.</li>
+<li><strong>Outcome</strong>: Discussions will continue on the mailing list to agree on specific text for client behaviors and TURN/STUN server provision. This point remains open.</li>
+</ul>
+</li>
+<li><strong>Passive Setup (<code>a=setup:passive</code>)</strong>:
+<ul>
+<li>Recommended adherence to RFC5763 for <code>a=setup:active</code> and <code>a=setup:passive</code>. If an endpoint cannot support setting to active, it can send an update, but without guarantee of success.</li>
+<li><strong>Outcome</strong>: Consensus reached; accepted as a good way forward.</li>
+</ul>
+</li>
+<li><strong>ICE Restart Avoidance Note</strong>:
+<ul>
+<li>An informative note was added specifying that, depending on ICE implementation, applying the local description after <code>setConfiguration</code> may be required to prevent ICE restarts.</li>
+<li><strong>Outcome</strong>: Accepted as an informative note.</li>
+</ul>
+</li>
+<li><strong>Handling Multiple Audio/Video Tracks or Streams</strong>:
+<ul>
+<li>Proposal: If a client sends an SDP offer with multiple audio/video tracks or streams that the server doesn't support, the POST request should fail completely with an error code.</li>
+<li><strong>Feedback</strong>: Adam Roach indicated that HTTP 406 (Not Acceptable) is semantically incorrect for this use case (it's for content negotiation) and suggested 422 or 400 might be more appropriate. Jonathan Max raised concerns about backward compatibility with WebRTC's offer/answer model and how clients would know server expectations.</li>
+<li><strong>Outcome</strong>: The principle of failing the entire offer was accepted. Adam Roach will suggest a more appropriate HTTP error code. The issue of client awareness of server capabilities (e.g., audio-only vs. A/V) was noted as a potential area for future extensions.</li>
+</ul>
+</li>
+<li><strong>IANA Extension Superspace Registration</strong>:
+<ul>
+<li>Addressing IANA feedback, a new superspace for protocol parameters will be registered.</li>
+<li><strong>Outcome</strong>: Accepted. Sergio will refine the text based on comments and seek further mailing list feedback.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>WHEP (WebRTC HTTP Egress Protocol) Introduction</strong>:
+<ul>
+<li>Sergio and Chen (ByteDance) introduced WHEP, a companion draft to <code>web</code> for egress scenarios.</li>
+<li><strong>Use Cases</strong>: Interoperability between WebRTC service providers (avoiding SDKs), common player software (e.g., for TVs), and integration with MPEG-DASH for mixed live/time-shifted experiences.</li>
+<li><strong>Mechanics</strong>: Largely reuses <code>web</code> mechanisms. Supports HTTP POST with SDP offer/answer and SDP DELETE. Includes an alternative flow for clients not supporting <code>createOffer</code> (empty HTTP POST from client, server returns offer, client sends answer via HTTP PATCH).</li>
+<li><strong>Outcome</strong>: Discussion was cut short due to time. Further discussion on WHEP will occur on the mailing list.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>The issues previously discussed and labeled as &quot;will not be fixed&quot; are considered <strong>closed</strong>.</li>
+<li><strong>Adam Roach</strong>: Provide a PR for precise wording on 405/501 error codes related to trickle ICE/ICE restart support in the <code>web</code> draft.</li>
+<li><strong>Adam Roach</strong>: Suggest a more appropriate HTTP error code for rejecting offers with unsupported multiple audio/video tracks or streams.</li>
+<li><strong>Sergio</strong>: Refine the IANA extension superspace registration text based on comments and seek mailing list feedback.</li>
+<li><strong>Working Group</strong>: Continue discussion on the mailing list regarding specific text for client behaviors and server provision of TURN/STUN credentials (Julias's point).</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong><code>web</code> Draft:</strong>
+<ul>
+<li>Address remaining open issues (error codes, TURN/STUN client behavior).</li>
+<li>Publish an updated draft (likely v08).</li>
+<li>A new Working Group Last Call (WGLC) is anticipated, likely in September, to review changes that impact normative language and accommodate summer vacation schedules.</li>
+</ul>
+</li>
+<li><strong>Working Group Future:</strong>
+<ul>
+<li>The <code>wish</code> working group will likely go dormant after the <code>web</code> draft is finalized and submitted to the IESG, allowing for practical experience with the <code>web</code> protocol in the field.</li>
+<li>Further work on extensions or new protocols (like WHEP) will be considered after gaining experience with <code>web</code>.</li>
+</ul>
+</li>
+<li><strong>WHEP Draft:</strong>
+<ul>
+<li>The WHEP draft discussion will continue on the mailing list. Slides are available in the data tracker.</li>
+</ul>
+</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

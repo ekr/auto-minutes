@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="webtrans.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-WEBTRANS-20220726-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 26 Jul 2022 14:00</p>
+<h1>webtrans</h1>
+<h2>Summary</h2>
+<p>The WebTransport working group session at IETF 114 covered updates on the W3C WebTransport API specification, discussions and proposed resolutions from the Capsule Design Team for WebTransport over H2 and H3, and several open issues for the WebTransport over H3 specification. Key discussions revolved around congestion control APIs, stream prioritization, flow control mechanisms for capsules, and various H3 stream semantics. Several issues were resolved, with others deferred to the mailing list for further input.</p>
+<h2>Key Discussion Points</h2>
+<h3>W3C WebTransport API Progress Update (Jan-Ivar Bruaroey)</h3>
+<ul>
+<li><strong>Progress:</strong> Published a new working draft (June 23rd). A charter extension is underway for an additional year.</li>
+<li><strong>Revised Timeline:</strong> Aiming for Candidate Recommendation by end of September (requiring API stability) and Proposed Recommendation by end of year (requiring two independent implementations). Call for review in February, publication by April.</li>
+<li><strong>Milestones:</strong> Three remaining issues for initial implementation, 10 open issues for Candidate Recommendation (6 ready for PR).</li>
+<li><strong>Recent Decisions:</strong>
+<ul>
+<li>Added per-stream stats (bytes written, sent, acknowledged for duplex streams).</li>
+<li>Reduced datagram priority algorithm to normative guidance, leaving details to implementation.</li>
+<li>Added datagram stats (dropped too big, dropped incoming, lost outgoing) as a subdirectory of <code>getStats</code>.</li>
+<li>WebTransport constructor now supports <code>requireUnreliable</code> boolean (defaults to <code>false</code>), allowing applications to specify a preference for UDP. A read-only property exposes the chosen transport.</li>
+<li>Connection pooling still defaults to <code>false</code>.</li>
+</ul>
+</li>
+<li><strong>Current Issues of Debate:</strong>
+<ul>
+<li><strong>Congestion Control API:</strong> Discussion on providing constructor-level configuration. Two main proposals:
+<ol>
+<li>Highly abstract input (e.g., <code>throughput</code> (default) vs. <code>low-latency</code>).</li>
+<li>API to expose names of available congestion control algorithms, allowing specific selection.</li>
+</ol>
+<ul>
+<li>Extensive discussion highlighted the complexity of low-latency vs. throughput, potential for pathological behavior, and the need for experts' input. Concern was raised about over-complicating for average developers versus providing fine-grained control for expert applications (e.g., Zoom, WebEx, Twitch). IETF members were strongly encouraged to provide input on the W3C GitHub issue.</li>
+</ul>
+</li>
+<li><strong>Datagrams vs. Streams and Relative Prioritization:</strong> Discussion on ordering vs. bandwidth allocation. Observations indicate ordering requires strict (not weighted) levels. Use cases include per-frame media, high-level control channels, real-time A/V, and background downloads. Proposals include:
+<ol>
+<li>Exposing at least 8 resettable priority levels (matching browser behavior), assuming active JavaScript involvement.</li>
+<li>Providing an upfront API for specifying fixed levels (requested by Warp, Chrome to investigate <code>int32</code> number of levels).</li>
+</ol>
+</li>
+<li><strong>Expose Stats for JavaScript:</strong> Debate on what stats are needed for JavaScript to build RTP-like real-time protocols (client-to-server A/V). Primarily for datagrams or connection level. Current datagram stats detail loss. Looking for input on necessary stats (e.g., RTT, packet departure/arrival, ECN, ACK info) and experimental data.</li>
+</ul>
+</li>
+</ul>
+<h3>Capsule Design Team for H2 and H3 (Eric Kinnear)</h3>
+<ul>
+<li><strong>Objective:</strong> Define a consistent approach for capsules across WebTransport over H2 and H3, especially for shared concepts like datagrams.</li>
+<li><strong>Datagram Capsule (Exploding):</strong>
+<ul>
+<li><strong>Proposal:</strong> Require anything that can be sent as a native feature (e.g., H3 datagram) <em>must</em> be sent as a native feature. If native feature is not available (e.g., H2), it is sent as a capsule on the H2 stream. This avoids implementations needing to handle the same conceptual data in multiple encapsulation forms.</li>
+<li><strong>Discussion:</strong> Clarified that the <code>WEBTRANSPORT</code> upgrade token implies capsule support. If the underlying transport (Quick) does not support datagrams (e.g., no transport parameter), WebTransport datagrams will not function. The consensus was to require datagrams if available and treat WebTransport without datagrams as a limited (or broken for datagram-dependent applications) scenario.</li>
+</ul>
+</li>
+<li><strong>Capsule Protocol Header Field:</strong> The <code>WEBTRANSPORT</code> upgrade token implies that capsule support exists.</li>
+<li><strong>Flow Control:</strong>
+<ul>
+<li><strong>Max Sessions:</strong> Proposed <code>WEBTRANSPORT_MAX_SESSIONS</code> setting replaces <code>ENABLE_WEB_TRANSPORT</code>. Setting to zero disables WebTransport; otherwise, it specifies the maximum number of concurrent sessions.</li>
+<li><strong>Stream Limits within a Session (<code>MAX_STREAMS</code>):</strong> Proposed a <code>MAX_STREAMS</code> capsule to limit streams within a WebTransport session, addressing the issue of one session consuming all H3 connection-level stream budget.
+<ul>
+<li><strong>Discussion:</strong> Acknowledged an issue where streams closed before being fully opened (e.g., due to reset) could leak stream credits if not carefully accounted for, especially in H3 due to potential out-of-order delivery.</li>
+<li>Debated the necessity of this protocol-level limit versus client-side browser management.</li>
+</ul>
+</li>
+<li><strong>Byte Flow Control (<code>MAX_DATA</code>):</strong> Proposed <em>not</em> to add additional complexity for byte flow control beyond H3's native mechanisms. The existing H3 connection and stream-level flow control provides sufficient knobs, and further complexity is not justified without proven need.</li>
+<li><strong>Intermediaries:</strong> Flow control is conceptually terminated at each intermediary (hop-by-hop). Intermediaries are responsible for the limits they advertise and must manage buffering. This simplifies the protocol definition but places responsibility on intermediary implementers.</li>
+</ul>
+</li>
+</ul>
+<h3>WebTransport over H3 Issues (Victor)</h3>
+<ul>
+<li><strong>Status Update:</strong> Overview draft merged. Minor updates to the H3 spec (e.g., clarify <code>GOAWAY</code> handling, session teardown). Roughly half of the 10 remaining issues are editorial or near PR.</li>
+<li><strong>HTTP Redirects:</strong>
+<ul>
+<li><strong>Issue:</strong> RFC 9205 requires explicit guidance on HTTP redirects for CONNECT requests. Browser behavior currently does not automatically follow them.</li>
+<li><strong>Discussion:</strong> Strong preference for either <code>MUST</code> or <code>MUST NOT</code> to ensure determinism. Many implementers expressed an assumption of <code>MUST</code> follow redirects, citing the utility for resource management and consistency with other HTTP requests. Concerns were raised about the semantic weirdness of redirects for <code>CONNECT</code> and past issues with WebSockets.</li>
+<li><strong>Resolution:</strong> No consensus in the room. Discussion deferred to the mailing list.</li>
+</ul>
+</li>
+<li><strong>Stream Frame Ordering:</strong>
+<ul>
+<li><strong>Issue:</strong> For bidirectional WebTransport streams, should any frames be allowed before the <code>WEBTRANSPORT_SESSION</code> frame? Unidirectional streams effectively forbid this already.</li>
+<li><strong>Discussion:</strong> Arguments for disallowing any preceding frames for consistency with unidirectional streams and to simplify implementation. Allowing other frames could lead to confusion or incorrect parsing by HTTP/3 endpoints assuming a request stream.</li>
+<li><strong>Resolution:</strong> Resolved to disallow any frames before the <code>WEBTRANSPORT_SESSION</code> frame for both unidirectional and bidirectional streams for consistency and implementation simplicity.</li>
+</ul>
+</li>
+<li><strong>Stream Reset before Peer Associates:</strong>
+<ul>
+<li><strong>Issue:</strong> A WebTransport data stream can be reset before the peer knows it's a WebTransport stream or can associate it with a session, potentially leading to a &quot;half-open&quot; stream and resource leaks.</li>
+<li><strong>Discussion:</strong> While H3 has general mechanisms for dealing with incomplete requests, this is more specific to WebTransport's session context. A suggestion was made to introduce a reliable control stream message (a &quot;reset capsule&quot;) to explicitly account for such resets.</li>
+<li><strong>Resolution:</strong> Resolved to add a reliable control stream message (e.g., a &quot;reset capsule&quot;) to explicitly account for streams that are reset before the peer fully associates them with a WebTransport session.</li>
+</ul>
+</li>
+<li><strong>WebTransport Session Closure:</strong>
+<ul>
+<li><strong>Issue:</strong> Lack of clear specification on how WebTransport sessions are closed. Two proposals: 1) Send close capsule, FIN, peer responds with FIN. 2) Send close capsule, FIN, STOP_SENDING. Both imply a timer for teardown if the peer doesn't respond.</li>
+<li><strong>Discussion:</strong> Value in waiting for application-level acknowledgment (Proposal 1) vs. immediately indicating no further interest (Proposal 2). Quick's <code>CONNECTION_CLOSE</code> provides precedent for a definitive unilateral close. It was suggested that both options might be valid depending on application needs.</li>
+<li><strong>Resolution:</strong> Resolved to document both methods for session closure, allowing either side to send a close capsule and FIN independently. The receiver can then choose to respond with a FIN or STOP_SENDING based on its intent to process further data.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>W3C WebTransport API:</strong>
+<ul>
+<li>IETF members are strongly encouraged to provide input on the W3C GitHub issues, especially for the Congestion Control API and Prioritization API.</li>
+</ul>
+</li>
+<li><strong>Capsule Design Team for H2 and H3:</strong>
+<ul>
+<li><strong>Decision:</strong> H2 will use capsules. H3 will use capsules and share with H2 where appropriate.</li>
+<li><strong>Decision:</strong> Capsules will always use native features if possible (e.g., H3 datagrams must be sent as H3 datagrams). If a native feature is not available (e.g., H2), a capsule is used.</li>
+<li><strong>Decision:</strong> The <code>WEBTRANSPORT_MAX_SESSIONS</code> setting will replace <code>ENABLE_WEB_TRANSPORT</code>, allowing more granular control over session limits.</li>
+<li><strong>Decision:</strong> H3 will include a stream count limit within a session (<code>MAX_STREAMS</code> capsule).</li>
+<li><strong>Decision:</strong> No additional byte flow control complexity will be added beyond H3's native flow control.</li>
+<li><strong>Decision:</strong> Intermediary flow control for WebTransport is hop-by-hop. Intermediaries are responsible for advertised limits and buffering.</li>
+<li><strong>Action Item (Eric Kinnear):</strong> File a GitHub issue for continued discussion on whether datagram support is mandatory for WebTransport sessions.</li>
+<li><strong>Action Item (Eric Kinnear):</strong> File a GitHub issue for further discussion on stream count limits (<code>MAX_STREAMS</code>) within a session.</li>
+<li><strong>Action Item (Eric Kinnear):</strong> Send links to the two relevant Pull Requests (H2 and H3 capsule changes) to the mailing list for review.</li>
+<li><strong>Action Item (Chairs):</strong> Initiate a formal consensus call on the capsule design team PRs once they are ready and reviewed.</li>
+</ul>
+</li>
+<li><strong>WebTransport over H3 Issues:</strong>
+<ul>
+<li><strong>Action Item (Victor):</strong> Continue discussion on HTTP redirects for WebTransport over H3 on the mailing list, actively seeking input from those who expressed objections.</li>
+<li><strong>Decision:</strong> For WebTransport over H3 bidirectional streams, the <code>WEBTRANSPORT_SESSION</code> frame <strong>MUST</strong> be the first frame on the stream, disallowing any other frames before it for consistency and simplified implementation.</li>
+<li><strong>Decision:</strong> A reliable control stream message (e.g., a &quot;reset capsule&quot;) will be added to the WebTransport over H3 specification to explicitly account for streams that are reset before the peer fully associates them with a WebTransport session.</li>
+<li><strong>Decision:</strong> Both methods for WebTransport session closure (send close capsule + FIN; peer responds with FIN; OR send close capsule + FIN + STOP_SENDING) will be documented as valid options, with clarified semantics.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The working group is encouraged to review the Pull Requests related to the Capsule Design Team's output and provide feedback on the mailing list.</li>
+<li>Further discussion on the HTTP Redirects issue for WebTransport over H3 will continue on the mailing list.</li>
+<li>Editors will continue to work on other open issues and PRs for the H3 specification.</li>
+<li>The chairs will assess progress on the remaining issues and PRs, and potentially organize an interim virtual meeting if a face-to-face discussion would be beneficial before the next IETF meeting.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

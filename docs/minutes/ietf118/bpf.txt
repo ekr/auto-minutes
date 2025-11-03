@@ -1,0 +1,41 @@
+**Session Date/Time:** 06 Nov 2023 08:30
+
+```markdown
+# bpf
+
+## Summary
+
+This meeting covered two main topics: a discussion on instruction set architecture (ISA) labeling and a presentation on the BPF memory model.  The ISA labeling discussion focused on creating a system for versioning and grouping BPF instructions to ensure interoperability between compilers, verifiers, and runtimes. The memory model presentation explained the importance of a well-defined memory model for BPF and discussed challenges in creating one that is both efficient and compatible with existing systems.
+
+## Key Discussion Points
+
+*   **ISA Labeling:**
+    *   The group discussed a proposal to create an IANA registry for BPF instruction set labels (conformance groups). These labels would allow compilers and runtimes to negotiate which instructions are supported.
+    *   Different approaches to granularity were discussed including individual instructions, CPU versions, and logical units of functionality.
+    *   There was a discussion on whether these groupings should be "should" or "must" instructions and there was a general consensus that "should" groupings would not provide enough guarantees for support.
+    *   A question was raised about how to handle instructions or helper functions only available on certain platforms. The debate covered separate conformance groups and conditionally mandatory constructs.
+    *   The group agreed that existing compiler flags such as CPUv3 and CPUv4 are inadequate and more semantic labeling is necessary.
+*   **BPF Memory Model:**
+    *   Alexis presented on the difference between PSABI (Processor Specific ABI) and the memory model.
+    *   The presentation argued for a new BPF instruction-level memory model.
+    *   The memory model defines how compilers and JIT compilers must handle concurrent memory access and control dependencies.
+    *   Existing Linux Kernel memory models serve as the base that BPF memory models are built on.
+    *   The presentation gave specific examples of how compilers and JIT compilers can introduce memory model violations through optimizations.
+    *   New instructions such as load acquire and store release may be added to the instruction set.
+
+## Decisions and Action Items
+
+*   **ISA Labeling:**
+    *   The group will explore creating conformance groups based on functional categories (e.g., atomics, ALU operations) rather than just historical CPU versions.
+    *   The ISA document will include new instructions that must be referenced using the new Conformance Group table and mechanism.
+*   **BPF Memory Model:**
+    *   Continue exploring BPF memory model design and documentation efforts.
+    *   Paul McKinney will present on the memory model at the upcoming Linux Plumbers Conference.
+    *   Explore the appropriate charter text so that BPF memory model can be codified in an IETF document.
+
+## Next Steps
+
+*   Continue discussion on the mailing list regarding:
+    *   Naming and organization of conformance groups for the ISA document.
+    *   Specific technical questions regarding the memory model.
+    *   Document memory model in a draft for discussion, starting with source code comments.

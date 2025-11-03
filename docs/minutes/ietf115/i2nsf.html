@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="i2nsf.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-I2NSF-20221108-0930">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2022 09:30</p>
+<h1>i2nsf Meeting Minutes</h1>
+<h2>Summary</h2>
+<p>The i2nsf session covered several key areas: a hackathon report on RFC 8961 implementation, updates on existing drafts under AD review (Consumer Facing Interface and Registration Interface), presentations on new drafts concerning intelligent detection and secure routing, a discussion on the impact of Netmod's ACL extensions, and finally, a preliminary discussion regarding a proposed re-chartering of the working group. Significant technical discussions revolved around cross-domain security, the role of various controllers, and the scope of i2nsf's YANG models in relation to underlying network protocols.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Hackathon Report: RFC 8961 (i2nsf-facing interface) Implementation</strong></p>
+<ul>
+<li><strong>Project</strong>: Implemented RFC 8961 to establish IPsec tunnels between Network Security Functions (NSFs).</li>
+<li><strong>Updates</strong>: Updated the YANG data model and XML configuration files to align with the finalized RFC.</li>
+<li><strong>Cross-Domain IPsec</strong>: Successfully demonstrated a West-East interface for establishing IPsec tunnels between two NSFs in different domains, facilitated by communication between Security Controller A and Security Controller B.</li>
+<li><strong>Verification</strong>: TCP dumps confirmed encryption of traffic, signifying successful IPsec establishment.</li>
+<li><strong>Lessons Learned</strong>: IPsec tunnels can be established between NSFs using security controllers, and cross-domain communication between security controllers for IPsec is possible.</li>
+<li><strong>Next Steps</strong>: Implement cross-domain Internet Key Exchange (IKE) for managing Security Associations (SAs) when IKE might not be directly available at the NSF.</li>
+<li><strong>Discussion</strong>: Raised architectural questions regarding security considerations for tying together two administrative domains. It was clarified that the current implementation was a proof-of-concept using NETCONF sessions between controllers, with potential for a specialized YANG model for this cross-domain interaction.</li>
+</ul>
+</li>
+<li>
+<p><strong>I2NSF Intelligent Detection (New Draft)</strong></p>
+<ul>
+<li><strong>Concept</strong>: Introduced &quot;intelligent detection&quot; (dynamic adjustment of detection policies) and &quot;detection modules&quot; (NSFs with detection capability).</li>
+<li><strong>Framework</strong>: Proposed an i2nsf framework combining i2nsf with SDN and SFC for intelligent attack detection (e.g., DDoS). This framework includes an SDN controller, classifiers, service function forwarders, and detection modules.</li>
+<li><strong>YANG Extensions</strong>: Extended existing i2nsf-facing, analytics, and monitoring interface YANG data models to include traffic features, resource utilization logs, detection results, and reconfiguration policies/rules.</li>
+<li><strong>Use Case</strong>: Demonstrated dynamic, automatic adjustment of DDoS attack detection path policy based on closed-loop feedback.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Clarification was sought on the role of the &quot;SDN controller&quot; in the proposed architecture, which some found conceptually recursive or overlapping with the i2nsf security controller.</li>
+<li>It was explained that the SDN controller acts as another security function, parsing low-level security policies and configuring flow tables, reflecting SFC routing problems.</li>
+<li>The draft was seen as a use case demonstrating how intelligence can be pushed down the stack within the i2nsf framework.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Secure Routing (New Draft)</strong></p>
+<ul>
+<li><strong>Objective</strong>: To enable network operators to provide secure, differentiated services by selecting routing paths based on user security requirements and link capabilities.</li>
+<li><strong>Methodology</strong>: Collect node security capabilities, form routing paths based on requirements, and issue routing paths (e.g., using Segment Routing V6).</li>
+<li><strong>BGP-LS Extension</strong>: Proposed extending BGP-LS (RFC 7752) to carry node, link, and prefix security capabilities for inter-domain communication.</li>
+<li><strong>Process</strong>: Outlined a three-step process: collecting node security capabilities, initial configuration on security devices, and distributing routing paths.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Recommendation</strong>: It was strongly recommended that the BGP-LS extensions part of the draft be proposed and discussed within the IDR working group, as this is their area of expertise.</li>
+<li><strong>I2NSF Scope</strong>: The i2nsf working group's focus would be on how the i2nsf security controller utilizes this information via its Northbound interface or if any new interfaces are needed.</li>
+<li><strong>Architectural Alignment</strong>: Questions were raised about aligning the capability exchange mechanism with the existing i2nsf DMS model and potential overlap with DOTS (DDoS Open Threat Signaling) work for inter-domain threat control.</li>
+<li>Clarification on the &quot;controller&quot; in this context: viewed as a mediation system for announcing capabilities and facilitating secure communication between domains, rather than directly controlling routers.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Consumer Facing Interface (CFI) Draft Update (AD Review)</strong></p>
+<ul>
+<li><strong>YANG Structure</strong>: Removed <code>endpoint-groups</code> and <code>threat-preventions</code> as direct policy children; they are now referenced.</li>
+<li><strong>New Endpoint Group</strong>: Added <code>voice-group</code> for labeling IP/SIP identities.</li>
+<li><strong>Location Group</strong>: Aligned with RFC 8805 for <code>country</code>, <code>region</code>, <code>city</code> labels.</li>
+<li><strong>Threat Intelligence</strong>: Renamed <code>description</code> and <code>signatures</code> to <code>indicators-of-compromise</code> (IoC), supporting STIX, MISP, and OpenIOC formats.</li>
+<li><strong>Payload Content</strong>: Added <code>depth</code> and <code>starting-point</code> for more precise content matching.</li>
+<li><strong>NACM</strong>: Removed general NACM guidance, deferring to security considerations section and RFC 8341.</li>
+<li><strong>Minor Updates</strong>: Added <code>rate-limit</code> threshold configuration and clarified endpoint group definitions.</li>
+<li><strong>Discussion</strong>: The AD (Roman) acknowledged the extensive updates and requested more time for a thorough cross-walk review against his initial comments.</li>
+</ul>
+</li>
+<li>
+<p><strong>Registration Interface (RI) Draft Update (AD Review)</strong></p>
+<ul>
+<li><strong>NSF Capabilities</strong>: Expanded <code>network-executive-functions</code> to include <code>memory</code> and <code>disk</code> details alongside <code>CPU</code> and <code>bandwidth</code>. Detailed specifications for CPU (model, clock speed, cores, threads), memory (capacity, speed), and disk (capacity).</li>
+<li><strong>Bandwidth</strong>: Refined <code>bandwidth</code> to <code>outbound</code> and <code>inbound</code> maximum capabilities.</li>
+<li><strong>Access Information</strong>: Allowed domain names in addition to IP addresses.</li>
+<li><strong>Authentication</strong>: Added <code>username</code> and <code>encrypted-password</code> fields to enable the security controller to connect to registered NSFs.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Authentication/Authorization Model</strong>: The AD raised significant concerns about the security architecture, particularly allowing an external DMS (client) to initiate a connection to the internal security controller (server) across administrative domains.</li>
+<li>Questions included the need for clearer guidance on credentialing, mutual TLS, and certificate-based authentication for such critical cross-internet communication, beyond just username/password.</li>
+<li>It was emphasized that while the security controller needs credentials to connect to NSFs, the underlying assumptions about transport security (e.g., NETCONF over SSH/TLS) need to be explicitly detailed, especially when discussing lower-level protocols like BGP in other contexts.</li>
+<li>The authors noted that the draft specifies the security controller as the server and the DMS as the client, and that security considerations for confidentiality and client identification have been added.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Impact of Netmod ACL Extensions (New Draft)</strong></p>
+<ul>
+<li><strong>Problem</strong>: Existing Netmod ACL model (RFC 8519) lacks features used in real-world operations.</li>
+<li><strong>Proposed Augmentations</strong>:
+<ul>
+<li><strong>Defined Sets</strong>: Introduced reusable <code>prefix-set</code>, <code>protocol-set</code>, <code>port-number-set</code>, <code>icmp-set</code> for improved manageability, instead of inline definitions.</li>
+<li><strong>TCP Flags</strong>: Added bitmask operations for flexible TCP flag matching.</li>
+<li><strong>Fragment Handling</strong>: Introduced options to match and handle IP fragments (discard all, first, last).</li>
+<li><strong>Actions</strong>: Proposed <code>rate-limit</code> action (though its status in Netmod is uncertain).</li>
+</ul>
+</li>
+<li><strong>Impact on i2nsf</strong>: Asked the i2nsf working group if <code>defined-sets</code> would be useful for its <code>condition</code> definitions and suggested positioning them in a standalone YANG module for broader reuse.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>These extensions align with BGP Flow Spec operators and are widely used in production networks.</li>
+<li>The speaker sought advice on whether to propose extending Layer 4 protocol support in Netmod ACLs to include SCTP and DCCP.</li>
+<li>Netmod is considering adopting these changes, with a decision pending on whether they become a base version or augmentations.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Proposed Re-chartering</strong></p>
+<ul>
+<li><strong>Chair's Rationale</strong>: Noted that the five core YANG data models (capability, i2nsf-facing, monitoring, consumer-facing, registration interfaces) are nearing completion, and expressed interest in pursuing new work items and open-source partnerships.</li>
+<li><strong>AD's Concern</strong>: Roman raised strong skepticism about re-chartering, citing a perceived lack of working group energy, insufficient review quality for recent documents (multiple discusses, one sent back), and low engagement (e.g., abstentions on the applicability document). He stressed that the facts on the ground did not indicate sufficient energy for more work, especially given the seven years it took to reach the current point.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Secure Routing Draft</strong>: The author of the Secure Routing draft (<code>draft-wang-i2nsf-secure-routing-update</code>) is to discuss further with IDR co-chair Sue Harris to identify and separate the BGP-LS specific extensions for IDR submission. The i2nsf working group portion should focus on the controller interface aspects.</li>
+<li><strong>Consumer Facing Interface (CFI) and Registration Interface (RI) Drafts</strong>: Authors are to provide revisions addressing the AD's (Roman's) comments. The AD will conduct a detailed cross-walk review upon submission of the updated drafts.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Authors of the CFI and RI drafts are to prioritize addressing AD comments and submitting revised versions.</li>
+<li>The Secure Routing draft author will refine the draft based on the discussion, focusing the i2nsf component on controller interfaces and preparing BGP-LS extensions for IDR.</li>
+<li>Further discussion on the proposed re-chartering of the i2nsf working group will take place on the mailing list, taking into account the AD's concerns regarding working group energy and review capacity.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

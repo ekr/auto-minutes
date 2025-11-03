@@ -1,0 +1,39 @@
+**Session Date/Time:** 29 Mar 2023 04:00
+
+# webtrans
+
+## Summary
+
+This webtrans meeting included updates on the WebTransport draft status, discussions on open issues, and presentations on recent developments in Firefox and Chrome implementations. Key topics included send rate estimation, client-initiated drain, max stream limits, error handling, flow control, redirects, and priority handling with pooled connections. Several decisions were made regarding default limits, error code space, and redirection behavior.
+
+## Key Discussion Points
+
+*   **WebTransport Draft Status:** The draft is currently a working draft, updated on March 14th, 2023. The charter was extended until December 31st, 2023, with the aim to reach Proposed Recommendation by September.
+*   **Send Rate Estimate:** Debated adding a send rate estimate to the `webTransport.getStats` method. Difficulties include varying implementations and volatile values.
+*   **Client Initiated Drain:** Discussion on exposing an API for JavaScript applications to send a drain notification to the server. Concerns raised about potential misuse, especially in frame stream transport scenarios.
+*   **Max Stream Limit:** Concerns that the default stream limit will be reached when using frame-per-stream and how to handle it. Discussed exposing an API to request an increased limit from the UA or the UA automatically handle in background.
+*   **H3 Capsule Design team changes landed** Significant changes to the capsule design have landed.
+*   **Error Handling (H3):** Proposal to reset the H2 stream and destroy the entire WebTransport session upon any fatal error.
+*   **Flow Control (H3):** Focus on initial flow control limits for H3. Discussed default limits versus communicating limits in settings.
+*   **HTTP Redirects:** Discussed how to handle HTTP redirects. Concerned about opportunistic sends and if there are issues when a three hundred is received.
+*   **Priority Handling with Pooled Connections:** Analyzed how prioritization should work when multiple WebTransport sessions are pooled together. Proposed different merging algorithms. How to handle new H3 priority header.
+*   **Error Code Space:** Increased it from 8 bits to something larger so folks can do more complicated stuff on top of web transport.
+*   **Total data usage by individual session.** Discussion on how to limit total data used by session and should is be optional only when you are doing polling.
+
+## Decisions and Action Items
+
+*   **Send Rate Estimate:** Continue the discussion on the issue list, and try to address the open questions.
+*   **Client Initiated Drain:** Add ability for the client to initiate the drain.
+*   **Max Stream Limit:** Investigate different methods for handing the current maximum. Add default values or a hint to the user agent.
+*   **Flow Control (H3):** Resolved not to use fixed default limits, but to negotiate using settings.
+*   **HTTP Redirects:** Will disallow automatically following HTTP redirects.
+*   **Priority Handling with Pooled Connections:** Use the priority header for everything. Will also have the H3 connection header for all the session.
+*   **Error Code Space:** Expand the HTTP error code space to 32 bits.
+*   **Flow control for total usage:** No action at the moment.
+*   **The team will be meeting to decide on different designs with extension.**
+
+## Next Steps
+
+*   Editors will discuss the Flow Control issue (multiplexing streams, H2 vs H3) and decide on an approach, inviting Lucas to the discussion.
+*   Continue discussions on other open issues via the mailing list.
+*   Quick working group review required an extensions that will solve this assist for WebTransport to proceed.

@@ -1,0 +1,40 @@
+**Session Date/Time:** 26 Jul 2024 20:00
+
+# ppm
+
+## Summary
+This meeting covered a range of topics related to privacy-preserving measurement, including updates on the DAP draft, heavy hitters consensus, active DAP issues, task provisioning, binomial DP noise generation in MPC, and the relationship between IETF and CFRG regarding fancy crypto. Key decisions were made on merging or rejecting several PRs related to DAP.
+
+## Key Discussion Points
+*   **Heavy Hitters Consensus:** Consensus was previously reached to drop heavy hitters support from the DAP document. The group emphasized that the heavy hitters problem remains within the working group's scope.
+*   **DAP Active Issues (Chris Patton):**
+    *   Discussed remaining architectural issues in the DAP repository.
+    *   Issue of Maximum Batch Size: Proposal to remove maximum batch size, rename `query type` to `batch mode`, and `fixed size` to `leader select`. This aimed to simplify implementation and align naming with semantics. Discussion around leader control and replay protection.
+    *   Asynchronous Aggregation Job Processing: Proposal to allow helpers to process aggregation jobs asynchronously, responding with a 201 Created and allowing leaders to poll for results. This addressed resource contention and improved P99 latency. Concerns were raised about replay detection.
+    *   TLS Representation Language Ambiguity: Addressed ambiguity in TLS representation language by introducing `struct variant`.
+    *   HPKE Configuration: Debated removing task ID parameter for HPKE configuration due to anonymity concerns and lack of implementation.
+    *   Content Type Versioning: Discussed adding versioning to the content type for draft compatibility.
+*   **TaskProv (Chris Patton):**  Presented an extension to the DAP protocol that has a couple of different tasks. Goals: Task binding, provisioning a task.
+*   **Binomial DP Noise Generation in MPC (Ben Case, Martin Thomson, Alex):**
+    *   Discussed generating central DP noise inside of MPC using a binomial mechanism.
+    *   Motivation for using binomial noise, its simplicity, and relative ease of generation within MPC.
+    *   Analyzed different parameters for binomials in the DP context, including trade-offs between privacy and utility.
+    *   Presented tables of parameters for different epsilons, deltas, and sensitivities to guide selection of N (number of samples) for binomial distribution.
+    *   Reviewed costs and potential performance improvements.
+*   **Three-Party MPC (Ben Case, Martin Thomson):** Introduced other documents. One is a three-party MPC and the other is a pseudorandum secret sharing.
+*   **SAG Feedback (Chris Patton, Deb Cooley):** Discussed the role of the IETF and CFRG regarding "fancy crypto" and cryptographic primitives. Concern about lack of direction to academic research and the need for industry driven use cases.
+
+## Decisions and Action Items
+*   **Maximum Batch Size PR:** Merge the PR to remove the maximum batch size from DAP.
+*   **Asynchronous Aggregation Job Processing PR:** Hold off on merging this PR pending further discussion of replay protection strategies.
+*   **TLS Representation Language PR:** Merge the PR to add the word `variant` to the word `struct` to resolve the TLS representation language ambiguity. (Watson's suggestion to use `variant` instead of `struct variant` to be considered).
+*   **HPKE Configuration PR:** Merge PR to remove the task ID parameter to avoid privacy risks.
+*   **Content Type Versioning PR:** Reject PR to add versioning to content type.
+*   **TaskProv adoption:** Poll to adopt.
+*   **Research Direction (Chris Patton):** Chris to open a new issue to discuss potential future research directions based on recent academic papers in VDAF execution.
+
+## Next Steps
+*   Continue discussion on replay protection mechanisms for asynchronous aggregation jobs.
+*   Editors to consult with HTTP experts on content type versioning best practices.
+*   Consider TaskProv adoption with further review.
+*   Continued exploration of Binomial DP Noise Generation in MPC by Ben Case, Martin Thomson, and Alex. Discuss with Tim on two party competition way to do it.

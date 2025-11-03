@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dtn.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-DTN-20220726-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 26 Jul 2022 14:00</p>
+<h1>dtn</h1>
+<h2>Summary</h2>
+<p>The dtn working group met to discuss the status of existing documents and key technical areas, including reliability, accounting, and especially naming and addressing. A significant portion of the session was dedicated to a presentation from CCSDS on their DTN profile and requirements, followed by updates on administrative records, COSE security contexts, and neighbor messaging. The latter half of the meeting focused on an in-depth workshop-style discussion led by Scott Burleigh on naming and addressing principles, culminating in a strong recommendation to begin drafting documents to formalize these concepts. Due to time constraints, an additional interim meeting was proposed to continue the naming and addressing workshop.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative Overhead</strong>: The chairs provided standard IETF notewell reminders and meeting tips. The agenda was compressed from two sessions to one, emphasizing a workshop approach for naming and addressing.</li>
+<li><strong>CCSDS DTN Status and Requirements (Keith Scott)</strong>:
+<ul>
+<li>CCSDS has submitted a BPv7 profile to their S-IS area director, largely based on RFC 9171 with minor clarifications and restrictions (e.g., 10MB bundle size limit).</li>
+<li>Defined convergence layer adapters (CLAs) including an LTP CLA with multiplexing for multiple bundles per LTP block and a simple UDPCL (one bundle per UDP datagram, administrative MTU handling).</li>
+<li>Stressed the need for alignment between IETF and CCSDS DTN efforts.</li>
+<li>Identified key areas for future work: reliability (bundle level), accounting, and quality of service.</li>
+</ul>
+</li>
+<li><strong>Reliability Discussion</strong>:
+<ul>
+<li><strong>Bundle-Layer Reliability</strong>: Desire for stronger reliability mechanisms signaled at the bundle layer, especially for unidirectional links or scenarios where reliable CLs are not feasible.</li>
+<li><strong>Custody Transfer</strong>: Interest in mechanisms akin to BPv6 custody transfer, with ESA expressing interest in combining reliability and accounting.</li>
+<li><strong>Working Group Questions</strong>: Whether reliable CLs and bundle-layer mechanisms are parallel options or one should be prioritized. Jonathan noted CLs only confirm bit transfer, not bundle parsing or storage, which is crucial for resource release (e.g., small rovers).</li>
+<li><strong>Brad Sipos</strong>: Noted that existing reliable CLs (TCPCL, LTPCL) are silent on acknowledgement meaning, suggesting a CCSDS profile or network operator could define it.</li>
+<li><strong>Chairs' Summary</strong>: Acknowledged energy towards an extension block or mechanism for reliability/custody signaling.</li>
+</ul>
+</li>
+<li><strong>Accounting and Network Management (Keith Scott)</strong>:
+<ul>
+<li>High concern in space missions for knowing bundle locations and resource usage (e.g., ground station receipt, radiation, node storage, error bundles).</li>
+<li>Distinction drawn between real-time bundle status reports (control plane, potential overhead issues for scarce space resources) and network management/accounting (statistics, local autonomy, AMP-like mechanisms).</li>
+<li><strong>Rick/Ed</strong>: Emphasized using a common management infrastructure (AMP) for statistics and reports, rather than overloading status reports. Noted OPS-AD liaison for best practices.</li>
+</ul>
+</li>
+<li><strong>Administrative Record Types (Brian Sipos)</strong>:
+<ul>
+<li>Draft proposes updates to the IANA administrative record types table for BPv7, reconciling with BPv6 and existing allocations (e.g., CCSDS aggregate custody signal).</li>
+<li>No change in registration procedure.</li>
+<li><strong>Decision</strong>: Chairs will initiate a working group adoption call for this draft following the session.</li>
+</ul>
+</li>
+<li><strong>COSE BPsec Security Context (Brian Sipos)</strong>:
+<ul>
+<li>Addresses the lack of asymmetric key algorithms and PKI integration in existing BPsec security contexts (focused on symmetric keys).</li>
+<li>Proposes using CBOR Object Signing and Encryption (COSE) as a BPsec security context, allowing PKI integration and deduplication.</li>
+<li><strong>Decision/Action</strong>: Brian Sipos to update and resubmit the expired draft. Chairs will then initiate a working group adoption call and seek review from the COSE community.</li>
+</ul>
+</li>
+<li><strong>Neighbor Messaging/Discovery (Brian Sipos)</strong>:
+<ul>
+<li>Addresses a charter milestone for neighbor peer discovery, aiming to improve upon the IRTF's experimental IPND draft by leveraging BPsec for security and BP for lifetime/hop limits.</li>
+<li>Proposes a new well-known endpoint <code>dtn:neighbor</code> for one-hop destinations.</li>
+<li>Payload would be a CBOR map for extensible content (identities, CLs, cryptographic binding).</li>
+<li><strong>Discussion</strong>: Scott Burleigh suggested a dedicated &quot;discovery convergence layer adapter&quot; to shield BP from CL complexities. Rick and Eric countered that the <code>dtn:neighbor</code> EID allows BPAs to resolve it to appropriate CLs (multicast UDP, D-LIP, etc.) based on network configuration, maintaining BP simplicity.</li>
+<li><strong>Action</strong>: Brian Sipos is seeking collaborators to develop this into a formal draft. Ronald Enfeld offered to review.</li>
+</ul>
+</li>
+<li><strong>Naming and Addressing Workshop (Scott Burleigh)</strong>:
+<ul>
+<li><strong>Definitions</strong>: Asserted definitions for <em>name</em> (identifies a thing), <em>location</em> (point in space), <em>address</em> (name of a location), and <em>node</em> (state machine at a location). A node's address is the name of its current location.</li>
+<li><strong>Late Binding</strong>: Highlighted DTN's need for late binding due to frequent node location changes and slow information propagation, contrasting with Internet's early binding where addresses are relatively stable. DTN bundles should use the destination node's <em>name</em>, not its potentially outdated <em>address</em>.</li>
+<li><strong>Region Concept</strong>: Introduced the idea of &quot;regions&quot; (subnets or subdivisions of naming space) where nodes move frequently within a region but rarely between regions.
+<ul>
+<li><strong>Globally Managed Region Tree</strong>: A central authority manages the region topology, all nodes compute paths. Downside: Management and synchronization challenges, political issues, exacerbated by latency.</li>
+<li><strong>Automatically Evolving Region Tree</strong>: Topology discovered locally via pairwise agreements. No global tree needs to be recorded. Less familiar but more DTN-like (late binding all the way down).</li>
+</ul>
+</li>
+<li><strong>Discussion on Routing vs. Naming</strong>:
+<ul>
+<li><strong>Rick</strong>: Expressed concern that encoding topological information (like regions) directly into the destination name implicitly enforces routing, potentially breaking late binding and making names less abstract. Preferred regions for subdividing naming space, not routing space (e.g., <code>marsrover2.esa</code> vs <code>marsrover2.nasa</code>).</li>
+<li><strong>Scott</strong>: Argued that the discussion belongs in naming/addressing because encoding topological info affects the EID structure. Stressed that if topological info is present, it introduces early binding. Preferred omitting all topological information from the EID (just the node's unique name).</li>
+<li><strong>Ed</strong>: Questioned if different parts of a structured EID (e.g., region ID vs. internal-to-region ID) could be treated differently for binding (early vs. late).</li>
+<li><strong>Stu Card</strong>: Asked if regions partition space or can overlap (Scott preferred partitioning with passageway nodes as members of multiple regions, preferably a tree structure to avoid routing loops). Also requested avoiding painting into a corner for ARP-like functions (HIP, ALE).</li>
+</ul>
+</li>
+<li><strong>Zahed</strong>: Emphasized the maturity of ideas and the need for formal documentation to guide further constructive discussion.</li>
+<li><strong>Scott Burleigh</strong>: Expressed willingness to start a draft.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>ACTION (Rick, Chairs)</strong>: Initiate a working group adoption call for <code>draft-sipos-dtn-admin-record-types</code> on the mailing list.</li>
+<li><strong>ACTION (Brian Sipos)</strong>: Update and resubmit the <code>draft-sipos-dtn-cose-security-context</code> as a new version to reactivate it in the data tracker.</li>
+<li><strong>ACTION (Rick, Chairs)</strong>: Following the update, initiate a working group adoption call for <code>draft-sipos-dtn-cose-security-context</code> and seek review from the COSE community.</li>
+<li><strong>ACTION (Brian Sipos)</strong>: Begin work on a draft for neighbor messaging/discovery, seeking collaborators (Ronald Enfeld offered review).</li>
+<li><strong>ACTION (Chairs)</strong>: Organize an interim meeting to continue the naming and addressing workshop, focusing on the implications of EID schemes for security, custody, routing, and QoS.</li>
+<li><strong>ACTION (Scott Burleigh, potentially collaborators)</strong>: Consider initiating a draft document on naming and addressing principles and proposed schemes, as suggested by Zahed.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The working group will hold an interim meeting before IETF 115 to continue the deep dive into naming and addressing, specifically focusing on how different EID schemes impact security, routing, custody, reliability, and quality of service.</li>
+<li>Members are encouraged to review the <code>admin-record-types</code> and <code>cose-security-context</code> drafts once adoption calls are made and new versions are available.</li>
+<li>Collaboration is sought for the neighbor messaging draft.</li>
+<li>New drafts on naming and addressing are encouraged to formalize the discussion points raised.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

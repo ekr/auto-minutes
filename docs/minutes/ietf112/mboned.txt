@@ -1,0 +1,49 @@
+**Session Date/Time:** 10 Nov 2021 12:00
+
+# mboned
+
+## Summary
+
+The mboned session covered several key areas of multicast development and deployment. Discussions included a new iOS entitlement program for multicast applications, an update on the Web multicast security efforts, a detailed presentation on a pan-European BEER and AMT implementation project using P4, and a demo of off-net multicast sourcing. The session concluded with a discussion on multicast redundant ingress router failover, which received support for working group adoption.
+
+## Key Discussion Points
+
+*   **iOS Multicast Entitlement Program:** Tommy from Apple described a new entitlement in iOS 14+ for applications using direct multicast/broadcast (not via system APIs like mDNS). This is part of a user privacy initiative to restrict arbitrary local network scanning, often performed by third-party SDKs. Apps must declare mDNS service types and request an entitlement for custom multicast. Most legitimate requests are approved, with Apple encouraging the use of standard, audited system APIs. The restrictions apply to iOS devices, not macOS or simulators.
+*   **Multicast in the Browser and Security:** Jake Rose provided an update on efforts to enable multicast in web browsers.
+    *   The W3C Multicast Community Group is active, with positive feedback regarding multicast's impact on sustainability.
+    *   An issue has been opened with the WebTransport working group to consider multicast as a valuable use case.
+    *   Chromium feedback for an "intent to experiment" indicated a need for confidentiality (in addition to integrity/authenticity) and addressing implementation weaknesses.
+    *   A draft (`k-rose-sec-dispatch-multicast-security`) proposes a security model. `insect-dispatch` recommended starting a mailing list to gather security expert interest.
+    *   Jake highlighted growing commercial interest in multicast (Virgin Media, Comcast, Dizone, Amazon) despite some skepticism about demand.
+    *   Current mboned drafts (`dorm`, `mnat`, `ambi`) are seeking reviews, with a proposal to cluster `dorm`, `c-back`, and `ambi` for RFC progression.
+    *   A concern was raised about `mnat`'s reliance on DHCP options for search domain discovery in home networks, with an alternative DNS RR type being considered.
+*   **Rarfree Router Project: BEER, AMT, and P4 Lab Deployment:** Frederick Louis and Saba from GÉANT presented on their project to implement a routing stack based on various data planes (P4, DPDK).
+    *   The project combines a control plane with multiple data planes to address R&E use cases, including multicast.
+    *   A BEER domain has been deployed across four European nodes, expanding globally, running on a P4 lab.
+    *   They showcased BEER implementation (RFC 8279) with IGP and BGP extensions, and AMT relay implementation (RFC 7450), demonstrating interoperability with public AMT relays.
+    *   An experiment combining BEER and INT (In-band Network Telemetry) for music streaming was demoed, connecting a home network (DPDK) to the P4 testbed (hardware).
+    *   The project aims for a cost-effective, independent, and secure overlay for multicast services, making it "brain-dead simple" for users.
+*   **Off-Net Multicast Sourcing:** Lenny presented a project enabling users on unicast-only networks to source multicast streams.
+    *   A Python-based Unicast-Multicast Translator converts unicast streams to multicast, making them available to on-net native receivers and off-net AMT receivers.
+    *   The translator automatically creates entries on the Multicast Menu for discovery.
+    *   A live demo showed streaming from VLC to the translator, creating a new entry on the Multicast Menu, with some attendees successfully joining the multicast stream.
+    *   The project is open source and seeks contributors to expand its functionality and deployment.
+*   **Multicast Redundant Ingress Router Failover:** Yisong presented an update on providing redundancy for Ingress Routers (IRs) in multicast, acting as Upstream Multicast Hub (UMH) candidates for Egress Routers (ERs).
+    *   The draft outlines Cold, Warm, and Hot standby modes for IR switchover.
+    *   A minor update clarified that in Warm Standby, IRs can manage different flows or ERs, with one IR notifying the other to take over flows upon failure.
+    *   Further feedback requested more specific mechanisms for failure detection and signaling.
+
+## Decisions and Action Items
+
+*   **Multicast Redundant Ingress Router Failover:** The draft received support for Working Group Adoption. An official adoption call will be sent to the mailing list.
+*   **Multicast Security:** Jake Rose will send an email to kick off a mailing list for multicast security discussions, engaging security experts.
+*   **AMT/BEER Project:** Frederick and Saba will share the public AMT relay link on the mailing list for community testing and are open to discussing a hackathon for IETF 113 focused on AMT client development.
+
+## Next Steps
+
+*   **YANG Models Draft:** Sandy to seek one more review before Working Group Last Call.
+*   **Multicast Telemetry Draft:** Plan to update after the IOM draft becomes an RFC, with more discussion at the next IETF.
+*   **Multicast in the Browser Drafts (`dorm`, `mnat`, `ambi`, `c-back`):** Jake Rose seeks reviews, particularly for `dorm` and `mnat`, and proposes clustering `dorm`, `c-back`, and `ambi` for RFC progression. He also plans to conduct experiments for a QUIC-based multicast protocol.
+*   **Multicast Security:** Jake Rose will work on gathering sufficient interest among security experts for a potential Birds of a Feather (Bof) to open a new (or re-charter existing) multicast security working group.
+*   **Multicast Redundant Ingress Router Failover:** Yisong and Sandy will consider adding more specific details about failure detection and signaling mechanisms in future versions of the draft.
+*   **Off-Net Multicast Sourcing:** The project is looking for contributors, and there's interest in integrating it with the P4 lab and exploring DNS-based discovery mechanisms (e.g., RFC 8777). Lauren is working on Multicast Menu 2.0, which will support specifying different AMT relays.

@@ -1,0 +1,114 @@
+**Session Date/Time:** 06 Nov 2023 16:30
+
+# lamps
+
+## Summary
+
+The LAMPS working group meeting covered a range of topics including updates on documents progressing through the IESG, discussion of KEM integration in CMS and CMP, and the AES CBC/GCM attack mitigation proposal. Several documents are nearing working group last call. A new draft regarding signaling of clear text copies in encrypted email messages was presented, and the working group will consider adoption.
+
+## Key Discussion Points
+
+*   **KEMRI Document (draft-ietf-lamps-cms-kemri):** Currently in IESG state. External party raised concerns about inverse CBC decryption Oracle attack. Question raised about whether to include content encryption algorithm in CMS. Discussed CMS never doing HBKE.
+*   **CMP DiscNet (draft-ietf-lamps-cmp-algorithms & draft-ietf-lamps-cmp-updates):** Incorporating RFC 9480 material as requested by the IESG. Need more review on KEM integration into CMP. Seeking feedback on content for KEM other info.
+*   **PKS P12 PBES2 (draft-ietf-lamps-pkcs12-pbmac-08):** In working group last call. Resolved issues with DMP string encoding for password. Need to check ASN.1.
+*   **CSR Attestation (draft-ietf-lamps-csr-attestation):** Aiming to integrate hardware key attestation into CSRs. Discussed changes to ASN.1 structure (evidence bundles), addressing CRMF incompatibility, and handling freshness/nonces in attestations.
+*   **EST/CMP Nonce (draft-hietala-lamps-est-cmp-nonce):** Presentation on how to introduce nonces to enrollment protocols like EST and CMP to provide freshness for attestations.
+*   **OCSP (draft-zhou-lamps-ocsp-ecdsa):** Ready for working group last call.
+*   **Kyber Certs (draft-brown-lamps-kyber-certs):** Update on draft. Discussed potential name change to ML-KEM and private key format. Will include example certificates with a warning about it using old version.
+*   **CMS Kyber (draft-jivsov-lamps-cms-kem):** Editorial changes, adding references to other drafts. Discussed renaming to ML-KEM and algorithm configurations. AES192 to be updated to AES256.
+*   **End-to-End Mail Guidance (draft-richardson-lamps-e2e-mail-guidance):** Discussed scenarios where a single message might be sent encrypted to some recipients and in clear text to others, and how mail user agents should handle this.
+
+## Decisions and Action Items
+
+*   **Action Item:** Note taker to initiate working group last call for the policy graph document (draft-ietf-lamps-cert-policy-data).
+*   **Action Item:** Working group to consider adoption of the end-to-end mail guidance document (draft-richardson-lamps-e2e-mail-guidance).
+*   **Action Item:** Note taker to initiate working group call for adoption for the end-to-end mail guidance document.
+
+## Next Steps
+
+*   Address open issues and comments raised for each document.
+*   Continue discussion on the mailing list for key design choices.
+*   Advance documents towards working group last call where applicable.
+
+
+---
+
+**Session Date/Time:** 08 Nov 2023 13:30
+
+# lamps
+
+## Summary
+
+The LAMPS working group meeting covered a range of topics, including a new downgrade attack on CMS, potential mitigations for that attack, updates on existing drafts related to header protection and email guidance, composite KEMs and signatures, and a discussion of strategies for dealing with large public keys in certificates. Several drafts were discussed with calls for adoption initiated for some.
+
+## Key Discussion Points
+
+*   **Downgrade Attack on CMS (Falco):**
+    *   A new attack was presented that exploits CBC decryption within CMS when AAD modes are used, potentially allowing for the recovery of low-entropy blocks.
+    *   The attack works by crafting messages that, when processed by a vulnerable system, return garbled data that can be used to deduce information.
+    *   SMIME was initially investigated but the exploit is not as straightforward; focus shifted to the broader CMS context.
+    *   A key separation mitigation was proposed to bind encryption algorithms to specific keys.
+    *   The attack impacts CCA2 security of AAD modes due to CBC decryption allowing modified messages.
+
+*   **Mitigation via KDF (Scott):**
+    *   Proposed a solution involving a Key Derivation Function (KDF) applied to the CEK (Content Encryption Key), incorporating the algorithm identifier.
+    *   This KDF would be triggered by a new OID in the unprotected attributes of CMS structures.
+    *   Removing the OID would deny the attacker access to the content, mitigating the attack, but may cause a denial of service.
+    *   The generated CEK must be dependent on the mode used.
+    *   Suggested the inclusion of context-specific salt for CMS within the HKDF to prevent cross-protocol attacks, or, maybe do not include.
+
+*   **End-to-End Mail Guidance and Header Protection (DKG):**
+    *   Updates were provided on both drafts, with only minor changes since the last IETF meeting, after working group last call.
+    *   A request was made to advance both documents out of working group last call.
+    *   Discussion on external resources in end-to-end email.
+
+*   **Composite KEMs (Antonio):**
+    *   Draft updates included a formal definition of generating encapsulation and decapsulation, pseudo code, and reworked wire formats to remove generics in ASN.1.
+    *   Changes from sequence of subject public key info to sequence of bit string in ASN.1 structure, which is now Composite KEM PublicKey rather than Composite PublicKey.
+    *   Removed a dependency on KEMs by lifting the text into KEMs and SIGs
+    *   Discussion about how to handle combinations of KDF primitives, including the use of KDF3 with SHA3. Discussion on the security considerations of combining key sizes, security levels, symmetric primitives.
+    *   DHKEM dependency.
+
+*   **No Revocation Available (Toma):**
+    *   Presentation covered a draft specifying a "no revocation available" certificate extension for short-lived certificates.
+    *   Concerns were raised about how OCSP responders should treat certificates with this extension and use cases like device certificates.
+    *   Should use valid response in OCSP.
+    *   Considerations around the validity period of this type of certificate.
+
+*   **CMC Bis (Sean):**
+    *   Draft updates focused on removing SHA-1 as the default and updating algorithms in line with current best practices.
+    *   The working group looked at a revision of CMS Best.
+    *   Discussion on appropriate default algorithms to transition to.
+
+*   **SHA3 CMS Individual Draft (Russ):**
+    *   Draft exists to publish OIDs for Shaw 3, but whether it would be used in conjunction with the composite draft.
+
+*   **Hash Based Signatures (Max):**
+    *   Updates covered addressing previous comments.
+    *   Discussion about use cases, specifically code signing for manufacturers and use of hash-based signatures at the root level, and, therefore, alignment to related documents is important.
+    *   Discussion about whether to split the document into different documents.
+    *   Open issue on dealing with Stateful signatures.
+
+*   **Composite Signatures (Kevin):**
+    *   Rework of the wire format.
+    *   Remove all signatures that has confidence at signature parameters. The OID now fully specifies the component algorithms.
+    *   Add NLDSA 44 combinations
+    *   Discussion about hash of Durham coded OID or hash of full algorithm ID or using hash of the full composite key, related to property requirements/functionality.
+
+*   **External Public Keys (David):**
+    *   Discussion on public keys in certificates that are extremely large. Instead of putting in certificate, use a URL and a hash of the public key in the certificate.
+
+## Decisions and Action Items
+
+*   **KDF Mitigation:** Scott will write an internet draft for the proposed KDF-based mitigation.
+*   **End-to-End Mail Guidance and Header Protection:** Chairs to follow up on list to move document to ISG.
+*   **No Revocation Available:** Chair to start a call for adoption on mailing list.
+*   **CMC Bis:** Remain as current, to allow updates.
+*   **Hash Based Signatures:** Chair to start a call for adoption on mailing list.
+*   **Composite Signatures:** After changes, move to a call for adoption.
+
+## Next Steps
+
+*   Authors to continue work on the respective drafts, addressing feedback from the working group.
+*   Working group to review the drafts and provide additional feedback on the mailing lists.
+*   Chairs to initiate calls for adoption for the "No Revocation Available," "Hash Based Signatures," and "Composite Signatures" drafts.

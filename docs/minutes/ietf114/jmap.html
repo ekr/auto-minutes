@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="jmap.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-JMAP-20220728-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 14:00</p>
+<h1>jmap</h1>
+<h2>Summary</h2>
+<p>The jmap session covered updates on several existing drafts, including JMAP Blob, JMAP Quotas, JMAP S/MIME, and JMAP Tasks, with most nearing Working Group Last Call (WGLC). There was significant discussion on JMAP Tasks, particularly around progress tracking, grouping, and interaction with JS Calendar. New work proposals for JMAP included using it for data migration/portability and standardizing preferences. The session concluded with a review and update of working group milestones, pushing several target dates into late 2023 and early 2024. The joint Extra session immediately followed, discussing IMAP-related drafts (Partial, Process, Snooze, Sieve Registry) and new work for IMAP Snooze, IMAP Mailboxes as Labels, and List Return Metadata.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>JMAP Blob</strong>:
+<ul>
+<li>Added digest response functionality by request, allowing digest calculation over a range for partial downloads or entire content for full verification.</li>
+<li>Needs more text on implementer advice and examples.</li>
+<li>Ready for a third (and hopefully final) Working Group Last Call (WGLC) after updates.</li>
+</ul>
+</li>
+<li><strong>JMAP Quotas</strong>:
+<ul>
+<li>Incorporated comments from Alexey, including examples for soft limits (e.g., blocking outgoing emails but allowing incoming).</li>
+<li>Corrected &quot;size&quot; to &quot;octet&quot; in examples.</li>
+<li>Enhanced security considerations section based on existing IMAP quota RFCs.</li>
+<li>Document is considered ready for WGLC.</li>
+</ul>
+</li>
+<li><strong>JMAP S/MIME</strong>:
+<ul>
+<li>Addressed issues regarding signing encapsulation (application/pkcs7-mime vs. multipart/signed) with <code>application/pkcs7-mime</code> as default.</li>
+<li>Header protection feature is now enabled by default.</li>
+<li><strong>Action</strong>: Change the field name <code>headerProtect</code> to <code>sMimeProtectHeaders</code> for consistency.</li>
+<li>Remaining work: Automatically decrypting messages (requires collaboration with Neil on email parsing).</li>
+<li>Anticipated WGLC readiness: October/November 2023.</li>
+<li>Clarified that server-side decryption assumes key availability (e.g., trusted directory/storage associated with JMAP user).</li>
+</ul>
+</li>
+<li><strong>JMAP Tasks</strong>:
+<ul>
+<li>Aims for a common standard for Kanban boards and issue trackers.</li>
+<li>Updates from last IETF:
+<ul>
+<li>Fixed &quot;relatedTo&quot; vs. &quot;extendingRelation&quot; with new values like &quot;dependOn&quot;.</li>
+<li>Added color support for categories and keywords.</li>
+<li>Clarified <code>estimatedWork</code> as an abstract value, recommending Fibonacci scale as a common agile practice.</li>
+<li>Differentiated <code>impact</code> from <code>priority</code>, stating <code>impact</code> can determine <code>priority</code> but isn't the same.</li>
+<li>Removed <code>source</code> property, recommending <code>prodId</code> instead.</li>
+</ul>
+</li>
+<li><strong>Progress Tracking</strong>: Introduced <code>workflowStatuses</code> (on TaskList) and <code>workflowStatus</code> (on Task) for custom workflows, making <code>progress</code> null if <code>workflowStatus</code> is used.</li>
+<li><strong>Grouping</strong>: Proposed grouping properties into capabilities (Common, Recurrences, Assignees, Alerts, Localizations, Custom Time Zones) to cater to diverse task systems.
+<ul>
+<li>Justification for groups: uncommon in certain systems, optional in JS Calendar, requires additional business logic.</li>
+<li>Each group is a separate capability.</li>
+<li>Discussion on server handling of unsupported properties: Default JMAP behavior is to reject, but suggestion to allow storage of unknown properties for later use/forwarding.</li>
+<li>Noted that &quot;Localizations&quot; and &quot;Custom Time Zones&quot; groups were not present in validation examples, suggesting they might not be needed.</li>
+<li>Discussion on &quot;impact&quot; vs. &quot;priority&quot;: <code>impact</code> is what affects the task creator, <code>priority</code> is what the assignee decides.</li>
+<li>Discussion on <code>estimatedWork</code>: Should there be a unit/scale definition? Currently just a value; fibonacci scale is a recommendation. Need clarity on direction (larger number = larger work).</li>
+</ul>
+</li>
+<li><strong>Dependency</strong>: JMAP Tasks updates JS Calendar tasks, so they would likely need to go through the publication process together, potentially with JMAP Calendars.</li>
+<li>Still gathering feedback, not yet ready for WGLC.</li>
+</ul>
+</li>
+<li><strong>JMAP Calendars</strong>:
+<ul>
+<li>Waiting on resolution of JS Calendar discussions in the CALEXT working group, particularly around participant identification.</li>
+<li>Plans to publish JMAP Calendars, Sharing, and Tasks together when ready.</li>
+</ul>
+</li>
+<li><strong>JMAP Sieve</strong>:
+<ul>
+<li>Changes since last IETF: Tracking updates in the Blob spec.</li>
+<li><strong>Decision</strong>: To remove the test method from this draft and make it a separate extension, as it has not seen wide implementation experience and may need additions for the Process IMAP draft.</li>
+<li>This will allow the core Sieve document to move forward (already in production at Fastmail).</li>
+<li>Ready for WGLC after the test method is moved out.</li>
+</ul>
+</li>
+<li><strong>New Work: JMAP Migration &amp; Portability</strong>:
+<ul>
+<li>Proposal to use JMAP as a &quot;one-time API&quot; for migrating data from legacy systems that lack modern APIs.</li>
+<li>Suggests simplifying JMAP implementation for this use case: focus on key objects/properties, potentially skip session object for single-user scenarios, simplified request formats (e.g., URL parameters instead of JSON bodies).</li>
+<li><strong>Action</strong>: Author to publish an informational draft to explore this concept, potentially as a &quot;REST-like&quot; JMAP access document.</li>
+</ul>
+</li>
+<li><strong>New Work: JMAP Preferences</strong>:
+<ul>
+<li>Discussed the challenges of standardizing groupware preferences (diverse contexts, data structures, scopes: user/admin).</li>
+<li>Example: A specific JMAP preferences object for allow lists and block lists, using separate capabilities and extensible attributes.</li>
+<li><strong>Discussion</strong>: Whether this is suitable for an RFC or a best practice document. General consensus leans towards a best practice document or an internal document, as specific preference types might be too service-specific for standardization. The concept of a generic key-value store for preferences was also raised.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>JMAP Blob</strong>:
+<ul>
+<li><strong>Decision</strong>: Proceed with a third (and hopefully final) Working Group Last Call after adding implementer advice and examples.</li>
+<li><strong>Action</strong>: Jim Fenton to update the draft and prepare for WGLC.</li>
+</ul>
+</li>
+<li><strong>JMAP Quotas</strong>:
+<ul>
+<li><strong>Decision</strong>: Document is ready for Working Group Last Call.</li>
+</ul>
+</li>
+<li><strong>JMAP S/MIME</strong>:
+<ul>
+<li><strong>Action</strong>: Alexey Melnikov to change the <code>headerProtect</code> field name to <code>sMimeProtectHeaders</code>.</li>
+<li><strong>Action</strong>: Alexey Melnikov to add automatic decryption functionality to the draft.</li>
+<li><strong>Decision</strong>: WGLC planned for October/November after these updates.</li>
+</ul>
+</li>
+<li><strong>JMAP Sieve</strong>:
+<ul>
+<li><strong>Decision</strong>: The test method will be removed from the main Sieve draft and published as a separate extension document.</li>
+<li><strong>Action</strong>: Ken Murchison to remove the test method from the draft and prepare for WGLC.</li>
+</ul>
+</li>
+<li><strong>JMAP Migration &amp; Portability</strong>:
+<ul>
+<li><strong>Action</strong>: Jörs to author and publish an informational draft on using JMAP for migration and portability.</li>
+</ul>
+</li>
+<li><strong>JMAP Preferences</strong>:
+<ul>
+<li><strong>Decision</strong>: Not currently pursue an RFC, but consider a best practice document.</li>
+</ul>
+</li>
+<li><strong>IMAP Partial (Extra)</strong>:
+<ul>
+<li><strong>Decision</strong>: Ready for Working Group Last Call.</li>
+</ul>
+</li>
+<li><strong>Process IMAP (Extra)</strong>:
+<ul>
+<li><strong>Action</strong>: Ken Murchison to add clarifying text about the scope and source of &quot;calendar ID&quot; in the draft.</li>
+<li><strong>Decision</strong>: Will go to Working Group Last Call after updates.</li>
+</ul>
+</li>
+<li><strong>IMAP Snooze (Extra)</strong>:
+<ul>
+<li><strong>Decision</strong>: Ready for Working Group Last Call.</li>
+</ul>
+</li>
+<li><strong>Sieve Registry (Extra)</strong>:
+<ul>
+<li><strong>Decision</strong>: Ready for Working Group Last Call.</li>
+</ul>
+</li>
+<li><strong>New Work: IMAP Snooze (Extra)</strong>:
+<ul>
+<li><strong>Action</strong>: Rick to draft a document for IMAP Snooze.</li>
+<li><strong>Discussion Point</strong>: Extensive discussion on whether to implement snooze via a special &quot;snooze mailbox&quot; or by using flags/metadata in the existing mailbox (defer command concept). This will be further discussed on the mailing list.</li>
+</ul>
+</li>
+<li><strong>New Work: IMAP Mailboxes as Labels (Extra)</strong>:
+<ul>
+<li><strong>Action</strong>: Rick to draft a document for IMAP Mailboxes as Labels, including the <code>mailboxIds</code> property and metadata for label colors.</li>
+</ul>
+</li>
+<li><strong>New Work: List Return Metadata (Extra)</strong>:
+<ul>
+<li><strong>Action</strong>: Brian to draft a document for List Return Metadata.</li>
+</ul>
+</li>
+<li><strong>Extra: Adopt AI with Sieve document</strong>:
+<ul>
+<li><strong>Action</strong>: Chairs to request a Call for Adoption for the AI with Sieve draft.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Working Group Last Calls will be initiated for JMAP Blob, JMAP Quotas, JMAP Sieve (after test method removal), IMAP Partial, Process IMAP (after calendar ID clarification), IMAP Snooze, and Sieve Registry. These should be staggered where possible.</li>
+<li>New drafts will be written for JMAP Migration &amp; Portability, IMAP Snooze, IMAP Mailboxes as Labels, and List Return Metadata, followed by calls for adoption.</li>
+<li>Further work on JMAP S/MIME and JMAP Tasks is required before WGLC.</li>
+<li>Ongoing discussion on the mailing list for IMAP Snooze implementation details (mailbox vs. flags) and other new work proposals.</li>
+</ul>
+<h2>Milestones</h2>
+<ul>
+<li><strong>Submit JMAP Blob document as RFC</strong>: August 2023 (Updated)</li>
+<li><strong>Submit JMAP Sieve document as RFC</strong>: August 2023 (Updated)</li>
+<li><strong>Submit JMAP Calendars document as RFC</strong>: December 2023 (Updated)</li>
+<li><strong>Submit JMAP Quotas document as RFC</strong>: August 2023 (Updated)</li>
+<li><strong>Submit JMAP S/MIME document as RFC</strong>: October 2023 (Updated)</li>
+<li><strong>Submit JMAP Address Books document as RFC</strong>: November 2023 (No change stated)</li>
+<li><strong>Submit JS Contact document as RFC</strong>: Next IETF (Targeting August/September 2023, updated from current calendar reference)</li>
+<li><strong>Submit JMAP Tasks document as RFC</strong>: Early next year (New milestone)</li>
+<li><strong>Submit JMAP Sharing document as RFC</strong>: December 2023 (New milestone)</li>
+<li><strong>Adopt List Return Metadata draft</strong>: August 2023 (New milestone for Extra)</li>
+<li><strong>Adopt Snooze IMAP draft</strong>: September 2023 (New milestone for Extra)</li>
+<li><strong>Adopt a document for AI with Sieve</strong>: Mid-next year (Updated; Call for Adoption to be initiated first)</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

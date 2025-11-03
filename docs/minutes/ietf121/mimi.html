@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="mimi.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF121-MIMI-20241107-0930">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF121-MIMI-20241107-1300">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 07 Nov 2024 09:30</p>
+<h1>mimi</h1>
+<h2>Summary</h2>
+<p>This meeting covered several key aspects of the Mimi protocol, including protocol updates, anti-abuse mechanisms, metadata privacy enhancements, content formatting, room policy, and user discovery. Discussions focused on technical details, security considerations, and future directions of the protocol.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Mimi Protocol Updates:</strong> Discussion covered recent PRs merged, including semi-private messaging, abuse reporting mechanisms, group info and ratchet tree protection, and a diagram explaining the franking mechanism.</li>
+<li><strong>Anti-Abuse Mechanisms (Franking):</strong> Extensive discussion of the franking mechanism for abuse reporting, including its security rationale, potential vulnerabilities (e.g., malicious follower servers), and integration with MLS. A request was made for a security review by CFRG.</li>
+<li><strong>Metadata Privacy:</strong>  Review of efforts to enhance metadata privacy, including minimal metadata mode using pseudonyms and encryption. Key management challenges associated with pseudonymization were discussed.</li>
+<li><strong>Content Formatting:</strong>  Discussion of various issues related to content formatting, including C-Bore encoding, self-deleting messages (relative vs. absolute expiration), GitHub flavored markdown, message editing, and last scene.</li>
+<li><strong>Room Policy:</strong>  Presentation of room policy concepts, including membership styles, capabilities, and roles. Examples of strict administrator, cooperative, and moderated room policies were provided. A call for adoption of the room policy document was made.</li>
+<li><strong>User Discovery:</strong> Initial presentation of the user discovery problem, terminology (CSIP, MSP, CSI), and high-level requirements. Discussion covered the need for verifiably authorized mappings from CSIs to MSPs.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Mimi Architecture Draft:</strong> Rohan Mahy will repost the Mimi architecture draft, which has expired.</li>
+<li><strong>Agenda Swap:</strong> Conrad Cobbrook's presentation on pseudonyms will follow the Mimi Protocol presentation. Discovery will be discussed in the second session.</li>
+<li><strong>CFRG Review:</strong>  Submit the franking mechanism to CFRG for a security review.</li>
+<li><strong>Room Policy Document Adoption:</strong> Issue a call for adoption of the Mimi room policy document to the mailing list.</li>
+<li><strong>Franking Issue 89:</strong> Discuss Franking Issue 89 relating to Malicious follower can mall server Frank? in an interim.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussion of User Discovery requirements after lunch.</li>
+<li>Address open issues and cleanup existing PRs.</li>
+<li>Harmonize web bug fix with attachment draft and perform a security analysis.</li>
+<li>Further develop pseudonym draft.</li>
+<li>Refine the definition of room policy.</li>
+<li>Define a baseline identity mechanism and credential definitions.</li>
+<li>Implement Mimi and provide feedback.</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 07 Nov 2024 13:00</p>
+<h1>mimi</h1>
+<h2>Summary</h2>
+<p>This meeting focused on a detailed review of the MIMI discovery requirements draft. The discussion covered recipient, sender, and discovery provider requirements, with a strong emphasis on privacy considerations, enumeration attacks, and the involvement of MSPs (Messaging Service Providers) and CSIPs (CSI Providers). Several points were raised concerning wording, clarity, and the feasibility of certain requirements. A decision was made to reframe the anti-enumeration requirement as a &quot;should&quot; rather than a &quot;must&quot; due to challenges in defining and measuring success. There was a call for adoption of a new draft after addressing comments raised during the meeting.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Recipient Requirements:</strong></p>
+<ul>
+<li>Debate on the phrasing of recipient vs. sender authentication and the need to align them.</li>
+<li>Concern raised about MSPs being able to impersonate any CSI and need for a mechanism like &quot;ID Prover&quot; to prevent this.</li>
+<li>Discussion of whether the mapping is from CSI to MSP or CSI-SSP pair.</li>
+<li>Word smithing to improve the clarity that the recipient must authorize mapping.</li>
+</ul>
+</li>
+<li>
+<p><strong>Sender Requirements:</strong></p>
+<ul>
+<li>The &quot;retrieve all mappings&quot; requirement (number 4) was discussed in the context of distributed discovery providers and the implications for federation.</li>
+<li>Verification of mappings (number 5): Clarification of whether online interaction with CSIP is needed. General agreement on the need for a cryptographic means for senders to validate mappings.</li>
+</ul>
+</li>
+<li>
+<p><strong>Discovery Provider Requirements:</strong></p>
+<ul>
+<li>Discussion about the meaning of &quot;zero mappings exist&quot; and its implications.</li>
+<li>Deep dive into Requirement 7 and the need for privacy. The discussion was framed around a need to not leak both sides of the graph.</li>
+<li>Concerns about potential oversharing between discovery providers (Requirement 8). Suggestions to ensure it's no more onerous than requirement 7.</li>
+<li>Agreement to remove &quot;between clients and servers&quot; from requirement 9.</li>
+<li>Extensive discussion around protecting mapping data against enumeration attacks (Requirement 10), including potential mitigation strategies and concerns about feasibility.</li>
+<li>Disagreement on how to enumerate. Is is the act of a bad actor that does not know anything? Or is it about linking more data than you should?</li>
+</ul>
+</li>
+<li>
+<p><strong>Interim Meetings:</strong></p>
+<ul>
+<li>Confirmation that bi-weekly interims have been productive.</li>
+<li>General agreement to continue the bi-weekly cadence and canceling if there is nothing to discuss.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Action Item:</strong> Chairs to cut a new version of the draft.</li>
+<li><strong>Action Item:</strong> Chairs to tweak requirements to address comments raised during the meeting.</li>
+<li><strong>Action Item:</strong> Chairs to reframe requirement on enumeration attacks as a &quot;should&quot; instead of &quot;must.&quot;</li>
+<li><strong>Decision:</strong> No more often than bi-weekly interims, with cancellations allowed if there is nothing to discuss.</li>
+<li><strong>Action Item:</strong> Chairs will follow up with Richard on room policy comments.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Circulate a new draft of the discovery requirements on the mailing list.</li>
+<li>Open call for adoption of the updated draft.</li>
+<li>Schedule the next bi-weekly interim meeting.</li>
+<li>Chairs to submit the new milestones.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

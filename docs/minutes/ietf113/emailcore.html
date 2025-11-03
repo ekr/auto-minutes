@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="emailcore.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-EMAILCORE-20220325-1130">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Mar 2022 11:30</p>
+<h1>emailcore</h1>
+<h2>Summary</h2>
+<p>The emailcore working group met at IETF 113 to discuss several open tickets related to the SMTP base specification (<code>rfc5321bis</code>) and the Applicability Statement (<code>AS</code>). Key discussions centered on IANA registration policy for SMTP extensions, the VERIFY command, clarification of &quot;restricted capability client&quot; terminology, handling of null MX responses, and issues related to list exploders and message header modification. While some issues were closed or saw a clear path forward, the IANA registration policy generated significant debate and will continue on the mailing list. The working group aims to schedule interims to maintain momentum on remaining items.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Mail Transaction Clarity (Ticket 11)</strong>: Initial concern about clarifying when a <code>MAIL</code> transaction begins and ends was discussed. The current text in <code>rfc5321bis</code> was largely deemed sufficient.</li>
+<li><strong>IANA Registration Policy for SMTP Extensions</strong>: This was the most extensive discussion.
+<ul>
+<li>Current policy (<code>rfc5321</code>) requires &quot;Standard Track or Experimental RFC approved by the IESG&quot;.</li>
+<li>Proposed alternatives:
+<ul>
+<li>&quot;Specification Required&quot; (expert review + specification, not necessarily IETF stream RFC).</li>
+<li>&quot;First Come First Serve&quot; with a reference requirement (specification templates).</li>
+</ul>
+</li>
+<li>Concerns were raised about the bar for registration (too high leading to non-registration, too low leading to &quot;loony&quot; or unreviewed extensions) and IANA's role in judging specification quality.</li>
+<li>Suggestions included:
+<ul>
+<li>&quot;Specification Required&quot; with a willing expert (e.g., Barry).</li>
+<li>&quot;First Come First Serve&quot; with a strong recommendation to post to the mailing list for feedback.</li>
+<li>&quot;First Come First Serve&quot; with an immediate, temporary registration followed by a 60-day period for community review before permanence.</li>
+</ul>
+</li>
+<li>The group acknowledged a desire to encourage registration without creating undue hurdles, but also to ensure community input for potential issues. No clear consensus was reached during the session.</li>
+</ul>
+</li>
+<li><strong>VERIFY Command</strong>:
+<ul>
+<li>The document currently requires <code>VERIFY</code> but many implementations offer only stub responses (<code>252</code>).</li>
+<li><code>VERIFY</code> can also be a capability, but it is not registered with IANA.</li>
+<li>Discussion revolved around whether to deprecate it, clarify the allowance for stub implementations, or ensure its capability registration. The existing text was considered to have enough loopholes for non-implementation if deemed insecure or non-sensible.</li>
+</ul>
+</li>
+<li><strong>Restricted Capability Client</strong>:
+<ul>
+<li>Confusion regarding the definition of &quot;restricted capability client&quot; and the associated text: &quot;must not assume that any SMTP server on the Internet can be used as their mail processing relaying site.&quot;</li>
+<li>The text was noted to be confusing, potentially misplaced, and possibly referring to SMTP clients rather than MUAs, or open relays.</li>
+<li>Options discussed included clarifying the text or dropping it if its purpose and clarity cannot be established.</li>
+</ul>
+</li>
+<li><strong>Null MX and 556 Response</strong>:
+<ul>
+<li>Discussed the case where <code>mail.example.com</code> handles mail for <code>example.com</code> but not for <code>mail.example.com</code> itself.</li>
+<li>The question was whether to return <code>550</code> (normal &quot;not our mailbox&quot; error) or <code>556</code> (null MX).</li>
+<li>Experience suggests <code>550</code> is more realistic as mail servers typically know what domains they handle but not the reasons for others.</li>
+<li>Consensus leaned towards no change, retaining <code>550</code> as the standard response.</li>
+</ul>
+</li>
+<li><strong>Blind Copies (BCC) and Received Header Fields</strong>:
+<ul>
+<li>Clarification needed on how BCC relates to <code>RCPT TO</code> and when <code>for</code> clauses in <code>Received</code> headers are inserted.</li>
+<li>The existing text was considered problematic as SMTP servers don't inherently know about blind copies.</li>
+</ul>
+</li>
+<li><strong>List Exploders and Header Modification</strong>:
+<ul>
+<li>Discussion on the text &quot;this change to MAIL FROM doesn't affect the header section of the message&quot; related to list exploders modifying message headers.</li>
+<li>The intent is to prevent exploders from incorrectly changing <code>From</code> headers when only <code>MAIL FROM</code> is changed, and to clarify they are not prohibited from making other unrelated header changes.</li>
+<li>Option 3 (&quot;replace it with: this change to MAIL FROM doesn't affect the header section of the message&quot;) was the preferred clarification.</li>
+</ul>
+</li>
+<li><strong>MTA Terminology (Client/Server vs. Sender/Receiver)</strong>:
+<ul>
+<li>Observation that <code>rfc5321bis</code> uses both &quot;SMTP client/server&quot; and &quot;SMTP sender/receiver&quot; interchangeably, causing potential minor confusion.</li>
+<li>The &quot;Crocker principle&quot; of &quot;it hasn't screwed up anyone&quot; was invoked, suggesting minimal change.</li>
+<li>A preference for &quot;sender/receiver&quot; was expressed due to its more functional description, especially when a single software acts in both capacities.</li>
+<li>A proposal was made to add a sentence clarifying the interchangeability of these terms in <code>rfc5321bis</code>.</li>
+</ul>
+</li>
+<li><strong>Sub-addressing</strong>: Briefly mentioned as a common local convention (e.g., plus-addressing) but out of scope for the SMTP base specification, though potentially relevant for the Applicability Statement.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Mail Transaction Clarity (Ticket 11)</strong>: Closed. John Clansen to propose a small editorial tweak (inserting &quot;normal&quot; in a sentence) on the mailing list for the next revision.</li>
+<li><strong>IANA Registration Policy for SMTP Extensions</strong>: No decision. Discussion to continue on the mailing list. Barry Leiba volunteered to lead this discussion.</li>
+<li><strong>VERIFY Command</strong>: No change to the base specification. John Clansen to propose editorial clarification for existing rules on the mailing list. Separate IANA registration for VERIFY capability to be pursued.</li>
+<li><strong>Restricted Capability Client</strong>: John Clansen to propose a clarification to the text on the mailing list. If clarification proves difficult or contentious, the text will be dropped.</li>
+<li><strong>Null MX (556 response)</strong>: No change to the document.</li>
+<li><strong>Blind Copies (BCC) and Received Header Fields</strong>: John Clansen, with assistance from Pete Resnick, to propose clarifying text or changes on the mailing list.</li>
+<li><strong>List Exploders and Header Modification</strong>: Adopted Option 3: &quot;replace it with: this change to MAIL FROM doesn't affect the header section of the message.&quot; John Clansen to implement this change.</li>
+<li><strong>MTA Terminology</strong>: John Clansen to propose a clarifying sentence for <code>rfc5321bis</code> indicating the general interchangeability of &quot;SMTP client/server&quot; and &quot;SMTP sender/receiver.&quot;</li>
+<li><strong>Applicability Statement (AS) Review</strong>: Todd Allcock to post the latest version of proposed text for Ticket 54 (authentication and encryption for ASrev4) to the mailing list for review. Ken will incorporate the text if no further comments.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Interim Meetings</strong>: Co-chairs (Todd Allcock and Barry Leiba) will try to schedule one or two interim virtual meetings in the next one to two months to focus on remaining issues, acknowledging the value of interims for driving progress.</li>
+<li><strong>Mailing List Engagement</strong>: Participants are encouraged to engage actively on the mailing list for discussions and proposals, aiming to make progress asynchronously and potentially reduce the need for interims.</li>
+<li><strong>Murray's Availability</strong>: Murray Kucherawy will be away for most of the next month; action items requiring his input should be addressed before then or await his return.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

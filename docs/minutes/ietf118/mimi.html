@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="mimi.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF118-MIMI-20231109-0830">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF118-MIMI-20231110-1430">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 09 Nov 2023 08:30</p>
+<h1>mimi</h1>
+<h2>Summary</h2>
+<p>This meeting covered the Mimi architecture, content format, and protocol design. Key discussions revolved around terminology consistency, message ID handling, external content security, message ordering, and the state management of users in rooms, particularly concerning banning and removals. The design team provided updates on document structure and proposed next steps, including potential adoption calls.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Terminology:</strong> Inconsistencies across documents were noted, and a unified terminology section was requested, preferably in the architecture document.</li>
+<li><strong>Content Format - External Content:</strong> Extensive discussion regarding the handling of external content (attachments) including security implications of web bugs, potential approaches like using the hub or local provider for content delivery, quota management, and privacy considerations.</li>
+<li><strong>Content Format - Message IDs:</strong> Debate on the necessity of message IDs versus relying on ciphertext hashes. Concerns were raised about handling duplicate messages and maintaining data integrity.</li>
+<li><strong>Content Format - Message Ordering:</strong> User experience requirements for consistent message ordering across clients were discussed, including potential challenges and recommendations for implementation. The team acknowledged complexities involved in server-side ordering.</li>
+<li><strong>Mimi Protocol: Protocol vs. Delivery Service Separation:</strong> Discussion on keeping the Mimi Protocol separate from the Delivery Service document. This was due to potential re-use of the Delivery Service in other contexts and engineering considerations regarding the interface between crypto and non-crypto elements.</li>
+<li><strong>Mimi Protocol: User State Management:</strong> Discrepancies emerged in the understanding of how user state is managed during removal processes (e.g., banning), specifically the order in which the MLS group, participant list, and authorization policies are updated. Clarification was provided, but inconsistencies in the draft were identified. A state with limited capabilities between removal from MLS and removing the participant were also proposed.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Content Format - External Content Security:</strong> Create an issue to address the vulnerability where anyone with the key can generate a new, valid encryption.</li>
+<li><strong>Mimi Protocol:</strong> Correct the slide about adding proposals because right now it states you immediately get added to the party. That point only applies when someone is added and not when they are removed.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The design team will revise the documents based on the feedback received.</li>
+<li>Address the comments made in the Zulip chat.</li>
+<li>The working group will use the mailing list or github to continue discussion on external content delivery.</li>
+<li>Consider an interim meeting the first week of December, document revisions available a week in advance, for further discussion and feedback.</li>
+<li>The working group will continue to work toward a decision about whether it wants to be as much technical content to a adoption decision.</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 10 Nov 2023 14:30</p>
+<h1>mimi</h1>
+<h2>Summary</h2>
+<p>This meeting focused on open issues within the mimi protocol and explored different approaches to user discovery. Discussions included tracking arbitrary state, fan-out mechanisms, and privacy considerations for service reachability. There was significant debate regarding the requirements for user discovery, particularly concerning the balance between privacy and service reachability. Several action items were identified, including clarifying authentication mechanisms and updating the requirements document.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Tracking Arbitrary State:</strong></p>
+<ul>
+<li>The need to carry informational state (e.g., room name, topic) within the protocol was discussed.</li>
+<li>A proposal to implement an &quot;M room state&quot; event was introduced, including considerations for encryption and standardized fields.</li>
+<li>Encryption was debated, along with concerns of how to maintain key rotation with the MLS group.</li>
+</ul>
+</li>
+<li>
+<p><strong>Fan-out and Routing:</strong></p>
+<ul>
+<li>The group discussed how key packages should be routed, specifically regarding whether they should always go through the hub.</li>
+<li>Concerns were raised about potential connectivity issues if keys are fetched directly from the source, especially in decentralized messaging architectures.</li>
+</ul>
+</li>
+<li>
+<p><strong>Authentication Mechanism for Key Packages:</strong></p>
+<ul>
+<li>Discussion on whether or not a fetching client should be authenticated to request key packages, and how to achieve this.</li>
+</ul>
+</li>
+<li>
+<p><strong>Discovery Framing:</strong></p>
+<ul>
+<li>The problem of user discovery was framed as mapping service specific identifiers (SSIs) to service independent identifiers (SIIs).</li>
+<li>Discussion evolved into separating user discovery into authentication and distribution sub-problems, and their different threat models.</li>
+</ul>
+</li>
+<li>
+<p><strong>Privacy Considerations for Service Reachability:</strong></p>
+<ul>
+<li>Whether or not to protect against someone using an SII to enumerate account SSI's on a particular service.</li>
+<li>Privacy needs of protecting data from the discovery provider, as well as a general anti-enumeration or rate limiting.</li>
+<li>Debate on hiding SIIs from discovery providers and recipients, balancing privacy with anti-spam measures.</li>
+</ul>
+</li>
+<li>
+<p><strong>Identifier Strategies</strong></p>
+<ul>
+<li>Consideration of new, Mimi-specific identifiers for enhanced control.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>
+<p><strong>Authentication Mechanism for Key Packages:</strong> Someone will write a clear explanation of the authentication problem on the mailing list.</p>
+</li>
+<li>
+<p><strong>Requirements Document:</strong> Jonathan Rosenberg and John Peterson will continue to update the requirements document with insights from the meeting, clarifying the scope and goals of user discovery.</p>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Working group members should review the existing Mimi protocol draft and comment on GitHub issues, particularly those considered blockers to adoption.</li>
+<li>The design team will process GitHub issues and make changes, potentially publishing a version prior to the adoption call.</li>
+<li>Continue discussion of privacy and security requirements for user discovery on the mailing list.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

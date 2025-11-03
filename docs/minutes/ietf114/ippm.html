@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ippm.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-IPPM-20220729-1630">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 29 Jul 2022 16:30</p>
+<h1>ippm</h1>
+<h2>Summary</h2>
+<p>The ippm session covered updates on several adopted working group drafts, including IOM Data Integrity and Deployment, IOM and STAMP YANG models, the IP Capacity Protocol, Explicit Flow Measurements, and IPPM Responsiveness. A new draft, Precision Availability Metrics, was also presented for potential working group adoption. Key discussions revolved around security considerations (authentication and encryption), IANA allocations, algorithm refinements, and testing of IPv6 extension headers.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Document Status:</strong>
+<ul>
+<li>Several IOM-related drafts are progressing through IESG review or are with the AD, including IOM Conf State (AD action pending), IPv6 Options (authors' action pending), and RFC 8321/8889 bis (requires scrub of experimental language).</li>
+<li>Working Group Last Call (WGLC) for Explicit Flow Measurements has received feedback, indicating a need for revision.</li>
+</ul>
+</li>
+<li><strong>IOM Data Integrity and Deployment:</strong>
+<ul>
+<li><strong>Integrity:</strong> Draft is stable; updates include RFC references, merging encapsulating node and validator roles, editorial changes. An implementation effort is underway at the University of Liege (VPP). The question of initiating WGLC now or waiting for implementation feedback (expected September) was raised.</li>
+<li><strong>Deployment:</strong> Updated with BIER references.</li>
+<li>A suggestion was made to add a reference to the IOM Conf State document and a description of IOM capabilities discovery to the deployment draft.</li>
+</ul>
+</li>
+<li><strong>IOM YANG:</strong>
+<ul>
+<li>Major changes addressed early YANG doctor review comments, including use of <code>derived-from</code> for identities, <code>interface</code> data type, list key validation, clarification of mandatory functionalities, and improved descriptions.</li>
+<li>The document is considered stable and mature, and WGLC was requested.</li>
+</ul>
+</li>
+<li><strong>STAMP YANG:</strong>
+<ul>
+<li>Updated to cover RFC 8972 STAMP Options extensions, marking operational STAMP information as read-only (<code>config false</code>).</li>
+<li>Includes new features like session identifier, extra padding location, ToB timestamp, ToB Class of Service, and authentication for extensions.</li>
+<li>Another YANG doctor review is planned before WGLC.</li>
+</ul>
+</li>
+<li><strong>STAMP SRPM:</strong>
+<ul>
+<li>Updated with references to RFC 8972, a new verification flag, and clarification on symmetric packet size.</li>
+<li>Experimental values for TLVs were added to facilitate interoperability testing, with a request for early IANA allocation.</li>
+<li>Companion drafts in other WGs (SPRING, MPLS) were noted.</li>
+<li>Discussion initiated about alternative IP UDP encapsulation of STAMP in MPLS.</li>
+</ul>
+</li>
+<li><strong>IP Capacity Protocol:</strong>
+<ul>
+<li>Significant progress, including input from a SecDir review.</li>
+<li><strong>Security:</strong> Discussion on authentication and encryption modes for control exchanges (setup, test activation) versus data plane (load PDUs, feedback messages). The draft pushes back on authenticating every load PDU due to performance impact and minimal attack surface.</li>
+<li><strong>Key Management:</strong> Current manual keys, suggestions to explore RFC 7210, key identifiers, and orderly key rollover.</li>
+<li><strong>DTLS:</strong> Considered for confidentiality in the setup phase, but with noted overhead and firewall implications.</li>
+<li><strong>Silent Rejection:</strong> Discussed behavior in authenticated vs. unauthenticated modes.</li>
+<li><strong>New Algorithm (Type C):</strong> Presented a fast ramp-up algorithm (multiplicative 1.5x sending rate) deemed more suitable for mobile and short-interval testing compared to the linear Type B.</li>
+<li>A strong preference was expressed for not fully encrypting data plane traffic due to its impact on measurement accuracy and host processing, and a dialogue with ADs was requested to clarify security requirements.</li>
+</ul>
+</li>
+<li><strong>Explicit Flow Measurements:</strong>
+<ul>
+<li>A draft in WGLC, aimed at enabling troubleshooting of loss/latency in encrypted networks using a few dedicated bits.</li>
+<li>Compared different bit usage strategies for various latency and loss measurements.</li>
+<li>Discussion around overlap of the &quot;square bit&quot; with RFC 8321 and its upcoming bis version (which favors time-based vs. packet-based intervals). Suggestion to describe both approaches in the informational document.</li>
+<li>Real-world implementations by Akamai, Orange, and researchers were reported.</li>
+</ul>
+</li>
+<li><strong>IPPM Responsiveness:</strong>
+<ul>
+<li>Updates include DNS-based service discovery for local network testing, server-side example configurations, and a significant rework of the measurement algorithm.</li>
+<li><strong>New Algorithm:</strong> Continuously probes every 100ms on separate and load-generating connections, aggregating a large dataset. Calculates responsiveness in Round Trips Per Minute (RPM) from a weighted 90th percentile of various latency measurements (TCP/TLS handshake, HTTP request/response).</li>
+<li><strong>Flaw Identified:</strong> The previous algorithm could prematurely declare goodput saturation without fully occupying the buffer. The new algorithm aims to saturate both goodput and responsiveness (buffer occupancy) before terminating.</li>
+<li>Implementations include macOS Ventura's Network Quality Tool and an open-source Go tool.</li>
+<li>Remaining issues include well-known URI for config, impact of congestion control, confidence estimation, and allowing non-TLS measurements for low-end devices.</li>
+</ul>
+</li>
+<li><strong>Encrypted PDMv2 (IPv6 Destination Option):</strong>
+<ul>
+<li>A draft for end-to-end performance measurement using an IPv6 Destination Option header to separate server time from network time.</li>
+<li>An early SecDir review indicated good progress but highlighted the need for authentication/authorization.</li>
+<li>Initial testing showed that IPv6 Extension Headers (EH) are making it through various internet paths (FreeBSD kernel patch, FTPs, curls across continents), even when fragmented.</li>
+<li>Acknowledged need for more extensive testing, especially on consumer access networks (mobile, DSL).</li>
+<li>Future work involves continuing encryption implementation, as the data can be sensitive.</li>
+</ul>
+</li>
+<li><strong>Precision Availability Metrics:</strong>
+<ul>
+<li>Introduced as a new draft to measure overall service availability based on combinations of multiple Service Level Objectives (SLOs), expressed as &quot;precision availability.&quot;</li>
+<li>Clarified problem statement and use cases, added a &quot;packets since last violated packet&quot; metric, and standardized terminology (e.g., &quot;violated intervals&quot;).</li>
+<li>Authors requested working group adoption.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>STAMP SRPM:</strong> The working group agreed there were no objections to proceed with early IANA allocations for experimental TLV values. The WG chairs will pursue this.</li>
+<li><strong>IP Capacity Protocol:</strong> The authors will initiate a dialogue with the IESG (Roman and Paul) to clarify the ADs' expectations regarding authentication and encryption for the data plane (load PDUs and feedback messages) and the trade-offs involved in terms of measurement accuracy and host processing load.</li>
+<li><strong>Explicit Flow Measurements:</strong> Given recent feedback, the working group last call (WGLC) will likely be extended to allow for another revision, followed by a new WGLC at a later point. The authors will discuss describing both time and packet-based options for the &quot;square bit&quot; in the document.</li>
+<li><strong>IPPM Responsiveness:</strong> Authors will consult Mark Nottingham regarding the use of a well-known URI for the JSON configuration to assess its viability for expert review.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>IOM Data Integrity and Deployment:</strong> Continue to gather feedback on implementations, incorporate Xiaomi's suggested reference, and discuss WGLC timing.</li>
+<li><strong>IOM YANG:</strong> Proceed with working group last call.</li>
+<li><strong>STAMP YANG:</strong> Address early review comments and plan for another YANG doctor review, aiming for WGLC by the next IETF meeting.</li>
+<li><strong>IP Capacity Protocol:</strong> Incorporate security-related feedback into the draft, particularly regarding authentication of control messages and carefully considered protection for feedback messages. Continue internal discussions and testing of new algorithms.</li>
+<li><strong>Explicit Flow Measurements:</strong> Revise the draft based on WGLC feedback, including clarifications on the &quot;square bit&quot; and its relation to RFC 8321/bis, and prepare for an extended WGLC.</li>
+<li><strong>IPPM Responsiveness:</strong> Address remaining issues (#17, #63, #55, #66, #62) and update the algorithm in the draft to ensure saturation of both goodput and responsiveness. Continue to evolve the open-source implementation and encourage community testing.</li>
+<li><strong>Encrypted PDMv2:</strong> Conduct more extensive testing of IPv6 extension headers across diverse network environments, including consumer access networks (mobile, DSL). Continue implementation of encryption capabilities.</li>
+<li><strong>Precision Availability Metrics:</strong> Seek working group adoption and continue work on the document.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,67 @@
+**Session Date/Time:** 24 Mar 2022 13:30
+
+# add
+
+## Summary
+
+The "add" working group convened to discuss the status of several drafts currently in or near Working Group Last Call (WGLC), consider adoption for new work, and address ongoing technical concerns related to DNS privacy and discovery mechanisms. Key outcomes include the successful completion of WGLC for one draft, plans for revisions for two others, and an upcoming adoption call for a draft on relaxed DDR validation policies. Discussions also covered new proposals for split horizon DNS, a network policy for DNS resolvers, and a mechanism for DNS resolver information, with significant feedback from the working group.
+
+## Key Discussion Points
+
+### Working Group Last Call Status
+
+*   **DNS Service Binding Mapping for DNS Servers:** This draft successfully completed Working Group Last Call with no negative comments or requested changes.
+*   **DDR (Discovery of DNS-based Recursive Resolvers):** Two outstanding editorial issues were identified: one concerning NXDOMAIN behavior for `resolver.arpa` and another to include a call-out to DNR. A new revision addressing these will be published, after which WGLC will be formally closed.
+*   **DNR (DHCP-based DNS Resolver Discovery):** Most comments have been addressed in a recent revision. One key outstanding issue relates to NDP clarification (RFC 4861) and requires input from the 6man working group. Another comment regarding "alias mode" requires further consideration. The chairs noted good progress towards closing off this draft soon.
+
+### Split Horizon DNS (draft-ietf-add-split-horizon-dns)
+
+*   **Presentation by Dan Wing:** Introduced changes including removal of NSEC allowance and subdomain of NS allowance, addition of a DNS-based validation section, and clarification of the document's scope to exclude domain filtering and focus on owner-verifiable domains. A title change to "Verified Split Horizon" was suggested.
+*   **Scope and Validation:** Discussion emphasized the draft's focus on verifying local claims of authority via public DNS or DNSSEC, not extending the initial information conveyance (PVD/DNR).
+*   **Title Suggestion (Ben Schwartz):** Proposed "Validating Local Claims of Authority" to better reflect the draft's core purpose of checking local entity claims over a zone.
+*   **Complexity and Mechanisms (Martin Huneck):** Questioned the complexity of the process and suggested simpler configuration via SRV/TXT records instead of HTTPS for JSON. The author clarified the draft's focus on validation mechanisms, not the initial discovery.
+*   **Disclosure Concerns (Ecker):** Raised concerns about the mechanism potentially disclosing the existence of internal domains. Ben Schwartz clarified that the existence of a delegated subdomain (e.g., `corp.example.com`) would become public, but subdomains underneath it could remain private.
+*   **DNS Replication (Ecker):** Concerns about name server replication between internal and external views for `example.com` and the implications for validation.
+*   **Overall:** The chairs are seeking adoption for this draft.
+
+### Never Policy to Use Network Designated DNS Resolvers (draft-ietf-add-never-network-designated-dns)
+
+*   **Presentation by Tiru:** Proposed a mechanism using Explicit Web PVD to inform endpoints about a network's policy requiring the use of network-signaled resolvers. This includes a boolean flag (`policy_allows_only_network_dns_resolvers`) and a `reason_code`. It's intended as an opt-in for trusted networks, especially for BYOD/enterprise environments without MDM.
+*   **Interpretation (Paul Hoffman):** Questioned the interpretation of "don't use another resolver" in the context of other provisioning domains (VPN, cellular) and suggested expressing it as an adversarial security stance.
+*   **Direction and BYOD (Ben Schwartz):** Expressed reservations about the general direction, preferring managed device states. Tiru clarified the draft targets environments without full MDM.
+*   **Opt-in vs. Opt-out (Martin Huneck):** Argued that third-party DNS should be opt-in by default, and a BCP for third-party DNS usage might be more appropriate than signaling to block them. Tiru responded that networks are already blocking unrecognized resolvers, and the draft aims to provide user feedback and choice.
+*   **Effectiveness (Lorenzo Colitti):** Doubted the hint's usefulness, arguing that devices already handle blocked third-party resolvers, and user choices remain the same. Tiru emphasized the value of clarifying *why* a connection is blocked (active policy vs. temporary outage).
+*   **Overall:** The chairs are seeking interest and comments on the mailing list.
+
+### DNS Resolver Information (draft-ietf-add-resolver-info)
+
+*   **Presentation by Tiru:** Proposed a new `RESINFO` Resource Record type (using JSON) to provide more detailed information about DNS resolvers, aiding client selection decisions. Fields include QNAME minimization, EDE support, client authentication, and URLs for policy/description.
+*   **Support for Adoption (Ben Schwartz):** Supported adoption as a standardized replacement for various ad-hoc resolver info records.
+*   **Security and Binding Concerns (DKG):** Raised concerns about exposing detailed machine configuration, the lack of cryptographic binding between the advertised URLs and the actual service (potential for misleading clients), and the inclusion of "required client authentication" due to privacy implications.
+*   **Practicality and Cryptographic Binding (Ecker):** Questioned whether client providers would actually surface this data to users and stressed the need for cryptographic binding between the published information and the server itself.
+*   **Separation of Info (Penny, Google):** Suggested separating protocol-specific information (e.g., QNAME, EDE) from policy-like information (URLs) and potentially using EDNS0 for protocol features.
+*   **Overall:** The chairs are seeking adoption, with a consensus on the need for such a mechanism but significant concerns regarding security, specific fields, and cryptographic binding.
+
+### Relaxed Validation Policy for DDR (draft-ietf-add-relaxed-ddr-validation)
+
+*   **Presentation by Ben Schwartz:** This informational draft addresses the inability of DDR's default validation rules to work with local DNS forwarders (e.g., home routers using private IPs) which prevents encrypted DNS to upstream resolvers. It describes client policies for opportunistic upgrades and identifies problems/mitigations.
+*   **Adoption Call:** The chairs will be issuing an adoption call soon and encouraged mailing list discussion.
+*   **Deployment Models and Security (Tiru):** Raised concerns about diverse deployment scenarios (legacy routers, ISP-managed routers) and potential phishing attacks where a malicious resolver mimics a trusted ISP. Ben responded that the draft is informational and that an attacker in such a position could already degrade DNS to cleartext.
+*   **IPv6 and Scope (Martin Huneck):** Inquired about applicability to IPv6, especially with link-local or on-link addresses, and how client policies would handle it. Ben clarified its applicability to IPv6 non-public ranges and the independent application of DDR to advertised servers.
+*   **Prescriptive Language (Tommy Pauly):** Suggested making the informational draft more prescriptive (without being normative) to strongly caution implementers about security considerations and mitigations to avoid "willy-nilly" use. Ben agreed to incorporate this feedback.
+*   **IPv6 Common Scenarios (Ecker):** Emphasized the need to review common IPv6 deployment scenarios (e.g., gateway in the same /64 as client) and provide guidance to ensure workability and security, especially concerning validating the locality of a public address. Ben acknowledged the need for further exploration.
+
+## Decisions and Action Items
+
+*   **DNS Service Binding Mapping for DNS Servers:** Working Group Last Call is officially passed.
+*   **DDR (Discovery of DNS-based Recursive Resolvers):** Authors to publish a new revision addressing two editorial issues. WGLC will then be formally closed.
+*   **DNR (DHCP-based DNS Resolver Discovery):** Authors to seek clarification from 6man WG regarding NDP/RFC 4861 and address the "alias mode" comment.
+*   **Relaxed Validation Policy for DDR:** The chairs will issue an adoption call for this draft soon. Authors will incorporate feedback regarding "sharp edges" and security warnings.
+
+## Next Steps
+
+*   **DDR and DNR:** Monitor for new revisions and external dependencies.
+*   **Split Horizon DNS and DNS Resolver Information:** Continue discussion on the mailing list and await formal adoption calls from the chairs.
+*   **Never Policy to Use Network Designated DNS Resolvers:** Engage in further discussion to gauge working group interest and address design concerns.
+*   **IPv6 Considerations:** The authors of the Relaxed Validation Policy for DDR draft will investigate IPv6 deployment practices and address scope/security considerations for non-public IP addresses.
+*   **Future Meeting:** The next IETF meeting (IETF 114) is scheduled for July in Philadelphia.

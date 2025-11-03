@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dnsop.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-DNSOP-20211111-1600">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-DNSOP-20211112-1430">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 16:00</p>
+<h1>dnsop</h1>
+<h2>Summary</h2>
+<p>The dnsop session covered updates from the chairs, including an adopt-a-doc initiative and progress on existing documents. Key technical discussions included NSEC3 iteration limits, DNSSEC automation, domain verification techniques, structured data for DNS error pages, and a suite of drafts on Authenticated DNS over TLS (ADoT). While no immediate adoption decisions were made for the newer drafts, chairs expressed support for important work and outlined next steps for consideration.</p>
+<h2>Key Discussion Points</h2>
+<h3>Chairs' Notes and Document Status Updates</h3>
+<ul>
+<li><strong>NomCom Feedback</strong>: Still open, encouraged participation.</li>
+<li><strong>Kim Davies' <code>int</code> Document</strong>: Document on moving <code>.int</code> related content to historic, AD-sponsored by Warren Kumari. Feedback encouraged.</li>
+<li><strong>Adopt-a-Doc Initiative</strong>: The working group plans to hold polls to gauge interest in adopting new documents, focusing on one or two documents at a time to ensure focused review. Authors of potential adoption candidates were encouraged to reach out to chairs.</li>
+<li><strong>Active Document Review</strong>: A &quot;pretty picture&quot; of active documents was shared, following up on a July poll. Key documents identified for discussion included DNSSEC Bootstrapping and DNSSEC Automation. <code>RFC 8109bis</code> was also mentioned as a potential adoption candidate that was &quot;lost in the shuffle.&quot;</li>
+<li><strong>RFC Status</strong>:
+<ul>
+<li><code>RFC 7816bis</code> is in the RFC Editor queue and assigned a number.</li>
+<li>Three other documents are in the IESG evaluation queue and receiving good feedback.</li>
+</ul>
+</li>
+<li><strong>Nearing Completion</strong>:
+<ul>
+<li>&quot;Glue is Not Optional&quot;: One outstanding item remains.</li>
+<li>&quot;Avoid Fragmentation&quot;: Some editorial work on fragmentation bits.</li>
+<li>&quot;Catalog Zones&quot;: Considered &quot;basically done&quot; with good hackathon results.</li>
+<li>&quot;DNS Error Reporting&quot;: Rory is integrating feedback; in good shape.</li>
+</ul>
+</li>
+<li><strong>RR Serial Document</strong>: Hugo is working on implementations; suggested as an interim topic.</li>
+<li><code>RFC 5933bis</code>: Discussed changing its status to Informational. A Working Group Last Call (WGLC) is expected to start soon.</li>
+</ul>
+<h3>NSEC3 Iteration Guidance (Wes Hardaker, Victor Ducournau)</h3>
+<ul>
+<li><strong>Current Draft Position</strong>: Use NSEC if possible, ideally zero iterations, use salt only if changing it.</li>
+<li><strong>Measurements</strong>: Victor's scans show over 12 million NSEC3-deployed domains; 99% of zones use 20 or fewer iterations. There's confusion around iteration count 0 (which means one iteration).</li>
+<li><strong>Proposed &quot;Should/May/Must&quot; Framework</strong>:
+<ul>
+<li><strong>Validators</strong>:
+<ul>
+<li><code>SHOULD</code> treat iterations &gt;0 as insecure (a change from current practice).</li>
+<li><code>MAY</code> treat iterations of 1 as not insecure (due to prevalence).</li>
+<li><code>MUST</code> treat iterations &gt;100 as insecure.</li>
+<li><code>MAY</code> treat iterations &gt;500 as servfail.</li>
+</ul>
+</li>
+<li><strong>Zone Owners</strong>:
+<ul>
+<li><code>SHOULD</code> use an iterations count of 0.</li>
+<li><code>MUST</code> use an iterations count of &lt;=100.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Discussion Highlights</strong>:
+<ul>
+<li><strong>Insecure vs. Servfail</strong>: Ted Lemon questioned the distinction, suggesting &quot;bogus&quot; or servfail for stub resolvers. Victor clarified that &quot;insecure&quot; means the entire zone (including positive answers) becomes insecure if non-existence proofs are compromised. Jim agreed, preferring servfail to avoid a &quot;middle ground.&quot;</li>
+<li><strong>Hard Cut</strong>: Ralph suggested a &quot;hard cut&quot; for servfail to simplify resolver implementation.</li>
+<li><strong>Goal vs. Current State</strong>: Ondřej suggested the RFC should state the long-term goal (0 iterations) for zone owners, and validators can dynamically adjust thresholds based on measurements rather than fixed values in the RFC.</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Wes will integrate the feedback, and further discussion on the mailing list is anticipated. The chairs will reserve time at the next session for this topic.</li>
+</ul>
+<h3>DNSSEC Automation: Multi-Signer DNSSEC (Ulrich Wisser, Shumon Huque)</h3>
+<ul>
+<li><strong>Document Status</strong>: Defines algorithms for joining/leaving multi-signer groups and key rollovers. Implementation work is ongoing (controller software), and the Swiss Internet Foundation is implementing CDS/CSYNC scanning.</li>
+<li><strong>Future Work</strong>: Real-world verification, stringent timing definitions, and enabling domain migration between signers using different algorithms (requires revisiting DNSSEC validation).</li>
+<li><strong>Request for Adoption</strong>: Authors requested working group adoption to document these processes and encourage broader collaboration and implementation.</li>
+<li><strong>Discussion Highlights</strong>:
+<ul>
+<li><strong>Working Group Fit</strong>: Paul Hoffman questioned if <code>dnsop</code> was the best fit, suggesting it might be more suited for an operator-focused group. Peter van Dijk pointed out potential protocol implications in key rollovers, which would fall under <code>dnsop</code>. Ralf Weber and Ron van der Heijden argued it belongs in <code>dnsop</code> due to required name server software changes and the group's broad scope.</li>
+<li><strong>Workload</strong>: Chairs acknowledged the importance of the work and its place on the adoption shortlist but emphasized managing working group workload.</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: The chairs will initiate the adoption process soon, and authors are seeking collaborators to help with further development.</li>
+</ul>
+<h3>Domain Verification Techniques using DNS (Shivani, Shumon Huque)</h3>
+<ul>
+<li><strong>Purpose</strong>: Provides an overview of existing DNS-based domain verification methods (e.g., for CAs like Let's Encrypt) and offers recommendations.</li>
+<li><strong>Draft Content</strong>: Discusses TXT and CNAME records, recommends targeted and time-bound verification, and suggests DNSSEC to prevent spoofing.</li>
+<li><strong>Request for Adoption</strong>: Authors requested adoption, noting that while some security analysis is needed, WG involvement would significantly benefit it.</li>
+<li><strong>Discussion Highlights</strong>:
+<ul>
+<li><strong>Importance</strong>: Paul Hoffman strongly supported adoption, calling it &quot;super important.&quot; Shumon emphasized the ad-hoc nature of current techniques and the lack of serious security analysis.</li>
+<li><strong>Draft Evolution</strong>: Joey asked about changes since the last presentation. Shivani indicated feedback was captured in GitHub issues, and some sections still need filling (e.g., when to use TXT vs. CNAME).</li>
+<li><strong>Workload vs. Value</strong>: Chairs reiterated the need to manage workload but acknowledged the work's importance and the potential for increased collaboration upon adoption.</li>
+<li><strong>Document Title</strong>: Brett Carr questioned the title &quot;survey,&quot; suggesting &quot;recommendations&quot; might be more accurate if it's not purely informational. Shivani confirmed it's intended as guidance rather than normative.</li>
+<li><strong>Addressee</strong>: Peter van Dijk asked who the primary addressee is (e.g., CAs, cloud providers). Shumon clarified the intent is to provide guidance for service providers designing verification methods and that outreach to application and service provider communities would be part of the process.</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Chairs will follow up with the authors regarding adoption. Paul Hoffman and Brett Carr volunteered to collaborate on the draft.</li>
+</ul>
+<h3>Structured Data for DNS Error Pages (Dan Wing)</h3>
+<ul>
+<li><strong>Purpose</strong>: Provide parsable (JSON) data for users and IT to troubleshoot filtered DNS queries, especially for headless devices.</li>
+<li><strong>Design</strong>: Handles multi-layered filtering (commercial, IT/parental). The JSON includes a correlation ID (<code>c</code>), DoH server domain (<code>d</code>), free-form justification (<code>j</code>), organization (<code>o</code>), and justification URL (<code>r</code>). Clients can construct a URL for more information.</li>
+<li><strong>Security Considerations</strong>: No clickable links in <code>o</code> and <code>j</code> fields, mandatory encrypted/authenticated DNS, constrained browser environment for <code>c</code>/<code>r</code> URLs.</li>
+<li><strong>Discussion Points</strong>: How to handle language in the <code>j</code> field, and the implications of an isolated browser environment.</li>
+<li><strong>Discussion Highlights</strong>:
+<ul>
+<li><strong>User Harm Concerns</strong>: Ben Schwartz expressed caution about DNS operators injecting information into user connections, especially web contexts, due to potential for user harm or deception. He suggested prioritizing technical debugging use cases and generalizing the format for other DNS failures.</li>
+<li><strong>Debugging/Enterprise Value</strong>: Jonathan highlighted the value for debugging and enterprise use cases (e.g., malware filtering) where an <code>NXDOMAIN</code> isn't enough information. Andrew Kepler emphasized that it supports &quot;good censors&quot; who want transparency and improves the currently poor user experience.</li>
+<li><strong>UI Security</strong>: Eric O'Neill found it &quot;scary&quot; for UI integration due to security risks of mixing content sources but saw value for debugging (similar to EDE).</li>
+<li><strong>Enterprise Scope</strong>: Paul Hoffman raised concerns about restricting such a protocol to &quot;enterprise only&quot; and the difficulty of enforcing such boundaries (e.g., BYOD at Starbucks). Dan agreed, noting that the industry already presents error messages for <code>NXDOMAIN</code>.</li>
+<li><strong>Providence</strong>: Brian Dickson suggested using DNSSEC signatures (similar to RPZ) to provide provenance for the error, allowing clients to trust/distrust the source.</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Dan will consider the feedback for future revisions.</li>
+</ul>
+<h3>Authenticated DNS over TLS (ADoT) (Brian Dickson)</h3>
+<ul>
+<li><strong>Goal</strong>: Provide a complete package for authenticated resolver-to-authoritative connections, including secure delegation, aiming for rapid deployment using existing DNS mechanisms where possible.</li>
+<li><strong>Component Drafts</strong>:
+<ul>
+<li><strong><code>nsv</code> (New DNSKEY Algorithm)</strong>: Protects NS records via a DS record containing a hash of the name server name, allowing validation even if the child zone is unsigned. Treated as &quot;insecure&quot; if unrecognized by resolvers.</li>
+<li><strong><code>dnst</code> (New RR Type)</strong>: Explicit signaling of transport support (UDP, TCP, DoT) for a name server. The name server's domain must be DNSSEC-signed.</li>
+<li><strong><code>tlsa</code> for ADoT</strong>: Assumes the need for a <code>TLSA</code> record (or an alias) for certificate validation, preferring it over web PKI.</li>
+</ul>
+</li>
+<li><strong>Other Aspects</strong>: Downgrade resistance through DNSSEC signing of parent DS records and name server zones. Efficiency improvements for warm caches. Focus on DNSSEC and <code>TLSA</code> for client validation using only DNS elements.</li>
+<li><strong>Discussion Highlights</strong>:
+<ul>
+<li><strong><code>dnst</code> vs. <code>SVCB</code></strong>: Ben Schwartz strongly pointed out that <code>add</code> working group has an adopted <code>SVCB</code> draft for service bindings which addresses similar signaling. He preferred a single solution and encouraged Brian to engage in the <code>add</code> WG if he believes <code>SVCB</code> needs changes. Brian acknowledged he hadn't followed <code>add</code> closely and simplified his approach for lightweight implementation but agreed there shouldn't be two solutions.</li>
+<li><strong>Glueless Delegations and Privacy</strong>: Ben Schwartz raised concerns that glueless delegations, as proposed, might disable ADoT mechanisms, potentially disclosing sensitive information in the clear. Brian noted glueless is a recommendation, not a requirement.</li>
+<li><strong><code>nsv</code> Deployment</strong>: Victor Ducournau questioned the deployability of <code>nsv</code>, noting some registries (like .de) perform live queries against child zones during DS record upload, requiring a matching DNSKEY, which <code>nsv</code> explicitly avoids publishing. Brian acknowledged the challenge and plans more direct API trials with registries.</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Brian will continue working on the drafts and engage with the mailing list, particularly regarding the <code>SVCB</code> overlap and registry feedback.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>NSEC3 Iterations</strong>: Wes Hardaker to integrate feedback on the &quot;should/may/must&quot; framework and thresholds. Continued discussion expected on the mailing list and in the next session.</li>
+<li><strong><code>RFC 5933bis</code></strong>: Chairs to initiate a Working Group Last Call (WGLC) for its reclassification as Informational.</li>
+<li><strong>DNSSEC Automation (Multi-Signer)</strong>: Chairs to initiate the adoption process. Authors (Ulrich Wisser, Shumon Huque) to seek collaborators.</li>
+<li><strong>Domain Verification Techniques</strong>: Chairs to follow up with authors (Shivani, Shumon Huque) regarding adoption. Paul Hoffman and Brett Carr volunteered to collaborate.</li>
+<li><strong>RR Serial Document</strong>: Hugo to be contacted about scheduling an interim topic.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>NSEC3 Iterations</strong>: Continued discussion and refinement of the iteration limits will occur on the mailing list and in the next dnsop session.</li>
+<li><strong>Adopt-a-Doc Initiative</strong>: Chairs will continue with the polling initiative for document adoption, focusing on managing the working group's active document load.</li>
+<li><strong>New Work Adoption</strong>: Chairs will proceed with adoption calls for DNSSEC Automation and Domain Verification Techniques after managing the current workload and facilitating collaboration.</li>
+<li><strong>Cross-Area Review</strong>: Chairs will work with the AD to identify and facilitate cross-area reviews for drafts that require broader expertise.</li>
+<li><strong>Mailing List Engagement</strong>: Authors of all presented drafts are encouraged to continue engagement and discussion on the dnsop mailing list to refine their work based on the feedback received.</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 12 Nov 2021 14:30</p>
+<h1>dnsop</h1>
+<h2>Summary</h2>
+<p>The dnsop session covered three main topics: hackathon results on Extended DNS Error responses, an update on DNS Catalog Zones, and a discussion on NSEC3 parameter guidance. A new draft on Automatic DNSSEC Bootstrapping was also presented. Key discussions revolved around the safety and utility of unsolicited EDNS errors, the readiness of Catalog Zones for Working Group Last Call, and the contentious details of NSEC3 iteration count recommendations, particularly regarding the use of specific dates and the &quot;serve-fail&quot; vs. &quot;insecure&quot; outcomes. The bootstrapping proposal received strong support for adoption, with an open point on hashing in the naming scheme.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Extended DNS Error Response (EDNS(0) Errors) Hackathon Results:</strong></p>
+<ul>
+<li><strong>Objective:</strong> Tested the behavior of resolvers when receiving unsolicited EDNS(0) error options from authoritative servers, based on the hypothesis that resolvers are more tolerant of such responses than authoritatives are to unknown EDNS options in queries.</li>
+<li><strong>Methodology:</strong> Used eBPF on authoritative servers and RIPE Atlas probes for measurements. Two measurements: a baseline and one with an unsolicited EDNS(0) error.</li>
+<li><strong>Findings:</strong> Approximately 0.5% of resolvers (95 in the test) accepted the baseline but <em>not</em> the unsolicited EDNS option. A significant number (73%) responded to the unsolicited option but <em>not</em> the baseline, which was attributed to internet error margin. A bug in the reporting domain configuration (trailing zero) was identified.</li>
+<li><strong>Implications:</strong> Suggested a &quot;driver for DNSSEC&quot; (similar to DMARC) could provide reporting without failures, easing DNSSEC deployment and allowing quick rollbacks.</li>
+<li><strong>Discussion:</strong> Ben Schwartz questioned the safety, pointing out that unsolicited EDNS options from authoritatives are &quot;clearly out of spec&quot; and suggested testing the reverse (resolver sending unknown EDNS option). The presenter acknowledged a small error rate but suggested sampling could mitigate risks.</li>
+</ul>
+</li>
+<li>
+<p><strong>DNS Catalog Zones:</strong></p>
+<ul>
+<li><strong>Update:</strong> Version 4 of the draft introduced &quot;catalog producer&quot; and &quot;catalog consumer&quot; terms, removed optimizations for predictable RRs, and refined descriptions for basic operations and error handling.</li>
+<li><strong>New Features:</strong>
+<ul>
+<li><strong>Properties:</strong> Standardized definitions for member zone properties.</li>
+<li><strong><code>COO</code> (Change Of Ownership):</strong> Facilitates controlled migration of member zones between catalogs in a stateless manner.</li>
+<li><strong><code>GROUP</code>:</strong> Allows different configurations (e.g., DNSSEC signing status) for member zones within a single catalog, enabling atomic configuration changes.</li>
+<li><strong><code>SERIAL</code>:</strong> A property intended to improve update reliability and reduce notify/SOA query traffic. Discussed potentially splitting this into a separate document.</li>
+</ul>
+</li>
+<li><strong>Security:</strong> Clarified that administrative control shifts from the server operator/consumer to the catalog producer. Recommends private transport (TLS, TSIG).</li>
+<li><strong>Discussion:</strong> Peter Van Dijk raised concerns about using &quot;real-looking&quot; TLDs in examples and recommended using reserved TLDs (<code>.arpa</code>, <code>.invalid</code>) or operator-owned names to prevent leakage. Paul Wouters, initially skeptical, reported positive deployment experience, noting it aids in diversifying name server software. Victor suggested considering signing catalog zones themselves for content validation.</li>
+<li><strong>Status:</strong> The draft is considered ready for Working Group Last Call, with interoperability testing ongoing.</li>
+</ul>
+</li>
+<li>
+<p><strong>NSEC3 Parameter Guidance:</strong></p>
+<ul>
+<li><strong>Background:</strong> Follow-up from previous discussions, aiming to modify NSEC3 usage.</li>
+<li><strong>Consensus Points:</strong>
+<ul>
+<li>Zone publishers should move to <code>iterations = 0</code>. This received no objections.</li>
+<li>Validators should enforce lower iteration counts.</li>
+<li><code>SERVFAIL</code> is preferred over <code>INSECURE</code> to mitigate CPU exhaustion attacks and prevent zone takeovers/surveillance.</li>
+</ul>
+</li>
+<li><strong>Proposed Text for Validators (Iterations):</strong> Suggested text for Section 4, recommending an upper limit of 100 iterations as of November 2021, and encouraging vendors to lower limits over time.</li>
+<li><strong>Discussion on Dates in RFCs:</strong> Paul Wouters objected to including specific dates in RFCs, suggesting such guidance belongs in a regularly updated DNS guidelines document or should be generalized (e.g., &quot;as of this publication&quot;).</li>
+<li><strong>Proposed Text for Validators (<code>SERVFAIL</code>):</strong> Encouraged validators to lower default/acceptable limits for returning <code>SERVFAIL</code> for high iteration counts.</li>
+<li><strong>Discussion on Scope:</strong> Peter (via chat) emphasized the need to address both operators and vendors. Peter Koch (DENIC) expressed concern about the &quot;compliance game&quot; implied by &quot;enforcement&quot; in standards, arguing that if it's a security risk, it should be framed as such rather than a protocol standard mandate for voluntary adoption.</li>
+</ul>
+</li>
+<li>
+<p><strong>Automatic DNSSEC Bootstrapping:</strong></p>
+<ul>
+<li><strong>Problem:</strong> Current methods for getting DS records to the parent are unauthenticated, slow, error-prone, or require too many intermediaries.</li>
+<li><strong>Proposal:</strong> An authenticated, in-band, immediate method using a &quot;signaling mechanism&quot; from the DNS operator.</li>
+<li><strong>Mechanism:</strong> DNS operators would publish zone-specific information (e.g., CDS/CDNSKEY records) under a securely delegated namespace within their nameserver's domain (e.g., <code>_boot.ns1.provider.net</code>), signed with the NS zone's keys. The parent can then validate the child's CDS against this operator-signed signal.</li>
+<li><strong>Technical Considerations:</strong> Avoids collisions with existing CDS/CDNSKEY usage. Proposed hashing ancestor labels (e.g., <code>hash_of_example.com</code>) to help with length limits, reduce ambiguity, and improve privacy. However, hashing adds implementation complexity and makes debugging difficult.</li>
+<li><strong>Impact:</strong> Analysis of Alexa Top 1 Million showed 22-23% of currently insecure domains could be bootstrapped this way, indicating high potential.</li>
+<li><strong>Discussion:</strong> Victor and Paul Wouters strongly supported adoption, with Victor specifically recommending against the hashing of labels.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>
+<p><strong>NSEC3 Parameter Guidance:</strong></p>
+<ul>
+<li><strong>Decision:</strong> General consensus that zone publishers should move to <code>iterations = 0</code>.</li>
+<li><strong>Action Item:</strong> Wes Hardiker to revise the proposed text for NSEC3 parameter guidance, taking into account feedback on dates in RFCs, the distinction between &quot;insecure&quot; and &quot;serve-fail,&quot; and addressing both operators and vendors. Submit revised text to the mailing list for further wordsmithing.</li>
+</ul>
+</li>
+<li>
+<p><strong>DNS Catalog Zones:</strong></p>
+<ul>
+<li><strong>Action Item:</strong> Willem to update examples in the draft/slides to use reserved TLDs (e.g., <code>.arpa</code>, <code>.invalid</code>) or operator-owned names for catalog zones.</li>
+<li><strong>Action Item:</strong> Working Group members are requested to review the current version of the draft thoroughly, especially in preparation for a Working Group Last Call. Interoperability testing to continue.</li>
+</ul>
+</li>
+<li>
+<p><strong>Automatic DNSSEC Bootstrapping:</strong></p>
+<ul>
+<li><strong>Decision:</strong> The chairs will initiate discussions with Peter Thomassen regarding the adoption of the draft as new working group work, considering the current working group load.</li>
+<li><strong>Action Item:</strong> Peter Thomassen and the working group to continue discussion on the mailing list regarding the &quot;hash or not to hash&quot; question for the naming scheme.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>NSEC3 Parameter Guidance:</strong> Further discussion and wordsmithing of proposed text on the mailing list, especially regarding the timeline for validator iteration count enforcement and <code>SERVFAIL</code> behavior.</li>
+<li><strong>DNS Catalog Zones:</strong> Continued interoperability testing and thorough working group review ahead of an anticipated Working Group Last Call.</li>
+<li><strong>Automatic DNSSEC Bootstrapping:</strong> Chairs to engage with Peter Thomassen for potential adoption of the draft. Technical discussion on the naming scheme (hashing) to continue on the mailing list.</li>
+<li><strong>General:</strong> The co-chairs will continue to organize interim meetings between IETF sessions and will announce proposed dates and agendas.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

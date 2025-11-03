@@ -1,0 +1,81 @@
+**Session Date/Time:** 09 Nov 2022 15:00
+
+# ipsecme
+
+## Summary
+
+The ipsecme working group session discussed the status of various drafts, several new proposals, and challenges in scaling IPSec deployments. Key topics included the adoption of optimized multi-child SA rekeying, issues with IKEv2 payload size limits and cookie processing, source address validation using RPKI and IPSec, and a proposal for anti-replay subspaces to improve performance in multi-core and multi-path environments. The session highlighted a clear interest in addressing scalability and performance for large-scale IPSec deployments, particularly in the context of emerging post-quantum cryptography and 5G use cases.
+
+## Key Discussion Points
+
+*   **Draft Status Update:**
+    *   Four drafts are in the RFC Editor queue.
+    *   Two documents are in IETF/WG Last Call, with reminders for shepherd review (IKEv2) and additional reviews (P2).
+    *   IKEv2-no-ids was noted as ready for Working Group Last Call.
+
+*   **Multiple Child SAs (draft-wouters-ipsecme-multiple-sas):**
+    *   The latest version removes the "special fallback SA," making it an implementation-specific functionality.
+    *   Discussion on scalability concerns for large IPSec hubs with many SAs; the expected use case focuses on filling CPU capacity rather than excessive SA multiplication per tunnel.
+    *   Support for adoption as a starting point, with calls to potentially limit SA creation.
+
+*   **IPSec Workshop Report:**
+    *   **FIPS requirements for AES-GCM:** Clarified that the same key can be used for more than 2^32 packets in FIPS mode if IV/ICV is greater than 8 octets.
+    *   **Decoupled Policies:** Flat SPD data structures improve lookup efficiency.
+    *   **Full Hardware Offload for IPSec:** APIs exist for Linux, supported by Melanox Nvidia CX-7 cards, enabling full IPSec data path in hardware.
+    *   **Forwarding Fast Path (Linux):** Packet parking, using netfilter flow tables and small code loops, showed a 5x performance boost.
+    *   **ANEMA and IPSec:** Problem with VTI interfaces for network name status; XFRM interfaces were proposed as a solution.
+    *   **IPTFS:** Aggregation and fragmentation are supported, but constant rate sending is still missing.
+    *   **Re-thinking ESP:** Extensive discussion around multi-CPU, QoS, hardware flows, and anti-replay windows, potentially leading to an "ESPv4" due to limitations and new protocols like PLP Crypto.
+    *   **Beat Mode:** Despite being an old, unfinished draft (2008), it's implemented in Linux and widely used; a consensus to continue its work towards a Proposed Standard.
+
+*   **IPComp Extension (draft-hu-ipsecme-ipcomp-extension):**
+    *   Proposed extensions to address IPComp issues:
+        1.  **Incompatibility with network functions:** Transport layer (L4) information (ports) is compressed, hindering firewalls/NAT. Solutions proposed: new flag or duplicate CPI code points.
+        2.  **Out-of-order processing:** Uncompressed packets sent without an IPComp header are processed differently. Proposed solution: always send IPComp header with a new CPI for uncompressed packets.
+    *   Discussion also touched on decoupling IPComp from IPSec, as its issues are not security-related.
+    *   The working group suggested exploring existing alternatives like IPTFS, CHIC over IP, or DIET-ESP for compression and MTU issues, indicating low interest in extending IPComp within ipsecme.
+
+*   **New IKEv2 Payload Formats (draft-valerie-ipsecme-compact-ikev2-payloads-format, draft-wouters-ikev2-large-payloads):**
+    *   Current IKEv2 payload length (2 bytes) limits payloads to 64KB, problematic for Post-Quantum (PQ) algorithms with large public keys and signatures (e.g., Classic McEliece).
+    *   Existing formats also exhibit redundancy (reserved fields, fixed-size parameters).
+    *   Proposals address either the 64KB limit or redundancy, with different negotiation and implementation complexities.
+    *   Working group expressed interest in a single, generic solution for the >64KB limit, with redundancy reduction being a separate, though related, concern.
+
+*   **IKEv2 Cookie Rework (draft-valerie-ikev2-revised-cookie-processing):**
+    *   Identified a protocol flaw where packet loss/reordering or a responder changing its secret key can cause `IKE_SA_INIT` authentication failures due to differing views of the most recent request used in calculation.
+    *   Proposed a "revised cookie processing" that excludes the cookie notify payload from authentication calculation, negotiated via a new notify message.
+    *   Concerns were raised about modifying the authentication system for a non-security-critical error, with suggestions for less intrusive solutions like the initiator echoing the cookie in `IKE_AUTH` for verification by the responder, leading to an error message if there's a mismatch.
+
+*   **Receive RPKI and IPSec AS2AS Approach for Source Address Validation (rSAV) (draft-li-ipsecme-rsav):**
+    *   Proposal for a cryptographically based inter-AS Source Address Validation (SAV) protocol using RPKI for prefix origin authorization and IPSec (rSAV AH in transport mode) for IP source address authentication.
+    *   Key features: RPKI integration, AS Contact Servers (ACS) for IKEv2 negotiation, rSAV announcement in RPKI, and IPSec SA indexed by SPI and AS number.
+    *   Discussion touched on specific IPSec protocol details, such as the use of `DELETE` notifications for rejection, the role of ICV in ESP, and the negotiation of transport vs. tunnel mode.
+    *   A warning was raised against using Static Diffie-Hellman due to the lack of Post-Quantum equivalents.
+    *   The proposal is in early stages, focusing on addressing large-scale IPSec mesh deployments and minimizing state.
+
+*   **Optimized IKEv2 Rekeying (draft-li-ipsecme-optimized-rekeying):**
+    *   Leverages RFC 7296 (section 2.8) to omit Traffic Selector (TS) and Security Association (SA) payloads during rekeying *for child SAs* if they are unchanged. This saves bandwidth and CPU cycles.
+    *   Implementation in 5G base stations reported, demonstrating practical value for large-scale, low-power, and constrained environments.
+    *   Clarification: This optimization primarily applies to child SAs, not IKE SAs, as IKE SAs can have different algorithms during rekeying.
+
+*   **IPSec Anti-Replay Subspaces (draft-thompson-ipsecme-anti-replay-subspaces):**
+    *   Addresses performance challenges in multi-core, multi-path IPSec hubs handling thousands of peers. Current approach of using many child SAs (e.g., 4M for 6 paths/6 QoS classes) leads to high IKE negotiation load and memory issues.
+    *   Proposal: Introduce multiple anti-replay windows within a single child SA, distinguished by a "Subspace ID" in the ESP header.
+    *   Discussion points include IKE negotiation mechanisms, where to embed the Subspace ID in the ESP header (e.g., explicit extended sequence number field), and FIPS compliance for AES-GCM nonces.
+    *   The working group acknowledged the problem, with some suggesting that separate SAs are the existing solution, while others highlighted the scalability issues of that approach in large-scale deployments.
+
+## Decisions and Action Items
+
+*   **Multiple Child SAs (draft-wouters-ipsecme-multiple-sas):** A working group adoption call will be issued.
+*   **New IKEv2 Payload Formats:** Valerie to draft a combined solution addressing both the >64KB payload size limit and message redundancy.
+*   **IKEv2 Cookie Rework (draft-valerie-ikev2-revised-cookie-processing):** Valerie to send an email to the mailing list to gather feedback on the problem and the proposed solutions, particularly Tero's suggestion of an explicit cookie copy in `IKE_AUTH`.
+*   **Optimized IKEv2 Rekeying (draft-li-ipsecme-optimized-rekeying):** A working group adoption call will be issued.
+*   **IPSec Anti-Replay Subspaces (draft-thompson-ipsecme-anti-replay-subspaces):** Discussions to continue on the mailing list.
+
+## Next Steps
+
+*   Chairs to issue adoption calls for `draft-wouters-ipsecme-multiple-sas` and `draft-li-ipsecme-optimized-rekeying`.
+*   Valerie to initiate mailing list discussions for IKEv2 payload formats and IKEv2 cookie rework.
+*   Proponents of IPSec Anti-Replay Subspaces to continue mailing list discussions, with a virtual interim meeting proposed to consolidate ideas.
+*   Continue work on Beat Mode to bring it to Proposed Standard status.
+*   Monitor new developments like ESPv4 and IPTFS as potential solutions for existing problems.

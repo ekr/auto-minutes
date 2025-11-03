@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lisp.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-LISP-20211112-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 12 Nov 2021 12:00</p>
+<h1>lisp</h1>
+<h2>Summary</h2>
+<p>The lisp working group meeting at IETF 112 covered updates on existing documents, including the critical Lispsec draft, and presentations on Lisp L2/L3 EID Mobility, Lisp VPNs, Map Server Reliable Transport, and two new use cases for LISP: Lispfix for network sampling and Lisp in Hexagon for vehicle mobility. Key discussions revolved around the status of these drafts, proposed updates, and technical feedback from the chairs and audience, particularly concerning security, document clarity, and adherence to existing LISP RFCs.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Document Status and Bottlenecks:</strong></p>
+<ul>
+<li>Several documents are awaiting publication, with Lispsec identified as the primary bottleneck.</li>
+<li>Luigi is shepherding Lispsec, and Damien is taking over as the editor, with a goal to finish before Christmas. Co-authors are urged to be responsive.</li>
+<li>The LISP YANG model is nearing readiness.</li>
+<li>Older working group items require review to determine future publication.</li>
+<li>Lisp NAT Traversal is a candidate for the last remaining charter item.</li>
+</ul>
+</li>
+<li>
+<p><strong>Lisp L2/L3 EID Mobility (Mark):</strong></p>
+<ul>
+<li>This draft provides methods for a common control plane to support Layer 3 and Layer 2 overlays with EID mobility.</li>
+<li><strong>Layer 3 Overlays:</strong> Focuses on EID mobility, describing data-driven SMR and Pop-Up notifications for updating map caches when EIDs change location.</li>
+<li><strong>Layer 2 Overlays:</strong> Uses MAC addresses as EIDs, dedicates a specific instance ID for L2/L3 separation. Mobility is similar to L3. TTL handling for inner packets should not change. Broadcast and multicast (BoM) traffic utilizes common groups (multicast underlay or signal-free multicast). ARP/ND resolution can be optimized via the mapping system using a dedicated instance ID.</li>
+<li><strong>Multi-homing (Work in Progress):</strong> Proposed using a &quot;segment ID&quot; (or potentially &quot;site ID&quot;) to identify multi-homed segments, leveraging merge semantics and map-notify bits.</li>
+<li><strong>Feedback:</strong> Chairs requested clarification on using instance IDs for L2/L3 (configured, not reserved). The document needs to be updated to reference current RFCs (not RFC 6833) and consider Lispsec implications. The use of &quot;site ID&quot; over a new &quot;segment ID&quot; for multi-homing was suggested.</li>
+</ul>
+</li>
+<li>
+<p><strong>Lisp VPN (Mark):</strong></p>
+<ul>
+<li>This draft describes the segmentation of the IP space using Instance IDs and Extended EIDs for control plane procedures and data plane forwarding (unicast/multicast).</li>
+<li>It addresses cross-VPN communication (extranets) through policy-driven traffic leaking between Instance IDs and introduces &quot;Home ID&quot; encoding for destination IID identification.</li>
+<li>Multicast extranets leverage signal-free multicast, where the egress XTR performs the Instance ID conversion.</li>
+<li>The solution is extensively used in practice and has stable code. Authors requested a working group last call.</li>
+<li><strong>Feedback:</strong> Joel Alpern raised concerns about the use of &quot;distinguished names&quot; (<code>afi</code> type 17) without clear definition, potential for collision, and dependency on an unadopted draft (DINOS). Luigi noted the need to update RFC references and discuss potential issues with extranet configuration mismatches.</li>
+<li><strong>Decision:</strong> No working group last call at this time. The document requires revision based on the feedback.</li>
+</ul>
+</li>
+<li>
+<p><strong>Map Server Reliable Transport (Mark):</strong></p>
+<ul>
+<li>This draft proposes moving from periodic UDP registrations to a reliable transport mechanism (e.g., TCP, HTTP, or Quick) between the XTR and Map Server.</li>
+<li><strong>Motivation:</strong> Addresses scalability issues, control plane load, and lack of flow control inherent in periodic UDP for large LISP deployments, high mobility, and inter-system redistribution.</li>
+<li><strong>Mechanism:</strong> XTRs initially use UDP, then establish a reliable session (if supported). The Map Server sends a &quot;Registration Refresh&quot; message to trigger full registration, after which registrations remain active as long as the session is up, eliminating periodic re-sends.</li>
+<li>It introduces explicit positive/negative acknowledgements and allows the Map Server to actively request information or specific scope refreshes.</li>
+<li><strong>Request:</strong> Adoption as a working group document.</li>
+<li><strong>Feedback:</strong> Chairs requested clarity on how XTRs determine reliable session establishment. Significant security concerns were raised regarding the current authentication methods (TCP/STP options) without a robust security layer like Lispsec, TLS, or Quick security. The draft is expired and needs to be updated.</li>
+<li><strong>Chair's View:</strong> The concept of reliable transport for map registration is valuable, but Lispsec remains the priority.</li>
+</ul>
+</li>
+<li>
+<p><strong>Lispfix (Sharon &amp; Aviv Haskell):</strong></p>
+<ul>
+<li>A non-working group item proposing a LISP-based approach for compute-first aggregation of large data from network sampling (IPFIX), particularly for detecting anomalies.</li>
+<li><strong>Background:</strong> Uniform network sampling combined with AI is proving more effective and efficient than full network probing, especially for threat prediction. However, achieving uniform sampling in large, virtualized, cloud-native environments is challenging.</li>
+<li><strong>Proposal:</strong> Utilize LISP to steer IPFIX traffic to logical EID collectors for uniform, per-application sampling. This involves matching samples to group memberships (e.g., bloom filters, regex) and routing them to distributed analyzers using the LISP overlay. EIDs can hide underlying equipment from analyzers, and the infrastructure provider can handle IPFIX aggregation.</li>
+<li><strong>Feedback:</strong> Questions were raised about the priority of sampled packets and the structure of EIDs to support this use case. The authors seek feedback for drafting version 00.</li>
+</ul>
+</li>
+<li>
+<p><strong>Lisp in Hexagon (Sharon):</strong></p>
+<ul>
+<li>A non-working group item describing LISP's use in production for vehicle mobility (e.g., NYC, Tokyo).</li>
+<li><strong>Learnings:</strong> LISP unifies disparate mobility use cases (vehicle-to-vehicle, vehicle-to-cloud, and intermediate scenarios) through hierarchical and layered EID abstraction of geospatial networks.</li>
+<li><strong>LISP addresses key industry issues:</strong>
+<ul>
+<li><strong>Dynamic Resource Allocation:</strong> Dynamically setting resources for geolocation services transparently using EIDs.</li>
+<li><strong>Geoprivacy:</strong> EID layering provides privacy as vehicle EIDs are ephemeral.</li>
+<li><strong>Seamless Context Switching:</strong> H3EIDs enable seamless transitions when vehicles move between geolocation areas.</li>
+<li><strong>Maintaining Identity:</strong> EIDs maintain vehicle identity across different mobile carriers (not dependent on changing IPs).</li>
+</ul>
+</li>
+<li>The authors confirmed that existing LISP specifications provide sufficient flexibility for these use cases without requiring protocol modifications.</li>
+<li><strong>Request:</strong> An indication of the RFC publication timeline was requested due to industry difficulty working with drafts.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Lispsec:</strong> Damien will take over as editor, working with Luigi, with a goal to finish the document before Christmas. Co-authors must be responsive to changes.</li>
+<li><strong>Lisp L2/L3 EID Mobility (Mark):</strong>
+<ul>
+<li><strong>Action Item:</strong> Revise the document to reference current LISP RFCs (not RFC 6833).</li>
+<li><strong>Action Item:</strong> Consider the implications of Lispsec (mandatory to implement).</li>
+<li><strong>Action Item:</strong> Consider using &quot;site ID&quot; instead of a new &quot;segment ID&quot; for multi-homing.</li>
+</ul>
+</li>
+<li><strong>Lisp VPN (Mark):</strong>
+<ul>
+<li><strong>Decision:</strong> The document will not proceed to WG last call yet.</li>
+<li><strong>Action Item:</strong> Discuss the &quot;distinguished names&quot; (<code>afi</code> type 17) concerns with Victor and Dino, ensuring clear definition and collision avoidance.</li>
+<li><strong>Action Item:</strong> Update RFC references (not RFC 6833).</li>
+<li><strong>Action Item:</strong> Add text addressing potential mismatches in extranet configuration/updates.</li>
+</ul>
+</li>
+<li><strong>Map Server Reliable Transport (Mark):</strong>
+<ul>
+<li><strong>Action Item:</strong> Add text explaining the policy or signaling for how an XTR determines it <em>can</em> set up a reliable session.</li>
+<li><strong>Action Item:</strong> Significantly enhance security considerations to include Lispsec, TLS, or Quick security.</li>
+<li><strong>Action Item:</strong> Update the expired draft and its references.</li>
+<li><strong>Implicit Decision:</strong> Adoption as a WG document is on hold until Lispsec is finalized and the document itself is revised.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Authors of Lisp L2/L3 EID Mobility, Lisp VPN, and Map Server Reliable Transport are to revise their drafts based on the feedback and action items from this meeting, with particular attention to updating RFC references and addressing security concerns.</li>
+<li>The Lispsec document remains the highest priority to unblock other publications.</li>
+<li>The Lispfix authors will continue to gather feedback for draft-00 of their proposal.</li>
+<li>The working group will await updates on the RFC publication timeline for Lisp in Hexagon.</li>
+<li>The next meeting will likely revisit these documents, contingent on the progress of Lispsec.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

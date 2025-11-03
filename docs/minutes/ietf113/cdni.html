@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="cdni.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-CDNI-20220322-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 22 Mar 2022 13:30</p>
+<h1>cdni</h1>
+<h2>Summary</h2>
+<p>The cdni session at IETF 113 covered updates on several drafts, including extensions to CDNI footprints and the control interface (triggers), HTTPS delegation, and a new draft on delegated credentials subsets. A presentation on the Common Access Token (CAT) from the CTA Wave project spurred discussion on its relation to CDNI URI signing. Authors provided updates on metadata extensions and capacity insights, prompting discussions on draft scope and adoption. The working group agreed to move forward with a Working Group Last Call for the footprint extensions and to initiate the adoption process for the delegated credentials subsets draft.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative:</strong>
+<ul>
+<li>Notewell reminder and IETF policies.</li>
+<li>Hybrid meeting etiquette (video/audio off when not presenting, Meetecho for queueing).</li>
+<li>Francesca volunteered as Jabber scribe.</li>
+<li>Milestones updated: re-adoption of triggers, adoption of footprint draft. Remaining on list: URI signing, ACME star (HTTPS delegation).</li>
+</ul>
+</li>
+<li><strong>CDNI Footprint Extensions (draft-ietf-cdni-footprint-extensions) - Near Sofer:</strong>
+<ul>
+<li>Recap of RFC 8006 and 8008, defining footprint types and their use.</li>
+<li>Proposed two new footprint types:
+<ul>
+<li>AS 3166-2 code (subdivision code, e.g., US states) for finer granularity than country code.</li>
+<li>Footprint Union for additive semantics between different footprint types.</li>
+</ul>
+</li>
+<li>The draft is straightforward, registering new IANA types, with no apparent contention.</li>
+<li><strong>Decision:</strong> The chairs will initiate a Working Group Last Call for this draft.</li>
+</ul>
+</li>
+<li><strong>CDNI Control Interface and Triggers (draft-sofer-cdni-control-interface) - Near Sofer:</strong>
+<ul>
+<li>Recap of the controller interface for managing content/metadata (e.g., pre-positioning, invalidation).</li>
+<li>Proposed Trigger V2 object additions:
+<ul>
+<li>Trigger extension list (generic items, e.g., time policy).</li>
+<li>Content selection methods (content regexes, content playlists).</li>
+</ul>
+</li>
+<li>Redefined the trigger object to use a list of generic objects for metadata/content selection (Trigger Specs).</li>
+<li>Proposed renaming the <code>trigger-type</code> field to <code>action</code>.</li>
+<li>Discussion on the error object (<code>Error V2</code>) structure and semantics:
+<ul>
+<li>It relates to the <code>Trigger Spec List</code>, listing only specs relevant to the error.</li>
+<li>Rajiv raised questions about implicit recursion for metadata/content paths and the handling of errors for items not explicitly in the original request (e.g., subtitle files within a playlist).</li>
+<li>Rajiv suggested rolling error reporting into a generic status object that mirrors the request structure to reduce state maintenance for upstream CDNs.</li>
+</ul>
+</li>
+<li>Proposed changes to the Footprint Capability Interface (FCI) to state supported actions, subjects, extensions (e.g., time policy), and target selection methods (e.g., playlists).</li>
+</ul>
+</li>
+<li><strong>HTTPS Delegation (draft-ietf-cdni-https-delegation) - Sanjay Mishra (for Fred Templin):</strong>
+<ul>
+<li>Fred Templin was unwell; Sanjay presented the update.</li>
+<li>Version 8 of the draft has been simplified and aligned with RFC 9115.</li>
+<li>The document now focuses on identifying the location from where the downstream CDN fetches certificate information, assuming pre-CDN conversations (account creation, key exchange) happen via RFC 9115.</li>
+<li>Security and privacy concerns were discussed, noting that this draft doesn't add new metadata exposure and relies on RFC 9115 and RFC 8006 for independent security concerns.</li>
+<li><strong>Action Item:</strong> The working group is requested to review version 8 of the draft for any security/privacy concerns.</li>
+</ul>
+</li>
+<li><strong>Delegated Credentials Subsets (draft-wordpeak-cdni-delegated-credentials-subsets) - Kristoff Wordpeak:</strong>
+<ul>
+<li>This draft is a split from the previous HTTPS delegation work, focusing on delegated credentials as ongoing work in the TLS WG.</li>
+<li>Defines two MI objects: <code>confDelegatedCredential</code> (URL) and <code>DelegatedCredential</code> (actual credentials and key material).</li>
+<li>Open issues include:
+<ul>
+<li>Aligning advertisement with certificate delegation (FCI object).</li>
+<li>Adding privacy and security sections.</li>
+<li>The <code>DelegatedCredential</code> object is not a &quot;normal&quot; MI object. Discussion on fetching mechanisms: FCI-based push (not dynamic enough for short-lived credentials) vs. dedicated interface (e.g., trigger interface) vs. ACME extension.</li>
+<li>Supporting downstream CDN key generation.</li>
+</ul>
+</li>
+<li>Sanjay noted the draft refers to &quot;subcerts&quot; from the TLS WG, which might apply to DTLS, and suggested clarifying the focus on TLS WG work.</li>
+<li>Kevin expressed concern about retrieving key material and potential pushback from the Security Area if CDNI specifies this, though specifying format might be acceptable.</li>
+<li><strong>Decision:</strong> The chairs will initiate a Working Group adoption call for this draft.</li>
+</ul>
+</li>
+<li><strong>Common Access Token (CAT) - Chris Lemons:</strong>
+<ul>
+<li>Work from the CTA Wave project, primarily for streaming media, but general.</li>
+<li>Comparison to CDNI URI signing:
+<ul>
+<li>CWT-based (smaller, faster to parse for CDNs).</li>
+<li>More &quot;musts&quot; for intermediaries, strong guarantees for issuers.</li>
+<li>No built-in delegation.</li>
+<li>More claims with greater complexity.</li>
+</ul>
+</li>
+<li>Features:
+<ul>
+<li>Encrypted claims using COSE objects directly for privacy, saving space/processing.</li>
+<li>Additional claims: HTTP method, ALPN, arbitrary headers (with regex support), geography, TLS public key binding (for client authentication).</li>
+<li>Nestable compositions (AND/OR/NOR) for flexibility.</li>
+<li>Actions modifying rejection (specific status codes/headers on token rejection).</li>
+</ul>
+</li>
+<li>Strong types on claims (e.g., critical claim as array of claim numbers).</li>
+<li>Chris suggested overlapping utility, potential for general usefulness of these claims, and a possible liaison between CDNI and CTA Wave.</li>
+<li>Discussion confirmed strong industry interest in CAT due to ecosystem fragmentation, flexibility, and conciseness for performance.</li>
+</ul>
+</li>
+<li><strong>URI Signing (draft-ietf-cdni-uri-signing) - Phil Shafer:</strong>
+<ul>
+<li>Phil reconnected and provided an update.</li>
+<li>Addressed Ben Kaduk's comments, including a minor clarification.</li>
+<li>Main issue: delegated shared keys (UCDN to DCDN). Phil had removed explanation of &quot;how to do it&quot; and added &quot;should not do this&quot; text.</li>
+<li>Ben Kaduk prefers &quot;must not&quot; due to security concerns.</li>
+<li>Francesca commented that &quot;should not&quot; requires clear description of consequences and acceptable corner cases, which may not exist here. A stronger stance of &quot;must not&quot; might be appropriate for security.</li>
+<li>Phil acknowledged the dilemma and indicated openness to changing to &quot;must not&quot; if the WG advises.</li>
+<li><strong>Action Item:</strong> Phil will review the text and consider changing &quot;should not&quot; to &quot;must not&quot; regarding delegated shared keys, potentially after further mailing list discussion.</li>
+</ul>
+</li>
+<li><strong>Metadata Extensions (draft-ippolito-cdni-metadata-extensions) - Alfonso Ippolito:</strong>
+<ul>
+<li>This draft stems from the SVA Open Caching Working Group to address gaps in CDNI metadata for video delivery.</li>
+<li>Version 2 changes:
+<ul>
+<li>Categorization of generic metadata objects (e.g., Cache Control, Origin Access, Edge Control, Processing Stages, Client Access Control).</li>
+<li>Added examples for each generic metadata object.</li>
+<li>Minor changes to metadata expression language syntax.</li>
+<li>More detailed description for processing stages.</li>
+<li>Removed <code>mi-requested-capacity-limits</code> (moved to Andrew's capacity draft).</li>
+</ul>
+</li>
+<li>Clarifications on specific objects:
+<ul>
+<li><code>allowCompress</code>: The name is confusing; it intends for upstream CDN to enforce downstream CDN compression of responses, regardless of origin. Proposed renaming to &quot;edge compress&quot; or &quot;force compress.&quot;</li>
+<li>Cache Policies (<code>cachePolicy</code>, <code>negativeCachePolicy</code>): Allows upstream to dictate downstream CDN caching behavior (e.g., TTL) independently of <code>Cache-Control</code> headers sent to the end-user.</li>
+<li>Cross-Origin Policy: Clarified its relation to HTTP Fetch standard and how origin headers relate to client access URLs vs. delegated host matches.</li>
+</ul>
+</li>
+<li>Discussion on private features (point-to-point, not needing public registry) and generic traffic types.</li>
+<li>Kevin suggested breaking the 90-page draft into multiple, smaller drafts to accelerate progress, especially for well-fleshed-out metadata vs. complex stages.</li>
+<li><strong>Action Item:</strong> Alfonso and co-authors will discuss breaking the draft into smaller pieces.</li>
+</ul>
+</li>
+<li><strong>Capacity Insights (draft-ietf-cdni-capacity-insights-extension) - Andrew W.:</strong>
+<ul>
+<li>Version 2 of the draft simplifies the approach.</li>
+<li>Removed <code>mi-requested-capacity-limits</code> object, as it wasn't clear how upstream could effectively ask downstream to reconsider adjustments.</li>
+<li><code>capacityLimits</code> object: Main driver for downstream to communicate utilization goals. Now uses generic <code>limits</code> objects with a <code>subscope</code> (e.g., <code>published-host</code>) for more granular capacity definition within a CDNI footprint.</li>
+<li><code>telemetrySourceCapabilities</code> object (unchanged): Lays foundation for correlating capacity limits with telemetry sources for unambiguous measurement.</li>
+<li>Overview of anticipated workflow: upstream polls downstream for capabilities/limits, consumes telemetry, combines data for delegation decisions.</li>
+<li>Andrew encouraged review of the updated draft.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<p><strong>Decisions:</strong></p>
+<ul>
+<li>The chairs will initiate a Working Group Last Call for <code>draft-ietf-cdni-footprint-extensions</code>.</li>
+<li>The chairs will initiate a Working Group adoption call for <code>draft-wordpeak-cdni-delegated-credentials-subsets</code>.</li>
+</ul>
+<p><strong>Action Items:</strong></p>
+<ul>
+<li><strong>All Working Group Members:</strong> Review <code>draft-ietf-cdni-https-delegation</code>, <code>draft-wordpeak-cdni-delegated-credentials-subsets</code>, <code>draft-ippolito-cdni-metadata-extensions</code>, and <code>draft-ietf-cdni-capacity-insights-extension</code> and provide feedback on the mailing list.</li>
+<li><strong>Phil Shafer (URI Signing author):</strong> Review the text regarding delegated shared keys in <code>draft-ietf-cdni-uri-signing</code> and consider changing &quot;should not&quot; to &quot;must not&quot; based on WG discussion and security best practices.</li>
+<li><strong>Alfonso Ippolito and co-authors (Metadata Extensions):</strong> Discuss breaking <code>draft-ippolito-cdni-metadata-extensions</code> into smaller, more manageable drafts to facilitate progression.</li>
+<li><strong>Rajiv:</strong> Post questions about metadata/content recursion and error object structure (<code>draft-sofer-cdni-control-interface</code>) to the mailing list for further discussion.</li>
+<li><strong>Near Sofer (Control Interface/Triggers author):</strong> Engage in mailing list discussion regarding the error object structure and content selection recursion.</li>
+<li><strong>Sanjay Mishra (HTTPS Delegation presenter):</strong> Perform the shepherd pre-review for <code>draft-ietf-cdni-https-delegation</code>.</li>
+<li><strong>Chris Lemons (CAT presenter):</strong> Keep the cdni WG updated on the progress and implementation of the Common Access Token (CAT) work, and potential liaison opportunities.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue active discussions on all presented drafts on the mailing list.</li>
+<li>Chairs to follow through on initiating the Working Group Last Call for <code>draft-ietf-cdni-footprint-extensions</code>.</li>
+<li>Chairs to follow through on initiating the Working Group adoption call for <code>draft-wordpeak-cdni-delegated-credentials-subsets</code>.</li>
+<li>Aim for further progress and potentially a Working Group Last Call for <code>draft-ietf-cdni-https-delegation</code> by IETF 114.</li>
+<li>The next IETF meeting (IETF 114) will be held in Philadelphia in the third week of July.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

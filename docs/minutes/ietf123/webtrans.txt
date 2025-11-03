@@ -1,0 +1,42 @@
+**Session Date/Time:** 23 Jul 2025 09:30
+
+# webtrans
+
+## Summary
+
+The webtrans meeting at IETF 123 covered recent progress on the WebTransport specifications, including updates to the W3C API, changes to datagram handling, and the retention of service certificate hashes. Discussions also focused on implementation status, interoperability, flow control, and the potential for defining WebTransport over non-HTTP/2 protocols.  The group agreed to re-order their milestones, focusing on a working group last call followed by an implementation phase.
+
+## Key Discussion Points
+
+*   **W3C API Update:** The W3C WebTransport API now references the IETF overview document more cleanly.
+*   **Datagram Handling:**  The singleton writable for datagrams was removed, allowing for multiple writables with different priorities, improving flexibility for applications using audio and video streams.
+*   **Estimated Send Rate:** A new property `atSendCapacity` was added to statistics to help applications interpret the estimated send rate.
+*   **Service Certificate Hashes:** The feature of service certificate hashes was retained after extensive discussion.
+*   **Implementation Status:** Apple's implementation of WebTransport behind a feature flag was announced, bringing the total to three major codebases.
+*   **Interoperability:**  Alan expressed concern about the lack of implementation and interoperability, particularly regarding next protocol negotiation.
+*   **Reliable Reset API:** Added a reliable reset API with example usage.
+*   **Commit Method in Overview Document:** Ben Schwartz raised an issue about the lack of a commit method in the overview document and how this impacts the abstract API.
+*   **Flow Control:**
+    *   A discussion occurred regarding whether flow control should be mandatory when sharing a transport connection with other HTTP traffic.  Victor argued it's more of a performance than a security issue and depends on trusting the origin.
+    *   The group explored the possibility of enabling flow control even when only one WebTransport session is active, specifically in scenarios where the connection is shared with non-WebTransport traffic.
+    *   The group reached a consensus to add a new setting to allow the use of flow control even with only one WebTransport session.
+*   **WebTransport over Non-HTTP/2:**
+    *   Victor proposed defining WebTransport over non-HTTP/2 protocols, including a custom header format.
+    *   The potential overlap with the QMux effort in the QUIC working group was noted.
+    *   There was no consensus to add this to the H2 draft, and the document editors were encouraged to include an informative appendix mentioning the possibility and encouraging anyone interested to start new efforts to define WebTransport over different protocols.
+
+## Decisions and Action Items
+
+*   **Action Item:** Ben to file an issue regarding the missing commit method in the overview document.
+*   **Decision:**  Retain the service certificate hashes feature.
+*   **Decision:** Add a new setting to explicitly enable flow control even when only one WebTransport session exists. Implementers should prefer option B from the discussion around the flow control setting.
+*   **Action Item:** The Chairs will move the issue regarding TLS server certificate verification from the H3 document to the overview document. The issue will be resolved with an editorial PR with references to RFC 8446.
+*   **Decision:** Not to add scope to the H2 document on how to do web transport on any byte stream. Add an informative appendix mentioning some of the possibilities to the document.
+
+## Next Steps
+
+*   Address outstanding GitHub issues and merge PRs.
+*   Start working group last call on all three WebTransport documents (Overview, H3, H2).  The last call will be extended to accommodate the review of three documents.
+*   Post-last call, perform interoperability testing based on the updated drafts.
+*   If significant changes result from the last call and/or interoperability testing, conduct a second working group last call.
+*   Submit the documents to the IESG for publication only after successful interoperability testing.

@@ -1,0 +1,102 @@
+**Session Date/Time:** 09 Nov 2021 14:30
+
+# maprg
+
+## Summary
+The maprg session at IETF112 featured four presentations covering a range of internet measurement and analysis topics. Discussions included a critical DNS vulnerability related to cyclic dependencies in `NS` records, an analysis of VPN performance over satellite communication links, a detailed study on the security and privacy implications of TLS usage in Internet of Things (IoT) devices, and a measurement-based investigation into the performance and network utilization of popular video conferencing applications. Key findings included the need for resolver fixes for DNS loops, the impact of PEP and VPN tunneling on satellite links, the prevalence of outdated TLS root stores in IoT, and the dynamic bandwidth demands and fairness issues of video conferencing apps.
+
+## Key Discussion Points
+
+### 1. Welcome, Administrativa, and IRTF Note Well
+*   Co-chairs Dave Thaler and Mirja Kühlewind welcomed attendees.
+*   Standard IETF intellectual property rights, privacy, and code of conduct policies were reiterated, emphasizing respect and constructive feedback, especially for newcomers to the IRTF.
+*   The role of IRTF as a research organization, distinct from IETF standardization, was highlighted.
+*   Information on the maprg charter, mailing list, and slides was provided.
+*   Announcements included:
+    *   IAB Workshop on Analyzing IETF Data (November 29th), featuring related work on RFC deployment.
+    *   SIGCOMM 2021, with relevant papers on operating IP exchange providers.
+    *   IMC (Internet Measurement Conference) last week, from which several presentations for this maprg session were sourced.
+
+### 2. Surnaming the DNS: An Attack on Authoritative Servers
+*   **Presenter:** Giovanni Mora (Internet New Zealand / USC)
+*   **Problem:** Cyclic dependencies in DNS `NS` records (e.g., A points to B, B points to A) can cause recursive resolvers and clients to enter non-stop query loops, overwhelming authoritative DNS servers. This is termed a "surname attack".
+*   **Real-world Impact:** .nz ccTLD experienced a 50% traffic surge due to two misconfigured domains.
+*   **RFC Analysis:** Current RFCs (1034, 1035, 1536) are vague or only address resolver-side looping, not amplification from looping clients or forwarders.
+*   **Solution Proposal:** The research proposes that resolvers implement negative caching to detect and cache these cycles, minimizing queries to authoritative servers. A new draft is available for feedback.
+*   **Tool:** `Cycle Hunter`, an open-source tool, was developed to scan DNS zones for such loops.
+*   **Responsible Disclosure:** The findings led to fixes in Google Public DNS and Cisco servers, verified through measurements.
+*   **Widespread Issue:** Other operators (e.g., a European ccTLD) reported similar 10x traffic increases from two misconfigured domains.
+*   **Q&A:**
+    *   **G-Root comparison:** Presenter was not aware of G-Root from Microsoft Research but would investigate.
+    *   **Looping clients:** Older versions of PowerDNS (2014) and Microsoft DNS Server (2008) were observed to loop. Google Public DNS clients, before fixes, were also found to send continuous queries.
+
+### 3. VPN Performance over Satellite Communications
+*   **Presenter:** Nicholas Kuhn (Thales Alenia Space)
+*   **Motivation:** Increasing VPN usage for remote work/enterprise, coupled with the challenges of satellite links (high Round Trip Time, Bandwidth-Delay Product).
+*   **TCP Performance Enhancing Proxies (PEPs):** Explained their use in satcom to mitigate high latency and losses by splitting reliability, custom initial windows, and congestion control.
+*   **Experiment Setup:** Compared WireGuard, OpenVPN (UDP and TCP) over emulated GEO/LEO satellite links, with PEPs placed inside or outside the VPN tunnel, and various TCP congestion controls (Cubic, BBRv2).
+*   **Key Findings (No Losses):**
+    *   VPN over TCP with PEP inside the tunnel showed very poor performance, suspected to be due to a "TCP-in-TCP" issue.
+    *   WireGuard with PEP outside the tunnel provided the best performance.
+    *   OpenVPN on UDP generally showed fair and good performance.
+*   **Key Findings (With Losses):**
+    *   Cubic was very sensitive to losses.
+    *   BBRv2 provided good performance, significantly reducing download times.
+    *   If BBRv2 is not available, using a VPN solution based on TCP with a PEP could help reduce damage caused by losses.
+*   **Discussion:** The presenter expressed interest in exploring mask-like proxies (Quick-based proxies) as a future direction to potentially combine benefits for both lossy and lossless scenarios.
+*   **Q&A:** Questions clarified that reported numbers were total time to completion for a 30 MB transfer.
+
+### 4. Who Guards the Guardians? On TLS Usage and IoT Devices
+*   **Presenter:** Talha Paracha (Northeastern University)
+*   **Motivation:** IoT devices raise significant privacy and security concerns, with TLS being the primary protection mechanism for network communications.
+*   **Challenges:** Limited ability to trigger traffic in IoT devices, and scarcity of IoT-specific TLS traffic vantage points.
+*   **Methodology:** Automated device reboots using smart plugs in a studio apartment-like IoT lab. Conducted two years of longitudinal experiments, complemented by a user study with 30+ participants. Focused on 40 TLS-supporting devices across various categories.
+*   **Key Findings:**
+    *   **TLS Connection Establishment:** Most devices used TLS 1.2, none used insecure cipher suites, but few upgraded to TLS 1.3 or modern cipher suites over time.
+    *   **Certificate Validation:** 11 devices were vulnerable to TLS interception attacks. Devices did not appear to update their TLS root stores.
+    *   **TLS Root Stores:** A black-box technique was developed to infer root certificates trusted by IoT devices based on TLS alert behavior.
+        *   Most common root certificates are present.
+        *   However, many devices trust deprecated certificates, and all devices trusted at least one certificate explicitly distrusted by major browsers (Firefox/Chrome).
+        *   This suggests root stores are a weak link in IoT security due to lack of updates.
+    *   **TLS Library Sharing:** TLS fingerprinting indicated that devices and applications from the same vendor likely share TLS libraries.
+*   **Conclusion:** TLS usage in IoT is not "completely broken" but suffers from issues reminiscent of early TLS adoption in other platforms.
+*   **Q&A:**
+    *   **Device Types:** Tested popular consumer devices (Alexa, smart TVs, Samsung fridge), likely running off-the-shelf Linux.
+    *   **Technique limitations:** The black-box technique only worked for 8 of 24 devices, as others did not send distinct TLS alerts for different validation failures.
+
+### 5. Measuring the Performance and Network Utilization of Popular Video Conferencing Applications
+*   **Presenter:** Kyle McMillan (University of Chicago)
+*   **Motivation:** Determine baseline internet performance requirements for common video conferencing applications (VCAs) for remote learning and inform broadband policy.
+*   **Applications Studied:** Zoom, Google Meet, Microsoft Teams.
+*   **Bandwidth Requirements (2-person call):**
+    *   Meet and Zoom typically used under 1 Mbps (both directions).
+    *   Teams used 1.4 Mbps upstream and 1.86 Mbps downstream.
+    *   Overall utilization was relatively low compared to typical home internet speeds and the FCC's 25/3 Mbps broadband definition.
+*   **Response to Temporary Disruptions:**
+    *   VCAs can take significant time to recover from temporary bandwidth drops.
+    *   Recovery times varied, with Teams taking over 25 seconds for severe drops (e.g., to 0.75 Mbps or 1 Mbps uplink).
+*   **Response to Competing Traffic:**
+    *   VCAs were not always fair when multiple instances or other applications competed for bandwidth on a constrained network.
+    *   Example: An incumbent Teams call often had significantly higher average utilization than a competing Teams call, implying that starting first can grant an unfair advantage.
+*   **Impact of Number of Participants and Viewing Modes:**
+    *   **Viewing Modes:** Gallery mode (multiple small videos) vs. Speaker mode (one large, high-res video).
+    *   **Uplink Bitrate:** For Meet and Zoom, a user's uplink bitrate remained relatively constant as the number of participants increased, even when others pinned their video.
+    *   For Teams, a user's uplink bitrate tended to **increase** with the number of participants, approaching the FCC's 3 Mbps upstream broadband standard with 8 participants (e.g., a teacher's video pinned by all students).
+*   **Policy Implications:** These findings can inform policymakers designing internet provisioning legislation, highlighting dynamic performance aspects beyond static bandwidth requirements.
+*   **Q&A:**
+    *   **Client Types:** Most experiments used a native app on a Dell laptop running Ubuntu. Teams performance in a browser was also investigated. Mobile devices were not studied.
+    *   **Video Content:** A pre-recorded "talking head" video was used for consistency across experiments to ensure fair comparison of video bitrate.
+
+## Decisions and Action Items
+
+*   **DNS Naming Loop Vulnerability:**
+    *   **Action Item for DNS Operators:** Run the `Cycle Hunter` tool to scan their zones and identify cyclic dependencies in `NS` records.
+    *   **Action Item for Resolver Developers:** Implement negative caching for DNS cycle detection as proposed in the new draft, to mitigate surname attacks.
+    *   **Decision:** The research group encourages feedback on the proposed draft for addressing DNS `NS` loop vulnerabilities.
+
+*   No other formal decisions or action items were recorded for other topics, but the presentations highlighted areas for future research and deployment considerations.
+
+## Next Steps
+
+*   The maprg co-chairs thanked the presenters and minute takers.
+*   The date for the next maprg meeting will be announced via the mailing list.

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="sidrops.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF121-SIDROPS-20241105-1630">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF121-SIDROPS-20241105-1800">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 05 Nov 2024 16:30</p>
+<h1>sidrops</h1>
+<h2>Summary</h2>
+<p>This session of the sidrops working group covered two main topics: Manifest Numbers and a next-generation RPKI transport, and Constraining RPKI Trust Anchors. The Manifest Numbers discussion focused on a draft addressing the potential for manifest number exhaustion and aimed for working group last call. The next-generation RPKI transport discussion explored the potential benefits and drawbacks of existing transport mechanisms (R-Sync and RRDP) and proposed a requirements-driven approach for developing a new transport. The Constraining RPKI Trust Anchors presentation discussed approaches to locally constrain trust anchors, and requested feedback from the working group.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Manifest Numbers:</strong></p>
+<ul>
+<li>The current mechanism relies on incrementing a manifest number, but it has a limited range and can stall if the maximum value is reached.</li>
+<li>The proposed solution involves resetting the manifest number when the manifest filename changes.</li>
+<li>There was a discussion regarding deprecating the manifest number check entirely, but the consensus was that it's useful for diagnostics and provides a safeguard against invalid restores from backup.</li>
+<li>Concerns were raised and addressed that CA regression would be a problem, and suggestion made that CAs should do a key rollover in these situations.</li>
+</ul>
+</li>
+<li>
+<p><strong>Next-Generation RPKI Transport:</strong></p>
+<ul>
+<li>R-Sync and RRDP both have advantages and disadvantages. R-Sync offers resilience and local bandwidth performance, while RRDP provides transport security and CDN compatibility.</li>
+<li>It was suggested to develop a requirements document that outlines the desired properties of a next-generation transport, as opposed to diving directly into specific solutions.</li>
+<li>Requirements mentioned included direct access to individual objects, bandwidth efficiency, RPKI-aware compression, resumption capabilities, and minimizing the need for snapshot generation.</li>
+<li>A small group has already volunteered to write an individual submission capturing transport requirements.</li>
+<li>Rob Austine thought that criticisms were implementation related.</li>
+<li>Andy Newton asked why not just patch RDP?</li>
+<li>George Michaelson suggested that best current practices documents could be used to describe best practices.</li>
+</ul>
+</li>
+<li>
+<p><strong>Constraining RPKI Trust Anchors:</strong></p>
+<ul>
+<li>Relying parties may want to limit the scope of trust they place in a given trust anchor.</li>
+<li>One approach is to use local configuration to allow or deny specific Internet Number Resources (INRs) under a trust anchor.</li>
+<li>Another approach is the NRO Experimental Trust Anchor, which signs over the public keys of the RER's trust anchor certificates and imposes constraints specific to each RAR.</li>
+<li>Problems with the current RPKI validation algorithm prevent the NRO experimental trust anchor from being readily used.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Manifest Numbers:</strong>
+<ul>
+<li>The presenter will consider adding recommendations for CAs regarding key rollover in the case of resource regression, possibly in a best current practice document.</li>
+<li>Aim for working group last call.</li>
+</ul>
+</li>
+<li><strong>Next-Generation RPKI Transport:</strong>
+<ul>
+<li>A small group will continue working on the individual submission capturing transport requirements for an next-gen transport.</li>
+</ul>
+</li>
+<li><strong>Constraining RPKI Trust Anchors</strong>
+<ul>
+<li>It may be helpful to turn this into an informational RFC</li>
+<li>The working group should consider the document and its usefulness in the future</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>
+<p><strong>Manifest Numbers:</strong></p>
+<ul>
+<li>Address feedback from the discussion.</li>
+<li>Move to working group last call.</li>
+</ul>
+</li>
+<li>
+<p><strong>Next-Generation RPKI Transport:</strong></p>
+<ul>
+<li>The small group will publish a first version of the transport requirements document and solicit feedback from stakeholders.</li>
+<li>Working group to further discuss requirements and potential solutions.</li>
+</ul>
+</li>
+<li>
+<p><strong>Constraining RPKI Trust Anchors:</strong></p>
+<ul>
+<li>Working group to consider further exploration of a locally configured policy that relying party operators can impose on the outcome of the relying party implementation</li>
+<li>Publish document via the independent stream</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 05 Nov 2024 18:00</p>
+<h1>sidrops</h1>
+<h2>Summary</h2>
+<p>This session covered several topics related to RPKI and route security. Presentations included discussions on ASRA (Autonomous System Relationship Authorization), CSP (Connectivity Security Policy) objects, route partial visibility, route origin registry, and RPKI repository issues.  Significant discussion focused on the need for ASRA given existing mechanisms like BGPSEC and the operational complexities of new RPKI objects. Other topics covered proposed solutions to known issues.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>ASRA (Autonomous System Relationship Authorization):</strong>
+<ul>
+<li>Purpose: Detect forged peering links not detectable by ASPA alone.</li>
+<li>Mechanism:  Combines with ASPA to verify BGP peering links.</li>
+<li>Debate:  Ben Winter argued that lying transit providers are rare and BGPSEC is the better solution to address concerns about falsified path information.  Charam addressed issues where ASRA would resolve vulnerabilities that ASPA can't.</li>
+<li>Operational Complexity: Concerns raised by Warren Kumari; need to finalize ASPA before considering ASRA.</li>
+<li>Deployment: Antwerp raised questions about deployment before ASPA, clarifying the need to deploy together.</li>
+</ul>
+</li>
+<li><strong>CSP (Connectivity Security Policy) Objects:</strong>
+<ul>
+<li>Purpose: Enable remote pinning and automatic peering for subnet adopting ASes.</li>
+<li>Updates: Addressed comments from Ross re: ASN.1 format, class names, and address families.</li>
+</ul>
+</li>
+<li><strong>Route Partial Visibility:</strong>
+<ul>
+<li>Problem: Even with correct ROAs, partial route visibility can lead to vulnerabilities.</li>
+<li>Types: Unilateral, SPDO, DPSO, DPDO.</li>
+<li>Causes: Route filtering, route aggregation.</li>
+<li>Mitigation: Local mitigation by each AS using ASPA and RPI level filtering of suspicious routes.</li>
+</ul>
+</li>
+<li><strong>Route Origin Registry:</strong>
+<ul>
+<li>Problem: Limitations of existing IRR and RPKI data sources for multi-origin AS announcements.</li>
+<li>Proposed Solutions: Multi-party governance, leverage multiple data sources, cross-verification, anomaly detection.</li>
+<li>Debate: Question about the necessity of a new system versus simply creating more ROAs to authorize multiple origin ASNs.</li>
+</ul>
+</li>
+<li><strong>RPKI Repository Issues:</strong>
+<ul>
+<li>Problems: Reliability, scalability, and security issues with current RPKI repository design.</li>
+<li>Proposed Solutions: Distributed data storage, preventing unlimited PP growth, malicious behavior detection, complete RPKI object view, audit functions.</li>
+<li>Concerns raised about operational practices and need for better training and guidance.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>ASRA: Review feedback and consider potential refinements, further discussion needed within the working group.</li>
+<li>Route Origin Registry: Author to consider feedback and re-evaluate the need for a new system given existing RPKI capabilities.</li>
+<li>Presentations cut short due to running out of time.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussion on the mailing list for ASRA, route origin registry, and RPKI repository issues.</li>
+<li>Reschedule remaining presentations for a future session.</li>
+<li>Working group to focus on deploying and finalizing ASPA.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

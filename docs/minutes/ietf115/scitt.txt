@@ -1,0 +1,85 @@
+**Session Date/Time:** 10 Nov 2022 09:30
+
+# scitt
+
+## Summary
+
+This was the inaugural meeting of the SCITT (Supply Chain Integrity, Transparency, and Trust) Working Group. The session kicked off with introductions of the new chairs, Hannes Tschofenig and John Gietl, and an overview of the agenda. The meeting covered the problem statement for software supply chain integrity, presented specific use cases, detailed the proposed SCITT architecture, discussed the concept of SCITT receipts, and shared key outcomes from the recent hackathon, including inter-ledger scenarios and deployment models. A significant outcome was the strong support for adopting the architecture document as a working group document.
+
+## Key Discussion Points
+
+*   **Problem Statement (Ori Steele)**
+    *   Software is an inherent part of digital life, but supply chain attacks and vulnerabilities highlight the critical need for greater visibility, integrity, transparency, and trust.
+    *   Transparency holds dishonest or compromised issuers accountable by ensuring consistent answers to queries about artifacts.
+    *   A key use case is providing verifiable evidence for Software Bill of Materials (SBOMs).
+*   **Software Supply Chain Use Cases (Yogesh Deshpandi)**
+    *   The software supply chain is highly complex, involving multiple producers, component vendors, package managers, and integrators, leading to diverse final products.
+    *   Integrators lack consistent, coherent, and trustworthy information about published components. There's no standard way to query or verify the trustworthiness of SBOMs, or to detect unexpected modifications or vulnerabilities.
+    *   An illustrative scenario showed a deadlock between an OS producer and a device integrator/distributor after a user-reported vulnerability, where a lack of verifiable proof leads to a blame game.
+    *   SCITT aims to define specifications to introduce transparency, allowing individuals to verify software provenance, assess risks, and track changes.
+    *   SCITT focuses primarily on software supply chain use cases but aims to support package repositories, container registries, and services. It plans to interoperate with existing IETF groups like COSE, RATS, CHIP, and SUIT.
+*   **SCITT Architecture (Anton Litvinenko)**
+    *   **Core Concepts**:
+        *   **Verifier**: Consumes software artifacts and uses SCITT to determine trustworthiness.
+        *   **Artifact**: Abstract; can be binaries, container images, git tags, etc.
+        *   **Issuer**: Any entity providing meaningful information about artifacts (author, distributor, CI system).
+        *   **Statement**: Any serializable information about an artifact.
+        *   **Claim**: A signed statement from an issuer.
+        *   **Registry/Notary**: A partially trusted authority that registers claims, verifies signatures, ensures global consistency, and produces standardized **Receipts** as proof of registration.
+    *   **Terminology Discussion**: Acknowledged some terminology overlap and potential confusion (e.g., "verifier" in SCITT vs. RATS; "evidence" in SCITT vs. RATS). The current terms are working drafts and subject to change.
+    *   **Rationale for Notary**: Provides stronger guarantees for accountability, prevents "equivocating issuers" (issuing different claims about the same artifact to different parties), enables scalability, offline validation, and post-incident analysis.
+    *   **Claim Issuance**: Issuers sign statements. Identity uses DIDs (Decentralized Identifiers) for long-term identity, separating it from short-term credentials, to be compatible with PKI/X.509. Mandatory fields in the SCITT envelope include issuer DID, artifact identifier, content type, key ID, and registration info.
+    *   **Claim Registration (at Notary)**: The notary authenticates the claim (DID resolution, signature verification). It *may* apply access control/authorization and inspect statement content (e.g., for vulnerabilities), rejecting registration if policies are not met. If accepted, it returns a SCITT Receipt.
+    *   **Verification (at Verifier)**:
+        *   **Simple Verifier**: Trusts the notary, validates the receipt offline using minimal information (doesn't need to inspect the statement content).
+        *   **Auditor (Advanced Verifier)**: Does not fully trust the notary, can repeat notary checks (e.g., issue signature verification, policy application) or audit the notary's ledger (full or partial replay) to keep it honest.
+    *   **Detecting Incorrect/Equivocating Claims**: A notary, or subsequent auditors, can detect when an issuer makes conflicting claims about the same artifact, ensuring non-repudiation through the registry.
+    *   **Inter-Registry Trust**: Acknowledged as a complex problem, discussed during the hackathon, and to be addressed further.
+    *   **Composability**: Any entity (including users) can make claims about an artifact.
+*   **SCITT Receipts (Mike Perham)**
+    *   **Purpose**: A receipt is proof that a SCITT claim has been successfully registered in a transparency service, after applying registration policies and storing the claim. It enables offline verification.
+    *   **Relationship to COSE Counter-signatures**: Receipts are inspired by COSE counter-signatures but require a new format.
+    *   **Need for New Format**: COSE counter-signatures are for individual claims. Transparency services typically involve Merkle trees (or similar hash trees) of claims. SCITT receipts need to include inclusion proofs linking the claim to the Merkle tree root signed by the transparency service, which isn't directly supported by existing COSE counter-signatures.
+    *   **Draft Structure**: Includes a protected header (for TS identification), an inclusion proof, and the actual signature. Flexibility is needed for different ledger types and hashing algorithms.
+    *   **Hackathon Feedback**: Initial presentation at IETF 114 received no immediate objection, but further collaboration with the COSE community is necessary.
+*   **Hackathon Report (Hank and Ori Steele)**
+    *   **Detached Statements**:
+        *   Problem: Statements can be terabytes in size, making inclusion in hash trees impractical. Regulations or PII concerns might restrict full disclosure.
+        *   Proposal: Use detached COSE envelopes for signed statements. The SCITT claim would then contain a hash link (URI/CRI/URL) to the actual statement stored in content-addressable storage.
+        *   Rationale: Supports existing content-addressable storage, handles large statements, enables fine-grained access control and PII management.
+    *   **Standard Statements**:
+        *   Problem: Notaries cannot be expected to understand "a thousand semantics" of opaque statements.
+        *   Proposal: Define a small set of named, registered standard statement structures (e.g., deferral hash links, revocation/refresh statements, endorsements).
+        *   Rationale: Facilitates transparency to the notary, system querying, and interoperability.
+    *   **Interlinked Statements**:
+        *   Problem: Need to understand relationships between opaque statements for querying and graph building (e.g., for remediation).
+        *   Proposal: Introduce simple semantic relationships, like a generic "connected" edge, to link statements without needing to parse their content.
+    *   **Multi-Service Deployments (Inter-Ledger Scenarios)**:
+        *   Recommendation: Link from a *transparent statement* (a claim already registered and given a receipt) when one SCITT process depends on another.
+        *   **Deployment Models for Confidentiality**: Illustrated different models using a GPU driver author, OS vendor, and cloud service provider.
+            *   **Single Transparency Service**: All claims and receipts are commingled in one service, providing full visibility to an auditor who trusts that service.
+            *   **Multiple Transparency Services**: Each entity (e.g., driver author, OS vendor) operates its own transparency service. This segregates claims, allows different levels of visibility (e.g., the driver author only sees their own claims, not how their driver is used by the OS vendor or CSP), and offers benefits in terms of confidentiality and use-case specific deployments.
+    *   **Policy Evolution and Freshness**:
+        *   Idea: Policies themselves can be registered as claims within a transparency service, allowing for verifiable policy changes and historical audit.
+        *   Freshness: Mechanisms like "read trees" and epoch markers (using Signed Civil Time Tags from RATS) can be used to prove the recency of policies and receipts.
+        *   Attestation: Remote attestation (RATS, TCG) can be used to prove the quality of transparency service nodes (e.g., confidentiality, adherence to policy).
+    *   **Operator/Consumer Perspective**: Emphasized the need to trace dependencies from an end-user or operator's perspective (e.g., in SaaS/IaaS) for risk management, incident remediation, and understanding affected components.
+    *   **SCITT and SBOMs**: SCITT builds *on top of* existing SBOM standards (SPDX, CycloneDX) by providing a transparency and verifiability mechanism for their delivery and assessment, rather than replacing them.
+
+## Decisions and Action Items
+
+*   **Decision**: The working group supports initiating a call for adoption for the "SCITT Architecture" document (36 in favor, 3 against during the meeting). This will be confirmed on the mailing list.
+*   **Action Item**: Chairs will send out a Doodle poll to confirm the date for continuing regular conference calls and transition to using IETF tools for scheduling.
+*   **Action Item**: Chairs will issue a formal call for adoption for the "SCITT Architecture" document on the working group mailing list.
+*   **Action Item**: The working group will continue to refine terminology for consistency across all documents (architecture, use cases, receipts).
+*   **Action Item**: Further collaboration and engagement with the COSE community on the SCITT receipts format.
+*   **Action Item**: The working group will explore defining a standard API for auditing and accessing the registry.
+
+## Next Steps
+
+*   Confirm the adoption of the architecture document via the mailing list.
+*   Continue iterating on the architecture and use case documents based on feedback received during the meeting and on the mailing list.
+*   Advance the receipts draft, incorporating community feedback and collaborating with relevant groups.
+*   Further explore mechanisms for inter-registry trust and federation.
+*   Deepen discussions on privacy aspects, detailed policy enforcement, and how different transparency service models cater to diverse confidentiality requirements.
+*   Develop use cases and architectural considerations from an operator/consumer risk management perspective for cloud and complex integrated systems.

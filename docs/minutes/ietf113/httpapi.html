@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="httpapi.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-HTTPAPI-20220324-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 24 Mar 2022 09:00</p>
+<h1>httpapi</h1>
+<h2>Summary</h2>
+<p>The httpapi working group session covered updates on several in-progress documents, including Rate Limit Headers and Media Type registrations. A new GitHub project board was introduced to improve document tracking. Key discussions focused on the structure of rate limit headers (separate fields vs. consolidated structured fields) and the challenges of registering new media types for YAML-based API specifications. The working group also reviewed open issues for the HTTP Problem (RFC 7807 bis) document, particularly concerning the extension mechanism for standard problem detail members. Finally, a new draft on date/timestamp in HTTP requests for anti-replay was presented, and plans for future document adoption and process improvements were discussed.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative Items</strong>:
+<ul>
+<li>Martin and Mark volunteered to take minutes.</li>
+<li>The agenda was reviewed with no further changes.</li>
+<li>Daryl showcased the new GitHub project board, a beta feature, to track issues across all working group documents, grouped by repository. It allows authors to update issue statuses independently, aiming to streamline progress tracking.</li>
+</ul>
+</li>
+<li><strong>Rate Limit Headers (draft-ietf-httpapi-ratelimit-headers)</strong>:
+<ul>
+<li>Roberto presented the latest draft, which aims to standardize existing rate limiting practices using structured fields.</li>
+<li>Current fields: <code>Rate-Limit-Limit</code> (list of structured fields, optional quota), <code>Rate-Limit-Remaining</code> (integer), <code>Rate-Limit-Reset</code> (delta seconds).</li>
+<li><strong>Technical Choices</strong>: Uses delta seconds for <code>Rate-Limit-Reset</code> (avoids NTP skew), structured fields for flexibility, no mention of infrastructure concepts.</li>
+<li><strong>Field Dependencies</strong>: <code>Rate-Limit-Limit</code> and <code>Rate-Limit-Reset</code> are required; <code>Rate-Limit-Remaining</code> is recommended.</li>
+<li><strong>Issues Needing Input</strong>:
+<ul>
+<li><strong>Splitting Quota Policies</strong>: Proposal to separate &quot;expiring limit&quot; from other quota policies into distinct header fields (e.g., <code>Rate-Limit-Limit</code> for expiring limit and <code>Rate-Limit-Policies</code> for other quotas). Implementers expressed preference for separation due to parsing complexity and distinct meanings.</li>
+<li><strong>Upper Bound for <code>Rate-Limit-Reset</code></strong>: Whether to suggest an upper bound for the delta seconds value to avoid excessively long waits.</li>
+<li><strong>Field Names</strong>: Editors believe current names (similar to existing API gateways) should be maintained to align with current practice.</li>
+</ul>
+</li>
+<li><strong>Discussion on Field Structure</strong>:
+<ul>
+<li>Mark and Martin advocated for combining information into a single structured field (e.g., a dictionary) for conciseness and better use of structured field parsers, arguing that relying solely on implementer preference without technical arguments might hinder better design.</li>
+<li>Roberto emphasized that implementers' feedback indicated they prefer separate fields and are not willing to change existing layouts, making a single field less likely to be adopted.</li>
+<li>Brian and Eric argued that implementer preference has value itself for adoption, especially for API developers who are not HTTP experts.</li>
+<li>Hunter stressed the need for conceptual clarity for libraries, as casual users might just use regex or rely on libraries.</li>
+<li>Rich mentioned a related need in Oblivious HTTP (OHAI) for multi-party rate limiting, suggesting a new field for addressing parties.</li>
+</ul>
+</li>
+<li><strong>Outcome</strong>: The discussion on splitting fields vs. consolidating will continue on the mailing list.</li>
+</ul>
+</li>
+<li><strong>Media Types for API Specifications (draft-ietf-httpapi-yaml-mediatypes)</strong>:
+<ul>
+<li>Roberto presented the draft aiming to register widely used, but unregistered, media types for API specifications (e.g., Open API, JSON Schema) and YAML itself.</li>
+<li>Goals: Increased interoperability, content negotiation, simplified development.</li>
+<li>Proposed registrations: <code>application/yaml</code>, <code>application/json-ld+yaml</code>, <code>application/openapi+yaml</code>, <code>application/schema+json</code>, <code>application/schema+yaml</code>.</li>
+<li><strong>Challenges</strong>: Engagement with media types mailing list, fragment identifier considerations, normative language in registrations, JSON-LD specific issues, and disagreement on <code>application/schema+yaml</code>.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Mark stressed the importance of formal liaison channels for consensus with external communities (e.g., OpenAPI, JSON Schema, YAML, Linked Data).</li>
+<li>Martin suggested splitting the document into smaller, easier-to-publish pieces (e.g., <code>application/yaml</code> and <code>+yaml</code> suffix first) due to the complexity and different levels of agreement across registrations.</li>
+<li>Eric volunteered to help with <code>application/yaml</code> registration.</li>
+<li>Mani (co-author) confirmed involvement in ongoing work on multiple suffixes, showing engagement with the right people.</li>
+</ul>
+</li>
+<li><strong>Outcome</strong>: Roberto will revise the draft, potentially splitting it, and seek further feedback on the mailing list, with Eric's assistance for YAML.</li>
+</ul>
+</li>
+<li><strong>HTTP Problem (RFC 7807 bis) Issues Review (Mark Nottingham)</strong>:
+<ul>
+<li><strong>Issue #21: Mapping Problem Details into a Header</strong>: Discussion on adding problem details in a response header for cases where the body is unavailable or not to be parsed by intermediaries.
+<ul>
+<li><strong>Outcome</strong>: Mark will create a PR to explore this, acknowledging it might be dropped if too complex.</li>
+</ul>
+</li>
+<li><strong>Issue #22: Requiring a specification document for registry entries</strong>: A mechanical fix for an incorrect text about registration policy.
+<ul>
+<li><strong>Outcome</strong>: PR is ready for merging.</li>
+</ul>
+</li>
+<li><strong>Issue #23: Multiple Problems</strong>: Discussion on how to handle multiple problems in a single response, including deleting text about status code 207 and adding warnings about limitations.
+<ul>
+<li><strong>Outcome</strong>: PR is ready for merging; general agreement.</li>
+</ul>
+</li>
+<li><strong>Issue #36 (Related to #24 and #26): Extending Problem Details with New Standard Members</strong>: This issue addresses the current limitation of 7807, which only allows problem-type-specific members or vendor extensions.
+<ul>
+<li><strong>Options Discussed</strong>:
+<ol>
+<li>Status quo (don't allow new standard members).</li>
+<li>Use a naming convention for new standard properties (e.g., a prefix, possibly a URI).</li>
+<li>Mint a new media type for problem details.</li>
+<li>Define new conventions that problem types can opt into (e.g., via JSON Schema vocabularies/dialects).</li>
+</ol>
+</li>
+<li><strong>Group Preference</strong>: Leaned towards option 2 (prefixed names) to allow generic tools to understand standard extensions without fragmenting the media type or requiring type-specific opt-in.</li>
+<li><strong>Outcome</strong>: This will be discussed further on the mailing list.</li>
+</ul>
+</li>
+<li><strong>Issue #25: JSON-LD Context</strong>: Request to add JSON-LD context support.
+<ul>
+<li><strong>Outcome</strong>: Waiting for a PR from a proponent; will be dropped if no PR is provided by last call.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Date/Timestamp in HTTP Requests (draft-nottingham-httpapi-timestamp-request)</strong>:
+<ul>
+<li>Martin presented a new draft exploring the use of adding current time (timestamp) in HTTP requests, primarily for anti-replay mechanisms in contexts like OHAI.</li>
+<li><strong>Key points</strong>: Addresses replayability, state commitment issues on servers, client/server clock skew (and potential remediation by retrying with response's date), and caching interactions (CDNs fixing dates).</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>Mark questioned if this is solely for API consumers/designers or could reside in http core/OHAI.</li>
+<li>Roberto expressed concern about relying on <code>Date</code> for guaranteed information, suggesting a broader &quot;timestamp&quot; focus.</li>
+<li>Daryl saw correlation with APIs due to problem types and potential relevance for signed requests, even if niche.</li>
+<li>Martin clarified it's complementary to idempotency keys.</li>
+</ul>
+</li>
+<li><strong>Outcome</strong>: Martin will revise the draft (e.g., &quot;timestamp&quot; instead of &quot;date&quot;) and bring it to the mailing list for further discussion and potential adoption.</li>
+</ul>
+</li>
+<li><strong>New Working Group Documents</strong>:
+<ul>
+<li><strong>Link Template</strong>: Re-issuing a call for adoption on the mailing list.</li>
+<li><strong>Health Check</strong>: Eric is following up with the author, Aki, on moving this individual draft to the working group.</li>
+</ul>
+</li>
+<li><strong>Any Other Business (AOB)</strong>:
+<ul>
+<li><strong>Milestones</strong>: Francesca requested updating working group milestones in the data tracker for better planning and visibility, potentially using &quot;next/later&quot; instead of strict dates. Chairs will discuss offline and propose.</li>
+<li><strong>Twitter Bot</strong>: Discussion about setting up a Twitter bot for httpapi to increase community visibility. Mark Nottingham offered to help set up a bot similar to the HTTP Working Group's.</li>
+<li><strong>HTTP/2 (RFC 7540 bis) Update</strong>: Francesca provided an update: IETF Last Call ends March 28th, internationalization directorate review requested, next telechat for ballots is April 7th.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Rate Limit Headers</strong>: Discussion on splitting quota policies and structured field usage to continue on the mailing list.</li>
+<li><strong>Media Types</strong>: Roberto to revise the draft, potentially splitting it into multiple documents, and seek further feedback on the mailing list. Eric will assist with YAML registration. Formal liaison through official channels emphasized.</li>
+<li><strong>HTTP Problem (RFC 7807 bis)</strong>:
+<ul>
+<li>Mark Nottingham to create a PR for mapping problem details into a header (Issue #21).</li>
+<li>PRs for &quot;requiring a specification document&quot; (Issue #22) and &quot;multiple problems&quot; (Issue #23) are ready for merging.</li>
+<li>Discussion on extending problem details with new standard members (Issue #36) to continue on the mailing list, with a preference for prefixed member names.</li>
+<li>JSON-LD context (Issue #25) will be dropped if no PR is submitted.</li>
+</ul>
+</li>
+<li><strong>Date/Timestamp in HTTP Requests</strong>: Martin to revise the draft (e.g., rename to &quot;timestamp&quot;), then bring it to the mailing list for further discussion on adoption.</li>
+<li><strong>Link Template</strong>: Chairs will re-issue a call for adoption on the mailing list.</li>
+<li><strong>Health Check</strong>: Eric to continue engaging with the author (Aki) regarding adoption into the working group.</li>
+<li><strong>Milestones</strong>: Chairs (Daryl, Rich) to discuss with Francesca offline and propose updated milestones, potentially using priority labels instead of strict dates, to the working group.</li>
+<li><strong>Twitter Bot</strong>: Daryl to connect with Mark Nottingham to set up a Twitter bot for the httpapi WG.</li>
+<li><strong>HTTP/2 (RFC 7540 bis)</strong>: Note about IETF Last Call ending March 28th and telechat on April 7th. Rich to post a note to the list to align deadlines for objections.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussions on Rate Limit Headers and HTTP Problem extensions on the mailing list.</li>
+<li>Roberto to revise the Media Types draft, potentially splitting it, and continue community engagement.</li>
+<li>Martin to revise the Date/Timestamp draft and seek adoption input on the mailing list.</li>
+<li>Chairs to issue a call for adoption for Link Template and propose updated milestones.</li>
+<li>Daryl to coordinate setting up a Twitter bot.</li>
+<li>Monitor IETF Last Call for HTTP/2 (RFC 7540 bis).</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

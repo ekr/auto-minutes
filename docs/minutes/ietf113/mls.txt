@@ -1,0 +1,83 @@
+**Session Date/Time:** 23 Mar 2022 12:00
+
+# mls
+
+## Summary
+
+The MLS Working Group meeting focused on the progress of the MLS Protocol and Architecture drafts, both of which are nearing Working Group Last Call (WGLC). Draft-13 of the Protocol document incorporated significant technical changes, including streamlined vector encoding, clearer separation of leaf nodes and key packages, improved tree update algorithms, and a more robust tree hash-based parent hash mechanism. Several Pull Requests (PRs) for the upcoming Draft-14 were reviewed, with three editorial/minor technical PRs approved for merging. A more contentious PR (605) proposing a MIME type field for application data was discussed at length but deferred to a mailing list poll due to mixed opinions. The Architecture draft was noted as largely complete with minor editorial adjustments remaining. The Federation draft, which had been stale, was officially revived with new contributions expected.
+
+## Key Discussion Points
+
+### Protocol Draft (draft-13) Status and Technical Changes
+
+*   **Overall Status**: Draft-13 has been released, with Draft-14 expected to incorporate outstanding PRs before Working Group Last Call (WGLC). The Architecture document must progress with the Protocol document as they are intrinsically linked.
+*   **Document Structure**: Editorial reordering was performed to improve document flow and comprehensibility without technical changes.
+*   **Vector Syntax Streamlining**:
+    *   The vector encoding now uses variable-length integers (similar to QUIC) for length fields, addressing interoperability issues found with fixed-byte length fields.
+    *   This removes the need for implementations to agree on byte sizes, simplifying code.
+*   **Leaf Node and Key Package Separation**:
+    *   The roles of "leaf node" (representing a group member in the tree) and "key package" (for pre-publishing initialization information) have been explicitly separated.
+    *   Extensions that were always present in key packages are now promoted to fields.
+    *   Two separate signatures are now used for leaf nodes (covering group ID for binding) and key packages, both using the credential's signature key.
+    *   Two distinct HPKE public keys are specified: one for treechem (in the tree) and one for welcome message encryption, providing clearer cryptographic separation.
+*   **Efficient Tree Update Algorithms**:
+    *   The algorithms for updating the tree were refined to avoid "redundant nodes" (nodes with only one populated child).
+    *   This reduces the number of key generations and streamlines tree truncation, making the tree structure cleaner and more efficient for sparse trees.
+*   **Tree Hash Based Parent Hash**:
+    *   The parent hash mechanism now uses the tree hash of the sibling node instead of its resolution, providing a tighter binding to the entire subtree structure and increasing security.
+    *   Performance analysis showed that while recomputing historical hashes adds complexity, the absolute performance impact is minimal (approximately 30ms for 200+ member trees in worst-case scenarios), making it a worthwhile trade-off for increased binding.
+
+### Draft-14 Planned Changes (Pull Requests Review)
+
+*   **PR 619 (Editorial: Code Block Annotation)**: Annotates code blocks (TLS, ASCER, pseudocode) for improved rendering and extraction, including compatibility with tools like `aasvg`.
+    *   **Decision**: Merged.
+*   **PR 618 (Technical: Require Distinct HPKE Keys)**: Adds a requirement that the two HPKE public keys (one for treechem, one for welcome message encryption) must be cryptographically distinct, generated with sufficient entropy.
+    *   **Decision**: Merged (no objections heard).
+*   **PR 617 (Technical: External Sender Agreement)**: Clarifies how pre-configured external senders are agreed upon within a group, ensuring consistent acceptance or rejection of messages from non-members across all group participants.
+    *   **Decision**: Merged (no objections heard, previous mailing list discussion approval).
+*   **PR 605 (Technical: Mime Type for Application Data)**: Proposes adding a MIME type field to application messages to indicate the content type of the enclosed data.
+    *   **Arguments for (Rowan)**: Essential "protocol hygiene," provides basic function for heterogeneous groups, allows explicit signaling of content types, minimal overhead (one byte if unused), avoids need for application-layer framing. Analogy to ALPN in TLS.
+    *   **Arguments against (Eric, Richard, Benjamin)**: MLS is a framework, application data interpretation should be defined by the embedding protocol/deployment-specific "integration glue," risks premature design choices, potential for conflict if content type is also defined internally in application data, ALPN analogy debated as it addresses a different discovery problem.
+    *   **Outcome**: Due to mixed opinions and lack of strong consensus in the room (15 "yes" votes, many not voting), the decision was deferred to a mailing list poll.
+
+### Architecture Draft Discussion
+
+*   **Status**: The Architecture document is mostly complete, with Richard Barnes and Benjamin Kaduk having performed an editorial pass to align it with the Protocol document.
+*   **Issue 75 (Deployment Types)**: Discussion centered on whether to document more diverse deployment types (e.g., federated, decentralized) in the Architecture document beyond the currently emphasized centralized model.
+    *   **Proposal**: Keep the centralized deployment as the primary reference for the protocol. The document already acknowledges other deployment possibilities and provides minimal assumptions (e.g., authentication service flexibility). More detailed federated/decentralized architectures would be better suited for the Federation document or separate contributions.
+    *   **Decision**: Close Issue 75 with no action, deferring detailed architectural discussions to the Federation draft or future specific contributions.
+*   **Issue 71 (Membership vs. Liveness/Consent)**: Discussion on refining phrasing to avoid implying active participation or consent simply because a participant's key package has been added to a group.
+    *   **Distinction**: A conceptual distinction was noted between cryptographic "membership" (access to group secrets) and active "liveness" or explicit "consent" to participate.
+    *   **Clarification**: The protocol design prevents "ghost protocol" scenarios where a participant could be added secretly without others being notified; cryptographic state ensures visibility. The issue is about clarity of text, not protocol safety.
+    *   **Action Item**: Richard Barnes to propose clarifying text to distinguish these concepts.
+
+### Federation Draft Revival
+
+*   **Background**: The Federation document was created earlier due to interest but stalled while focusing on the core MLS protocol.
+*   **Current Status**: Now that the core protocol is maturing and implementations/deployments exist, the working group is in a better position to define federation.
+*   **Purpose**: The document is non-normative, intended to describe components and interactions for federated MLS deployments, rather than specifying a full wire format.
+*   **Contributions**: Rowan and others have proposed initial contributions to update and revive the draft.
+*   **Process**: The existing adopted draft will be updated by editors, avoiding a full re-adoption process.
+
+## Decisions and Action Items
+
+### Decisions
+
+*   **PR 619 (Editorial: Code Block Annotation)**: **Merged**.
+*   **PR 618 (Technical: Require Distinct HPKE Keys)**: **Merged**.
+*   **PR 617 (Technical: External Sender Agreement)**: **Merged**.
+*   **Issue 75 (Architecture Deployment Types)**: **Closed with no action**. Detailed deployment architectures to be considered for the Federation document or specific future contributions.
+
+### Action Items
+
+*   **Mime Type PR (605)**: The chairs will initiate a **mailing list poll** for this PR to gather broader consensus.
+*   **Issue 71 (Architecture: Membership vs. Liveness)**: Richard Barnes will **propose clarifying text** for the Architecture draft to distinguish between cryptographic membership and active participation/consent.
+*   **Protocol & Architecture Drafts**: The chairs will move towards a **Working Group Last Call** for both documents soon, encouraging wider review from the community.
+*   **Federation Draft**: Rowan and other contributors are encouraged to **update and revive** the Federation draft.
+
+## Next Steps
+
+*   Conduct mailing list poll for PR 605.
+*   Incorporate clarifying text for Issue 71 into the Architecture draft.
+*   Initiate Working Group Last Call for the MLS Protocol and Architecture drafts.
+*   Progress the revival and updating of the MLS Federation draft.

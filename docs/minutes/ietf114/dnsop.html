@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dnsop.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-DNSOP-20220728-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 17:30</p>
+<h1>dnsop</h1>
+<h2>Summary</h2>
+<p>The dnsop session covered a wide range of topics, including a proposal for a new DNS Directorate to improve cross-WG document review, updates on numerous in-progress and last-call drafts, hackathon results, and several technical presentations. Key discussions included the status of DNSSEC Best Current Practice and Validator Requirements, the potential for a &quot;dry run&quot; DNSSEC mechanism, recommendations for domain verification techniques (with a strong push for BCP status), an extension for Extended DNS Errors (EDE) to report filtering reasons, and a research presentation highlighting high failure rates for endpoint DNSSEC validation over traditional UDP/TCP. The session concluded with a discussion on ensuring consistency for CDS/CDNSKEY records in multi-signer environments.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>IETF AD Term and DNS Directorate</strong>:</p>
+<ul>
+<li>Warren Kumari announced his term as IETF AD is ending in March and encouraged volunteers for the role.</li>
+<li>He proposed, with Eric Vyncke, to establish a <strong>DNS Directorate (v2)</strong>, similar to OpsDir or SecDir. This directorate would review DNS-related drafts originating from other working groups (currently 59 drafts mention DNS outside dnsop). The goal is to provide focused DNS expertise early in the document lifecycle to prevent issues from reaching the IESG telechat without proper DNS review.</li>
+<li>A call was made for volunteers, including secretaries and reviewers (potentially pairing experienced and newer members).</li>
+</ul>
+</li>
+<li>
+<p><strong>Document Updates</strong>:</p>
+<ul>
+<li><strong><code>dnssec-bcp</code> (Paul Hoffman)</strong>: Described as a consolidating document for DNSSEC RFCs, affirming DNSSEC as Best Current Practice. It is considered ready for Working Group Last Call (WGLC).</li>
+<li><strong><code>dnssec-validator-requirements</code> (Daniel Migault)</strong>: Provides operational recommendations for DNSSEC resolver operators (provisioning, monitoring, management), emphasizing not interfering with DNS mechanics. It is considered well-shaped and ready for WGLC.</li>
+<li><strong>Working Group Last Calls (in progress or planned)</strong>:
+<ul>
+<li><code>dns-voip-fragmentation</code>: WGLC in progress (3 weeks due to August meeting).</li>
+<li><code>glue-unoptional</code>: Ready for WGLC (discussion on starting now vs. September due to August holidays).</li>
+<li><code>catalog-zones</code>: Ready for WGLC (early September).</li>
+<li><code>validator-requirements</code>: Ready for WGLC (September).</li>
+</ul>
+</li>
+<li><strong>Ongoing Drafts</strong>:
+<ul>
+<li><code>dnssec-bis</code> (Dimitri Johnsen): New informational version submitted, addresses previous comments. Needs review.</li>
+<li><code>ns3-validation</code>: Authors working on outstanding items.</li>
+<li><code>8499-bis</code> (Bailiwick Definition): Interim meeting proposed to finalize.</li>
+<li><code>ede-error-reporting</code>: Authors on holiday, feedback expected soon.</li>
+<li><code>zone-version-other</code>: Authors to be contacted regarding EDNS registry.</li>
+<li><code>dnssec-automation</code>: Needs another author from data-c, protocol fully implemented by Johannes.</li>
+<li><code>dnssec-bootstrapping</code>: New version submitted, progressing well.</li>
+</ul>
+</li>
+<li><strong>Document Adoption</strong>:
+<ul>
+<li><code>domain-verification-techniques</code> and <code>caching-resolution-failures</code> were adopted.</li>
+<li><code>service-b-dain</code> showed strong poll interest but lacked email comments, prompting chairs to request feedback.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Hackathon Results</strong>:</p>
+<ul>
+<li><strong>DNSSEC Bootstrapping</strong>: Implemented in two ways: a Python-based cron job (generates and pushes signaling zone) and PowerDNS (synthesizes records on the fly using Lua). Both are deployed.</li>
+<li><strong>DNSSEC Error Reporting</strong>: Happy path implemented, further work needed on features and preventing resolver attacks.</li>
+</ul>
+</li>
+<li>
+<p><strong>Draft: <code>domain-verification-techniques</code> (Shumon Huque)</strong>:</p>
+<ul>
+<li>A survey of existing techniques (TXT, CNAME) for domain ownership verification.</li>
+<li>Recommends targeting records to a specific service and time-bounding them.</li>
+<li>Received feedback to move examples to an appendix and remove normative language (now informational).</li>
+<li><strong>Discussion</strong>: Strong sentiment in the room for this to be a Best Current Practice (BCP) document due to inconsistent current practices and the need for clear guidance.</li>
+</ul>
+</li>
+<li>
+<p><strong>Draft: <code>dry-run-dnssec</code> (Yorgos P. Theodorou)</strong>:</p>
+<ul>
+<li>Proposes a &quot;dry run&quot; DS record type to allow DNSSEC testing (adoption, key rollovers) without affecting live validation. Resolvers would generate reports (using DNSSEC Error Reporting) and fall back to known secure/insecure states.</li>
+<li><strong>Discussion</strong>: Concerns raised about potential disruption to validation behavior, the use of DS &quot;hacks&quot; vs. new RR types, variable length digests (potentially useful for post-quantum DNSSEC), implementation complexity, and the challenge of measuring the true error rate without a &quot;denominator&quot; of supporting resolvers. Security caveat: an insecure zone in dry-run will fall back to insecure.</li>
+</ul>
+</li>
+<li>
+<p><strong>Draft: <code>dns-priming-bis</code> (Paul Hoffman)</strong>:</p>
+<ul>
+<li>An update to RFC 8109 on DNS priming (initial cache population).</li>
+<li>Aims to address deferred issues and new considerations like pre-fetching and post-priming authoritative server selection strategies.</li>
+<li>Argued as important for correct resolver operation despite being &quot;boring.&quot;</li>
+</ul>
+</li>
+<li>
+<p><strong>Draft: <code>extended-dns-error-filtering</code> (Dan Wing)</strong>:</p>
+<ul>
+<li>An extension to EDE to provide more detailed information about DNS filtering actions (what was filtered, by whom).</li>
+<li>Recent changes include constraining JSON, numeric sub-error codes, and requiring AD Resolver Info to prevent cache poisoning.</li>
+<li><strong>Discussion</strong>: Positive feedback for operational usefulness and interoperability with RPZ. Questions about browser vendor interest and whether dnsop is the right working group; strong consensus from attendees that it is.</li>
+</ul>
+</li>
+<li>
+<p><strong>Research Presentation: Endpoint DNSSEC Validation (Chris Wood)</strong>:</p>
+<ul>
+<li>Research conducted using Firefox demonstrated that direct endpoint DNSSEC validation (over UDP/TCP port 53) is generally <strong>not safe</strong> due to high failure rates.</li>
+<li>RRSIG queries failed ~30% of the time; other record types (e.g., HTTPS, SMIMEA) also showed significant failure rates (5-15%).</li>
+<li>Failures are attributed to middleboxes, home gateways, and resolvers mangling or failing to deliver DNSSEC-related records.</li>
+<li>Suggests validation might be safer over DoH/DoT due to bypassing intermediaries.</li>
+<li>Failure rates vary geographically (US/Europe better, China/India worse) and with packet size.</li>
+</ul>
+</li>
+<li>
+<p><strong>Draft: <code>cds-cdnskey-consistency</code> (Peter Thomassen)</strong>:</p>
+<ul>
+<li>Highlights an issue where inconsistent CDS/CDNSKEY records across a child zone's authoritative name servers can lead to delegation breakage (e.g., in multi-homing setups).</li>
+<li>Proposes that a parental agent querying CDS/CDNSKEY must query all listed name servers and only act if the records are consistent.</li>
+<li><strong>Discussion</strong>: Concerns raised about potential denial-of-service if a single NS being down prevents key rollovers, the presence of &quot;hidden masters,&quot; and the need for clarity on rechecking frequency in case of inconsistency.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>DNS Directorate</strong>: Warren Kumari and Eric Vyncke will organize the DNS Directorate and seek volunteers for secretaries and reviewers.</li>
+<li><strong><code>dnssec-bcp</code></strong>: Chairs will initiate a 3-week Working Group Last Call.</li>
+<li><strong><code>dnssec-validator-requirements</code></strong>: Chairs will initiate a Working Group Last Call.</li>
+<li><strong><code>glue-unoptional</code></strong>: Chairs to decide on WGLC timing (August vs. September) based on feedback.</li>
+<li><strong><code>catalog-zones</code></strong>: WGLC to be initiated in early September.</li>
+<li><strong><code>8499-bis</code></strong>: An interim meeting will be organized to finalize the bailiwick definition.</li>
+<li><strong><code>domain-verification-techniques</code></strong>: Working Group expresses strong support for this draft to become a Best Current Practice (BCP). Chairs will discuss with authors to adjust the status and move examples to an appendix.</li>
+<li><strong><code>extended-dns-error-filtering</code></strong>: Chairs will plan a call with Dan Wing and potential implementers to gauge explicit implementation support before considering working group adoption.</li>
+<li><strong><code>cds-cdnskey-consistency</code></strong>: Author Peter Thomassen to consider feedback regarding potential DoS implications, hidden masters, and the definition of time constants for rechecking inconsistencies.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Working Group Last Calls for <code>dnssec-bcp</code>, <code>dnssec-validator-requirements</code>, <code>glue-unoptional</code>, <code>catalog-zones</code>, and <code>validator-requirements</code> are expected in the coming months.</li>
+<li>An interim meeting for <code>8499-bis</code> will be scheduled.</li>
+<li>Chairs will follow up on <code>service-b-dain</code> and <code>extended-dns-error-filtering</code> based on feedback and implementation interest.</li>
+<li>Attendees are encouraged to review draft versions, particularly those entering WGLC, and provide feedback via the mailing list.</li>
+<li>The next IETF meeting will be in London in November, with an interim meeting for dnsop planned for September.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

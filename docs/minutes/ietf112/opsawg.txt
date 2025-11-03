@@ -1,0 +1,124 @@
+**Session Date/Time:** 09 Nov 2021 12:00
+
+# opsawg
+
+## Summary
+
+The opsawg session covered a wide range of operational and management topics, including updates on existing drafts, discussions on new proposals, and coordination efforts with other working groups. Key discussions focused on service assurance, inventory management (hardware, software, and operational context), secure protocol updates (SNMPv3 over TLS 1.3), and network service modeling. A recurring theme was the need for harmonization and clear delineation between various "inventory" and "data manifest" efforts across multiple drafts and working groups. Several drafts are nearing Working Group Last Call, while others are seeking adoption or direction on their appropriate working group home.
+
+## Key Discussion Points
+
+*   **Administrative Items**:
+    *   The session began with logistics, note-well reminder, and confirmation of Elliott as the designated minute taker.
+    *   **Working Group Status Update**:
+        *   RFC 9105 (TACACS+ Client YANG) was published.
+        *   "Telemetry Id for Interface and Hardware" is in the ISG publication queue.
+        *   "L2NM" consensus was reached for Working Group Last Call; Adrian (shepherd) is working on a thorough review and expects completion by end of IETF week.
+        *   "VPN Common Model" is in the RFC editor queue.
+        *   Two new drafts, "YANG Data Model for License Management" and "PCAP" (historical), were recently adopted.
+
+*   **Service Assurance for Intent-Based Networking (Benoit Claise)**:
+    *   **Purpose**: Discover root causes of service degradation and identify services impacted by component failures.
+    *   **Updates**: Clarified Directed Acyclic Graph (DAG) structure; added a new section on detecting and transforming circular dependencies (e.g., via a "top service" to break loops). The YANG module remains unchanged.
+    *   **Next Steps**: Align with finalized 2nmrg IBN drafts. Plan for hackathon on combining subservice health (e.g., MPLS VPN scenarios) and graphing syslog messages for automation. Aim for Working Group Last Call by next IETF.
+    *   **Discussion**: Elliot Lear emphasized the draft's importance and requested clarification on the operational implications of graph transformations with an example. Hank addressed the programmatic determination of the "top service." Rob Wilton suggested allowing circular dependencies but mitigating them in processing rather than forcing graph changes.
+
+*   **MUD and IoT DNS (Michael Richardson)**:
+    *   **Related Work**: The "Acceptable URLs" document is considered ready for progression.
+    *   **Main Issue**: IoT devices performing DNS requests may receive geographically specific answers different from the MUD controller, leading to incorrect Access Control Lists (ACLs).
+    *   **Discussion**: Elliot Lear believes the issue is solvable with further elaboration in the draft. Michael Richardson will re-engage the discussion on the mailing list regarding the possibility of normative changes to the MUD controller specification.
+
+*   **PCAP and PCAPNG Historical/Standards Track (Michael Richardson)**:
+    *   **Context**: There are two documents, `pcapp` (historical) and `pcapng` (standards track). The working group had adopted `pcapp` for historical.
+    *   **Proposal**: Discussed creating a third document solely for the link type registry to separate its creation from the `pcapp` document, allowing `pcapp` to go via ISE or AD sponsorship to historical status. IANA prefers XML for registry initialization.
+    *   **Discussion**: Hank reiterated the goal for `pcapp` to go directly to historical. Elliot Lear questioned placing the link type registry in `pcapng` instead of a third document.
+    *   **Next Steps**: Propose these options to the mailing list for wider working group input.
+
+*   **Network and VPN Service Performance Monitoring (Bo Wu)**:
+    *   **Status**: No updates since the last IETF, as authors are focused on L2NM/L3NM. The draft complements L2NM/L3NM and augments IETF network/topology models.
+    *   **Open Issues**: Proposed to use `identity` types for PM sources (e.g., BGPLS, T-VAM). Suggested adding VPN network access-specific counters (e.g., per sub-interface) and class ID-specific counters for logical links. Also, a clarification regarding the "direction" definition for link delay statistics.
+    *   **Discussion**: Elliot Lear requested more clarity on the definition and counting method for new VPN network access statistics, suggesting illustrative examples.
+
+*   **Discovering and Retrieving Software Transparency (S-BOM) (Elliot Lear)**:
+    *   **Goal**: An extension to MUD to facilitate discovering and retrieving Software Bill of Materials (S-BOMs) (SPDX, CycloneDX, CSAF) for devices to understand software components and vulnerabilities.
+    *   **Updates**: Removed the ability to include local CSAF information, as vulnerabilities are typically announced externally.
+    *   **Next Steps**: Requires more reviews (security, apps for `.well-known` discovery) and implementation feedback from Open C2 before Working Group Last Call.
+
+*   **Data Model for Life Cycle Management and Operations (LMO) (Marisol Palmeiro)**:
+    *   **Purpose**: A YANG data model to facilitate life cycle management (selection, installation, licensing, operation, renewal) of assets (hardware, software, services) and enhance user experience by collecting business and operational data.
+    *   **Motivation**: Provide proactive network analysis, benefiting data science teams, business leaders, and architects.
+    *   **Use Cases**: Highlighted risk mitigation checks based on hardware/software features.
+    *   **Discussion**: Benoit Claise noted naming concerns ("management" vs. "collecting info") and significant overlap with other inventory/context-related drafts, emphasizing the need for harmonization, especially for multi-vendor licensing aspects.
+
+*   **Data Manifest for Streaming Telemetry (Benoit Claise)**:
+    *   **Problem**: While capability discovery describes *what* telemetry data is available, it lacks *how* the data is metered (e.g., collection cadence, on-change vs. polling, OS version). This context is crucial for data interpretation and AI/ML analysis.
+    *   **Proposal**: Introduce two YANG modules:
+        *   **Platform Manifest**: Describes hardware model, OS type/version, available YANG modules, and deviations. Updated on platform changes.
+        *   **Data Manifest**: Describes collection conditions (polling/on-change, suppressed-unchanged, requested/current collection period). Updated when collection conditions change.
+    *   **Next Steps**: Clarify collection methods for manifests, source of data, and mapping to collected data. Discuss potential overlap with S-BOM and LMO work.
+    *   **Discussion**: Rob Wilton suggested exploring YANG packages for describing modules. Hank emphasized the need for harmonizing this effort with other inventory and S-BOM work. Frank Brockners suggested delineating pure inventory from runtime operational data.
+
+*   **SNMP over TLS 1.3 (Ken Duda)**:
+    *   **Motivation**: The Intelligent Transport Systems (ITS) community uses SNMP as a primary standard and needs to update its security to use SNMPv3 over TLS 1.3 (RFC 6353 update).
+    *   **Problem**: TLS 1.3's 2-octet cipher suite identifier conflicts with RFC 6353's MIBs, which use 1-octet identifiers for hash and encryption algorithms.
+    *   **Open Questions**: Whether opsawg should adopt this work, how to address the fingerprint issue (revise MIBs or IANA management), and the document format (update, obsolete, or parallel RFC).
+    *   **Discussion**: Elliot Lear and Rob Wilton supported the work's importance for protocol security and urged adoption, emphasizing coordination with the TLS working group for expertise.
+
+*   **In-Band Flow Learning (Minshu Xing)**:
+    *   **Problem**: Challenges in dynamically obtaining flow characteristics (ports, IPs, DSCPs) in large-scale 4G/5G and enterprise networks for performance monitoring, especially with changing traffic paths.
+    *   **Requirements**: Ingress, egress, and hop-by-hop flow learning, plus auto-flow aging to manage resources.
+    *   **Next Steps**: Seeking guidance on whether IPPM or opsawg is the appropriate working group.
+
+*   **Data Model for Optical Network Inventory (Italo Busi)**:
+    *   **Motivation**: Operators lack a standard YANG data model for network-wide inventory management (boards, racks, shelves, ports) across various technologies (optical, IP, microwave). RFC 348 is device-specific.
+    *   **Goal**: Develop a generic network inventory model.
+    *   **Key Question**: Which working group (CCAMP, NetMod, or opsawg) should host this work?
+    *   **Discussion**: Elliot Lear noted this as the fifth "inventory" related draft presented, suggesting an interim meeting to map all inventory drafts, clarify overlaps, and determine appropriate working group homes.
+
+*   **Service Attachment Points (SAP) (Ching Li)**:
+    *   **Purpose**: A new model derived from L2NM/L3NM, designed to work with them to provide closed-loop lifecycle management for VPN services. It exposes network capabilities (service types, attachment points) to the service orchestration layer.
+    *   **Updates**: Renamed from "UNI Topology" for clarity, clarified relations to other topology models, augmented network models with logical service types, and refined SAP attributes.
+    *   **Discussion**: Confirmed coordination with the TEAS working group on network slicing terminology.
+    *   **Next Steps**: Bring up an adoption call for this draft on the working group mailing list.
+
+*   **Source Address Validation (SAV) Use Cases and Gap Analysis (Lan Chanting)**:
+    *   **Problem**: The internet's lack of source address validation enables spoofing, leading to various attacks (e.g., DDoS). Existing SAV mechanisms (e.g., strict uRPF) have false positive/negative problems because they rely on local FIB/RIB, not the real data forwarding path.
+    *   **Proposal**: A path probing method where source routers send probing packets to generate SAV rules at intermediate routers. This needs to consider scalability, deployability, and security.
+    *   **Next Steps**: Seeking comments and collaborators. The recommendation from the IESG and opsawg chairs is to discuss this work with the OpSec working group due to its relevance to routing security.
+
+*   **Ops Area Open Mic**: Rob Wilton and Warren Kumari (ADs) reminded attendees that they would be available in Gather Town for an Ops Area open mic equivalent to discuss any remaining topics.
+
+## Decisions and Action Items
+
+*   **L2NM Draft**: Adrian to complete thorough shepherd review by end of IETF week.
+*   **Service Assurance Drafts (Benoit Claise)**:
+    *   Benoit to follow up with Elliot Lear on operational meaning of graph transformations and provide an example.
+    *   Benoit to add more text on how the "top sub-service" is programmatically determined.
+    *   Benoit to consider Rob Wilton's suggestion regarding processing mitigations for circular dependencies.
+    *   Chairs to facilitate discussion of these points on the mailing list before Working Group Last Call.
+*   **MUD and IoT DNS Draft (Michael Richardson)**: Michael to re-engage the discussion on the mailing list regarding normative changes to the MUD controller.
+*   **PCAP/PCAPNG Drafts (Michael Richardson)**:
+    *   `pcapp` to be processed as a Historical RFC.
+    *   Michael to propose options (third document for registry vs. registry in `pcapng`) to the mailing list for working group decision.
+*   **Network and VPN Service Performance Monitoring (Bo Wu)**: Bo Wu to address open issues after the meeting, including adding examples for clarity on VPN network access statistics.
+*   **S-BOM Draft (Elliot Lear)**: Chairs to facilitate security and apps reviews in parallel to ongoing work.
+*   **LMO Draft (Marisol Palmeiro)**: Marisol to bring discussion points (naming, alignment with other inventory drafts, licensing challenges) to the mailing list.
+*   **Data Manifest for Streaming Telemetry (Benoit Claise)**: Benoit to engage in efforts to harmonize inventory and context-related drafts across working groups.
+*   **SNMP over TLS 1.3 Draft (Ken Duda)**: Chairs to raise the question of adoption for this draft with the working group on the mailing list and coordinate with the TLS working group.
+*   **In-Band Flow Learning (Minshu Xing)**: Minshu to initiate a discussion on the mailing list regarding the appropriate working group for this draft (IPPM or opsawg).
+*   **Data Model for Optical Network Inventory (Italo Busi)**: Chairs will consider facilitating a broader discussion or interim meeting to holistically address the various "inventory" drafts presented. Italo Busi to discuss opsawg interest on the list.
+*   **Service Attachment Points (Ching Li)**: Chairs to raise the question of adoption for this draft with the working group on the mailing list.
+*   **Source Address Validation (Lan Chanting)**: Lan to discuss this work with the OpSec working group.
+
+## Next Steps
+
+*   **Working Group Chairs**:
+    *   Facilitate necessary reviews for the S-BOM draft.
+    *   Initiate adoption calls/discussions on the mailing list for SNMP over TLS 1.3, SAP, and potentially the Optical Network Inventory draft.
+    *   Consider organizing a dedicated discussion or interim to harmonize the multiple "inventory," "data manifest," and "life cycle management" drafts to clarify scope and avoid duplication.
+    *   Coordinate with the TLS working group regarding the SNMP over TLS 1.3 work.
+*   **Draft Authors**:
+    *   Continue working on feedback and proposed changes for their respective drafts, engaging with the mailing list as requested.
+    *   Actively participate in cross-draft harmonization discussions where applicable.
+*   **Specific Draft Progress**: Several drafts are on track for Working Group Last Call (Service Assurance, L2NM, MUD/IoT DNS acceptable URLs).
+*   **Cross-WG Coordination**: Continued engagement with 2nmrg, TEAS, OpSec, and TLS working groups is crucial for relevant drafts.

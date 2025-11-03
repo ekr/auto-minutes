@@ -1,0 +1,103 @@
+**Session Date/Time:** 08 Nov 2021 16:00
+
+# core
+
+## Summary
+
+The core working group meeting at IETF 112 covered updates on several in-progress drafts, including CRI (Concise Representation of URIs), CoRAL (CBOR-based Resource Abstraction Language), CoAP Group Communication, Group OSCORE, and Key Update for OSCORE (Kudos). A new draft on a CoAP option for performance measurement was also introduced. Key discussions centered on URI data model representation, application group naming, enhanced security advice for group communication, mandatory-to-implement algorithms for Group OSCORE, and a new rekeying mechanism for OSCORE. The working group also formally adopted the "Key Update for OSCORE" (Kudos) draft.
+
+## Key Discussion Points
+
+*   **Working Group Status:**
+    *   RFC 9100 (CoAP Sentinel Versions) was published.
+    *   Two documents were approved for publication as Proposed Standard and are in the RFC Editor Queue.
+    *   Two CoAP-CoNf documents are in ISG processing, with positive reviews.
+    *   Group OSCORE had its first working group last call (WGLC) comments addressed, approaching a second WGLC.
+    *   Chairs plan to update working group milestones. An informal meeting/interim for CoAP applications was discussed.
+    *   Rumors about the working group concluding were dispelled by the chairs.
+*   **CRI (Concise Representation of URIs):**
+    *   Aims to standardize a CBOR-based, concise URI format addressing common URI implementation errors.
+    *   Current version (08) defines CRI and CRI references, is CBOR-based, and is considered feature-complete for RFC 3986 subset supported by CoAP. Includes parsing for URNs and hostnames.
+    *   **Open Issues:**
+        *   **Prefix Compression:** Difficulty supporting prefix compression (e.g., JSON-LD `@context`) for partial paths due to CBOR-packed limitations. This represents a functional deficiency.
+        *   **Percent Encoding:** CoAP's restrictive stance on percent encoding prevents full support for structures like W3C DIDs. A proposed solution involves alternating unencoded and percent-encoded parts within an array, though this introduces complexity.
+    *   A preference was expressed for a solution within CRI over falling back to URIs, to calm the "wilderness" of URI usage.
+*   **CoRAL (CBOR-based Resource Abstraction Language):**
+    *   A data model and language for describing resource metadata and interactions, optimized for constrained devices.
+    *   Provides semantic information via predicates, similar to RDF but more compact and constraint-device friendly (e.g., option numbers for URI predicates).
+    *   Users include Problem Details, PubSub, ACE group management, and potentially SDF.
+    *   **Key Updates:** Information model (RDF-ish basic model + tree structure for processing), dictionary definition (leveraging packed CBOR tags, pre-populated dictionaries via media types, or named dictionaries). Text serialization has been removed in favor of EDN and Turtle examples.
+    *   Queries and reification are deferred to later phases.
+    *   Next steps include coordinating with target applications to gather a corpus for binary serialization evaluation and defining a core feature subset.
+*   **Group Communication for CoAP (groupcom):**
+    *   This draft serves as a normative successor to RFC 7390, covering general group communication, including CoAP Observe, Block-wise, and Group OSCORE security.
+    *   **Key Updates (v05):**
+        *   Removed the "Multi ETag" option for simplicity.
+        *   Clarified details on updates/obsoletions of RFCs.
+        *   Expanded section on "Application Group Naming," allowing identifiers in URI path, query, host, port, or as a CoAP option, or implicitly.
+        *   Expanded section on "Group Discovery," including examples of discovery via CoAP and Link Format.
+        *   **Stronger Security Advice:** Explicitly states that unsecured group communication is "not recommended," with exceptions like discovery requiring careful consideration and mitigation of risks (e.g., amplification attacks).
+    *   The document is deemed ready for WGLC, with additional reviews planned.
+*   **Group OSCORE:**
+    *   Version 13 incorporated minor updates following the first WGLC.
+    *   **Key Updates:**
+        *   Terminology aligned with AD-HOC draft for public keys (referring to CCS).
+        *   Fixed an oversight in Group Encryption Key derivation size.
+        *   **Mandatory-to-Implement (MTI) clarified:** Aligned with AD-HOC; non-constrained devices expected to support both EDDSA and ECDSA, constrained devices at least one. Similar rationale for pairwise key agreement curves.
+    *   The document is considered ready for a second WGLC.
+    *   Test vectors are being produced, expected to be extensive, and may warrant a separate informational draft.
+    *   It was noted that Group OSCORE and Group Communication for CoAP should ideally proceed to WGLC in parallel.
+*   **Key Update for OSCORE (Kudos):**
+    *   Addresses key usage limits (encryption, failed decryptions) for AEAD algorithms, as per the C4G document.
+    *   **Part 1 (Key Limits):** Defines fixed values (Q, V, L) for various algorithms, with 'L' (message size limit) now explicitly calculated in bytes. Probabilities for confidentiality and integrity advantage (CA/IA) are within safe margins, prompting an open question about increasing Q and L further.
+    *   **Part 2 (Kudos Procedure):** A new one-round-trip rekeying method where client and server exchange nonces (R1, R2) to derive new contexts via `UpdateCtx`. It preserves the ID context and is compatible with AD-HOC. Extends the OSCORE option with a new flag bit and `id_detail` field.
+    *   **Observation Handling:** Proposes terminating observations after rekeying due to cryptographic binding issues, as re-establishing is simpler than complex workarounds. This raised concerns about visibility at the application layer.
+    *   Deprecates and replaces Appendix B.2 of RFC 8613.
+    *   The document foundation and protocol are considered stable, with implementation plans.
+*   **Cacheable OSCORE:**
+    *   Focused on ensuring robust request-response binding, particularly in scenarios lacking source authentication for requests (e.g., non-traditional responses, group communication with untrusted members, non-authenticated GETs).
+    *   The proposed solution involves embedding a hash or key information of the request into a Class I OSCORE option, making it part of the Additional Authenticated Data (AAD).
+    *   This approach augments the standard OSCORE binding mechanism, allowing receivers to verify responses are tied to specific requests even without source authentication.
+    *   This enhances cacheable OSCORE's readability and verifiability and enables new use cases where full signatures on requests are not desired.
+*   **OSCORE Capable Proxies:**
+    *   Aims to update the OSCORE RFC to define intermediaries as OSCORE endpoints, allowing for "nested OSCORE" (multiple layers of protection for the same message).
+    *   **Use Cases:** Group CoAP proxy, multicast notifications, LwM2M server as a CoAP proxy, transport indication proxies, firewalls, and potentially long proxy chains for client location privacy.
+    *   **Key Updates (v01):**
+        *   Lifted the previous limit of two protection layers.
+        *   Introduced a generalized, simplified algorithm for message processing applicable to any endpoint (client, intermediary, server).
+        *   Explicitly states no explicit signaling is needed; presence of CoAP options is sufficient.
+        *   Endpoints should not panic if an OSCORE option remains after decryption.
+        *   Certain options (e.g., CoAP corruption, proxy-intended options) must be protected.
+    *   Next steps include adding caching examples (leveraging cacheable OSCORE), elaborating on use cases for more than two layers, and exploring compression with RFC 8824.
+*   **CoAP Option for Performance Measurement:**
+    *   **Motivation:** Address the lack of simple, low-overhead performance measurement for constrained CoAP nodes, especially in unreliable modes. Existing CoAP reliability mechanisms are resource-intensive for measurement.
+    *   **Proposal:** A new CoAP option carrying "performance measurement bits" inspired by IETF IPPM's Explicit Flow Measurement, Quick's Spin Bit, and Alternate Marking Methodology's Square Bit.
+    *   **Mechanism:**
+        *   **Spin Bit:** Creates a square wave signal whose length directly indicates RTT, reducing the need for extensive timestamping.
+        *   **Square Bit:** Uses a fixed number of packets in a square wave for loss measurement.
+        *   **Event Bits:** Reserved for advanced usage.
+    *   **Benefits:** Easier RTT, delay, and loss measurement for constrained nodes, potential for advanced usage (e.g., adaptive protocol parameters based on network conditions).
+    *   Further clarification on user scenarios, especially involving proxies, is needed.
+
+## Decisions and Action Items
+
+*   **Decision:** The "Key Update for OSCORE" (Kudos) draft (draft-ietf-core-oscore-key-update) was adopted as a working group document, pending confirmation on the mailing list.
+*   **Action Item (Chairs):** Initiate a working group last call for both "CoAP Group Communication" (draft-ietf-core-groupcom) and "Group OSCORE" (draft-ietf-core-group-oscore) in parallel.
+*   **Action Item (Chairs):** Send a formal adoption call for "Key Update for OSCORE" (Kudos) to the mailing list.
+*   **Action Item (Chairs):** Update the working group milestones on the data tracker to reflect ongoing work and upcoming documents for ISG submission.
+*   **Action Item (Chairs):** Discuss and potentially schedule an informal meeting or interim focusing on CoAP applications, possibly in December.
+*   **Action Item (Authors - groupcom):** Review updated parts, address open issues, and consider adding more concrete request/response examples for group discovery.
+*   **Action Item (Authors - oscore-key-update):** Prepare test vectors (potentially in a separate document), further refine key limits, and address open issues on the GitLab repo.
+*   **Action Item (Authors - oscore-capable-proxies):** Add caching examples, elaborate on use cases for more than two layers, and investigate RFC 8824 for compression.
+*   **Action Item (Authors - coap-performance-measurement):** Clarify user scenarios and deployment models, especially concerning proxies.
+
+## Next Steps
+
+*   **CRI (href):** More implementation and implementer reviews are needed before a working group last call. Address the functional deficiency regarding prefix compression and the percent encoding challenge.
+*   **CoRAL:** Coordinate with potential users (e.g., problem-details, pubsub, SDF) to gather examples and define a core feature subset for the initial iteration.
+*   **Group Communication for CoAP (groupcom):** Conduct further reviews of the updated sections, close outstanding issues, and potentially add more detailed examples.
+*   **Group OSCORE:** A second working group last call will be initiated. Production of extensive test vectors will continue, with a decision needed on their publication location (e.g., separate informational draft).
+*   **Key Update for OSCORE (Kudos):** Following working group adoption, continue refining the draft based on feedback, particularly concerning key limits and observation handling. Implementation efforts are planned.
+*   **Cacheable OSCORE:** Continue to refine the request-response binding mechanism, particularly in scenarios without source authentication for requests.
+*   **OSCORE Capable Proxies:** Add examples, elaborate on use cases for multi-layered protection, and explore integration with CoAP compression mechanisms.
+*   **CoAP Option for Performance Measurement:** Further develop the draft, clarifying user scenarios and welcoming community feedback and collaboration.

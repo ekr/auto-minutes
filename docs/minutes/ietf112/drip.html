@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="drip.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-DRIP-20211111-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 14:30</p>
+<h1>drip</h1>
+<h2>Summary</h2>
+<p>The drip working group session provided updates on the status of several core drafts, including architecture, remote ID (RID), authentication formats, and registries. Key discussions revolved around the progress towards Working Group Last Call (WGLC) for the architecture and RID drafts, an implementation report for a blockchain-based registry, and a detailed update on the authentication formats and registries drafts. A significant decision was made to include a more detailed architectural figure in the <code>drip-architecture</code> draft. The group also discussed potential future work on attestation technologies (RATS/SUIT) and the emerging need for private observer-to-pilot communications.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Policies</strong>: The chairs reminded attendees about the Notewell and the new IETF conduct policy, emphasizing professionalism and impersonality.</li>
+<li><strong>Document Status Overview</strong>:
+<ul>
+<li><strong>Requirements Draft</strong>: Currently in the AD queue for publication, anticipated by year-end or early January.</li>
+<li><strong>Architecture Draft (draft-ietf-drip-architecture)</strong>:
+<ul>
+<li>Version 17 recently published, addressing most editorial comments.</li>
+<li>Detailed review by Sue acknowledged. New sections cover drip authentication and journal content.</li>
+<li>Remaining tasks: update the architecture figure and a <code>30pp</code> update.</li>
+<li><strong>Architectural Figure Discussion</strong>: Stu presented a detailed ASCII art figure (showing GPOD, PSOD, UA, GCS, UAS, etc.) proposed for inclusion to provide a comprehensive overview of system relationships, excluding over-the-air broadcast to avoid over-complication.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Implementation Report (Blockchain Registry)</strong>:
+<ul>
+<li>Andre presented an implementation using Hyperledger Iroha blockchain for the drip registry.</li>
+<li><strong>Functionality</strong>: Stores drone ID, flight records, and handles authentication and access control for public and authorized private lookups. Drones themselves do not directly interact with the blockchain.</li>
+<li><strong>Security</strong>: Uses Byzantine fault tolerance, permissioned access, multi-signature transactions, and smart contracts for tracking data access.</li>
+<li><strong>Performance</strong>: Simulations on Amazon Virtual Cloud with 16 blockchain nodes and 100 drones showed good performance (approx. 10ms delay for drone-to-system updates, hundreds of milliseconds for queries).</li>
+<li><strong>Data</strong>: Supports EU regulation data (123 bytes) and compressed STSM (24 bytes).</li>
+<li><strong>Code Status</strong>: Authentication part (OpenHIP v2 crypto branch extended for c-shake and hierarchical hits) is public. Blockchain scripts are currently private but planned for end-of-year release.</li>
+<li><strong>Future</strong>: Prototype with flying drone expected by end of year.</li>
+</ul>
+</li>
+<li><strong>Drip Entity Tags / Remote ID Draft (draft-ietf-drip-rid)</strong>:
+<ul>
+<li>Bob provided an update on version 13.</li>
+<li><strong>Naming</strong>: Renamed to &quot;Drip Entity Tags&quot; (DETs) for hierarchical HITs, aligning with ASTM terminology.</li>
+<li><strong>Content</strong>: Proof messages removed, aligning with <code>drip-auth</code>. Aligned with ASTM F3411 (removing version designation).</li>
+<li><strong>Mappings</strong>: Completed ET mapping to CTA 2063-A for standalone remote ID modules.</li>
+<li><strong>Privacy</strong>: Added a section on the lack of privacy on open broadcast media.</li>
+<li><strong>Security</strong>: Expanded attack vector section, with input from CFRG, highlighting the importance of registration for mitigation against hash size attacks.</li>
+<li><strong>Dependencies</strong>: Strong reliance on <code>drip-auth</code> for attestation proofs and <code>drip-registries</code> for attack mitigation.</li>
+<li><strong>Status</strong>: Considered complete except for fine-tuning (e.g., DNS examples) and ready for WGLC. Two known implementations (AX Enterprise, Andre's).</li>
+</ul>
+</li>
+<li><strong>Authentication Formats Draft (draft-ietf-drip-auth-formats)</strong>:
+<ul>
+<li>Adam presented updates since adoption.</li>
+<li><strong>Changes</strong>: New title, re-arranged sections for clarity, explicit F3411-19 references removed.</li>
+<li><strong>ASTM F3411 v1.1 Changes</strong>:
+<ul>
+<li><strong>Specific Authentication Method (SAM)</strong>: A new authentication type allows adding formats after F3411 publication. ICAO will manage values for a dedicated byte.</li>
+<li><strong>Additional Data Length/Field</strong>: Provides all 16 pages of authentication message for use, with subset used for broadcast due to media constraints. Used for Forward Error Correction (FEC).</li>
+</ul>
+</li>
+<li><strong>FEC</strong>: Aligned for multi-page FEC (Reed-Solomon).</li>
+<li><strong>Broadcast Attestation Structure</strong>: Fits within SAM data. Signing timestamp removed (pending re-addition discussion). Provides self-attestation of the DET and confirms key possession asserted by the drip link message.</li>
+<li><strong>Drip Manifest</strong>: Reworked hash lengths, message hashing definitions, variable window byte. Drip Link + Manifest provides necessary trust (Link: key trusted via registry; Manifest: dynamic aircraft signature validates key ownership).</li>
+<li><strong>Drip Frame</strong>: Future-proofing mechanism.</li>
+<li><strong>To-Dos</strong>: FEC cleanup, manifest window definition, operational recommendations review, IANA considerations, appendix updates, flow diagram. Target early next year for review and WGLC.</li>
+</ul>
+</li>
+<li><strong>Registries Draft (draft-ietf-drip-registries)</strong>:
+<ul>
+<li>Adam presented an update on the recently revived draft.</li>
+<li><strong>Expansion</strong>: Grew from 11 to 36 pages. Attestations moved from <code>drip-auth</code>.</li>
+<li><strong>Structure</strong>: Currently a compilation of notes; needs significant reorganization and cleanup. The section on &quot;definitions, claims, assertions, attestations, and certificates&quot; needs to be consolidated to one location (likely aligning with <code>drip-arch</code>).</li>
+<li><strong>Registry Classes</strong>: Defined generalized high-level views of registries (Root, IRM, MRA, CAAs/RAs, Remote ID Registries).</li>
+<li><strong>FQDNs &amp; DNS Records</strong>: Definitions included, needing harmonization. List of proposed DNS records and justifications.</li>
+<li><strong>Registry Operations</strong>: Section 9 requires significant re-writing for clarity and technical detail.</li>
+<li><strong>Implementation</strong>: AX Enterprise has a registry implementation on a development Kubernetes cluster with an HTTP API, manual DNS updates, and a transition to EPP and RDAP for registry operations.</li>
+<li><strong>Next Steps</strong>: Refine sections, clean up revisioning, gather EU input, address PII protection, work with Bob on X.509 aspects.</li>
+<li><strong>Importance</strong>: Draft supports <code>drip-auth</code>, <code>uas-rid</code>, and potentially operator privacy.</li>
+</ul>
+</li>
+<li><strong>Broader Ecosystem Discussions</strong>:
+<ul>
+<li><strong>RATs &amp; SUIT</strong>: Robin suggested exploring the RATS (Remote Attestation Procedures) working group and SUIT (Software Updates for Internet of Things) for design patterns relevant to secure remote attestations and registry interactions, particularly for devices with manufacturers separate from operators. Adam and Stu agreed on the potential, noting compactness challenges for over-the-air protocols but usefulness of patterns.</li>
+<li><strong>Observer-to-Pilot Communications</strong>: Med reported that U.S. federal agencies recognize a need for <em>private</em> observer-to-pilot communications for immediate, non-punitive actions. This is on the horizon but not a current <code>drip</code> work item.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Architecture Draft Figure</strong>:
+<ul>
+<li><strong>Decision</strong>: The group reached consensus to include Stu's proposed detailed architectural figure (showing GPOD, PSOD, UA, GCS, etc.) in the <code>drip-architecture</code> draft.</li>
+<li><strong>Action</strong>: Stu and Shuai to update the draft with the figure and associated textual explanations, including clear identification of what is and is not within the drip scope (e.g., DAA and V2P interfaces). Target for inclusion in the next revision (version 18) by end of the week.</li>
+</ul>
+</li>
+<li><strong>Architecture Draft WGLC</strong>:
+<ul>
+<li><strong>Action</strong>: Co-chairs to initiate a 2-week final review period, followed by a 2-week Working Group Last Call (WGLC), aiming to stick to this schedule.</li>
+</ul>
+</li>
+<li><strong>RID Draft WGLC</strong>:
+<ul>
+<li><strong>Action</strong>: Co-chairs to discuss initiating Working Group Last Call for <code>draft-ietf-drip-rid</code>.</li>
+</ul>
+</li>
+<li><strong>Registries Draft Adoption</strong>:
+<ul>
+<li><strong>Action</strong>: Co-chairs to start a call for adoption for <code>draft-ietf-drip-registries</code> very soon.</li>
+</ul>
+</li>
+<li><strong>Mailing List Transparency</strong>:
+<ul>
+<li><strong>Action</strong>: Co-authors are encouraged to conduct discussions on draft content on the mailing list to ensure transparency for the entire working group.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Architecture Draft</strong>: Publish revision 18 incorporating the new figure and other editorial fixes. Proceed with the proposed WGLC schedule.</li>
+<li><strong>Remote ID Draft</strong>: Chairs to initiate WGLC.</li>
+<li><strong>Authentication Formats Draft</strong>: Continue addressing open to-dos (FEC, manifest window, operational recommendations, IANA, flow diagrams). Aim for an early IoT sector review and a subsequent release, targeting WGLC.</li>
+<li><strong>Registries Draft</strong>: Following adoption, refine section 4 and section 8 (registry operations, revisioning process). Incorporate EU input, address PII protection, and collaborate with Bob on X.509 aspects.</li>
+<li><strong>Research</strong>: Further explore design patterns and potential applicability from the RATs and SUIT working groups for registry and attestation processes.</li>
+<li><strong>Future Work</strong>: Keep the emerging requirement for private observer-to-pilot communications on the horizon for potential future consideration.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

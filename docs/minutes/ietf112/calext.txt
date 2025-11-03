@@ -1,0 +1,84 @@
+**Session Date/Time:** 10 Nov 2021 14:30
+
+# calext
+
+## Summary
+
+The calext working group session focused on updates and next steps for several drafts. Key discussions revolved around technical clarifications for the `relations` draft, necessary refactoring for `iCal Tasks`, stalled progress on the `JS Calendar` mapping, and preparation for a Working Group Last Call (WGLC) for `Subscription Upgrade`. The group also discussed future work, including the refresh of core iCalendar RFCs (`5545`, `5546`) and the creation of a calendaring data model document. A significant outcome was the consensus to recharter the working group to be a long-running entity responsible for general calendaring-related work and maintenance.
+
+## Key Discussion Points
+
+*   **iCalendar Relations (draft-dawes-icalendar-relations)**
+    *   **Security Section**: A comment suggested adding information on XML security perils due to an XML reference in the draft. No specific issue was highlighted, but a generic warning about XML entities (referencing the WebDAV spec) was proposed for inclusion. The group agreed this general statement should suffice, with further review during IESG processing.
+    *   **Link Property Serialization**: Discussed Mark Nottingham's comment regarding the link property as a serialization of RFC 8288's link header. The group agreed that the draft *is* a reasonable serialization, using `FORMAT-TYPE` for `type` and `LABEL` for `title`. Explicitly stating UTF-8 encoding avoids the need for `title*` parameters. There is no need to define a new registry.
+    *   **Useful Link Relations**: Identified several existing link relations that could be immediately useful for calendaring, especially in event publication: `copyright`, `terms-of-service`, `privacy-policy`, `author`, `payment`, and a proposed `source` relation to link back to the origin of an event.
+    *   **Action**: Mike to update the draft with the security section text, explicit serialization details for `FORMAT-TYPE` and `LABEL`, and potentially add clarification on the `source` relation. A new draft version is expected within 2-3 days.
+    *   **JS Calendar Interdependency**: Noted that JS Calendar also references RFC 8288, implying a need to align its reference to the updated relations draft.
+
+*   **iCal Tasks (draft-dawes-icalendar-tasks)**
+    *   The draft has been dormant and requires substantial updates.
+    *   **Relations Integration**: Needs to be updated to refer to the newer relations work.
+    *   **Participant Component**: The `GROUP` parameter for status grouping should be replaced with the `PARTICIPANT` component, which provides a more robust and less crude method for grouping properties, especially for per-attendee status.
+    *   **Enhanced Status**: The `STATUS` property in iCalendar is limited. The draft should introduce a new component to group more complex status information, including associated comments, similar to concepts in JS Calendar.
+    *   **Alignment**: Needs to stay aligned with JMAP tasks work.
+    *   **Action**: Mike to continue significant rewriting and updating of the document.
+
+*   **JS Calendar <-> iCalendar Mapping (draft-ietf-calext-jscalendar-icalendar-mapping)**
+    *   No progress since the last interim meeting; still in the design phase for JS Calendar to iCalendar mapping.
+    *   **Implementation Experience**: Requires implementation experience for advancement. Cyrus IMAP server (Robert) and another implementation (Mike) are targeted for this.
+    *   **Dependencies**: The link object mapping in JS Calendar depends on the updates being made to the `relations` draft.
+    *   **Action**: Robert and Mike will collaborate to prioritize and push forward with implementations and spec updates.
+
+*   **Subscription Upgrade (draft-ietf-calext-subscription-upgrade)**
+    *   The draft is considered to be in a good state, with current open issues being more matters of opinion than substantive technical changes.
+    *   **Next Steps**: Mike will perform a final review, refresh the dates, and publish a new version, after which the document will be proposed for Working Group Last Call (WGLC).
+
+*   **Future Work**
+    *   **VPOLL (draft-ietf-calext-vpoll)**: Mike has updated the draft to use the `PARTICIPANT` component instead of a custom `VOTER` component, improving consistency.
+        *   **Action**: Mike to publish a new version. Robert (Cyrus) will update his implementation by the next IETF for interoperability testing.
+    *   **Server-Side Subscription (draft-ietf-calext-server-side-subscription)**: Awaiting feedback from Apple.
+    *   **RFC 5545/5546 Refresh**: Brian suggested that core iCalendar RFCs (5545/5546) are due for a refresh, citing 17 errata and updates from 75 other specs for 5545. He also noted the need for updated language in 5546 regarding handling invites/replies on behalf of others, especially with DMARC/IMAP contexts.
+    *   **Calendaring Data Model Document**: Mike proposed creating a document that defines the calendaring data model independent of its representation (e.g., iCalendar, JS Calendar). This would clarify the underlying semantics, similar to how HTTP/S separates wire format from semantics, and would be valuable for future formats. An existing OASIS WS-Calendar Platform Independent Model (PIN) was mentioned as a potential starting point.
+    *   **iTIP with JS Calendar**: Discussion included extending JS Calendar to support iTIP exchange, possibly as a text alternative.
+
+*   **Working Group Rechartering**
+    *   The current charter is highly specific, which necessitates rechartering for new work items.
+    *   **Consensus**: There was strong agreement to recharter the `calext` working group to be a broad, long-running working group responsible for all calendaring-related standards, including maintenance of existing documents, extensions, and new work. This will avoid frequent rechartering and provide a clear home for calendaring work.
+    *   **Action**: Brian to draft a recharter proposal and discuss it with Daniel.
+
+## Decisions and Action Items
+
+### Decisions
+
+*   The `iCalendar Relations` draft will not define a new link registry but will explicitly state its serialization of RFC 8288's link header using existing iCalendar properties (`FORMAT-TYPE` and `LABEL`).
+*   The `calext` working group will pursue rechartering to become a long-running working group with a broader scope encompassing general calendaring-related standards, maintenance, and extensions.
+
+### Action Items
+
+*   **Mike Dawes**:
+    *   Update `draft-dawes-icalendar-relations` with security section clarification and explicit link header serialization details. Publish a new draft within 2-3 days.
+    *   Follow up on the alignment of JS Calendar's RFC 8288 references with the updated `relations` draft.
+    *   Continue significant refactoring and updating of `draft-dawes-icalendar-tasks` (integrating relations, `PARTICIPANT` component, enhanced status).
+    *   Perform a final review and refresh dates for `draft-ietf-calext-subscription-upgrade` in preparation for WGLC.
+    *   Publish a new version of `draft-ietf-calext-vpoll` incorporating the `PARTICIPANT` component.
+    *   Collaborate with Robert on `draft-ietf-calext-jscalendar-icalendar-mapping` implementations and updates.
+*   **Robert Scheck**:
+    *   Prioritize updating the Cyrus IMAP server implementation for `draft-ietf-calext-jscalendar-icalendar-mapping`.
+    *   Update Cyrus IMAP implementation of `draft-ietf-calext-vpoll` by the next IETF for interoperability testing.
+    *   Collaborate with Mike on `draft-ietf-calext-jscalendar-icalendar-mapping` implementations and updates.
+*   **Brian Rosen**:
+    *   Draft a proposal for rechartering the `calext` working group and discuss it with Daniel (AD).
+
+## Next Steps
+
+*   **Draft Publication**: Anticipate updated versions of `draft-dawes-icalendar-relations`, `draft-dawes-icalendar-tasks`, `draft-ietf-calext-subscription-upgrade`, and `draft-ietf-calext-vpoll` in the coming weeks.
+*   **Working Group Last Call (WGLC)**: Begin WGLC for `draft-ietf-calext-subscription-upgrade` after Mike's final review.
+*   **Implementation**: Push forward with implementations for `draft-ietf-calext-jscalendar-icalendar-mapping` to gather essential experience.
+*   **Rechartering**: Initiate the process for rechartering the `calext` working group.
+*   **Milestone Review**:
+    *   `draft-dawes-icalendar-tasks`: Target submission to IESG by January.
+    *   `draft-ietf-calext-subscription-upgrade`: Target submission to IESG by December/January.
+    *   `draft-ietf-calext-jscalendar-icalendar-mapping`: Aim for completion by April (next IETF).
+    *   `draft-dawes-icalendar-series`: Milestone adjusted to July.
+    *   `draft-ietf-calext-vpoll`: Current milestone (June 2022) remains.
+    *   `draft-ietf-calext-server-side-subscription`: Status pending Apple feedback.

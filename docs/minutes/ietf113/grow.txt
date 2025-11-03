@@ -1,0 +1,52 @@
+**Session Date/Time:** 23 Mar 2022 12:00
+
+# grow Session Minutes - IETF 113
+
+## Summary
+
+The grow working group session at IETF 113 covered three key technical drafts: updates on BMP TLV extensions, the proposal for Near Real-Time Mirroring Protocol version 4 (NRTMv4), and a YANG module for Border Gateway Protocol Monitoring Protocol (BMP). Key discussions revolved around the status of existing BMP drafts, the need for a robust IRR mirroring protocol, and standardizing BMP configuration via YANG. Working group adoption was proposed for NRTMv4 and the BMP YANG module, while the BMP TLV draft is progressing to completion of working group last call.
+
+## Key Discussion Points
+
+*   **BMP TLV and E-Bit TLV Updates (`draft-lucente-grow-bmp-tlv` and `draft-lucente-grow-bmp-tlv-e-bit`)**
+    *   **BMP TLV (v7):** Feedback processed, including formalizing boolean encoding, requesting new IANA registries for root monitoring messages and peer down events, and adding error handling and size limitation notes. Running code and implementations exist.
+    *   **BMP E-Bit TLV:** Addresses the need for proprietary or low-level/implementation-specific TLVs that may not be suitable for IANA standardization. Proposes an "Enterprise Bit" (E-bit) in the TLV type, mirroring IPFIX practice, where `E=1` indicates an enterprise-specific TLV using an IANA Private Enterprise Number (PEN) as a namespace.
+    *   **Operational Considerations for E-Bit TLV:** Discussion emphasized recommending public availability of privately defined registries and discouraging abuse for features likely to be standardized. IPFIX history suggests this mechanism is generally not abused for common features.
+    *   **Scope of E-Bit:** Current scope is limited to TLVs, but potential expansion to private messages or statistics types was considered.
+
+*   **Near Real-Time Mirroring Protocol Version 4 (NRTMv4) (`draft-sasha-grow-nrtm-v4`)**
+    *   **Problem Statement:** NRTMv3 is poorly specified, lacks integrity/authenticity, scales poorly, has no status signaling, and is prone to silent failures.
+    *   **NRTMv4 Solution:** Proposes publishing IRR mirroring data over HTTPS, using JSON-based update notification files, periodic full snapshots, and 1-minute delta files (generated only when changes occur).
+    *   **Key Features:** UTF-8 support, immutable/cacheable files, signed update notification files with hashes for integrity, and a random session ID for automatic client re-initialization and recovery from out-of-sync states.
+    *   **Trust Anchor Discovery:** Proposed solution involves an additional "database configuration file" published on a well-known URI on a "generally known domain" to establish a trust basis for public keys and URLs. Discussion around more robust IANA registry for source names.
+    *   **Delta Expiration:** To prevent excessive downloads for clients lagging far behind, deltas will expire after 24 hours. Clients more than 24 hours behind will automatically re-initialize from a snapshot. An alternative of delta aggregation was also discussed.
+    *   **Historical Context:** NRTMv3 was never formally standardized by IETF. This draft aims to provide a proper, readable specification.
+
+*   **YANG Module for BMP (`draft-ietf-grow-bmp-yang` - assumed)**
+    *   **Goal:** To provide a standard YANG module for configuring and monitoring BMP on routers.
+    *   **Module Scope:** Covers configuring BMP stations, connectivity, session parameters, and includes an action to clear BMP sessions.
+    *   **Explicit Configuration:** Emphasizes explicit enabling of BMP remotes, address families, and RIB modes, allowing granular selection of peers (by address or BGP peer type).
+    *   **Pending Work:** Further review of vendor modules for missing options (e.g., initialization delay, backup times), integration with TCP YANG module for connection details and authentication (e.g., TCP AO, TLS), defining units for statistics, and determining the optimal placement of the module within the routing tree.
+    *   **Alignment with BGP Model:** Discussed the importance of aligning the BMP YANG module's structure (e.g., instance -> peers -> ribs) with the BGP YANG model for user familiarity and configuration efficiency.
+
+## Decisions and Action Items
+
+*   **`draft-lucente-grow-bmp-tlv` (BMP TLV):**
+    *   **Decision:** The draft is considered complete in terms of technical content and ready to complete working group last call. Chairs will proceed with the necessary steps.
+*   **`draft-lucente-grow-bmp-tlv-e-bit` (BMP E-Bit TLV):**
+    *   **Decision:** Paolo proposed working group adoption.
+    *   **Action Item:** Chairs will issue a call for working group adoption on the mailing list to gauge interest.
+*   **`draft-sasha-grow-nrtm-v4` (NRTMv4):**
+    *   **Decision:** Sasha proposed working group adoption.
+    *   **Action Item:** Chairs will issue a call for working group adoption on the mailing list to gauge interest.
+    *   **Action Item (Ben):** Write an Internet Draft defining an IANA registry and associated procedures for IRR source names to aid in trust anchor discovery and improve the general list of IRR databases.
+*   **`draft-ietf-grow-bmp-yang` (BMP YANG Module):**
+    *   **Decision:** John proposed working group adoption.
+    *   **Action Item:** Chairs will issue a call for working group adoption on the mailing list.
+
+## Next Steps
+
+*   The chairs will initiate mailing list discussions and formal calls for adoption for `draft-lucente-grow-bmp-tlv-e-bit`, `draft-sasha-grow-nrtm-v4`, and `draft-ietf-grow-bmp-yang`.
+*   The community is encouraged to review these drafts and provide feedback on the mailing list, particularly for the proposed adoption items.
+*   Ben Madison will work on a draft for an IANA registry related to IRR source names.
+*   Authors of the BMP YANG module will address pending points, including TCP module integration and module placement.

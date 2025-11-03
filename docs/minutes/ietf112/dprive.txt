@@ -1,0 +1,74 @@
+**Session Date/Time:** 11 Nov 2021 12:00
+
+# dprive
+
+## Summary
+
+The dprive working group session at IETF 112 covered the status of existing work, proposals for new approaches to DNS encryption from recursive resolvers to authoritative servers, and a critical discussion about the working group's path forward. Key topics included the potential reallocation of port 853 for DNS over QUIC, the stalled "unoff to authoritative" draft, a new proposal for unilateral opportunistic probing, and a detailed design for authenticated DNS over TLS (ADoT) using DS Glue. A central theme throughout the session was the challenge of achieving working group consensus on the design space for ADoT and the practical deployment concerns from large authoritative DNS operators regarding resource consumption and incremental rollout.
+
+## Key Discussion Points
+
+*   **DNS over QUIC (DoQ) Port Allocation:**
+    *   The DoQ draft, having completed working group last call, seeks to use port 853.
+    *   Port 853 is currently allocated for DNS over DTLS (DoDTLS), an experimental RFC (RFC 8094).
+    *   No known implementations of DoDTLS were identified by the DoQ authors or chairs.
+    *   A proposal was raised to mark RFC 8094 as Historic and reallocate port 853 to DoQ. This requires IESG action and further WG discussion.
+
+*   **"unoff to authoritative" Draft (Paul Hoffman/Peter van der Stok):**
+    *   The draft (version 04) was posted six weeks prior, with no comments received despite open issues, particularly regarding interaction with fully authenticated systems.
+    *   Authors questioned whether the lack of comments indicated stability or a need for more use case discussion.
+    *   The current draft uses SVCB for tracking and has a vague mention of probing.
+    *   Authors expressed willingness to proceed with interop testing if the WG is satisfied or to adapt to new use cases (e.g., unilateral probing). Their primary goal is increased internet encryption.
+    *   **Discussion on Use Cases:** A call was made to rekindle broader use case discussions on the mailing list, separate from specific draft proposals. The WG needs to decide if the "unauthenticated" use case should align with a "fully authenticated" one, as previous WG input had driven such alignment.
+    *   **AD Perspective (Eric):** The AD noted a lack of WG consensus, implementer action, and progress on ADoT proposals. He expressed concern about continuous effort without a clear path forward and urged the chairs to facilitate consensus or consider declaring failure.
+
+*   **New Draft: Unilateral Opportunistic Probing (DKG/Joey Salazar):**
+    *   A new draft (not yet posted to data tracker, Gitlab link provided) was presented. It proposes no new protocol elements, but internal state and guidance for recursive resolvers to unilaterally probe authoritative servers for opportunistic encryption.
+    *   **Goal:** "Raise the floor without lowering the ceiling" – increase encrypted traffic against passive monitors without hindering stronger authenticated connections.
+    *   **Concerns:** Avoid performance degradation, resource exhaustion, authoritative overload, and data leakage (learning from the "StartTLS trap" in SMTP/IMAP).
+    *   **Guidance for Authoritative Servers:** Listen for Dot/DoQ on port 853, offer any X.509 certificate, and ignore SNI for probes. If facing resource exhaustion, cleanly close connections and prioritize.
+    *   **Guidance for Recursive Resolvers:** Implement specific internal state for probing by authoritative IP address (similar to "Happy Eyeballs"). Key parameters: persistence, damping, and timeout.
+    *   **Implications for Stronger Signaling:** The draft identifies what a robust signal for authenticated ADoT would need beyond simple availability, including expected authentication methods, data, hard-fail expectations, and failure reporting.
+    *   **Challenges:** Impedance mismatch between IP-bound probing information and domain/name server-bound signals for strong crypto. SNI handling (probe vs. signal) needs to be clarified.
+    *   **Authoritative Operator Concerns (Brian Dixon, Eric Nygren):** Large authoritative operators expressed significant concerns about the resource consumption of universal encryption. They argued that "all or nothing" would lead to "nothing" due to the inability to accommodate 100% encrypted traffic with current infrastructure. They stressed the need for client-side control over resource consumption and safe, incremental rollout mechanisms that don't cause timeouts.
+    *   **Proponents' Rebuttals (DKG):** The goal *is* universal encryption for recursive-to-authoritative traffic. If authoritatives cannot accommodate, they should send port-closed responses. The draft includes mechanisms for client-side greediness reduction. Skepticism was expressed regarding end-users accurately identifying "sensitive" queries.
+    *   **SNI Discussion:** Conflicting views arose on whether probes should or should not send SNI.
+
+*   **DS Glue (Ben Schwartz):**
+    *   **Scope:** Focuses exclusively on authenticated ADoT, meaning downgrade-resistant against active adversaries.
+    *   **Current ADoT:** Possible today but requires very patient resolvers (NS revalidation, SVCB query, DNSSEC validation), slowing down *all* domains and making it impractical for scale.
+    *   **Parent Signals:** Any ADoT parent signal is a performance optimization for this slow but secure path.
+    *   **Design Questions:** Presented a list of questions that define the design space for ADoT parent signals, with Ben's chosen answers leading to DS Glue.
+    *   **DS Glue Structure:** Proposes a new DNSKEY algorithm type ("DS Glue") that encodes a compact, TLV-encoded glue RR set (e.g., NS, SVCB records) within the DS record using a "verbatim" digest type.
+    *   **Authentication:** The DS record, being subject to RRSIGs, ensures downgrade resistance.
+    *   **Deployment:** CDS can push these records to the parent. Resolvers aware of DS Glue can use them to directly establish Dot. Unaware resolvers ignore the unknown DS algorithm type, ensuring backward compatibility.
+    *   **Benefits:** No slowdown for non-participating zones, minimum latency for participating zones, child zone doesn't need to be signed.
+    *   **Challenges:**
+        *   **Complexity:** Considered complex by some.
+        *   **DNSKEY Limitations:** Relies on parent zones accepting the "verbatim" digest type, which is not guaranteed (some TLDs filter for known algorithm types in CDS implementations).
+        *   **New RR Types vs. Overloading DS (Jonathan, Ralph):** A strong discussion arose about whether the WG should continue "hacking" onto existing records (like DS) or actively work towards adding new authenticated RR types at the parent zone, even if difficult and time-consuming. The consensus on the feasibility and desirability of new RR types in the parent is lacking.
+    *   **Experimental Path:** The charter supports experimental solutions, suggesting DS Glue could be pursued on an experimental basis.
+
+*   **New Drafts by Brian Dixon (Authenticated to Authoritative Proposal):**
+    *   Four new drafts (some for dprive, some for dnsop) were introduced, motivated by ADoT.
+    *   **Goals:** Channel security via TLS (relaxing cert types for easier deployment), maximize interoperability, quick deployability (avoiding changes to record types/DS hash algorithms), minimal new DNS protocol elements, explicit signaling to avoid probing, validate server identity, and protect against downgrade.
+    *   **Non-Goals:** Data integrity (handled by DNSSEC), web PKI requirement, single unique server identity (allows multiple names per IP for incremental deployment), registry/registrar changes (except for NSV validation).
+    *   **Key Drafts:**
+        *   **NSV (Name Server Validation):** Proposes a new DNSKEY algorithm that embeds a hash of the name server name in the DS record in the parent, protecting the unsigned NS delegation name. Backward compatible.
+        *   **DNST (DNS Transport Signaling):** A new RR type published only in the child's name server zone for explicit transport signaling and resolver discovery.
+    *   **Process:** NSV protects the name server name in delegation. Resolvers then use signed TLSA records (requiring DNSSEC in the name server's zone) and DNST signals to establish a downgrade-resistant TLS session.
+    *   **Interoperability:** Requires DANE TLSA, clients *should* validate DANE.
+
+## Decisions and Action Items
+
+*   **Chairs Action:** The chairs (Brian Haberman, Tim Wicinski) will discuss with the Area Director (Eric) ways to facilitate use case discussions for the "unoff to authoritative" draft to determine consensus and a clear path forward.
+*   **Mailing List Discussion:** The chairs will initiate a mailing list discussion regarding moving RFC 8094 (DNS over DTLS) to Historic status and reallocating port 853 to DNS over QUIC.
+*   **Next Steps for Unilateral Probing Draft:** DKG and Joey Salazar will post their "unilateral opportunistic probing" draft to the IETF data tracker.
+*   **AD's Appeal Follow-up:** The chairs will follow up on the AD's appeal to address the lack of consensus on ADoT proposals and solicit suggestions from the working group on how to move forward (e.g., achieving consensus or acknowledging failure).
+
+## Next Steps
+
+*   Working group members are encouraged to engage in the mailing list discussions on port 853 reallocation and broader ADoT use cases.
+*   Review the newly posted "unilateral opportunistic probing" draft once it appears on the data tracker and provide feedback.
+*   Review the drafts presented by Brian Dixon (NSV, DNST, TLS ADoT) and provide feedback, noting that these will also be presented at the DNSOP session.
+*   The chairs will continue to explore options for organizing experimental ADoT deployments to gather real-world data and inform future specifications.

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="netconf.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-NETCONF-20211108-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 14:30</p>
+<h1>netconf</h1>
+<h2>Summary</h2>
+<p>The NETCONF Working Group held its virtual meeting to discuss the status of existing chartered and unchartered drafts. Key discussions included the progress of the Client Server Suite of drafts, open security considerations for the UDP-based Notification draft, approaches to handling XPath complexity in Adaptive Subscriptions, and improvements/open questions for NETCONF Transaction IDs and List Pagination. Several drafts are nearing publication, while others require further discussion on the mailing list to resolve open issues.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative Items:</strong> Standard IETF processes and policies apply. A countdown timer was used for speakers. Attendees were encouraged to use the Etherpad for notes and queue up to speak.</li>
+<li><strong>Chartered Workgroup Items Status:</strong>
+<ul>
+<li><strong>YANG Push Notification Capabilities:</strong> Past IESG review, currently in the RFC editor queue.</li>
+<li><strong>HTTPS Notification:</strong> Authors believe all open issues are addressed and it's ready for publication. A document shepherd is being sought.</li>
+<li><strong>YANG Push Notification Messages:</strong> The draft expired. Authors (if present or offline) are requested to revive and update it to finalize.</li>
+<li><strong>UDP Notif:</strong> Scheduled for discussion in this meeting.</li>
+<li><strong>Distributed Notif:</strong> Expired. Authors are planning to bring discussion back to the mailing list.</li>
+<li><strong>SCTP CSR:</strong> Updated by Kent (removed a duplicate paragraph) and is now considered ready for IESG Last Call.</li>
+</ul>
+</li>
+<li><strong>Client Server Suite of Drafts (Kent Watsen):</strong>
+<ul>
+<li>Last Call for the entire suite (Netconf client server, Restconf client server) was completed 2-3 weeks ago without objections.</li>
+<li><strong>Open Issue 1 (TLS client server):</strong> How to support raw public keys and pre-shared keys for TLS 1.3, an issue raised by P. Wouters. Resolution is pending.</li>
+<li><strong>Open Issue 2 (Keystore and Truststore):</strong> Ensure language does not preclude the ability to use system-defined configuration (Netmod WG work), allowing built-in keys to appear in the system datastore (preferably) rather than just copied to running.</li>
+<li><strong>Open Issue 3 (Keystore Liaison):</strong> A liaison request from IEEE 802.1AR regarding concerns about copying private keys to running config. This is believed to be a misunderstanding, as it's the YANG node (representing the key data) that needs to be copied, not the private key itself. Rob Wilton will set up a meeting with IEEE (Glenn Parsons) to clarify and determine if a formal liaison response is needed.</li>
+</ul>
+</li>
+<li><strong>UDP-Based Transport (Alex and Pierre):</strong>
+<ul>
+<li><strong>Changes (v03 to v04):</strong>
+<ul>
+<li>Reserved <code>0</code> for encoding types and moved CBOR to the bottom for compliance.</li>
+<li>Merged the DTLS version of the draft into the main UDP Notif draft. DTLS 1.3 is to be used, with messages sent as application data.</li>
+<li>IANA requests for encoding types and option types.</li>
+</ul>
+</li>
+<li><strong>Comments Received:</strong>
+<ul>
+<li>Andy Bierman: Add RFC references for encoding types (CBOR, XML). Discussion ongoing about which CBOR RFC version to use.</li>
+<li>Mahesh Jethanandani: Feedback received and will be addressed.</li>
+</ul>
+</li>
+<li><strong>Working Group Discussion:</strong>
+<ul>
+<li><strong>Security (Rob Wilton):</strong> Concern raised by SecAD about standards-track documents sending data over an unencrypted channel. DTLS is included as an option, but the ability to send unencrypted UDP may be an issue for SecAD. Need to consult with them (via SecDir review or direct conversation). Kent expressed empathy for native UDP in private/local networks where crypto overhead is undesired, noting it's about configuring existing protocols. Pierre argued that current RFCs for UDP applications allow cleartext in certain deployment considerations.</li>
+<li><strong>Congestion (Rob Wilton):</strong> Need to ensure the document sufficiently covers transport requirements for handling congestion. Authors believe it's covered in the applicability section.</li>
+<li><strong>Transmission Timeout (Chair):</strong> Questioned if a configured transmission timeout in the YANG model (for segmentation retention) is intended and if it should be configurable. Authors clarified it relates to segmentation retention and may not need configuration beyond default.</li>
+<li><strong>Well-known UDP Port (Chair):</strong> Noted the draft removed a well-known UDP port. Authors stated it was removed as no one cared and load sharing deployments would likely configure multiple ports anyway.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Adaptive Subscription to YANG Notification (Kefang):</strong>
+<ul>
+<li><strong>Motivation:</strong> Address expensive data management for massive data collection by allowing dynamic streaming rates based on conditions (e.g., higher rate when signal strength drops below a threshold for troubleshooting).</li>
+<li><strong>Proposal:</strong> Client configures an adaptive subscription policy with a condition expressed using XPath evaluation criteria.</li>
+<li><strong>XPath Complexity:</strong> Acknowledged as a potential issue, similar to YANG Push selection filters. A new section in the draft discusses this.</li>
+<li><strong>Design Principles to Reduce Complexity:</strong>
+<ul>
+<li>XPath evaluation against a minimum set of data objects, advertised via a notification capability model.</li>
+<li>Integer-based filters.</li>
+<li>One-to-one numeric comparison, where one object is a leaf data node and the other an integer, resulting in a boolean value.</li>
+</ul>
+</li>
+<li><strong>Working Group Discussion:</strong>
+<ul>
+<li><strong>Rob Wilton:</strong> Agreed the proposed text is on the right track. Praised advertising supported objects via capabilities. Recommended requiring all implementations to support a basic set of filters, but allowing more complex ones (with a well-defined error code for unsupported complexity).</li>
+<li><strong>Kent Watsen:</strong> Noted similar XPath complexity concerns in the List Pagination work. Raised the need for servers to advertise what extra, complex expressions they support beyond the minimum set.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>NETCONF Transaction ID (Jan Lindblad):</strong>
+<ul>
+<li><strong>Motivation:</strong> Reduces traffic and increases reliability for configuring multiple servers from multiple clients.</li>
+<li><strong>Traffic Analysis:</strong> Real-world application data showed 91% of traffic in YANG 1.0 hello messages. Transaction IDs could reduce round trips (569 to 378) and configuration data exchanged by nearly half. Emphasized reliability for multi-client/multi-server scenarios as the primary value.</li>
+<li><strong>Changes (v00 to v01):</strong> Clarified e-tag specifics, harmonized transaction ID names with RFC 7232/8040, and <em>removed the option for clients to set transaction IDs</em> due to controversy (though Jan still advocates for it). Adjusted the mechanism for transaction IDs to be returned.</li>
+<li><strong>Open Questions/Alternatives (Current Draft Position):</strong>
+<ul>
+<li>E-tag assignments: Matches Restconf/RFC 7232; no specific string formatting.</li>
+<li>Timestamp support: Not included.</li>
+<li>Client-assigned TIDs: Not allowed in the current draft (but Jan made a case for it, citing performance benefits by allowing clients to update their local database without waiting for server responses).</li>
+<li>Free-form metadata string: Not included.</li>
+<li>Granularity: Applies to datastores and server-picked containers/list elements, not individual leaves or client-decided elements.</li>
+</ul>
+</li>
+<li><strong>Future Development Ideas:</strong> Indicate TID-associated elements via capabilities, reduce config false data, add e-tags for commit/other operations.</li>
+<li><strong>Working Group Discussion:</strong>
+<ul>
+<li><strong>Pierre (NetConf Chair):</strong> Supported client-assigned TIDs or a mechanism to label transactions (e.g., with service request IDs from orchestrators) for improved lookup and multi-client scenarios.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>List Pagination Mechanisms (Ching Chu):</strong>
+<ul>
+<li><strong>Motivation:</strong> Improve client interface, reduce latency and resource consumption when retrieving large lists, leveraging server-side processing and backend storage.</li>
+<li><strong>Changes since IETF 109:</strong>
+<ul>
+<li>Renamed <code>cong</code> and <code>escape</code> parameters to <code>limit</code> and <code>offset</code>.</li>
+<li>Defined 5 query parameters (<code>where</code>, <code>sort-by</code>, <code>direction</code>, <code>offset</code>, <code>limit</code>) and <code>sublist-limit</code> (for descendant lists).</li>
+<li>Extended server capabilities with <code>constraint</code> (for parent nodes) and <code>indexed</code> (for child nodes used in <code>where</code>/<code>sort-by</code>) parameters.</li>
+<li>Netconf draft: New RPC augmenting <code>get-config</code>, <code>get</code>, and <code>get-data</code>.</li>
+<li>Restconf draft: Updates RFC 8040, allowing list/leaf-list as valid resource targets for GET/DELETE, adds new media types, and six new query parameters.</li>
+</ul>
+</li>
+<li><strong><code>remaining</code> Metadata Attribute:</strong> Returns the number of entries <em>not</em> included due to <code>limit</code> or <code>sublist-limit</code>. Examples for both parent and descendant lists were shown.</li>
+<li><strong>Open Issues for Discussion:</strong>
+<ul>
+<li><strong>Cursor Support:</strong> The draft uses offset-based pagination. Seeking compelling use cases for cursor-based pagination (which handles dataset changes during paging better) for config data. Current mechanisms (entity-tag, timestamp, error codes) might suffice.</li>
+<li><strong><code>remaining</code> Annotation:</strong> Debate on whether to omit the <code>remaining</code> annotation if zero elements were removed, or use <code>0</code> to represent &quot;no elements removed&quot; versus omitting it to mean &quot;unknown.&quot;</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> The <strong>HTTPS Notification</strong> draft is considered ready for publication.</li>
+<li><strong>Decision:</strong> The <strong>SCTP CSR</strong> draft has been updated and is ready for IESG Last Call.</li>
+<li><strong>Decision:</strong> The <strong>Client Server Suite</strong> of drafts has completed its Last Call.</li>
+<li><strong>Action Item: Rob Wilton (Chair):</strong> Solicit a document shepherd for the <strong>HTTPS Notification</strong> draft.</li>
+<li><strong>Action Item: Rob Wilton:</strong> Schedule a meeting with Kent Watsen and IEEE 802.1AR liaison (Glenn Parsons) to resolve the liaison request issue regarding the <strong>Keystore</strong> draft.</li>
+<li><strong>Action Item: Alex/Pierre (UDP Notif authors):</strong> Engage with the Security Area Directorate (SecAD) to address concerns about sending data over unencrypted channels in a standards-track document.</li>
+<li><strong>Action Item: Alex/Pierre (UDP Notif authors):</strong> Address remaining comments on the mailing list (RFC references, CBOR version, congestion handling, transmission timeout configuration).</li>
+<li><strong>Action Item: Kefang (Adaptive Subscription author):</strong> Refine the text regarding XPath complexity, consider implementing a minimum set of supported filters, and define error codes for unsupported complex queries. Explore mechanisms for servers to advertise supported expressions.</li>
+<li><strong>Action Item: Jan Lindblad (Transaction ID author):</strong> Take the open questions and alternatives, especially the case for client-assigned Transaction IDs, to the mailing list for further discussion.</li>
+<li><strong>Action Item: Ching Chu (List Pagination author):</strong> Take the open issues regarding cursor support and the <code>remaining</code> annotation to the mailing list for further discussion.</li>
+<li><strong>Action Item: All Authors:</strong> Be proactive in bringing technical discussions and open issues to the working group mailing list.</li>
+<li><strong>Action Item: All Attendees:</strong> Assist with note-taking during meetings.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussions on all open issues via the working group mailing list.</li>
+<li>Authors are expected to update their drafts based on the feedback and discussions.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,70 @@
+**Session Date/Time:** 11 Nov 2021 14:30
+
+# netmod
+
+## Summary
+The netmod session at IETF 112 covered administrative updates, including document status and the importance of using the mailing list for consensus. Key technical discussions included the status of the YANG versioning drafts, with `ietf-yang-module-versioning` and `ietf-yang-semantic-versioning` declared ready for Working Group Last Call. The `ietf-yang-packages` draft presented progress on addressing open issues, particularly around schema mount functionality and resolving duplication with existing module list mechanisms. A new individual draft on system-defined configuration introduced concepts for managing system-level configuration, leading to significant discussion on backward compatibility, running configuration validity, and origin tracking. Finally, a presentation on extending ACLs (RFC 8519) highlighted functional gaps and sought working group guidance on the approach to enhancements (augmentation vs. revision) and the scope of network-wide ACL management.
+
+## Key Discussion Points
+
+*   **Administrative & Document Status:**
+    *   The `c-camp` document on the agenda is expected to remain within the C-CAMP WG.
+    *   Several post-last call documents require author updates, including one returned to the WG for reference alignment.
+    *   The `no-tags` draft requires an update from authors.
+    *   The `enum-bits` draft is nearing Working Group Last Call, pending any immediate additions identified by the WG by December.
+    *   `versioning-requirements` is awaiting progress on other versioning work.
+    *   Emphasis was placed on using the mailing list for consensus building for WG documents, even if authors agree to changes offline.
+
+*   **YANG Versioning (`ietf-yang-module-versioning`, `ietf-yang-semantic-versioning`):**
+    *   Weekly meetings are ongoing and open to all.
+    *   `ietf-yang-module-versioning` (draft-ietf-netmod-module-versioning-05) received editorial updates and minor corrections; no major functional changes.
+    *   `ietf-yang-semantic-versioning` (draft-ietf-netmod-yang-semver-05) includes full author reviews, defines usability for submodules (submodule version change requires module version change, similar to revision dates), and has a shortened/unique YANG module prefix.
+    *   Authors believe both drafts are ready for Working Group Last Call.
+
+*   **YANG Packages (`ietf-yang-packages`):**
+    *   Checksum definitions were removed for consistency with `module-versioning`.
+    *   **Open Issues:** 20 open issues, with owners assigned.
+    *   **Refining Text (Issue 65):** Needs alignment with stable YANG versioning drafts, especially regarding semantic version labels.
+    *   **Schema Mount Functions:** The draft currently lacks schema mount definitions. Authors propose packages could contain modules with mount points and define constraints (e.g., `ietf-basic-package` restricting to L2/L3 VPNs). Initial rules were proposed for constraints, overriding, and including allowable packages.
+    *   **Module List Duplication:** A key concern was duplication of module list functionality with existing mechanisms (e.g., NETCONF `hello`, `NETCONF monitoring`, `yang-library` RFC 7950/8834). Discussion is ongoing on how to remove this duplication.
+
+*   **System Defined Configuration (`system-defined-configuration`):**
+    *   This individual draft, based on prior discussions, aims to improve visibility, convenience, configurability, and client control of system configuration.
+    *   **Proposed Solution:**
+        *   A mandatory `with-system` parameter for `get`/`get-config` to retrieve combined `running` and `system` configuration.
+        *   An optional `system` datastore, read-only for clients, with dynamic content.
+        *   `intended` configuration would be created by `system` being overwritten/extended by `running`.
+    *   **Key Open Issues:**
+        *   **`running` configuration validity:** A fundamental question of whether `running` must always be a valid configuration tree (as per RFC 7950/8342). Concerns about backward compatibility for offline validation vs. proposed online/offline validation approaches.
+        *   **Immutable flag:** Discussion on defining a flag to indicate read-only system configuration.
+        *   **`with-origin` for `intended`:** Whether to expose origin information (system or running) to clients when retrieving from `intended`.
+        *   **`origin=system` for copied configuration:** If system configuration is explicitly copied into `running`, should its origin remain `system` or be treated as client-configured? This relates to the behavior of `with-defaults` in explicit mode.
+    *   Concern was raised about potential incompatible redefinition of RFC 7950/8342, suggesting an alternative `without-system` flag approach for normal operation. The issue of backward compatibility for clients unaware of system information was highlighted.
+
+*   **Extensions of ACLs (RFC 8519):**
+    *   The draft proposes enhancements to the `ietf-acl` YANG model (RFC 8519) based on operational experience.
+    *   **Limitations of RFC 8519:** Design makes some extensions via augmentation complicated, potentially requiring redefinition.
+    *   **Functional Gaps Identified:**
+        *   Lack of manipulating lists of prefixes (currently one prefix per entry), leading to sub-optimal configuration for many-to-many rules.
+        *   Inability to define aliases or sets (e.g., prefix sets, protocol sets, port sets, ICMP sets) for reuse across ACLs.
+        *   Sub-optimal handling of IPv4 fragments and TCP flags (e.g., no bitmasking for multiple flags).
+        *   Limited actions (accept/discard); desire for rate-limited or payload-based filtering.
+        *   RFC 8519 is a device model, but there's a need for network-level ACL management (e.g., central management, reusing templates across multiple devices).
+    *   **Guidance Sought:** Working Group guidance was requested on the best approach for enhancements: a new version of the ACL model (minimizing breaking changes) or augmenting the existing model. Also, how to handle a separate module for network-wide ACLs/sets (in netmod or elsewhere).
+    *   The proposed functionality is stateless.
+
+## Decisions and Action Items
+
+*   **YANG Versioning Drafts:**
+    *   **Decision:** The chairs will initiate a Working Group Last Call for `ietf-yang-module-versioning` and `ietf-yang-semantic-versioning`.
+    *   **Decision:** These drafts will be held within the working group until all five versioning-related drafts are ready for IESG processing.
+*   **Post-Last Call Document:** Authors of the document returned to the WG are expected to align it with reference documents. Others wishing to help should contact authors and cc the netmod chairs.
+*   **`enum-bits` Draft:**
+    *   **Action Item:** Working Group members are requested to review `enum-bits` by December and propose any immediate additions to the mailing list. If no significant issues or additions are identified, the chairs will move it to Working Group Last Call.
+
+## Next Steps
+
+*   **`ietf-yang-packages`:** Authors to continue working on the 20 open issues, including proposals for schema mount functionality and addressing module list duplication.
+*   **`ietf-yang-packages` (Chairs Request):** Authors are requested to post weekly meeting topics to the mailing list to facilitate broader participation.
+*   **System Defined Configuration:** Authors to update the draft with more concrete technical proposals regarding running configuration validity, origin tracking, and backward compatibility. Continued discussion on the mailing list is encouraged, with potential for another interim meeting if interest remains high.
+*   **ACL Extensions:** Authors to update the draft with detailed proposals on how to implement the identified enhancements, including specific proposals for augmenting or revising RFC 8519, and a more concrete design for the network-level ACL module. Discussion will continue on the mailing list.

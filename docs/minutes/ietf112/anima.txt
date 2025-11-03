@@ -1,0 +1,91 @@
+**Session Date/Time:** 10 Nov 2021 16:00
+
+# anima
+
+## Summary
+
+The anima Working Group session at IETF 112 covered the status of existing and new drafts, including progress on constrained join proxy, constrained voucher, and the split of BRSKI AE into two distinct documents (BRSKI AE and BRSKI PRM). Discussions also focused on updates to RFC 8366, proposals for autonomic IP address to access control group mapping, and resource auto-deployment. The session highlighted the need for more document reviews and shepherding within the working group, and a call for adoption was made for GRASP DNS-SD and ANIMA Services DNS Auto-Configuration. A significant debate ensued regarding the requirements and reference model for an L2 ACP, with authors asked to clarify forwarding plane specifics and use cases.
+
+## Key Discussion Points
+
+### General Updates and Working Group Processes
+
+*   **IETF Notewell and Code of Conduct:** Reminders were given regarding public discourse and expected behavior.
+*   **IPR Disclosure:** Early IPR disclosure is required, especially when adopting documents, to avoid past issues with late disclosures.
+*   **NomCom Feedback:** Participants encouraged to provide feedback for NomCom candidates by November 23rd.
+*   **Anima Marketing:** An overview of Anima and its capabilities was published in the Internet Protocol Journal (October 2021), recommended as an introductory resource.
+*   **RFC Errata:** A reminder to check and file errata for published RFCs. Anima currently has three RFCs with documented errata.
+*   **Document Review & Shepherding:** A strong call was made for more document reviews, with acknowledgements tracked. Authors encouraged to seek early reviews, including formal IoT directorate, YANG doctor, and security reviews, before IESG submission. Shepherding was emphasized as a crucial reciprocal activity for document progression and learning the IETF process.
+*   **Technical Collaboration:** The use of design teams (e.g., BRSKI design team) and Webex/other conferencing tools was encouraged for faster technical collaboration. An unofficial GitHub repository is available for drafts.
+
+### Document Specific Discussions
+
+*   **draft-ietf-anima-asa-guidelines:** Passed working group last call without negative comments. IPR disclosures collected. Publication requested to IESG.
+*   **draft-ietf-anima-brski-cloud:** Authors incorporated IETF 111 feedback and security considerations. It is considered ready for working group last call, which will be initiated after IETF 112.
+*   **draft-ietf-anima-constrained-join-proxy:**
+    *   Working group last call concluded October 14th with reviews from Esco, Russell, and Brian Carpenter.
+    *   A new revision was posted addressing minor nits and restructuring the introduction, resolving IoT directorate review comments. No significant technical concerns remain.
+*   **draft-ietf-anima-constrained-voucher:**
+    *   Updates include clarification of "updates" semantics (amending/extending RFC 8995 and 8366), and fixing SID value duplications.
+    *   Concern raised about the dependency on YANG/CBOR documents, which are stuck in IESG review. The authors are hedging by preparing a pull request to make these references informative if needed.
+    *   Hackathon report indicated limited participation. A bug was found in a pledge client's interaction with a registrar server, related to an Authority Key Identifier missing from a certificate.
+    *   Discussion on IPv4 vs. IPv6 usage in implementations.
+*   **BRSKI AE and Derived Work (draft-ietf-anima-brski-ae, draft-ietf-anima-brski-prm):**
+    *   The original `draft-ietf-anima-brski-ae` was split into two documents to better address distinct use cases and facilitate conformance.
+    *   **draft-ietf-anima-brski-ae (Use Case 1):** Focuses on supporting alternative enrollment protocols (specifically lightweight CMP) and pledge-registrar interaction. A proof-of-concept (POC) implementation is underway.
+    *   **draft-ietf-anima-brski-prm (Use Case 2):** Covers pledge in responder mode and reverse communication, introducing a registrar agent. It incorporated YANG doctor review comments, `ietf-voucher-request-prm` enhancements, and `ietf-ztp-types` for CSRs. A POC implementation is underway.
+*   **draft-ietf-anima-jws-voucher:**
+    *   Proposes JWS-signed JSON vouchers as an alternative to CMS-signed vouchers (RFC 8366).
+    *   Supports compact serialization (implemented) and is investigating JSON serialization for potential OPC UA foundation interest.
+    *   Minor editorial changes for consistency.
+    *   Discussion on protocol variability and ensuring interoperability via `Content-Type` and `Accept` headers.
+*   **Status of RFC 8366 Update:**
+    *   A revision is needed to allow for new assertion types (e.g., for BRSKI async enroll) by changing the enumerated type to an IANA-managed registry.
+    *   This change is considered a bug fix and is expected to not alter on-the-wire bits for existing functionality.
+    *   Possibility of moving the document from Proposed Standard to Internet Standard during this revision if implementation experience can be demonstrated.
+*   **draft-ietf-anima-ip-acg-mapping:**
+    *   Proposes a GRASP objective `ip-address-to-access-control-groups` for autonomic IP address to access control group mapping.
+    *   Clarified roles of Access Authentication Point (AAP) and Policy Enforcement Point (PEP).
+    *   Examples for information passing procedures were provided.
+    *   Future updates will change "unsolicited synchronization" to "negotiation," allow rapid mode discovery, and use objective name suffixes (`.aap`, `.pep`) for multiplexing roles.
+    *   Request for a concrete example service instance with detailed parameters to guide implementation and identify extension points.
+*   **draft-ietf-anima-resource-auto-deployment:**
+    *   Describes an autonomic mechanism for deploying resource-based network services using GRASP.
+    *   Major changes include refined definitions of network elements, more detailed resource processes, and simplified GRASP objectives (`resource-manager`).
+    *   Open questions regarding resource release/increase and cross-domain operation were noted, with the authors clarifying that cross-domain is out of scope for the current draft.
+    *   Call for concrete examples with parameters for better understanding.
+*   **draft-ietf-anima-grasp-dnssd & draft-ietf-anima-service-autonomic-autoconfig:**
+    *   **GRASP DNS-SD:** Specifies how to support DNS-SD equivalent service announcement and discovery using GRASP objectives, simplifying encoding and allowing shared registries.
+    *   **ANIMA Services DNS Auto-Config:** Defines minimum self-auto configuration for core infrastructure services (syslog, NTP, RADIUS, SSH) to support ANI infrastructure with SDN controllers (RFC 8368).
+    *   The author justified keeping these drafts separate, analogizing to generic DNS-SD RFCs vs. application-specific uses.
+*   **draft-ietf-anima-idet-id:** The document is not dead, with some derived work in T2TRG, but feedback on its usefulness is low.
+*   **draft-ietf-anima-l2-acp-ani-framework:**
+    *   Discusses scenarios and requirements for an L2 ACP, particularly for small, IoT, or disconnected networks without L3 interfaces, where current L3-based ACP might be suboptimal.
+    *   Proposed L2 requirements include using L2 information (MAC, physical port), L2 frame-based discovery, and L2 loop-free logical topology.
+    *   **Discussion:** A lengthy discussion focused on the practical implementation of an L2 ACP.
+        *   Need for a detailed step-by-step explanation of the L2 forwarding process (packet reception, protection, forwarding, and transmission).
+        *   Credibility of use cases questioned, especially if devices lack L3 management interfaces, or if existing L3 ACP solutions are sufficient.
+        *   Concerns raised about the performance of L3 ACP on L2-only hardware switches for high-volume traffic (telemetry, firmware downloads), suggesting an L2 ACP could leverage hardware forwarding.
+        *   Debate over the role of spanning tree protocols in L2 networks and their convergence limitations vs. L3 routing protocols.
+        *   The chairs noted that there is an unsolved ACP use case for L2-only switches in certain network types, and proposed potential approaches like treating L2 devices as hosts in a mixed L2/L3 ACP.
+
+## Decisions and Action Items
+
+*   **draft-ietf-anima-constrained-join-proxy:** Chair (Shang) to perform a rough check and shepherd write-up within 2-3 weeks, and request IPR disclosures.
+*   **draft-ietf-anima-constrained-voucher:** Michael (author) to fix certificate issues (Authority Key Identifier). Esco (implementer) to recheck IPv4/IPv6 usage in his client.
+*   **draft-ietf-anima-brski-ae / draft-ietf-anima-brski-prm:** The decision to split the original BRSKI AE draft into two (BRSKI AE for alternative enrollment, BRSKI PRM for pledge-in-responder mode) was confirmed.
+*   **draft-ietf-anima-ip-acg-mapping:** Authors to add a concrete service instance example with parameters to the draft to clarify its application and identify extension points.
+*   **draft-ietf-anima-resource-auto-deployment:** Authors to add concrete examples with parameters to the draft to improve understanding and justification for cross-domain scenarios.
+*   **draft-ietf-anima-l2-acp-ani-framework:** Authors to elaborate on the L2 forwarding plane details (packet reception, protection, forwarding, and transmission) within the draft and further position their proposal with respect to the discussed use cases.
+*   **Working Group Chairs:** To initiate working group adoption calls for `draft-ietf-anima-grasp-dnssd` and `draft-ietf-anima-service-autonomic-autoconfig`.
+*   **Working Group Chairs:** To follow up on the status of `draft-ietf-anima-grasp-distribution` (ready for WG last call in July).
+*   **All Participants:** Actively engage in document reviews and consider volunteering for shepherding roles.
+*   **All Participants:** Provide NomCom feedback.
+
+## Next Steps
+
+*   Working group chairs will continue to facilitate discussions on the mailing list and manage document progression.
+*   Authors will revise drafts based on meeting feedback and upload new versions.
+*   Working group last calls for `draft-ietf-anima-brski-cloud` and `draft-ietf-anima-grasp-distribution` are anticipated after IETF 112.
+*   Shepherding efforts will be coordinated for documents lacking shepherds.
+*   Further discussions on the `draft-ietf-anima-l2-acp-ani-framework` and potential joint work on L2 ACP solutions.

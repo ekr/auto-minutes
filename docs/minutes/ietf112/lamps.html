@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lamps.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-LAMPS-20211108-1600">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 16:00</p>
+<h1>lamps</h1>
+<h2>Summary</h2>
+<p>The lamps session covered a wide range of topics, including updates on existing RFCs and several new drafts related to CMP, email header protection, end-to-end encryption guidance, document signing, CSR attributes, and Post-Quantum Cryptography (PQC) integration. Key discussions revolved around algorithm deprecation in CMP, the impact of header protection on legacy email clients, the need for review on stalled drafts, and a significant debate on different approaches (composite vs. non-composite) for PQC migration in authentication, key exchange, and CMS. The working group made decisions on deprecating outdated algorithms in CMP and agreed to advance several drafts to Working Group Last Call (WGLC) or adoption calls after authors incorporate feedback.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>RFC 7299 Update</strong>: The update is in the RFC Editor's queue, with OIDs already assigned by IANA. An RFC is expected within approximately one month.</li>
+<li><strong>CMP Algorithms Update</strong>:
+<ul>
+<li>The draft underwent Working Group Last Call (WGLC) and Area Director review.</li>
+<li><strong>Decision</strong>: Deprecate the use of MD5, SHA-1, DSA, RC5, CAST-128, and Triple DES (with three keys) from RFC 4210 Appendix D. PBMAC is retained, but PBMAC1 is recommended.</li>
+<li><strong>Discussion</strong>: Section 7 (algorithm choice guidelines) was updated for clarity. A proposal to add a table illustrating a &quot;balanced set&quot; of algorithms (e.g., bits of security, key size, CMP protection, central key generation) was discussed. The group agreed that adding such a table is helpful, with editors to determine the final format.</li>
+</ul>
+</li>
+<li><strong>CMP Updates and Lightweight Profile</strong>:
+<ul>
+<li>John Gray was added as an author due to significant contributions.</li>
+<li>RFC 4210 errata were fixed, the <code>hashElks</code> field was moved, a new CRL update retrieval message type was added, and the root CA certificate transfer mechanism was refined.</li>
+<li><strong>Decision</strong>: The polling mechanism in CMP was extended to cover all message types, not just enrollment, using an error message with a &quot;status waiting&quot; state to initiate polling for non-enrollment messages.</li>
+<li>OID registration for the new CRL update message is required. A proposal to reorder pre-registered OIDs in the ASN.1 module was clarified; changing assigned OID <em>values</em> is not permissible, but ordering within the ASN.1 module is acceptable.</li>
+<li>A minor update is still needed in section 4.1.6.1 regarding key agreement key management.</li>
+</ul>
+</li>
+<li><strong>Lamps Email Header Protection</strong>:
+<ul>
+<li>The document has been stalled, with two major options (wrapped vs. injected messages) lacking clear guidance, particularly concerning legacy client handling.</li>
+<li><strong>Discussion</strong>: Bernie proposed sticking to the wrapped approach for signed-and-encrypted messages (as per current standard, fixable by clients) but allowing injected messages for signed-only (multi-part signed).</li>
+<li>DKG proposed a different evaluation criterion: minimize changes in experience for legacy clients, ignoring any security <em>increase</em> for legacy clients. This aims to incentivize adoption by compliant clients. Concerns were raised about the UI impact of wrapped messages on legacy clients (e.g., looking like an attachment, causing confusion).</li>
+<li>DKG suggested dropping the &quot;legacy display&quot; proposal, using injected headers, and for HTML messages, including a hidden <code>div</code> containing obscured headers (e.g., subject) that compliant clients could hide, degrading gracefully for others.</li>
+<li>The discussion highlighted a preference to differentiate between signed-only and encrypted messages, with more flexibility desired for signed messages to avoid confusing legacy users.</li>
+</ul>
+</li>
+<li><strong>End-to-End Encrypted Mail Guidance</strong>: The document is stalled, with outstanding <code>FIXME</code>s. A plea was made for working group members to review and contribute.</li>
+<li><strong>Document Signing EKU</strong>:
+<ul>
+<li>The draft was updated based on list comments, clarifying the definition of document signing and adding a new section on the handling process (with an example based on signing internet drafts).</li>
+<li>Security considerations for cross-protocol attacks were added, and no new privacy considerations were identified.</li>
+<li>A call for working group adoption was initiated. No immediate concerns were voiced in the session, but broader feedback from the mailing list, particularly from a previously vocal individual, is expected.</li>
+</ul>
+</li>
+<li><strong>CSR Attributes</strong>:
+<ul>
+<li>RFC 7030 was deemed unclear regarding CSR attributes, leading to ambiguities in existing implementations (e.g., BRISKI, ANIMA).</li>
+<li><strong>Discussion</strong>: The design team proposes defining a new attribute that allows specific callouts for generic names (e.g., DN, Subject Alternative Name - SAN), rather than allowing arbitrary attributes initially.</li>
+<li>Sean suggested defining a <em>new</em> attribute using extensible ASN.1 to allow future additions, or specific new attributes for DN/SAN. The document aims for backward compatibility.</li>
+</ul>
+</li>
+<li><strong>PQC CHEM in Certificates</strong>:
+<ul>
+<li>A new draft proposes how to include NIST PQC Key Encapsulation Mechanism (CHEM) algorithms in X.509 certificates, following the format of RFC 8410.</li>
+<li><strong>Discussion</strong>: Key points for discussion include:
+<ul>
+<li>Whether to use algorithm identifiers with OIDs that implicitly define parameters, or a generic NIST OID with separate parameter OIDs. A preference for OIDs that imply parameters (no explicit parameters in the structure) was noted.</li>
+<li>Appropriate Key Usage extensions (Key Agreement was initially assumed, but Key Transport from RFC 5990 for RSA KEM was suggested as an alternative). CHEMs represent a new API that doesn't cleanly fit existing Key Agreement/Transport models.</li>
+<li>The need to synchronize with CMS efforts on CHEM integration.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>PQC Migration Discussion (NSA Framework)</strong>:
+<ul>
+<li>A framework for PQC migration was introduced, emphasizing a quick transition to <em>post-quantum only</em> solutions, with hybrid designs serving solely as a transition. The concept of &quot;forward compatibility&quot; (hybrid systems communicating with PQC-only systems) was highlighted.</li>
+<li><strong>Definitions</strong>:
+<ul>
+<li><strong>Composite Design</strong>: Traditional and PQC algorithms function as <em>one entity</em> (e.g., negotiated as a pair).</li>
+<li><strong>Non-Composite Design</strong>: Traditional and PQC algorithms function <em>discretely as individual entities</em> (e.g., two separate certificates).</li>
+</ul>
+</li>
+<li><strong>Pros/Cons</strong>: Non-composite designs were presented as having advantages for long-term PQC migration due to simpler validation, broader crypto agility, and easier interoperability with non-hybrid-aware systems, despite requiring more logistical protocol changes upfront. Composite designs could build on existing structures but face challenges with deprecation, new OID definition, and require an additional transition phase to PQC-only.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>The framework applies to key exchange as well as authentication, though details may differ.</li>
+<li>Some working groups (e.g., TLS) show a preference for non-composite signatures to avoid bandwidth for legacy clients.</li>
+<li>Mike (presenting later) noted that for <em>online</em> protocols (IKE, TLS), multi-cert (non-composite) offers flexibility. However, for <em>offline</em> protocols (code signing, S/MIME) where stripping attacks are a concern and negotiation is absent, non-composite solutions are harder to manage; composite designs might be more suitable there.</li>
+<li>The sentiment emerged that Lamps might need to provide <em>both</em> composite and non-composite tools for other working groups to choose from based on their specific protocol environments.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>PQC CMS Content Encryption</strong>:
+<ul>
+<li><strong>Fitting CHEMs into CMS</strong>: How to integrate CHEMs into CMS content encryption (enveloped data). Three approaches were discussed:
+<ul>
+<li>Generalizing RFC 5990's RSA KEM to use <code>KeyTransRecipientInfo</code> with a &quot;dummy&quot; OID and parameters.</li>
+<li>Using <code>OtherRecipientInfo</code> with a custom structure.</li>
+<li>Defining a new top-level <code>ChemRecipientInfo</code> type. The latter two options offer better semantic clarity and potential flexibility (e.g., for User Keying Material - UKM), but defining a new top-level structure in CMS (a full standard) requires careful consideration of backward compatibility.</li>
+</ul>
+</li>
+<li><strong>Composite Content Encryption</strong>: How to encrypt for a recipient with multiple public keys (whether in a single composite certificate or multiple separate certificates).
+<ul>
+<li>Work has progressed on combining different mechanisms for this.</li>
+<li>The choice between a generic <code>CompositeKeys</code> container and <code>ExplicitCompositeKeys</code> (explicit pairs of OIDs) leans towards explicit pairs.</li>
+<li>For signatures, existing <code>SignedData</code> in CMS allows for multiple signatures, but an attribute might be needed to clarify &quot;OR&quot; vs. &quot;AND&quot; relationships. Mike believes the work on composite signatures remains relevant even in a multi-cert world.</li>
+<li>The underlying mechanism for wrapping the Content Encryption Key (CEK) (e.g., one-time pad XOR vs. AES keywrap) will influence the <code>KeyTrans</code> vs. <code>CHEM</code> decision.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision (CMP Algorithms Update)</strong>:
+<ul>
+<li>Deprecate MD5, SHA-1, DSA, RC5, CAST-128, and Triple DES (with three keys) from RFC 4210 Appendix D.</li>
+<li>Add a table of balanced algorithm sets to Section 7 of the draft, with editors to decide on the best format.</li>
+</ul>
+</li>
+<li><strong>Decision (CMP Updates / Lightweight Profile)</strong>:
+<ul>
+<li>Extend CMP polling mechanism to cover all message types using error messages with &quot;status waiting&quot;.</li>
+<li>Introduce new general message types for CRL update retrieval.</li>
+</ul>
+</li>
+<li><strong>Action Items</strong>:
+<ul>
+<li><strong>Hendrick</strong>:
+<ul>
+<li>Submit an updated CMP Algorithms draft (incorporating the balanced algorithm tables) by the end of the current week.</li>
+<li>Make necessary changes to the CMP Updates and Lightweight Profile drafts (including the minor update in section 4.1.6.1 for CMP Updates).</li>
+</ul>
+</li>
+<li><strong>Chairs</strong>:
+<ul>
+<li>Initiate Working Group Last Call (WGLC) for the CMP Algorithms Update draft, followed by CMP Updates, and then Lightweight Profile (after authors submit their next updates). All three CMP-related drafts should be reviewed before publication.</li>
+<li>Initiate a Working Group Adoption Call for the Document Signing EKU on the mailing list.</li>
+</ul>
+</li>
+<li><strong>DKG</strong>:
+<ul>
+<li>Modify the Lamps Email Header Protection draft to implement the chosen approach (likely injected headers, dropping legacy display, and an HTML <code>div</code> for the subject in HTML messages).</li>
+<li>Coordinate with Bernie and Alexei to agree on the proposed changes before WGLC.</li>
+</ul>
+</li>
+<li><strong>Working Group Members</strong>:
+<ul>
+<li>Review and contribute feedback to the End-to-End Encrypted Mail Guidance draft.</li>
+</ul>
+</li>
+<li><strong>Michael (CSR Attributes author)</strong>:
+<ul>
+<li>Prepare an updated CSR Attributes draft incorporating discussions (defining a new attribute for generic name or specific DN/SAN attributes). Aim for an adoption call in January/March.</li>
+</ul>
+</li>
+<li><strong>Sean (PQC CHEM in Certificates author)</strong>:
+<ul>
+<li>Clarify the appropriate key usage (Key Agreement vs. Key Transport) for PQC CHEMs in certificates.</li>
+<li>Post an updated draft for a call for adoption.</li>
+</ul>
+</li>
+<li><strong>Ali, Rebecca, Daphne</strong>:
+<ul>
+<li>Publish an informational draft detailing their PQC migration framework (composite vs. non-composite authentication).</li>
+<li>Consider expanding their analysis to include store-and-forward (offline) protocols.</li>
+</ul>
+</li>
+<li><strong>Mike (PQC CMS Content Encryption author)</strong>:
+<ul>
+<li>Initiate several mailing list threads to discuss higher-order design decisions for PQC CMS content encryption, including:
+<ul>
+<li>The necessity and use cases for composite vs. non-composite/dual atomic structures.</li>
+<li>The best approach for integrating CHEMs into CMS (KeyTransRecipientInfo, OtherRecipientInfo, or a new ChemRecipientInfo).</li>
+<li>The underlying mechanism for wrapping the CEK.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>John (PQC CMS Content Encryption co-author)</strong>: Consider creating a new draft specifically for composite KEM construction.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Working Group Last Calls will be initiated for the CMP-related documents following author updates.</li>
+<li>The Lamps Email Header Protection draft will be updated and moved towards WGLC after the authors address the discussed design choices.</li>
+<li>The End-to-End Encrypted Mail Guidance draft requires active review and contributions to move forward.</li>
+<li>Calls for adoption are anticipated for the Document Signing EKU, CSR Attributes, and PQC CHEM in Certificates drafts once further revisions are completed.</li>
+<li>Discussions on the mailing list are expected to clarify key design decisions for PQC integration into CMS, including the preferred framework for composite and non-composite structures, and how to best integrate CHEMs.</li>
+<li>The working group will need to assess whether to standardize both composite and non-composite PQC tools to offer flexibility for various protocol environments.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

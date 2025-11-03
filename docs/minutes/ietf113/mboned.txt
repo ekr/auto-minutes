@@ -1,0 +1,57 @@
+**Session Date/Time:** 22 Mar 2022 13:30
+
+# mboned
+
+## Summary
+
+The mboned session included updates on ongoing working group documents, a hackathon report focusing on AMT with IPv6, and a detailed discussion on the Multicast Redundant Ingress Router Failover draft. A significant portion of the session was dedicated to the "Multicast to the Browser" initiative, where progress and strategy were outlined, including the challenges of W3C adoption, a shift towards production deployment, and the proposal of a new Multicast over QUIC extension.
+
+## Key Discussion Points
+
+*   **Hackathon Update:**
+    *   Frederick confirmed that his primary hackathon work was not multicast-related.
+    *   Jake reported successful interoperability testing of the AMT Gateway Docker container with IPv6 against his own relays. He achieved streaming and listening to music over all four combinations of IPv4/IPv6 tunnels (v4-in-v4, v4-in-v6, v6-in-v4, v6-in-v6).
+    *   Interop was also successful with the FreeRouter AMT gateway, connecting to Jake's relays and streaming over the same four combinations.
+    *   Bugs were identified and potentially patched in the FreeRouter implementation.
+    *   FFmpeg and VLC (with external gateways) worked as expected. Testing focused on SSM, not ASM.
+*   **Active Working Group Documents:**
+    *   **YANG Models for MBONE Multicast:** Sandy updated the draft based on previous comments and is actively seeking further reviews, specifically from Jake and Gion.
+    *   **Telemetry for IP Multicast:** Authors plan to update the draft soon. Its progression is dependent on related unicast telemetry drafts currently in working group last call within the IP Performance Measurement (IPPM) working group. Mike acknowledged contributions from new authors and stated the draft is technically "almost ready to go" but noted that this working group does not require implementations for progression.
+    *   **Multicast Redundant Ingress Router Failover Draft (draft-sandy-mboned-redundant-ingress-failover):**
+        *   The adoption call for this draft is underway and open until Friday. More responses are encouraged.
+        *   Sandy presented the draft, which describes three standby modes (cold, warm, hot) for two ingress routers (IRs) to protect against single node failure, usable with various multicast technologies (PIM, BIER, P2MP-TE, MRDP).
+        *   Version 02 added a section on failure detection, detailing methods like BFD (various RFCs) and Ping (IPv4/v6 Ping, LSP Ping, BIER Ping).
+        *   The draft notes a potential for mistaken switchover (duplicate flow) if only the path between Backup IR (BIR) and Selected IR (SIR) fails.
+        *   Future updates plan to add signaling procedures between IRs and ERs, details on optimization methods (e.g., FC9026), clarification for L3VPN/L2VPN deployments, and language improvements.
+        *   Jake inquired about existing implementations. Sandy confirmed many existing deployments use Ping methods for warm/hot standby, especially in large broadband networks. PIM is more common than BIER in current deployments for these scenarios.
+*   **Multicast to the Browser (Jake's Presentation):**
+    *   **IETF 112 Follow-ups:** The Multicast Security document discussion was dispatched to the `msec` list but received no responses, indicating a "mild setback" and no immediate plan for a BOF.
+    *   **W3C WebTransport Working Group Feedback:** Rejected adding multicast as a use case, citing lack of browser interest and the prematurity of the proposal without foundational IETF work.
+    *   **Strategy Shift:** Acknowledging the "chicken-and-egg" problem for multicast, the current strategy is to pursue production deployment of inter-domain multicast by ISPs first, believing that real traffic will drive browser interest.
+    *   **Akamai's Project Status:** The project has moved from R&D to a product team, and Akamai is actively seeking partners for a production run within the next 1-2 years, targeting software downloads and video offload.
+    *   **Multicast over QUIC:** A new draft is being developed to extend QUIC, building on its multipath capabilities. The goal is to provide a multicast transport that is mostly transparent to web applications, leveraging a unicast connection for security.
+        *   This approach aims to transport unidirectional web transport streams (server to client) and H3 server push.
+        *   Lucas Pardue has agreed to co-author. An optimistic target for a prototype and initial spec presentation to the QUIC working group is July, though this may slip due to deployment priorities.
+    *   **AMBIE Draft:** Max provided feedback and PRs, aiding its progression. Its exact relationship to the new QUIC effort is TBD.
+    *   **W3C Multicast Community Group:** Continues to meet regularly, serving as a hub for monthly updates and code contributions (e.g., Gavin Henry's work on `libmcrx` for Windows support and improved static analysis).
+    *   **Circular Dependency Challenge:** The discussion highlighted the difficulty of generating browser interest without IETF protocol work, and IETF interest without clear use cases and demand, and W3C interest without IETF work first. Jake emphasized the need for a concrete protocol proposal for web multicast before WGs like security or transport can fully engage.
+    *   **Market Drivers:** Lenny and Jake discussed the increasing demand for peak event capacity (e.g., Amazon Prime's NFL streaming, Italian Serie A football), underscoring the potential for multicast to alleviate network strain.
+
+## Decisions and Action Items
+
+*   **Decision:** The adoption call for `draft-sandy-mboned-redundant-ingress-failover` will remain open until Friday.
+*   **Action Item (Working Group):** Review `draft-sandy-mboned-redundant-ingress-failover` and respond to the adoption call by Friday.
+*   **Action Item (Working Group):** Review the YANG models for MBONE Multicast draft.
+*   **Action Item (Jake):** Initiate the working group last call for the `dorms` draft.
+*   **Action Item (Jake):** Request the RFC Editor to cluster the `dorms` and `ambie` drafts.
+*   **Action Item (Working Group Members):** Post to `msec@ietf.org` in response to the multicast security considerations discussion to encourage engagement from security experts.
+*   **Action Item (Jake):** Address the TBDs in the `mna` draft and then solicit more reviews or open it for last call.
+*   **Action Item (Chairs):** When scheduling future mboned meetings, attempt to avoid collision with the QUIC working group schedule to facilitate cross-participation.
+*   **Action Item (Working Group):** Consider making an official request to the security, transport, or QUIC working groups to evaluate and engage with the "Multicast to the Browser" work once a concrete protocol proposal is available.
+
+## Next Steps
+
+*   The authors of the Telemetry for IP Multicast draft will update their document once dependent drafts in the IPPM working group complete their last call phase.
+*   Jake will continue developing the Multicast over QUIC draft with Lucas Pardue, aiming for a prototype and initial specification to potentially present to the QUIC working group in July.
+*   Akamai will continue talks with potential partners to drive the first production deployment of inner-domain multicast.
+*   Working group members are encouraged to join and participate in the W3C Multicast Community Group.

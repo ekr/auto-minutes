@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="teep.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-TEEP-20211112-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 12 Nov 2021 12:00</p>
+<h1>teep</h1>
+<h2>Summary</h2>
+<p>The TEEP session covered a hackathon report, updates on the TEEP protocol draft (draft-07), and significant discussions around the integration of Evidence Attestation Tokens (EAT) and SUIT manifests. Key topics included clarifying token usage, defining a &quot;class of device&quot; identifier, handling SUIT manifest examples and uninstallation, and streamlining cipher suite definitions. The working group reached consensus on several technical points, providing clear direction for future draft revisions and inter-working group collaboration.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Hackathon Report (Akira)</strong></p>
+<ul>
+<li>The hackathon focused on integrating SUIT manifest examples into the TEEP draft.</li>
+<li>Implementations used were <code>tamp-proto-tam</code> (TAM side) and <code>lib-csuit</code> (device library). Work on TEEP device implementation is ongoing.</li>
+<li>Progress included supporting TEEP message format draft-06 and adding SUIT manifest examples with integrated trusted component (TC) binaries.</li>
+<li><strong>Feedback on Drafts / GitHub Issues</strong>:
+<ul>
+<li>Ambiguity in TEEP message token usage (Dave's issue).</li>
+<li>Alignment of COSE usage between SUIT and TEEP for simpler implementation.</li>
+<li>Preference for <code>unlink</code> command for deleting TC binaries/firmware in SUIT manifests.</li>
+<li>Finalizing three SUIT manifest examples in the TEEP message.</li>
+<li>Adding <code>ES256</code> for COSE/CWT to CDDL description.</li>
+</ul>
+</li>
+<li><strong>Importance of CBOR Diagnostic Notation</strong>: Highlighted the utility of diagnostic notation alongside binary representations and comments to ease implementation and debugging for TEEP and SUIT.</li>
+<li><strong>SUIT Manifest Examples (Three Formats)</strong>:
+<ol>
+<li><strong>URI-based Payload</strong>: SUIT manifest contains a URI pointing to the TC binary, which the TEEP device then fetches. Benefits: TAM doesn't host binaries; Developer manages hosting.</li>
+<li><strong>Embedded Payload</strong>: TC binary is embedded directly within the SUIT manifest. Benefits: Single message transfer; TAM hosts the binary.</li>
+<li><strong>Personalization Data</strong>: Providing configuration (<code>config.json</code>) for an <em>already installed</em> TC binary using a SUIT manifest.</li>
+</ol>
+</li>
+<li><strong>Discussion on Example Location</strong>: Raised the question of whether these SUIT manifest examples should reside in the TEEP draft, SUIT manifest draft, or a separate document. Brendan's strong preference was for them to be in the TEEP document as TEEP is a profile of SUIT and SUIT itself is fragmented into multiple documents.</li>
+</ul>
+</li>
+<li>
+<p><strong>TEEP Protocol Draft Updates (Dave)</strong></p>
+<ul>
+<li>Most historical issues from IETF 111 have been resolved and incorporated into draft-07.</li>
+<li><strong>OCSP and Capability Discovery</strong>: All references to OCSP were removed. The spec now requires an update mechanism for trust anchors for revocation.</li>
+<li><strong>Token (Nonce) Clarification</strong>: The <code>token</code> field (nonce-like) in TEEP requests is optional, for TAMs to match requests/responses. Requirements added: must be random/different per request, one response per token, not for other purposes, and should have an expiration.</li>
+<li><strong>Ambiguity in Update Message Tokens</strong>:
+<ul>
+<li>The <code>Update</code> message allows an optional <code>token</code> field, but lacks explicit guidance on when to include it.</li>
+<li>Proposal: Clarify that <code>token</code> inclusion is up to the TAM implementation. TEEP agent <em>must</em> ensure the SUIT report nonce is present if the <code>Update</code> message contains a nonce.</li>
+<li><strong>Decision</strong>: This proposal was accepted by consensus.</li>
+</ul>
+</li>
+<li><strong>EAT (Evidence Attestation Token) Integration</strong>
+<ul>
+<li>Draft-07 currently references the core EAT spec and Hank's individual submission.</li>
+<li>Updates in EAT draft-11 (including <code>OemId</code>, <code>EuiT</code>, <code>Software Name/Version</code>) can meet most TEEP architecture requirements (vendor, device unique ID, firmware type/version).</li>
+<li><strong>Class of Device Discussion (EAT/RATS/TEEP Interoperability)</strong>:
+<ul>
+<li>This is the last remaining requirement from TEEP architecture not fully addressed by EAT draft-11.</li>
+<li>Background: The concept of &quot;class of device&quot; (e.g., model number, TEE type) is needed for scalable policy management, distinct from serial numbers (<code>EuiT</code>).</li>
+<li>Existing proposals: Hank's uses UUID; Lawrence's uses opaque byte blob.</li>
+<li><strong>Key Questions</strong>:
+<ol>
+<li>Is &quot;hardware class identifier&quot; TEEP-specific or a general EAT/RATS concept?</li>
+<li>Should its value be globally unique, vendor-specific, or profile-specific?</li>
+<li>Should it be opaque or structured?</li>
+<li>What format (UUID, byte blob, text string, OID, URL)?</li>
+</ol>
+</li>
+<li><strong>Brendan's Proposal (Consensus)</strong>:
+<ul>
+<li>The &quot;class of device&quot; is a <strong>general problem</strong>, not TEEP-specific (SUIT also recognizes it).</li>
+<li>Class identifiers should be <strong>scoped by vendor or profile</strong>, not necessarily globally unique.</li>
+<li>The value <strong>must be opaque</strong>, with UUID (specifically Type 5 for hashing) preferred to enforce opaqueness and prevent accidental structure interpretation.</li>
+</ul>
+</li>
+<li><strong>Guidance to RATS Working Group</strong>: The EAT spec should define a claim for &quot;class of device,&quot; but leave the <em>definition of its values</em> to vendors and profiles. The values must be opaque.</li>
+<li><strong>Decision</strong>: Strong consensus was reached for this guidance to RATS.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>EAT Profile Requirements</strong>:
+<ul>
+<li>Section 7 of the EAT document outlines requirements for any EAT profile. Not all of these are currently covered in the TEEP protocol spec.</li>
+<li>Proposal: Incorporate all missing EAT profile requirements directly into the TEEP protocol specification.</li>
+<li><strong>Decision</strong>: Accepted by consensus.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>SUIT Discussion (Continued)</strong></p>
+<ul>
+<li><strong>SUIT Reports</strong>: Brendan's SUIT report examples from IETF 111 need to be added to the TEEP protocol spec appendix.</li>
+<li><strong>Deleting Trusted Component (Unlinking Manifests)</strong>:
+<ul>
+<li>Question 1: Should a SUIT parser unlink all dependent manifests when a dependent manifest is unlinked? (Implied: only when ref count goes to zero).</li>
+<li>Question 2: Can a component installed via SUIT be removed without a <em>new</em> SUIT manifest updating/deleting it (e.g., local admin action)?</li>
+<li>Options: 1) Require a new SUIT manifest with a higher sequence number (current default in PR). 2) Introduce a SUIT <code>uninstall</code> command/section.</li>
+<li><strong>Discussion</strong>: Brendan highlighted privilege concerns and the need for link tracking. He suggested an <code>uninstall</code> command sequence, possibly within the SUIT Trust Domains ID, as replacement was the original focus of SUIT, not explicit uninstallation.</li>
+<li><strong>Decision</strong>: TEEP will proceed with option 1 (requiring a new SUIT manifest for unlinking) for now. Option 2.2 (SUIT <code>uninstall</code> section) will be discussed further on the SUIT mailing list.</li>
+</ul>
+</li>
+<li><strong>Personalization Data Scenarios</strong>: The document covers three scenarios: Developer provides binary+data; TAM provides binary+data (functionally similar to first); Developer provides binary, Operator provides personalization data (using manifest dependency).</li>
+<li><strong>Cipher Suites (SUIT/COSE)</strong>:
+<ul>
+<li>TEEP currently defines its own registry for cipher suites.</li>
+<li>Proposal: Use the existing COSE numbering space and values directly, deleting the TEEP-specific registry, to simplify implementations.</li>
+<li><strong>Decision</strong>: Accepted by consensus. SUIT's preference for HSS-LMS (MUST) and ECDSA (SHOULD) was noted.</li>
+</ul>
+</li>
+<li><strong>Overriding SUIT Manifest URI</strong>:
+<ul>
+<li>Scenario: Developer publishes a binary with a URI. TAM/Operator wants to host it locally (e.g., for disconnected networks).</li>
+<li>Options: 1) TAM creates a brand new manifest, signed by its own trusted key (no spec changes needed). 2) A mechanism to reference the original manifest but override specific fields like the URI.</li>
+<li><strong>Discussion</strong>: Brendan suggested transparent caching or using integrated payloads with a string reference (where the string is the URI) as pre-caching. Further discussion on the mailing list.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Unsolicited Query Response Optimization</strong></p>
+<ul>
+<li>Current TEEP protocol requires an extra round trip for a query response.</li>
+<li>Proposal: TEEP agent <em>may</em> send an unsolicited query response if three conditions are met:
+<ol>
+<li>A prior query request from the TAM contained no token/challenge (i.e., no varying fields).</li>
+<li>The TEEP agent has not received a <code>process error</code> since that last query request.</li>
+<li>The TAM's certificate/key is cached and still valid.</li>
+</ol>
+</li>
+<li><strong>Decision</strong>: This proposal was accepted by consensus.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>TEEP Protocol (Tokens)</strong>: The <code>token</code> field in <code>Update</code> messages is optional and up to TAM implementation. TEEP agents must ensure SUIT report nonces are present if the <code>Update</code> message contains a nonce.</li>
+<li><strong>EAT (Class of Device)</strong>:
+<ul>
+<li>The &quot;class of device&quot; is a general problem, not TEEP-specific.</li>
+<li>Class identifiers should be scoped by vendor or profile.</li>
+<li>The value must be opaque, with UUIDs (e.g., Type 5) as a preferred format to enforce opaqueness.</li>
+<li><strong>Action for RATS</strong>: The TEEP WG recommends that the EAT spec define a claim for &quot;class of device,&quot; but delegate the definition of its specific values to vendors and profiles, ensuring the values are opaque.</li>
+</ul>
+</li>
+<li><strong>EAT Profile Requirements</strong>: All missing EAT profile requirements from EAT document section 7 will be incorporated directly into the TEEP protocol specification.</li>
+<li><strong>SUIT Uninstallation</strong>: TEEP will continue with the approach of requiring a new SUIT manifest for unlinking/uninstallation. Option 2.2 (introducing a dedicated SUIT <code>uninstall</code> section/command) will be discussed on the SUIT mailing list.</li>
+<li><strong>Cipher Suites</strong>: TEEP will drop its custom cipher suite registry and instead use COSE's existing numbering space and values directly for cipher suite definitions.</li>
+<li><strong>Unsolicited Query Response</strong>: TEEP agents may send an unsolicited query response if specified conditions (no token/challenge in prior request, no process error, valid cached TAM key) are met.</li>
+<li><strong>Action for Editors</strong>: Incorporate all agreed-upon changes and clarifications into the next draft revision.</li>
+<li><strong>Action for Akira</strong>: Follow up on the SUIT manifest example placement with the SUIT WG.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The TEEP working group aims to reach a Working Group Last Call (WGLC) capable state around IETF 113.</li>
+<li>Continue resolving remaining open issues in the TEEP protocol draft.</li>
+<li>Further discussions on SUIT manifest examples and SUIT uninstallation will occur on the SUIT mailing list.</li>
+<li>The TEEP community will engage with the RATS working group regarding the &quot;class of device&quot; claim definition based on the consensus reached.</li>
+<li>A hackathon in December was suggested to continue implementation efforts.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+**Session Date/Time:** 24 Mar 2022 12:00
+
+# rift
+
+## Summary
+
+The RIFT working group held a session at IETF 113, which included a brief status update on existing drafts and two technical presentations. The first presentation introduced "Auto Flood Reflection" (AutoFR), a mechanism to leverage RIFT's architecture for automatic configuration of IS-IS Flood Reflection to improve scalability in flat topologies. The second provided updates on the "Auto EVPN" draft, focusing on improvements in variable derivation and schema enhancements. Discussions included the scope of RIFT's charter concerning its use as a configuration plane for other protocols and the need to present AutoFR work to the LSR WG.
+
+## Key Discussion Points
+
+*   **Working Group Document Status Update**:
+    *   **Base Spec**: Updated and awaiting new review.
+    *   **Applicability Statement**: Awaiting Alvaro's review.
+    *   **YANG Model**: In process, data model in good shape, expected to finish after IETF.
+    *   **KV Registry**: Work in progress.
+    *   **Auto EVPN**: In progress with implementations.
+    *   **Segment Routing**: In process, no update presented but stable from author's point of view.
+    *   **Multicast**: Work on hold for the time being, to be updated when there's more demand.
+
+*   **Presentation: Auto Flood Reflection (AutoFR) in RIFT** (Jordan Novick)
+    *   **Problem Statement**: Flat single-area IGPs (like IS-IS Level 2) suffer from scalability issues due to excessive flooding, state maintenance, and slow convergence as networks grow.
+    *   **Solution (IS-IS Flood Reflection)**: Based on existing LSR work, it splits a single flooding domain into multiple, reducing adjacencies and LSPs, leading to less flooding and faster SPF computation. It designates Flood Reflectors and Flood Reflective Clients, similar to BGP Route Reflection.
+    *   **RIFT's Role**: RIFT's architecture is well-suited for Clos topologies. AutoFR uses RIFT as an "underlay" to automatically derive and configure Flood Reflection parameters (e.g., cluster ID, loopback address) for IS-IS, simplifying deployment.
+    *   **AutoFR Analytics**: Utilizes the RIFT Key-Value Registry to distribute operational information about AutoFR, allowing for centralized monitoring and troubleshooting.
+    *   **Discussion on Scope**:
+        *   Question arose whether RIFT could be used for Flood Reflection in an IS-IS-only network (RIFT as ZTP/configuration tool). Response indicated this is possible; RIFT could configure IS-IS L1/L2, or RIFT could serve as the L1 protocol.
+        *   Concerns were raised regarding RIFT being used as a non-routing protocol (e.g., ZTP for IS-IS Flood Reflection) and its implications for the RIFT WG charter.
+        *   The draft track for AutoFR was discussed, with "Experimental" or "Informational" being suitable due to the need for interoperability.
+        *   It was suggested to present this work in the LSR Working Group due to its close ties with IS-IS Flood Reflection.
+
+*   **Presentation: Auto EVPN Updates** (Jordan Novick)
+    *   **Key Changes**:
+        *   **Improved Variable Derivation**: Enhanced algorithms for deriving values like IRB VLAN and EVI, ensuring alignment (e.g., IRB and VLAN IDs can be identical) based on operator preference, simplifying verification and troubleshooting.
+        *   **Schema Enhancements**: Moved fabric ID components (default, undefined) into the main RIFT schema. Node capabilities and flags now carry information about Auto EVPN support and requirements (e.g., Data Center Interconnect functionality) within the RIFT thrift schemas.
+    *   **Next Steps**: Continue seeking co-authorship and comments, work on more multi-plane and Data Center Interconnect (DCI) examples, and address operational considerations.
+
+*   **Segment Routing (SR) Update**: The draft is considered complete and stable by the authors. An adoption call for the document is planned after IETF 113, with a potential short presentation in the Spring WG if adopted.
+
+## Decisions and Action Items
+
+*   **Action Item**: The authors of the Auto Flood Reflection draft (Jordan and Tony) will present their work in the LSR Working Group.
+*   **Action Item**: The RIFT WG Chairs will initiate a discussion regarding updating the RIFT WG charter to potentially include work on RIFT being used as a non-routing protocol or ZTP mechanism for other protocols (e.g., IS-IS Flood Reflection). This discussion should ideally commence after the base RIFT documents and applicability statement have been submitted to the IESG telechat.
+
+## Next Steps
+
+*   Solicit further feedback, comments, and potential co-authors for both the Auto Flood Reflection and Auto EVPN drafts.
+*   Continue work on Auto EVPN to include more multi-plane and DCI examples and operational details.
+*   Issue an adoption call for the Segment Routing draft after IETF 113.
+*   Begin the process of charter re-evaluation for the RIFT WG, in coordination with IESG.

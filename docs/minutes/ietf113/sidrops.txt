@@ -1,0 +1,121 @@
+**Session Date/Time:** 25 Mar 2022 11:30
+
+# sidrops
+
+## Summary
+
+The sidrops session began with a reminder about the IETF Code of Conduct, emphasizing respectful communication. Key technical discussions included the Resource Sign Checklist (RSC) moving towards Working Group Last Call, a proposal for Discard Origin Authorizations (DOA) to secure RTBH signaling, and an analysis of BGPsec scalability issues, suggesting protocol-level changes for better performance. Enhancements to ASPA verification procedures, particularly concerning route servers, were presented, sparking further discussion. Finally, a proposal was made to explore RPKI Certificate Transparency (CT) to improve auditability, alongside an examination of several "off-the-beaten-path" RPKI edge cases and potential attack vectors.
+
+## Key Discussion Points
+
+### IETF Code of Conduct Reminder
+
+*   Allison Menken from the ombuds team highlighted an increase in concerns regarding discussions in sidrops, urging participants to adhere to the Code of Conduct (be neutral, equal, respectful).
+*   Personal attacks, especially using "you," were identified as problematic and detrimental to new participants.
+*   Warren Kumari, co-chair, emphasized the need to channel passion constructively, avoiding "beating up the artwork." He stressed disagreeing with ideas, not people.
+*   Lars Eggert suggested a "cool-off" period (e.g., a few hours with coffee) before sending potentially heated emails.
+*   Chairs committed to monitoring discussions and encouraged participants to reach out if they feel stressed or attacked.
+
+### Resource Sign Checklist (RSC) Update (Job Snijders)
+
+*   **Concept**: RSC is a simplification of the earlier RTA idea, allowing signing of arbitrary digital objects (hashes) with RPKI resources. RSC files are distributed *outside* the global RPKI publication system, making them useful for scenarios like "bring your own IP/AS" without burdening the RPKI repository infrastructure.
+*   **Status**: Multiple signer and validator implementations exist. IANA code points were allocated and integrated into OpenSSL 3.0 and LibreSSL 3.4.0. Example files and an implementation report wiki are available.
+*   **Discussion**:
+    *   Jeff questioned the load on the RPKI system. Job clarified RSC files are distributed one-to-one, not via rsync/RDP, so they do not add burden to the global RPKI repository. Revoking an RSC adds a few bytes to a CRL, which is a minimal load.
+    *   The relationship with the "RPKI has no identity" draft was noted; RSC confirms possession of private keys and resource subordination, not identity.
+
+### Discard Origin Authorization (DOA) (Ben Maddison)
+
+*   **Problem**: Existing Inter-Domain RTBH (Remotely Triggered Black Hole) signaling, often using BGP communities, conflicts with RPKI Origin Validation (ROV). RTBH for host-length prefixes requires ROAs with very long max-length values, which effectively disable ROV's protection against sub-prefix hijacks. Current workarounds (disabling ROV for RTBH routes) are problematic as they remove essential security. There is also a lack of secure attribution for RTBH communities.
+*   **Proposal**: A new RPKI signed object, DOA, similar to ROAs but specifically for RTBH. It would include:
+    *   **Prefix and Length Range**: Allows specifying a range (e.g., /16 to /32) rather than a single max-length, offering finer granularity.
+    *   **Origin ASID**: Same as ROA.
+    *   **Peer ASIDs**: To provide scoping, allowing recipients to act only if the BGP announcement comes from a listed AS.
+    *   **Communities**: A set of communities to cross-reference against the received BGP community for verification.
+*   **Mechanism**: DOAs would be validated by RP software and processed on a router *before* ROV checks, allowing parallel, orthogonal validation. This offers a stronger hint for RTBH routes, preventing mis-origination without weakening ROV for unicast routes.
+*   **Status**: Early stages.
+
+### BGPsec Scalability Experimentation (Ignas Bagdonas)
+
+*   **Experiment**: Simulation using real-world data showed that a BGPsec-enabled global routing system took over 30 minutes to converge for a 400-neighbor topology, compared to 1.5 minutes for plain BGP.
+*   **Performance Bottlenecks**:
+    *   **SHA2 Hashing**: The wire format of BGPsec's secure path (6+94 bytes per hop) is not 4-byte aligned, hindering efficient vectorization (SIMD) on modern CPUs. Memory access for hashing is expensive.
+    *   **Signature Generation**: While computationally heavier, it's memory-independent and becomes less dominant for longer paths (4-5+ hops) compared to hashing.
+    *   **Target AS Number**: Located at the beginning of the hash block, it changes with each neighbor, preventing caching of pre-computed hash states even for stable paths.
+*   **Proposed Solutions**:
+    *   Define a new wire format (versioned protocol) where the message to be hashed is a single, contiguous block, improving vectorization.
+    *   Algorithm identifiers could specify message format for future flexibility.
+    *   Rearrange fields to allow caching of pre-computed hash states.
+*   **Conclusion**: BGPsec is not fundamentally broken in terms of security, but its current design (wire format, protocol mechanics) is poorly correlated with performant implementation on modern computing platforms.
+*   **Community Interest**: Joe Snijders expressed strong interest in starting work on addressing these performance issues, suggesting that operational feedback from version 0 deployment could inform migration to an enhanced version.
+
+### ASPA Verification Procedures Enhancements (Sriram Kotapalli)
+
+*   **Context**: Discussion on enhancing ASPA upstream and downstream verification procedures, incorporating prior fixes (IETF 110), route server accommodation, and handling special/corner cases.
+*   **Route Server (RS) Handling**:
+    *   **Recommendation**: Each RS client should include the RS ASN in its ASPA (Set of Provider ASes). This simplifies validation for transparent and non-transparent RS scenarios.
+    *   **Simplification**: The validating AS, if it's an RS client, can determine if the RS is transparent by checking if the most recently added AS in the AS path equals the sender's AS. If not, the RS client can add the RS ASN to the AS path for verification purposes, then apply the downstream procedure. This avoids needing separate upstream/downstream algorithm choices at the RS client.
+*   **Status**: The algorithm description is complete, includes various corner cases and route server treatment, and is ready for updating the ASPA draft. Implementations are available in BGP-SRx.
+*   **Discussion**: Ben Maddison expressed confusion, arguing that from an AS4 perspective (receiving the route), a transparent RS can be ignored, and a non-transparent RS is indistinguishable from a transit provider. He felt the proposed RS handling added complexity. Alexander responded that for non-transparent RS cases, particularly for a customer AS (e.g., AS4 being a customer of AS3), having AS1 and AS3 attest AS2 as a provider is necessary to avoid false positives for route leaks. Further discussion on the mailing list was requested.
+
+### RPKI CT and Discovery (Job Snijders)
+
+*   **Motivation**: Inspired by Web PKI's Certificate Transparency (CT), the proposal aims to introduce CT-like mechanisms to RPKI to improve transparency and auditability.
+*   **CT Concepts Mapped to RPKI**:
+    *   **Believer**: RPKI relying party cache implementations (e.g., RPKI Client, Routinator).
+    *   **Verifier**: Resource holders (AS/IP owners), security researchers.
+    *   **Claimant**: Trust Anchor Operators (TAOs) and their subordinate CAs.
+*   **Why not existing mechanisms (rsync/RDP)?**: RPKI publication mechanisms are optimized for the *current* state of objects, not a full, immutable historical log of all issued certificates. CT's purpose is to provide full insight into all CA certificates issued.
+*   **Benefits**: Auditable logs of all RIR actions, allowing resource holders to inspect cryptographic entitlements over time. This raises the bar for RIR issuance processes, provides grounds for accountability, and helps in incident retrospectives.
+*   **Initial Scope Proposal**: Track **CA certificates only**, excluding End-Entity (EE) certificates like ROAs, GBRs, BGPsec keys, ASPAs.
+*   **To-Do List**: Draft an Internet-Draft outlining the plan, find entities willing to host CT logs, find entities willing to send pre-certificates to logs, and find CT experts to guide the community. This is seen as a multi-year project.
+*   **Discussion**:
+    *   Questions were raised about including EE certificates initially, the impact on CA availability/brittleness if logs are required for issuance, and the end-game if an RIR misbehaves (since there are no alternatives).
+    *   Job clarified that RPKI RPs (believers) would not directly check CT logs; rather, verifiers would use logs for monitoring and auditing. The goal is to proactively identify and address issues, avoiding the need to distrust a TA.
+    *   Ruediger noted fundamental differences between Web PKI and RPKI, suggesting some CT principles might not directly apply, but the idea of tracking and monitoring RPKI issuance is valuable.
+    *   Ben Maddison stressed the importance of distinguishing signing events (which CT addresses) from publication events (a separate problem) and the need for accountability to demonstrate trust in the RPKI system, especially during outages.
+
+### RPKI Off-the-Beaten-Happy-Path (Kung-Ching Chang)
+
+*   **Overview**: Discussion of five edge cases and potential attack vectors in the RPKI ecosystem that could cause issues with current standards and implementations.
+*   **1. Partial RPKI Data**: A hierarchical delegation where a child CA (e.g., CA3) becomes unavailable, causing a sub-prefix (e.g., /16 from CA2) to appear invalid even if a super-prefix (e.g., /8 from CA1) is valid, contradicting the "fail-open" principle.
+*   **2. Excessive Delegation Depth/Width**: The ability to create millions of publication points (e.g., 9 children wide, 8 layers deep) could overwhelm RP software and underlying file systems, as limits are often implementation-defined, not specified.
+*   **3. File System Attacks (via rsync)**: A malicious actor (or man-in-the-middle) could inject an extremely large number of directories and files into an rsync reply, potentially crashing or incapacitating RP software by exhausting file system limits.
+*   **4. Excessive VRPs from ROAs**: A resource holder can create an astronomical number of valid route origin authorizations (VRPs) from a single ROA (e.g., a /48 prefix allowing 2^81 prefixes, 2^423 ASNs), overwhelming routers and RP software.
+*   **5. Attribution and Reporting for Attacks**: How to effectively stop and report such attacks, prove the perpetrator's identity, and communicate malicious intent to a CA, especially for rsync-based attacks that bypass signed objects.
+*   **Discussion**:
+    *   Job Snijders suggested "publish-in-parent" as a mitigation for partial data and excessive delegation, allowing parents to apply dynamic, local policy limits on children without burdening the global RPKI.
+    *   Tim stressed that parent CAs are currently reactive, but proactive measures and examining publication protocols are needed.
+    *   Ruediger noted that rsync is being replaced due to identified dangers. He also pointed out that the partial data example relies on non-hierarchical/overlapping delegations, which are generally understood to be problematic.
+    *   Ben Maddison agreed these are important problems. He suggested that, rather than protocol changes, RP implementers should collaborate on an informational document to describe recognized attack vectors, how they deal with them, and the trade-offs involved. He acknowledged that building a system impervious to all abuse is impossible.
+    *   Jared Mauch suggested abstracting data storage away from the underlying file system, similar to how early Usenet news servers handled large volumes of data, which could mitigate file system-based attacks.
+    *   The overall sentiment was that some work is needed in this area, particularly for RP instances to detect administrative domain changes when traversing the tree and to investigate ways to set appropriate limits.
+
+## Decisions and Action Items
+
+*   **Code of Conduct**:
+    *   **Action**: All participants are encouraged to re-read the Code of Conduct and apply its principles in discussions.
+    *   **Action**: Participants feeling stressed or attacked should reach out to the chairs or the ombuds team.
+*   **Resource Sign Checklist (RSC)**:
+    *   **Decision**: Chairs will initiate a Working Group Last Call (WGLC) for the RSC draft.
+    *   **Action**: Interested parties are requested to contribute to the implementation report and RIRs are encouraged to consider implementing RSC support in their hosted environments.
+*   **Discard Origin Authorization (DOA)**:
+    *   **Action**: Working group feedback is requested on whether the DOA work should remain a single document or be split, and if it's a candidate for working group adoption at this stage.
+    *   **Action**: Ben Maddison to provide further context and discussion on the mailing list.
+*   **BGPsec Scalability Experimentation**:
+    *   **Decision**: The community views BGPsec performance as a significant concern that needs to be addressed for future deployment.
+    *   **Action**: Further work to define a versioned protocol with an improved wire format and protocol mechanics for better performance on modern hardware is encouraged.
+*   **ASPA Verification Procedures Enhancements**:
+    *   **Action**: Further discussion on the mailing list is requested, particularly regarding the route server handling. Ben Maddison is expected to post his concerns.
+*   **RPKI CT and Discovery**:
+    *   **Action**: Interested parties are called upon to contribute to drafting an Internet-Draft on RPKI CT, hosting logs, sending pre-certificates, and providing CT expertise. Contact Job Snijders if interested.
+*   **RPKI Off-the-Beaten-Happy-Path**:
+    *   **Action**: RP implementers are encouraged to collaborate on an informational document outlining recognized attack vectors, mitigation strategies, and trade-offs.
+    *   **Action**: Continue investigating issues related to excessive delegation, VRPs, and file system attacks, particularly mechanisms for detecting administrative domain changes when traversing the RPKI tree and setting appropriate limits.
+
+## Next Steps
+
+*   The chairs will initiate the Working Group Last Call for the Resource Sign Checklist (RSC) draft.
+*   Discussions on Discard Origin Authorization (DOA) and ASPA verification procedures, especially route server handling, will continue on the mailing list.
+*   Community members interested in BGPsec performance, RPKI Certificate Transparency, or RPKI edge cases are encouraged to engage with the respective authors and propose further work or documents.
+*   RPKI implementers are urged to consider the discussed attack vectors and mitigation strategies in their software.

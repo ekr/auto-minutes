@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="quic.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-QUIC-20220728-1400">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 14:00</p>
+<h1>QUIC Working Group Session - IETF 114</h1>
+<h2>Summary</h2>
+<p>The QUIC working group met to discuss the progress of adopted documents and potential new work. Key discussions focused on Multipath QUIC (addressing single vs. multiple packet number spaces), ACK Frequency (frame types, <code>ignore_ce</code>, guidance), QUIC Load Balancer (readiness for WG Last Call), and new proposals for QUIC Timestamps and Multicast QUIC. Significant progress was reported on HTTP/3 and QPACK achieving RFC status.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>QUIC Versions in Alt-SVC / SVCB Records</strong>: Martin Duke announced a draft for including QUIC versions in Alt-SVC and SVCB records will be significantly stripped down to focus on SVCB and will be proposed for adoption in the PROTOCOL WG, as ALPN has dissociated from QUIC versioning.</li>
+<li><strong>HTTP/3 and QPACK RFCs</strong>: HTTP/3 and QPACK documents have officially become RFCs, marking a significant milestone.</li>
+<li><strong>QUIC Multipath Extension</strong>:
+<ul>
+<li>A new draft version was published, incorporating a &quot;unified proposal&quot; to mandate Multiple Packet Number Spaces (MPS) when the multipath extension is negotiated. Single Packet Number Space (SPS) support is optional.</li>
+<li>A new <code>PATH_STATUS</code> frame was introduced to signal path recommendations (<code>standby</code> or <code>available</code>).</li>
+<li>The <code>PATH_ABANDON</code> frame can now be used to actively deny a new path, avoiding timeouts.</li>
+<li>Discussion on SPS vs. MPS: While SPS initially appears simpler, implementation experience and analysis (e.g., for congestion control, RTT calculation, ECN handling) indicate MPS is significantly clearer and easier to implement correctly, despite MPS requiring changes to crypto for packet number decryption with Connection IDs. SPS makes delay calculation ambiguous and can lead to sub-optimal performance.</li>
+<li>Hardware offload implications: MPS is generally seen as more amenable to future hardware offload due to less packet reordering across paths.</li>
+<li>Zero-length Connection ID (CID) support: SPS supports zero-length CIDs. The need for zero-length CIDs with multipath, especially for client-side use cases like browsers, was questioned, as it introduces complexity.</li>
+</ul>
+</li>
+<li><strong>ACK Frequency Extension</strong>:
+<ul>
+<li><strong>Frame Type Size</strong>: Discussion on whether the <code>ACK_FREQUENCY</code> frame type should be a one-byte code point for efficiency. Consensus leaned towards it being infrequently sent, so the current two-byte size is not a significant concern. Editors will make the final decision.</li>
+<li><strong><code>ignore_ce</code> field</strong>: The <code>ignore_ce</code> field, restricted to <code>ECT(0)</code> packets, was discussed. There is no known active implementation or compelling use case. It was deemed too simplistic and potentially harmful, as ECN handling should be dictated by the congestion controller.</li>
+<li><strong>Guidance for Congestion Controllers</strong>: There was a request for normative guidance or recommendations on <code>ACK_FREQUENCY</code> settings for common congestion controllers (e.g., Reno, Cubic). This is challenging as optimal values vary by network conditions and use cases (e.g., data center vs. internet). The document is expected to provide mechanism, with strategies potentially in follow-up documents.</li>
+<li><strong>Loss Detection Delay</strong>: A problem was identified where a high ACK eliciting threshold can delay loss detection of single missing packets. A proposed solution is to communicate the sender's reordering threshold to the receiver, allowing the receiver to send an immediate ACK for missing packets within that threshold, accelerating loss detection.</li>
+</ul>
+</li>
+<li><strong>QUIC Load Balancer (QUIC-LB)</strong>:
+<ul>
+<li>All Github issues for the QUIC-LB draft are closed, including a fix related to crypto review of the for-pass algorithm.</li>
+<li>Implementation status: Two load-balancer side implementations exist, but no server-side implementations, preventing interop testing. Google is working on a server-side implementation.</li>
+</ul>
+</li>
+<li><strong>QUIC Timestamps (Proposed Work)</strong>:
+<ul>
+<li>The draft (v10) proposes a simple <code>TIMESTAMP</code> frame with a transport option.</li>
+<li>Use cases include: better congestion control on asymmetric paths, simplified RTT measurement in multipath, and improved delay-based congestion control (e.g., LEDBAT, Hystart).</li>
+<li>Some implementation experience exists (PicoQUIC, LightSpeed).</li>
+<li>Discussion on clock synchronization requirements, timestamp placement (all packets vs. ACK packets), and the need to clarify &quot;one-way delay delta&quot; vs. absolute delay.</li>
+<li>Support from the real-time media community was noted for WebRTC-style congestion control.</li>
+</ul>
+</li>
+<li><strong>Multicast QUIC (Proposed Work)</strong>:
+<ul>
+<li>Proposal for source-specific IP multicast, anchored to a unicast QUIC connection.</li>
+<li>Shared symmetric keys for multicast packets, with separate unicast integrity packets to prevent spoofing.</li>
+<li>Server controls client joining multicast sessions, client provides limits.</li>
+<li>Multicast channels are for server-to-client data (server-initiated streams/datagrams).</li>
+<li>Implementation work is ongoing (Google Quiche-based demo).</li>
+<li>Challenges include strictly enforcing origin policy for web traffic in a browser context.</li>
+<li>Interest noted for solving scaling problems in popular content delivery (e.g., sports, large downloads), especially for smart TVs using web APIs.</li>
+<li>Discussion whether QUIC is the right layer or if a separate protocol is more appropriate; proponents argue for using QUIC's framing and security model.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Multipath QUIC</strong>:
+<ul>
+<li><strong>Decision</strong>: Multiple Packet Number Spaces (MPS) are mandatory if the Multipath extension is negotiated. Single Packet Number Space (SPS) support is optional. This decision is already merged into the draft.</li>
+<li><strong>Action Item</strong>: Chairs to discuss and potentially issue a consensus call on the adoption of MPS as mandatory.</li>
+</ul>
+</li>
+<li><strong>ACK Frequency</strong>:
+<ul>
+<li><strong>Decision</strong>: The <code>ignore_ce</code> field will be removed from the draft due to lack of use cases and concerns about its simplistic nature.</li>
+<li><strong>Action Item</strong>: Editors will decide on the <code>ACK_FREQUENCY</code> frame type size (one-byte vs. two-byte).</li>
+<li><strong>Action Item</strong>: Continue to work on providing guidance and examples for using <code>ACK_FREQUENCY</code> with common congestion controllers.</li>
+<li><strong>Decision</strong>: The concept of communicating the reordering threshold to the receiver for improved loss detection will be pursued, likely replacing the <code>ignore_order</code> concept.</li>
+</ul>
+</li>
+<li><strong>QUIC Load Balancer</strong>:
+<ul>
+<li><strong>Decision</strong>: The working group will wait for more implementation experience, specifically server-side implementations (e.g., Google Quiche), before initiating a Working Group Last Call.</li>
+</ul>
+</li>
+<li><strong>QUIC Timestamps</strong>:
+<ul>
+<li><strong>Action Item</strong>: Chairs will discuss a follow-up on the mailing list and potentially issue an adoption call to gauge community interest and objections.</li>
+</ul>
+</li>
+<li><strong>QUIC Observability Tooling</strong>:
+<ul>
+<li><strong>Action Item</strong>: Emil is encouraged to propose this work for a future QUIC agenda.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Multipath QUIC</strong>: Seek further implementation experience and feedback, particularly regarding zero-length Connection ID use cases. Consider a hackathon for interop testing.</li>
+<li><strong>ACK Frequency</strong>: Editors to finalize frame type size. Continue to refine guidance for congestion controllers. Incorporate the reordering threshold mechanism.</li>
+<li><strong>QUIC Load Balancer</strong>: Implementers to continue work on server-side implementations to enable interop.</li>
+<li><strong>QUIC Timestamps</strong>: Await mailing list discussion and potential adoption call from the chairs.</li>
+<li><strong>Multicast QUIC</strong>: Continue discussions, including at the upcoming MBO and INDIAN sessions.</li>
+<li><strong>General</strong>: Chairs will continue to monitor progress on Version Negotiation, v2, QUIC Grease Bit, and QUIC Careful Resume.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

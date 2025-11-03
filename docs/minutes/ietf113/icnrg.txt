@@ -1,0 +1,134 @@
+**Session Date/Time:** 25 Mar 2022 11:30
+
+# icnrg
+
+## Summary
+The icnrg session at IETF 113 featured updates on several ongoing drafts and presentations on new research work. Key discussions included the status of various ICN drafts, a detailed report on a project applying NDN to data-intensive science with promising throughput and caching results, and a proposal for compact time encoding in CCNx. Further presentations refreshed the group on ICN Ping/Traceroute and Path Steering, highlighting their importance for network instrumentation and multi-path control. A new proposal for Reflexive Forwarding aimed to enable multi-way interactions like RESTful communication over ICN, addressing challenges with large parameters and consumer mobility. The session concluded with a call for contributions to FLIC, an upcoming RG adoption call for Path Steering, and a general request for new research work.
+
+## Key Discussion Points
+
+### ICNRG Document Status Updates
+*   **CCNInfo**: Awaiting IRSG reviews.
+*   **FLIC**: Stalled, critical for manifest capability. A call for contributions was made to unblock progress.
+*   **ICN LTE**: Authors published a new version after IHG conflict review. Awaiting clarification on IPR situation, which involves an earlier individual draft declaration not yet reflected on the RG draft. Dirk Kutscher is working to resolve this.
+*   **ICN Ping / Traceroute**: New versions published. Awaiting shepherd review (Dirk Kutscher). These documents are considered a pair for review.
+*   **NRS Architecture Considerations**: Awaiting RFC Editor publication.
+
+### NDN for Data Intensive Science Experiments (NDIES) Progress Report (Edmund Yeh)
+*   **Project Goal**: Deploying NDN-based petascale data distribution, caching, access, and computation systems for major science programs (e.g., Large Hadron Collider).
+*   **Deployment Architecture**:
+    *   Containerized setup using Docker for various OS.
+    *   NDNC: Lightweight integration of NDN CXX with NDN-DPDK for high throughput, using Memo shared memory packet interface. Includes congestion window and retransmission support.
+    *   Future plans: Extensive benchmarking, multi-threaded support, porting NDN xrootd plugin.
+*   **WAN Testbed & Throughput**:
+    *   Established a high-performance WAN testbed across the US (Northeastern, UCLA, Tennessee Tech, Caltech, Starlight Chicago) with 100 Gbps links.
+    *   Achieved **21 Gigabits per second** average throughput over a real continental WAN (Starlight-Caltech 40 Gbps path), showing significant improvement over previous results (6.7 Gbps at SC19, 14 Gbps at SC21).
+*   **Optimized Caching & Forwarding**:
+    *   Experiments with "VIP" caching algorithm on WAN testbed (two consumers, one or two forwarders, one producer).
+    *   Demonstrated VIP's adaptive caching, accurately caching most popular files based on Zipf distribution without prior knowledge.
+    *   Showed significant improvements in both **lower delay and higher throughput** compared to ARC (an LRU variant) and no caching.
+    *   Currently focusing on caching; future work to leverage multi-path forwarding capabilities.
+*   **Congestion Control**:
+    *   UCLA group exploring impact of caching on congestion control.
+    *   Observation: Caching can interfere with congestion signals (e.g., a fast consumer being served by cache may reduce request rate due to perceived congestion, never fetching from producer).
+    *   Developing hop-by-hop congestion control using queuing delay as a signal, designed to be resilient to RTT variations.
+*   **FPGA Acceleration**:
+    *   Focus on accelerating NDN-DPDK forwarder input stage (prefix hashing, table lookup for thread dispatch).
+    *   Preliminary results show a **4x throughput improvement** over CPU for hashing and table lookup, though this is considered preliminary.
+    *   Integration with NDN-DPDK is ongoing, with plans to extend to PIT/CS table and FIB.
+*   **Q&A**:
+    *   **Computation**: Joint data movement and computation scheduling for workflows was out of scope due to budget cuts but is a future goal.
+    *   **Zipf Distribution**: Based on actual LHC community request data, demonstrating similar popularity falloff for "hot" datasets.
+    *   **Chunking**: Implemented directly in the file server and consumer application, leveraging NDN CXX and NDN-DPDK.
+    *   **Signature Validation**: Not currently performed in throughput tests for the NDIES project. In LHC, access is strictly controlled, but future plans include signing packets for provenance.
+    *   **FPGA 4x Improvement**: Acknowledged as preliminary; further work is expected to yield higher performance by exploiting parallelism.
+
+### Compact Time Encoding for CCNx (Dirk Kutscher)
+*   **Motivation**: Reduce energy consumption and improve transmission reliability in resource-constrained, low-bandwidth, high-latency environments (e.g., IoT).
+*   **Proposal**: Single-byte encoding for time values inspired by RFC 5497 (MANET routing time TLV) and IEEE 754 floating-point standard.
+*   **Encoding**: Single byte encodes exponent and mantissa, allowing representation from 0 (subnormal range in 7ms increments) to nearly 4 years (normalized range).
+*   **Protocol Integration**:
+    *   **Option 1 (Current Draft)**: Use `length=1` for existing `InterestLifetime` TLV to indicate compact delta time. For `RecommendedCacheTime` (fixed 8 bytes), use `length=1` for compact delta time, requiring forwarders to convert to absolute time.
+        *   **Advantage**: No new IANA TLV number.
+        *   **Disadvantage**: Requires update to CCNx messages RFC; non-upgraded forwarders misinterpret.
+    *   **Option 2 (Alternative)**: Define a new top-level TLV (e.g., `InterestLifetimeCompact`).
+        *   **Advantage**: Forwarders unaware of new TLV would ignore it and use a default.
+        *   **Disadvantage**: Requires new IANA TLV number.
+*   **Status**: Draft updated with streamlined formula and pseudocode. Seeking feedback on protocol integration and handling of absolute times (expiry/signature) within security envelopes.
+*   **Potential RG Adoption**: Chairs propose adopting this draft as research group activity, seeing it as a useful feature for high-delay environments and a way to explore protocol extensibility.
+
+### ICN Ping and Traceroute Updates (Dave Oran for Spiros Koutsouris)
+*   **Purpose**: Instrumentation and management tools for NDN/CCN style ICN, analogous to IP ping/traceroute but designed for ICN multi-path and caching.
+*   **Capabilities**:
+    *   **Ping**: Reachability of names in producers and on-path caches.
+    *   **Traceroute**: Multi-path capable traceroute to explore paths to destinations and report on them.
+*   **Status**: Drafts implemented in experimental settings, completed last call in January. Updated based on comments from Junehwa Song.
+*   **Key Changes**:
+    *   Integration of path steering into base protocol.
+    *   Packet format updated for latest NDN formats.
+    *   Path steering TLV moved after signature TLV (excluded from security envelope as it's modified hop-by-hop).
+    *   Use of new typed name components in both CCNx and NDN variants to indicate special processing.
+*   **Next Steps**: Authors believe drafts are ready for IRSG review. Both documents will be reviewed together.
+
+### Path Steering Refresher (Dave Oran)
+*   **Motivation**: Provide consumers with control over traffic direction in inherently multi-path and multi-destination ICN networks. Needed for troubleshooting, performance measurement, and multi-path congestion control.
+*   **Problem Statement**: Current ICN lacks mechanism for consumers to direct interest traffic onto specific paths. IP had similar issues with MPLS/tunnel trace, leading to messy post-hoc solutions. ICN aims for a cleaner, earlier integration.
+*   **Design Choices**:
+    *   **Path Labels**: Fixed-size labels chosen for fast processing (instead of bloom filters, pairing functions, or label stacks).
+    *   **Path Discovery & Steering**: Leverages symmetric forwarding. Interest includes path label (marked for discovery); forwarded via FIB. Data message carries computed path label back to source. Subsequent interests use this label for explicit next-hop selection (selects outgoing face from FIB entry).
+*   **Benefits**:
+    *   Reliable path RTT measurement.
+    *   Iterative discovery of multiple paths.
+    *   Congestion control can distribute load across paths (e.g., MERC, SMEK).
+    *   Potential mitigation of content poisoning attacks.
+    *   Traffic engineering solutions possible with SDN-style route distribution.
+*   **Route Updates**: Handled by invalidating discovered paths (interest return with invalid label), silently forwarding, or forcing error/redoing discovery. New next-hop labels assigned on FIB changes; data/NACK dropped on reverse path.
+*   **Packet Encoding**:
+    *   **CCNx**: New error code for broken path labels; `NextHop` header carries path label and sub-TLVs.
+    *   **NDN**: Proposed new packet TLV `PathLabel` with same semantics.
+*   **Security Considerations**:
+    *   **Malicious Probing**: Hard to guess correct next hop; mitigations in spec.
+    *   **Cache Pollution**: Cache entries annotated with path labels; only satisfy interests with matching labels. Cache entries for path-labeled content should not evict unlabeled or differently labeled entries for same object.
+*   **Potential RG Adoption**: Chairs consider this a powerful tool illustrating how ICN can be leveraged, using soft state, unlike IP.
+
+### Reflexive Forwarding for CCNx and NDN (Dirk Kutscher)
+*   **Motivation**: Enable scenarios not well-supported by basic Interest/Data exchange, such as:
+    *   Web/RESTful communication (large input parameters, authentication tokens, cookies).
+    *   Remote Method Invocation (RMI) for distributed computing (large arguments, authorization).
+    *   IoT "phone home" (asynchronously generated data, server pulls from device).
+    *   Peer state synchronization (requires multi-way handshakes).
+*   **Problem with current approaches**:
+    *   Stuffing large parameters into Interests: Detrimental to congestion control, opens computational overload attacks, creates large pending state on forwarders, fragmentation is undesirable.
+    *   Including consumer's routable name in Interest: Reveals source address (undesirable for anonymity, consumer mobility) and complicates state machines.
+*   **Proposal: Reflexive Forwarding**:
+    *   Allows a producer/server to request additional data from a consumer.
+    *   Leverages state created by an initial Interest in the forwarding system, allowing the producer to send a "reflexive interest" back to the consumer without knowing a routable prefix for the consumer.
+    *   Couples state for interim exchanges to the overall Interest/Data exchange.
+*   **Mechanism (PIT Token Approach)**:
+    *   Consumer sends `I1` Interest with a regular prefix and a **Reflexive Name Prefix (RNP)** (random 128-bit UUID, new name component).
+    *   Forwarders (first on path) create a **Forward Pit Token (FPT)** and associated PIT state for the RNP.
+    *   Producer receives `I1`, potentially checks initial parameters, then constructs a **Reflexive Interest (`I2`)** using the RNP and mirroring the FPT as a **Reverse Pit Token (RPT)**.
+    *   `I2` is sent back towards the consumer. Forwarders use the RPT to look up the PIT entry established by `I1` and forward `I2` to the correct incoming face of `I1`.
+    *   This relies on symmetric forwarding.
+*   **Benefits**:
+    *   Producer can explicitly request needed data (e.g., arguments, tokens) preventing computational overload attacks.
+    *   Consumer's location remains private; no stable routable address needed.
+    *   PIT-based forwarding is less invasive than modifying FIB for transient state.
+    *   Enables multi-step interactions and complex communication patterns.
+*   **Security**: RNP is a random, transient label, preventing reflection attacks to third parties. Extended discussion on security, key exchange, name privacy, and session management is in the draft.
+*   **Next Steps**: Seeking feedback on the mailing list.
+
+## Decisions and Action Items
+*   **ICN LTE IPR Clarification**: Authors to clarify the IPR situation regarding an individual draft declaration that needs to be reflected on the research group draft as soon as possible. Dirk Kutscher to facilitate.
+*   **ICN Ping / Traceroute Shepherd Review**: Dirk Kutscher to take responsibility as shepherd for these documents.
+*   **Compact Time Encoding Adoption**: Chairs propose adopting this draft. Reconfirmation on the mailing list will follow.
+
+## Next Steps
+*   **FLIC**: Call for help from the community to provide substantive comments and push for progress towards an RG last call.
+*   **ICN Ping / Traceroute**: Submit for IRSG review.
+*   **Path Steering**: Dirk Kutscher to issue an RG adoption call on the mailing list. Community feedback is requested.
+*   **Reflexive Forwarding**: Request for feedback on the mailing list, particularly on protocol integration.
+*   **General**: The group seeks new research work and contributions, especially given available capacity.
+*   **Collaboration**: Explore joint work with the Computing in the Network (COIN) group.
+*   **Meetings**: Planning to meet at IETF 114 in Philadelphia in July. Discussion requested on holding an interim meeting before July.
+*   **ICN Conference**: Reminder for the annual ICN conference in September (paper registration deadline in a couple of months).

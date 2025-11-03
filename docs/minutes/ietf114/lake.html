@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lake.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-LAKE-20220727-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 27 Jul 2022 17:30</p>
+<h1>lake</h1>
+<h2>Summary</h2>
+<p>The IETF 114 Lake session focused on reviewing the formal analysis of the AD-HOC protocol, discussing updates to the specification, and planning the path towards Working Group Last Call (WGLC). Presentations covered computational analysis of method 0 and method 3, updates to the draft-ietf-lake-ad-hoc specification, and a hackathon report. The group discussed outstanding issues, potential improvements, and agreed on next steps to finalize the protocol, aiming for WGLC before IETF 115.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative Items</strong>:
+<ul>
+<li>Marco kindly agreed to take notes.</li>
+<li>Attendees were reminded of the Note Well and hybrid meeting etiquette (mute audio/video when not speaking, join queue for mic, state name, sign into DataTracker).</li>
+<li>A potential agenda item for Marek's update on test vectors was noted, but Marek was not present.</li>
+</ul>
+</li>
+<li><strong>Status Update (Militia)</strong>:
+<ul>
+<li>Formal analysis of the protocol is nearing completion, with symbolic analysis presented at IETF 113 and computational analysis for methods 0 and 3 presented in this meeting.</li>
+<li>Good progress on implementation security, with an update expected at IETF 115.</li>
+<li>A new page, <code>lakewwg.org</code>, was created to track activities like interoperability testing and formal analysis. Feedback is welcome.</li>
+<li>The chairs will initiate a mailing list discussion regarding renaming &quot;ad-hoc&quot; to &quot;lake&quot; given external references to the protocol as &quot;lake&quot;.</li>
+</ul>
+</li>
+<li><strong>Computational Analysis of <code>ad-hoc-6sig</code> (Method 0) (Mark)</strong>:
+<ul>
+<li><strong>Main Results</strong>: The <code>ad-hoc-6sig</code> protocol is structurally sound and secure regarding key secrecy, explicit authentication, and four secrecy guarantees.</li>
+<li><strong>Security Model</strong>: Analyzed <code>ad-hoc</code> in the multi-stage exchange model, following TLS 1.3 analysis. This model captures dependencies between multiple derived stage keys.</li>
+<li><strong>Explicit Authentication Insights</strong>:
+<ul>
+<li>A conservative approach was taken, assuming non-unique credential identifiers and allowing the adversary to choose them arbitrarily.</li>
+<li>Discovered that the protocol requires more than normal unforgeability from signatures; specifically, <strong>&quot;exclusive ownership of signatures&quot;</strong> and <strong>&quot;strong unforgeability&quot;</strong> are needed.</li>
+<li><code>EdDSA 25519</code> provides universal exclusive ownership; <code>ECDSA</code> can provide it if public keys are signed and no weak keys exist, with all checks performed.</li>
+<li>Noted that the <code>MAC-then-Sign</code> structure (MAC under signature) means an initiator might accept a modified second message (unlike <code>Sign-then-MAC</code> in TLS 1.3).</li>
+</ul>
+</li>
+<li><strong>Proposed Modifications</strong>:
+<ul>
+<li>Adding credentials to transcript hashes would prevent identity spinning attacks by causing transcript hashes to diverge.</li>
+<li>An explicit <code>prk_out</code> session key simplifies security proofs.</li>
+<li>Computing transcript hashes over plaintext simplifies proofs by removing reliance on non-standard encryption assumptions.</li>
+</ul>
+</li>
+<li><strong>Conclusion</strong>: Security of <code>ad-hoc-6sig</code> reduces to properties of its components (collision-resistant hash, strong unforgeable/exclusive ownership signature, PRF assumptions). The previous recommendations (explicit session key, plaintext hashes) have already been incorporated into the latest draft.</li>
+</ul>
+</li>
+<li><strong>Computational Analysis of <code>ad-hoc</code> Method 3 (Baptiste)</strong>:
+<ul>
+<li><strong>Assumptions</strong>: Compositional Diffie-Hellman (CDH), Gap Diffie-Hellman (GDH), and standard properties for symmetric and authenticated encryption.</li>
+<li><strong>Security Levels (Cipher Suites 0 and 2)</strong>:
+<ul>
+<li>Key Privacy: 128 bits (best attack: baby-step giant-step on GDH combined with birthday paradox).</li>
+<li>Identity Protection (Initiator/Responder): 128 bits.</li>
+<li>Explicit Authentication (Initiator/Responder): 64 bits (due to guessing the 64-bit tag <code>t2</code>).</li>
+</ul>
+</li>
+<li><strong>Authenticated Encryption Usage</strong>: Noted that the use of authenticated encryption for <code>sk3</code> in the current protocol does not enhance security because <code>sk3</code> is independent of <code>xs</code> and can be computed by an imposter.</li>
+<li><strong>Proposed Improvements</strong>:
+<ul>
+<li><strong>If MAC is 128-bit</strong>: Replace authenticated encryption with one-time encryption for message 3. This maintains 128-bit authentication and leads to a shorter message 3 (stream cipher vs. block cipher).</li>
+<li><strong>If MAC is 64-bit (to achieve 128-bit authentication)</strong>:
+<ul>
+<li>Compute <code>sk3</code> dependent on <code>xs</code> and use authenticated encryption for <code>t3</code> in message 3 (increases initiator authentication to 128 bits by multiplying 64-bit tag security with forged ciphertext probability).</li>
+<li>A similar approach for message 2 could increase responder authentication but would result in a larger message 2.</li>
+<li>Adding an <em>optional</em> first message could also provide an additional 64 bits of security for responder authentication.</li>
+</ul>
+</li>
+<li><strong>Improving Security Bounds</strong>: Use <code>th2</code> as input for <code>kdf_prk_to_e</code> instead of an empty string. This makes the security independent of the number of sessions (<code>N_sigma</code>), removing a <code>N_sigma * Q_rand</code> factor from the bounds, with no extra computational cost.</li>
+</ul>
+</li>
+<li><strong>Availability</strong>: The work is part of an ongoing paper and is expected to be available as a preprint soon.</li>
+</ul>
+</li>
+<li><strong>Draft Update and Open Issues (John)</strong>:
+<ul>
+<li><strong>Draft Versions</strong>: Version 13 was a resubmission, while 14 and 15 included major changes. Traces were updated to align with <code>ad-hoc-14</code> and <code>ad-hoc-15</code>.</li>
+<li><strong>Major Rewrites/Updates</strong>: Sections 3 and 5 (authentication), and the EAD section.</li>
+<li><strong>Technical Changes</strong>: EAD value is now a bit string. Significant changes to key derivation and key schedule based on formal verification feedback: more key derivations, single context input for transcript hashes, integer labels.</li>
+<li><strong>Identifier Encoding</strong>: Reverted to byte strings encoded as integers, simplifying the solution.</li>
+<li><strong>Key Schedule</strong>: New <code>prk_exporter</code> and <code>prk_out</code> (a well-defined final session key).</li>
+<li><strong>Processing</strong>: EAD and <code>id_cred</code> are parsed earlier. Optional padding has been added to hide lengths.</li>
+<li><strong>Authenticated Operation</strong>: A new section was added, generalizing authenticated operation options (previously an empty &quot;trust on first use&quot; section).</li>
+<li><strong>EAD Flags</strong>: Critical/non-critical flag introduced for EAD (negative values critical, positive non-critical), similar to X.509 extensions.</li>
+<li><strong>Open Issues</strong>:
+<ul>
+<li>HKDF length limit: SHA256 has a maximum output of 8160 bytes. This could be an issue for very large EADs or certificate chains. Potential solutions include using HKDF multiple times.</li>
+<li>Changes to authentication encryption in message 3 (as discussed by Baptiste).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Hackathon Report (Marco)</strong>:
+<ul>
+<li>Participants: Marco (responder), Militia (initiator).</li>
+<li>Implementations: Updated to <code>ad-hoc-15</code>.</li>
+<li>Test Configuration: Malicious initiator, smallest message 2 (45 bytes), cipher suite 2, method 3, peers with CCS and Kids as credential identifiers (encoded as integer).</li>
+<li>Result: Interop succeeded, implementations converged to the same master secret and salt. More implementations are being updated.</li>
+</ul>
+</li>
+<li><strong>Additional Test Vectors (Joran)</strong>: Stephan Ristof and Marek have updated their implementations and test vector code to <code>ad-hoc-15</code>. New test vectors for <code>ECDSA</code> and <code>EdDSA</code> are available in GitHub.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Implement Formal Analysis Suggestions</strong>: The working group agrees to carefully consider and integrate the improvements suggested by Baptiste, especially those affecting the key schedule and security levels. (Chairs, Draft Editors)</li>
+<li><strong>HKDF Length Limit</strong>: Investigate the HKDF length limit issue and proposed solutions, including the PR for using HKDF multiple times. (John, Joram, Draft Editors)</li>
+<li><strong>Renaming Discussion</strong>: The chairs will poll the working group on the mailing list regarding renaming &quot;ad-hoc&quot; to &quot;lake&quot;. (Chairs)</li>
+<li><strong>Security Review Request</strong>: An early security review will be requested from the Security Area Directorate (SEC-DIR) once the next draft version, incorporating the latest analysis feedback, is ready. (Chairs)</li>
+<li><strong>Re-review by Analysis Teams</strong>: Formal analysis teams will be asked to review the protocol again after the proposed changes are incorporated, to ensure no new issues are introduced. (Chairs)</li>
+</ul>
+<h2>Next Steps</h2>
+<ol>
+<li>Address outstanding issues and PRs (e.g., HKDF length, Baptiste's suggestions) on GitHub.</li>
+<li>Publish a new version of the <code>draft-ietf-lake-ad-hoc</code> specification incorporating these changes.</li>
+<li>Continue updating implementations to the latest draft version.</li>
+<li>The chairs will aim for the Working Group Last Call (WGLC) to be completed before the IETF 115 meeting in November, potentially scheduling an interim meeting around October if needed for urgent discussions.</li>
+</ol>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

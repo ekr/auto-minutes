@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lisp.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-LISP-20220322-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 22 Mar 2022 12:00</p>
+<h1>lisp Session</h1>
+<h2>Summary</h2>
+<p>The lisp working group session discussed the status of existing documents, pending chartered work items, and received updates on several drafts. Key discussions revolved around the <code>lisp-l2l3-id-mobility</code> draft (specifically the use of <code>ethernet segment ID</code> and its scalability implications), the <code>lisp-reliable-transport</code> draft (signaling, Quick integration, and security), a new proposal for <code>Ground-Based LISP</code> for aviation safety-critical communication, and <code>LISP Mobility Routing</code> in the automotive edge industry. The working group also decided to adopt the <code>lisp-reliable-transport</code> draft.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Document Status Update:</strong>
+<ul>
+<li>Five documents are currently in the RFC Editor queue, awaiting resolution of external dependencies.</li>
+<li>Five documents have passed working group last call and are in AD Alvaro's review queue.</li>
+<li>The LISP YANG model is nearing working group last call.</li>
+<li>A review of other existing working group documents is needed to determine whether to advance them to working group last call or drop the work.</li>
+</ul>
+</li>
+<li><strong>Chartered Tasks for the Year:</strong>
+<ul>
+<li>Progress the NAT traversal document.</li>
+<li>Standardize the LISP DDT system: RFC 8111, which defines a LISP packet type, is experimental. Moving it to the standard track is required for a permanent IANA allocation, as its current experimental allocation has been renewed multiple times.</li>
+</ul>
+</li>
+<li><strong>EID Mobility Draft (<code>lisp-l2l3-id-mobility</code>) - Presented by Fabio Maino:</strong>
+<ul>
+<li><strong>Layer 2 Multi-homing Identification:</strong> Discussion on identifying Layer 2 multi-homing groups for XTRs.</li>
+<li><strong>Proposed Solution:</strong> Introduce an <code>ethernet segment ID</code> (ESID), a 32-bit value, to uniquely identify multi-homed XTR groups. This allows the mapping system to aggregate multiple RLOCs, reconcile split horizon issues, and enable load balancing for aliasing. ESID can be associated with EIDs, not just RLOCs.</li>
+<li><strong>Dino's Concerns (Scalability):</strong> Raised concerns about the scalability of ESID, especially with up to 4,000 VLANs, potentially leading to large Map-Register messages. He suggested using the <code>site ID</code> with designated forwarder election/selection for all VLANs to avoid packet format changes and excessive entries. He also noted that an ESID per EID record might be inefficient for Layer 3, where it's not needed.</li>
+</ul>
+</li>
+<li><strong>Reliable Transport Draft (<code>lisp-reliable-transport</code>) - Presented by Albert Cabado:</strong>
+<ul>
+<li><strong>ETR/Map Server Capability Signaling:</strong> Proposed using a bit in the Map-Register message to signal an ETR's desire to use reliable transport, and a corresponding bit in the Map-Notify message from the Map Server to indicate support.</li>
+<li><strong>Map-Notify Bit Placement:</strong> Suggested placing the reliable transport bit in the Map-Notify message next to the record count field for better contiguity and future extensibility.</li>
+<li><strong>Quick Protocol Support:</strong>
+<ul>
+<li><strong>Port Usage:</strong> Discussion on which UDP port to use for Quick (e.g., 4342 UDP, a dedicated Quick port, or the standard Quick port). Consensus was to investigate standard Quick port practices and make it consistent with TCP port usage (4342).</li>
+<li><strong>Multiple Transport Protocols:</strong> Current inclination is to leave the choice of reliable transport protocol (e.g., TCP vs. Quick) to implementation, with a suggestion to use separate signaling bits if needed in the future.</li>
+</ul>
+</li>
+<li><strong>Security Considerations:</strong> Acknowledged the need for a thorough security review, specifically considering TLS for TCP-based reliable transport.</li>
+</ul>
+</li>
+<li><strong>Ground-Based LISP for Aviation (<code>draft-heindel-lisp-ground-based-rfc</code>) - Presented by Bernard Heindel:</strong>
+<ul>
+<li><strong>Use Case:</strong> Provides mobility and multi-link solutions for safety-critical aviation communication, with LISP elements primarily on the ground.</li>
+<li><strong>Concept:</strong> Aircraft uses a unique IPv6 <code>Mobile Network Prefix</code> (MNP, /60) for communication. It announces MNP reachability and routing preferences (via sub-MNPs for traffic scope) to ground-based LISP XTRs (Ground Ground Routers) through an <code>Air-Ground Mobility Interface Protocol</code> (ACME). The ACME Ground Proxy translates these preferences into LISP priorities.</li>
+<li><strong>Multi-link and Local Policy:</strong> LISP XTRs use cached mapping preferences (MNP and sub-MNPs) for uplink routing decisions, enabling multi-link traffic distribution. Local policies can override aircraft recommendations for uplink traffic.</li>
+<li><strong>Standardization Requests for IETF LISP WG:</strong>
+<ul>
+<li>Request for RFC 6830 and 6833 to move to the standard track (critical for aviation domain standardization).</li>
+<li>Request for LISP PubSub functionality to move from experimental to standard track, with clarifications on selective subscription/unsubscription and re-registration behavior.</li>
+<li>Need for network mobility support, including a flag to indicate mobile networks and control over removal of longer sub-prefixes (for traffic scoping).</li>
+<li>Suggest integrating network mobility features into the <code>lisp-eid-mobility</code> draft.</li>
+<li>Desire for a mechanism within LISP control plane to transport additional information (e.g., 4D trajectory snapshots, digital signatures) from aircraft to ground routers.</li>
+<li>Asked for advice on the best process for these requests (change requests to existing drafts or a new experimental RFC).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>LISP Mobility Routing (Automotive Edge) (<code>draft-sharon-lisp-mobile-routing-edge</code>) - Presented by Sharon Barkai:</strong>
+<ul>
+<li><strong>Industry Progress:</strong> Updates on deployments and trials in Japan and the US (with AWS Wavelength).</li>
+<li><strong>Goal:</strong> Unify V2V (vehicle-to-vehicle) immediacy with V2C (vehicle-to-cloud) programmability, addressing challenges in volume, processing, and latency for automotive edge applications.</li>
+<li><strong>Scale:</strong> Handling millions of active vehicles, millions of frames/second, and terabits of data requires distributed GPU processing across edge sites and consolidation for cloud upload (exceptions only).</li>
+<li><strong>Downstream:</strong> Scales through pre-joined multicast feeds for scenario-specific applications.</li>
+<li><strong>Benefits:</strong> Enables &quot;air traffic control for the city&quot; through crowdsourced data, improves driver experience, scales autonomous vehicle (AV) density, and reduces AV costs.</li>
+<li><strong>Mechanism:</strong> Divides the Earth's EID space into hexagons for data posting and processing. RTRs steer uploads to appropriate hexagonal processing zones. Downstream notifications are replicated by RTRs.</li>
+<li><strong>Edge Challenges Solved by LISP:</strong> Balancing services on servers (not clients on servers), geo-privacy, context changes (avoiding multi-second DNS breaks), and maintaining identity across different carriers.</li>
+<li><strong>Role:</strong> LISP application routing acts as the &quot;application server&quot; connecting the auto edge to 3GPP interfaces.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> The <code>lisp-reliable-transport</code> draft will be adopted as a working group document, pending a final confirmation poll on the mailing list.</li>
+<li><strong>Action Item (Dino):</strong> Post to the mailing list regarding scalability considerations for <code>ethernet segment ID</code> (ESID) in the <code>lisp-l2l3-id-mobility</code> draft, specifically concerning multiple VLANs and Map-Register message size.</li>
+<li><strong>Action Item (Authors of <code>lisp-reliable-transport</code>):</strong>
+<ul>
+<li>Finalize the placement of the reliable transport bit in the Map-Notify message (suggested near the record count).</li>
+<li>Initiate a mailing list discussion on Quick port usage and potential signaling mechanisms for multiple reliable transport protocols.</li>
+<li>Review and incorporate security considerations (e.g., TLS for TCP).</li>
+</ul>
+</li>
+<li><strong>Action Item (Bernard Heindel):</strong> Send an email to the mailing list detailing the specific requirements for Ground-Based LISP (standardization of 6830/6833, PubSub clarifications, network mobility support, mechanism for additional data transport).</li>
+<li><strong>Action Item (Chairs):</strong> Initiate the working group adoption call for <code>lisp-reliable-transport</code> on the mailing list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussions on the <code>lisp-l2l3-id-mobility</code> draft, particularly addressing ESID scalability and Dino's proposed alternatives.</li>
+<li>Further refine the <code>lisp-reliable-transport</code> draft based on mailing list discussions regarding Quick integration, signaling, and security.</li>
+<li>Address the requirements raised for Ground-Based LISP, discussing the most appropriate path for standardization (document amendments or new RFCs).</li>
+<li>Prioritize and progress the chartered tasks: NAT traversal and standardization of LISP DDT (RFC 8111).</li>
+<li>Evaluate other existing working group drafts to determine their future progression or retirement.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

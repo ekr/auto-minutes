@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dmarc.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-DMARC-20220728-2000">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 28 Jul 2022 20:00</p>
+<h1>dmarc</h1>
+<h2>Summary</h2>
+<p>The DMARC Working Group session primarily focused on resolving outstanding issues for the DMARC Bis draft, particularly the &quot;tree walk&quot; mechanism and the impact of DMARC <code>p=reject</code> policies on mailing list interoperability. Discussions around the tree walk included clarifying examples and addressing concerns about maximum lookup depth. The debate on mailing list interoperability centered on whether to use a <code>SHOULD NOT</code> or <code>MUST NOT</code> normative statement to guide implementers regarding <code>p=reject</code> policies given their known breakage of forwarded mail streams. Minor updates and future work for reporting documents were also briefly touched upon. The working group aims to finalize DMARC Bis soon, with several items delegated to offline discussion and the mailing list.</p>
+<h2>Key Discussion Points</h2>
+<h3>DMARC Bis - Tree Walk Issue</h3>
+<ul>
+<li><strong>Current Status</strong>: Version 15 of the draft includes updated tree walk examples, with diffs available.</li>
+<li><strong>New Examples</strong>: John Levine added a more complex Public Suffix Domain (PSD) example (e.g., mega.bank.example, giant.bank.example where bank.example is a PSD) to illustrate the <code>psd</code> flag's effect on the tree walk.</li>
+<li><strong>&quot;Bad&quot; Examples</strong>: The chairs and John Levine agreed that a &quot;bad&quot; example of PSD usage was not necessary, as incorrect usage is hard to exemplify meaningfully and is unlikely to occur in plausible real-world scenarios.</li>
+<li><strong>Max Depth of Tree Walk</strong>: Seth Blank raised a concern that the current <code>max depth of 5</code> for the tree walk might inadvertently exclude complex organizational structures (e.g., federal agencies, universities with deep sub-organizations) from finding their intended DMARC policy, which was an original use case for the tree walk. This creates a trade-off with preventing abuse from overly long domain names.
+<ul>
+<li>John Levine explained that the <code>5</code> was chosen because the deepest label ever found in the Public Suffix List (PSL) is <code>4</code> from the root, making <code>5</code> a conservative choice. He also noted that deep organizational names often remain within the same organization, minimizing the impact of the <code>jump</code> rule.</li>
+<li>Murray suggested documenting the rationale for choosing <code>5</code> in the shepherd write-up or the document itself.</li>
+</ul>
+</li>
+<li><strong>DNS Directorate Review</strong>: Murray inquired if the tree walk mechanism had been reviewed by DNS experts. Tim Wilsinski confirmed that DNS folks were monitoring the discussion and offered to draft text for the shepherd write-up regarding the DNS aspects. He also volunteered to shepherd the DMARC Bis document.</li>
+<li><strong>Algorithm Tweaks</strong>: Ali expressed that the current algorithm for finding the organizational domain might need further minor tweaks and requested that specific text proposals be submitted to the mailing list.</li>
+</ul>
+<h3>DMARC Bis - Mailing List Interoperability</h3>
+<ul>
+<li><strong>Barry's Concern</strong>: Barry Lieber highlighted that DMARC <code>p=reject</code> policies &quot;blatantly break&quot; long-standing internet protocols for mailing lists. He proposed a normative <code>SHOULD NOT</code> statement in the DMARC Bis draft for domains that may post to mailing lists, arguing <code>p=reject</code> was intended for transactional mail.</li>
+<li><strong>Support for Normative Statement</strong>: Murray supported using <code>BCP14 SHOULD NOT</code>, indicating willingness to defend it to the IESG. Pete Resnick questioned why it shouldn't be a <code>MUST NOT</code> if it causes damage, citing RFC2119.</li>
+<li><strong>Practicality vs. Protocol</strong>: John Levine voiced concern that a <code>MUST NOT</code> might make the IETF appear &quot;out of touch&quot; given that many mailing lists have already implemented workarounds for DMARC breakage. He suggested acknowledging workarounds while still guiding best practices.</li>
+<li><strong>Seth's Perspective (Individual)</strong>: Seth Blank strongly disagreed with <code>MUST NOT</code> or <code>SHOULD NOT</code>, emphasizing DMARC's value in protecting domains from spoofing. He suggested documenting the impact on forwarded mail streams rather than prohibiting <code>p=reject</code>, and questioned if ARC (Authenticated Received Chain) could provide a solution.</li>
+<li><strong>&quot;Stupid&quot; Perception</strong>: Jim Fenton argued that the IETF would look &quot;stupid&quot; for <em>not</em> clarifying that previous mandates (e.g., by DHS) to publish <code>p=reject</code> based on informational RFCs were problematic. He supported a <code>MUST NOT</code> for compliance-oriented organizations.</li>
+<li><strong>Ali's Counterpoint</strong>: Ali noted that <code>p=none</code> is largely ineffective and that the IETF itself relies on mailing lists, yet is standardizing DMARC. He believed mailing lists can adapt and that <code>MUST NOT</code> would be disregarded.</li>
+<li><strong>ARC as a Solution</strong>: Braun Gondwana suggested exploring a pathway for ARC, possibly through a DNS record on receiving MX servers, to allow intermediates to determine if receivers support ARC and thus avoid rewriting <code>From</code> headers. He noted recent ARC updates from Microsoft and potential for data sharing.</li>
+<li><strong>Reframing the Problem</strong>: John Levine suggested reframing the issue to emphasize that enforcing <code>p=reject</code> can lead to legitimate mail being lost (e.g., US Census mail rejected by Gmail due to lack of DMARC alignment).</li>
+<li><strong>Beyond Mailing Lists</strong>: Jim Fenton pointed out that the breakage problem extends beyond mailing lists to other forwarding scenarios like alumni domains.</li>
+</ul>
+<h3>Reporting Documents (Aggregate and Failure Reports)</h3>
+<ul>
+<li><strong>Aggregate Report (RFC7489bis)</strong>: Alex Brockman (editor) stated he had been holding off on major changes, pending DMARC Bis stabilization, but noted no monumental impacts. There are still open tickets needing discussion, but none are deemed critical.</li>
+<li><strong>XML Validation</strong>: Ali proposed adjusting the aggregate report syntax for automatic XML verification with existing tools. Alex requested specific proposals if needed.</li>
+<li><strong>Failure Reporting (RFC7489bis)</strong>: Ali suggested making failure reports header-only due to privacy concerns and very low actual deployment of full content reports.</li>
+<li><strong>Privacy Concerns &amp; Operational Impact</strong>: Seth Blank raised the <code>RFC6973</code> privacy impact of failure reports as a critical issue requiring mailing list discussion. He also noted that almost no major mailboxes send failure reports, indicating low operational adoption.</li>
+<li><strong>Message-ID Uniqueness</strong>: Pete Resnick confirmed that RFC5322 states <code>Message-ID</code> &quot;must be globally unique&quot; with best-effort guarantees, acknowledging spammers may disregard this.</li>
+</ul>
+<h3>Other Issues</h3>
+<ul>
+<li><strong>DMARC Bis Closure</strong>: Todd Hurt indicated that few outstanding issues remain in GitHub, with only a minor reformatting of Section 4.8 being discussed on the mailing list.</li>
+<li><strong>IANA Registry for PSD Flag</strong>: Tim Wilsinski filed an issue regarding the IANA registry for the <code>psd</code> flag.</li>
+<li><strong>IDNA and Tree Walk</strong>: Victor questioned whether IDNA's alternative label separators (beyond periods) impact the tree walk. John Levine and other IDNA experts dismissed this as irrelevant to current A-label processing, considering it a &quot;pit of hopeless despair&quot; from older IDNA specifications.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Tree Walk Max Depth</strong>: John Levine and Seth Blank will discuss Seth's <code>max depth</code> concerns offline and report their findings to the mailing list.</li>
+<li><strong>Tree Walk Algorithm Tweaks</strong>: Ali is requested to post specific text proposals for any further tweaks needed for the organizational domain finding algorithm.</li>
+<li><strong>Shepherd for DMARC Bis</strong>: Tim Wilsinski volunteered and was accepted as the shepherd for the DMARC Bis document. He also offered to write text for the DNS portion of the shepherd write-up.</li>
+<li><strong>Mailing List Interoperability</strong>: The current text in DMARC Bis is deemed insufficient. The working group must address the impact of DMARC <code>p=reject</code> on forwarded mail streams. The exact normative strength (<code>SHOULD NOT</code> vs. <code>MUST NOT</code>) and accompanying explanatory text will be decided via mailing list discussion.</li>
+<li><strong>Reporting Documents - Aggregate Syntax</strong>: Ali's proposal for XML syntax adjustments for aggregate reports will be considered if specific proposals are submitted.</li>
+<li><strong>Reporting Documents - Failure Report Privacy</strong>: The <code>RFC6973</code> privacy impact of failure reports and the proposal for stripped-down (header-only) failure reports will be discussed on the mailing list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>John Levine and Seth Blank to resolve the <code>max depth</code> issue and post an update to the mailing list.</li>
+<li>Ali to propose specific text changes for organizational domain finding.</li>
+<li>The DMARC Working Group to engage in detailed mailing list discussions on the normative language for <code>p=reject</code> policies and their impact on forwarded mail, including mailing lists and other forwarding scenarios.</li>
+<li>Further discussions on the aggregate and failure reporting documents, particularly regarding XML syntax validation and the privacy implications of failure reports (<code>RFC6973</code>), will take place on the mailing list.</li>
+<li>Await DNS directorate review of the DMARC Bis draft.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

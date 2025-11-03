@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="jwp.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-JWP-20220725-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 17:30</p>
+<h1>jwp Session Minutes</h1>
+<h2>Summary</h2>
+<p>The jwp (JSON Web Proofs) Birds of a Feather (BoF) session discussed the need for new JSON-based cryptographic formats within the JOSE family to enable advanced identity use cases such as selective disclosure, zero-knowledge proofs (ZKPs), predicate proofs, and unlinkability, which are not adequately supported by existing JOSE and JWT specifications. The session featured presentations on the motivation, use cases (including explicit dependency from W3C Verifiable Credentials v2), and an overview of the proposed jwp drafts and compatible algorithms like BBS signatures. While strong interest was expressed, the BoF concluded without formal decisions, emphasizing the need for further detailed discussion on design choices, security properties, and the scope of a potential re-chartered JOSE working group.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Initial Technical Issues</strong>: The session began with significant technical difficulties related to AV display, which were eventually resolved.</li>
+<li><strong>BoF Introduction</strong>: Co-chairs John Bradley and Karen O'Donoghue welcomed participants and covered administrative items, including the Note Well, calling for a scribe (Chris volunteered), and a reminder about the mask policy.</li>
+<li><strong>Motivation for jwp (Mike Jones, Microsoft)</strong>:
+<ul>
+<li>JOSE and JWT have been successful but were designed for a two-role model (issuer, recipient) where all claims are disclosed.</li>
+<li>New industry developments introduce a three-role model (issuer, holder/wallet, recipient/verifier) and demand advanced cryptographic capabilities.</li>
+<li>These capabilities include:
+<ul>
+<li><strong>Selective Disclosure</strong>: Holder reissues a subset of claims.</li>
+<li><strong>Predicate Proofs</strong>: Disclosing a proof about a claim (e.g., over 18) instead of the claim itself (e.g., exact age).</li>
+<li><strong>Unlinkability</strong>: Deriving tokens for multiple recipients that cannot be linked back to the original issued token or each other.</li>
+</ul>
+</li>
+<li>Existing JOTS/JOSE cannot natively represent these new cryptographic techniques (e.g., pairing-friendly curves, ZKPs).</li>
+<li>The W3C Verifiable Credentials v2 working group explicitly depends on the jwp work becoming an IETF standard.</li>
+<li>Proposal: Re-charter the JOSE working group to develop new JSON-based cryptographic encoding formats for these advanced techniques, leveraging existing JOSE expertise.</li>
+<li>Proposed charter deliverables include non-normative use cases/requirements, standards-track cryptographic formats, claims/proofs documents, algorithm usage/identifiers, key representation, test vectors, and eventual CBOR equivalence.</li>
+</ul>
+</li>
+<li><strong>Clarifying Questions on Motivation/Scope</strong>:
+<ul>
+<li><strong>Scope of re-chartered JOSE</strong>: Clarified that the &quot;jwp&quot; BoF name was for data tracker purposes; the proposal is for a re-chartered JOSE WG. Question was raised if new algorithms for JWS/JWE would be in scope for a re-chartered JOSE WG (proponents suggested potentially yes, if chartered).</li>
+<li><strong>Minimizing Reinvention</strong>: Concern was raised about creating entirely new constructs versus reusing JWS for signing and embedding new proof types. Proponents argued that certain advanced cryptographic techniques (e.g., one signature over many selectively disclosed claims with unlinkability) are fundamentally not representable with current JWS formats.</li>
+</ul>
+</li>
+<li><strong>Use Cases and Industry Demand (Christina, W3C Verifiable Credentials Co-chair)</strong>:
+<ul>
+<li>W3C Verifiable Credentials v2 needs jwp for advanced capabilities, driven by an emerging architecture that decouples credential issuance from presentation.</li>
+<li>This enables holder consent and real-time presentation of only requested claims, prevents verifier-user unlinkability, and supports predicate proofs.</li>
+<li>The ISO Mobile Driving License (mDL) specification faced similar challenges, implementing less efficient solutions (hash-based selective disclosure, batch issuance for unlinkability, pre-issuing boolean claims for predicates). A standardized jwp solution would be beneficial.</li>
+<li>The re-chartered W3C VC V2 working group has a conditional normative dependency on jwp, planning to define how jwp would be used in the application layer.</li>
+<li><strong>jwp vs. JWT Selective Disclosure (SD-JWT)</strong>: Christina clarified that SD-JWT focuses on providing a simple selective disclosure solution with existing JWT/JWS and does not address advanced cryptography, unlinkability, or predicate proofs. jwp is complementary, addressing these more complex, urgent problems in the ecosystem.</li>
+</ul>
+</li>
+<li><strong>jwp Draft Overview (Jeremy, jwp Draft Author)</strong>:
+<ul>
+<li>jwp aims to be a new container format within the JOSE family that introduces the role of a &quot;holder&quot; and supports new algorithms.</li>
+<li>Key properties are selective disclosure, multiple uses of a credential, answering predicates, and proof of possession.</li>
+<li>Unlinkability goal: After issuance, a holder can present proofs such that presentations are not linkable to each other or the original credential, without the container format forcing linkability.</li>
+<li>The jwp core draft proposes a structure similar to JWS but with a payload divided into multiple messages (separated by tilde <code>~</code>). Presentations can omit payloads, which alters the signature. A &quot;presentation header&quot; allows the holder to add context (e.g., a nonce for replay protection).</li>
+</ul>
+</li>
+<li><strong>BBS Algorithm Overview (Tobias)</strong>:
+<ul>
+<li>BBS (Boneh-Boyen-Shacham) signatures were presented as an example of a compatible algorithm.</li>
+<li>BBS provides two cryptographic structures: a signature over a set of messages and a presented proof.</li>
+<li>Use cases include privacy-preserving anonymous credentials, proof of possession, and non-correlating security token proofs (unlinkable presentations).</li>
+</ul>
+</li>
+<li><strong>Open Discussion and Concerns</strong>:
+<ul>
+<li><strong>Issuer Knowledge</strong>: Question on whether the issuer knows all attributes being signed in BBS. Tobias confirmed the issuer typically knows the values but schemes like BBS can also support pre-committed or blind attributes.</li>
+<li><strong>&quot;Mashup&quot; Concern</strong>: A participant expressed concern that the jwp draft includes mechanisms for selective disclosure using existing JOSE algorithms, which might create confusion because such &quot;jwp&quot; objects would lack the advanced properties (like unlinkability) of those using newer crypto. Suggestion to focus jwp solely on capabilities Jose cannot represent.</li>
+<li><strong>Unlinkability Complexity</strong>: A participant viewed unlinkability as a &quot;terrifying&quot; and very different problem from selective disclosure, requiring new cryptography and potentially CFRG vetting. Questions were raised if existing JWS couldn't be transformed with specific algorithms to achieve needed properties. More comfort was expressed for charting selective disclosure than unlinkability.</li>
+<li><strong>Industry Need</strong>: A participant from industry emphasized their company's immediate need for jwp's capabilities (selective disclosure and unlinkability) that JOT cannot provide, stating this need motivated their first attendance at IETF.</li>
+<li><strong>Cross-WG Awareness</strong>: Questions about discussions with Privacy Pass (IETF) and Trust Tokens (W3C) groups. Proponents acknowledged relevance and confirmed more engagement is needed. Christina clarified that W3C VC is consuming jwp, not developing similar primitives.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<p>No formal decisions were made during the BoF due to time constraints.</p>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Continue Discussion</strong>: Further conversation is needed to better understand the underlying design choices, assumptions, and approaches to realize the desired security properties.</li>
+<li><strong>Mailing List</strong>: The conversation will continue on the JOSE mailing list. Participants were encouraged to subscribe.</li>
+<li><strong>Potential Virtual BoF</strong>: The chairs will explore organizing a virtual BoF to provide more time for discussion. Any such announcement would be made to the IETF community.</li>
+<li><strong>W3C/IETF Relationship</strong>: There is a recognized need to better define the relationship between the W3C and IETF for this work to avoid confusion and ensure smooth progress.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

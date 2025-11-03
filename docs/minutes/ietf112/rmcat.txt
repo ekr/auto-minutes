@@ -1,0 +1,83 @@
+**Session Date/Time:** 12 Nov 2021 14:30
+
+# rmcat
+
+## Summary
+
+The rmcat working group session provided updates on the status of its previously published experimental RFCs for congestion control algorithms and discussed the sole remaining active working group document. While some algorithms, particularly SCREAM and Shared Bottleneck Detection, have seen continued research and implementation, the group concluded there wasn't enough widespread deployment experience to advance any to Proposed Standard at this time. The primary decision was to send the final outstanding document, `draft-ietf-rmcat-cc-feedback-message`, to a Working Group Last Call, with the intention to close the working group upon its completion.
+
+## Key Discussion Points
+
+### Working Group Status and Agenda
+
+*   The working group had previously decided to go idle to gain experience with its published algorithms before reconvening. Due to the pandemic, this meeting was delayed.
+*   The agenda included an update on the four published experimental RFC algorithms and the status of one active working group document on RTCP feedback for congestion control.
+*   Administrative: Gauri volunteered as note-taker. Jabber integrated into Meetecho, no separate scribe needed.
+
+### Recap of Working Group Activities
+
+*   **Four Experimental RFC Algorithms Published**:
+    *   SCREAM (RFC 8298)
+    *   NADA (RFC 8312)
+    *   Coupled Congestion Control (RFC 8303)
+    *   Shared Bottleneck Detection (RFC 8382)
+    *   NADA and Coupled CC were published after the last physical meeting.
+*   **Requirements and Evaluation Documents Published**: Most were published in January of the current year. Video Traffic Models were published earlier.
+*   **One Active Working Group Document**: `draft-ietf-rmcat-cc-feedback-message` on RTCP feedback for congestion control, which depended on RFC 8888 (published).
+
+### Algorithm Status Updates
+
+*   **NADA Congestion Control (RFC 8312)**:
+    *   Full implementation in Mozilla browser (circa 2020) marked completion of work for the authors.
+    *   No known ongoing activities by the original authors; they have moved to other projects/employers. Open-source implementation exists.
+*   **Coupled Congestion Control (RFC 8303)**:
+    *   Some ongoing research by authors, with students working on coupling video and data flows in Chromium.
+    *   No reportable results or ready outcomes at this time.
+*   **SCREAM (RFC 8298) Update (Ingmar Johansson)**:
+    *   **Usage**: Not widely adopted in WebRTC, but integrated with Quick (Go Quick implementation). More traction in cloud-rendered gaming (30+ Mbps video) and remote driving (high bitrate, multiple cameras). Used for 5G network benchmarking.
+    *   **L4S Development**: SCREAM was used as a known algorithm for L4S development due to ease of statistics collection. A GStreamer plug-in was developed for real experiments. Issues found were related to video encoder behavior with frequent bitrate updates.
+    *   **Remote Driving**: Integrated with a remote control core, tested over 4G/5G networks, proving a good test platform for bad coverage. Data logging was ad-hoc.
+    *   **Benchmarking Tool**: Publicly available tool emulates video encoder (fixed/adaptive bitrate up to 500+ Mbps), models iframes/variable frame sizes, measures RTT, Q delay, throughput, loss, ECN marks. Supports classic ECN and L4S.
+    *   **Findings**:
+        *   Window-based CC (like SCREAM) is beneficial for cellular access due to radio resource reconfiguration and handovers, preventing transmit buffer buildup and head-of-line blocking.
+        *   Allows for fast recovery with forced IDRs on sender side.
+        *   Feedback Rate: Currently 1 feedback per 16 RTP packets (approx. 1/150th of media bitrate), potentially overkill; optimization not a primary focus so far.
+        *   Video Encoder Interaction: Video encoders are "strange animals" – sluggish adaptation, confusion by frequent updates, systematic offsets (e.g., NVENC). Iframes are problematic in congestion. Recommendations include gradual decoder refresh or hard iframe compression (qpmax/qpmin control).
+    *   **Future**: Plans for an improved L4S implementation update to the experimental RFC, but not immediate.
+    *   **Discussion**: ECN/L4S usage currently in specific demos. Questioned applicability to data center traffic (likely tailored to last-mile mobile access). Optimized for transmit video.
+*   **Shared Bottleneck Detection (SBD) (RFC 8382) Update (David Hayes)**:
+    *   **Work Since Last Meeting**: Implementation in Multipath TCP and Multipath QUIC.
+    *   **Comparative Study**: Published in IEEE/ACM Transactions on Networking. Compared RFC 8382 (summary statistics, divide & conquer) with dynamic online clustering and cross-correlation (offline/online wavelet filtering).
+    *   **Key Findings**:
+        *   RFC 8382 performs well, is simple, light, and fast.
+        *   Summary statistics introduce a detection lag (up to ~4 seconds) for bottleneck start/stop.
+        *   RFC 8382 handles different path delays very well; correlation methods degrade significantly with propagation delay differences >100ms.
+        *   With many parallel bottlenecks (>4), RFC 8382 accuracy drops, while dynamic clustering improves upon it. Cross-correlation methods remain robust.
+    *   **Limitations**: All SBD methods assume measurable similarities/bottleneck signature. They can fail if a sending pattern dominates the bottleneck, leading to correlation of sending patterns instead of shared congestion.
+    *   **Path Forward**: Address the sending pattern limitation (algorithm-dependent or generic filtering). Calls for interested parties to continue research.
+    *   **Discussion**: Further exploration of complex Layer 2 bottlenecks (e.g., adaptive radio links) might reveal similar characterization challenges due to external patterns.
+
+### RTCP Feedback for Congestion Control (Draft Update) (Colin Perkins)
+
+*   **Document Goal**: Outline bandwidth overheads of using congestion control feedback packets defined in RFC 8888, considering various RTCP configurations (compound/non-compound packets, reporting intervals, profiles).
+*   **Scenarios**: Examines two typical cases:
+    *   Voice over IP: Two-party call, varying feedback rates, compound vs. non-compound packets. Illustrates overhead reduction with non-compound packets and less frequent reporting.
+    *   Point-to-Point Video: Two-person, audio+video streams bundled, aggregated feedback using reporting groups. Shows potentially large overheads but also how they can be reduced.
+*   **Calculations**: The draft details packet formats and uses RFC 3550 reporting interval calculations to derive bandwidth overheads.
+*   **Current Status**: Latest version updates calculations to RFC 8888, corrects minor errors, and removed placeholders for multi-party/screen sharing as those scenarios introduced too many variables for general characterization.
+*   **Author's Recommendation**: Document is considered complete and useful for implementers to understand overhead fundamentals. Recommends moving to Working Group Last Call. If significant work beyond minor nits is required, the author would not invest further effort.
+*   **Discussion**: Jonathan Lennox confirmed the document is useful for implementers to understand general principles and apply the procedures to their specific, more complex cases. It is an informational document.
+
+## Decisions and Action Items
+
+*   **`draft-ietf-rmcat-cc-feedback-message`**: The working group agrees to send the document to Working Group Last Call. Jörg and Ingmar volunteered to review it.
+*   **Algorithm Advancement**: No algorithms (SCREAM, NADA, Coupled CC, SBD) will be moved to Proposed Standard at this time due to insufficient deployment and experience gained.
+*   **Working Group Closure**: The chairs, with AD concurrence, propose to close the rmcat working group once the `draft-ietf-rmcat-cc-feedback-message` document is finalized and published. The mailing list might be kept alive.
+
+## Next Steps
+
+*   The chairs will initiate a Working Group Last Call for `draft-ietf-rmcat-cc-feedback-message`.
+*   Volunteers (Jörg, Ingmar, possibly Xiaojing) are encouraged to review the document during the WG Last Call.
+*   Upon successful completion of the WG Last Call and addressing any feedback, the document will be moved to IETF Last Call.
+*   The rmcat working group will begin the process of closure after the final document is published.
+*   Future updates to experimental RFCs like SCREAM (e.g., L4S, ECN handling) could be pursued in other venues, such as ICCRG, potentially as an independent submission or an experimental RFC update.

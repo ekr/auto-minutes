@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="acme.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-ACME-20211111-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 14:30</p>
+<h1>acme</h1>
+<h2>Summary</h2>
+<p>The ACME session at IETF 112 covered updates on several existing drafts and presentations for <code>dtn-node-id</code>, Automated Certificate Management Environment Renewal Info (ARI), <code>integrations</code>, and <code>subdomains</code>. Key discussions revolved around technical clarifications, proposed protocol extensions, terminology choices, and the progress of various documents towards working group last call or ISG submission. A new potential use case for client certificates/code signing was also discussed.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative</strong>
+<ul>
+<li>Russ Housley volunteered as note taker.</li>
+<li>The Jabber room was monitored for questions/comments.</li>
+</ul>
+</li>
+<li><strong>Document Updates</strong>
+<ul>
+<li><strong>RFC 8991bis-15 (Star Delegation)</strong>: Published as RFC 8991bis-15. Authors acknowledged.</li>
+<li><strong>draft-ietf-acme-authority-token-07</strong>: Published, includes additional text and IANA considerations, broken into sections. Currently in IETF Last Call until next Monday.</li>
+<li><strong>draft-ietf-acme-authority-token-tnoth-list</strong>: No modifications since last IETF. Both <code>authority-token</code> drafts will be batched and submitted to the ISG after <code>draft-ietf-acme-authority-token</code> exits IETF Last Call.</li>
+<li><strong>draft-ietf-acme-end-user-client-code-signing</strong>: Two new revisions, limited discussion on the mailing list.</li>
+<li><strong>draft-ietf-acme-dtn-node-id</strong>: Two updates since last IETF, ongoing discussions. Presented during this session.</li>
+<li><strong>draft-ietf-acme-ari</strong>: One new version. Presented during this session.</li>
+<li><strong>draft-ietf-acme-subdomains</strong>: Adopted as a working group draft (<code>draft-ietf-acme-subdomains-00</code>), resubmitted. Presented during this session.</li>
+</ul>
+</li>
+<li><strong>Presentation: dtn-node-id (draft-ietf-acme-dtn-node-id-04)</strong>
+<ul>
+<li>Updates focused on supporting the DTN certificate profile.</li>
+<li>Switched from <code>uri-san</code> to a specific <code>bundle-eid-san</code> in the certificate profile, reflected in the ACME draft.</li>
+<li>Clarified multi-perspective validation, making it a first-class use case.</li>
+<li>Clarified <code>node-id</code> definition for server logic and client inputs.</li>
+<li>Updates related to the DTN working group's RFC have been moved to a separate document, making the ACME draft purely ACME and experimental.</li>
+<li>Remaining minor issues: typo in <code>must not</code> vs <code>must</code>, <code>uri-name</code> in IANA registrations, encoding form in example bundles.</li>
+<li><strong>Open Question</strong>: Terminology for &quot;dtn node id&quot; vs. &quot;node id&quot;. <code>dtn-node-id</code> clarifies the context for ACME implementers.</li>
+<li><strong>Discussion on Timeline</strong>: Roman (via chat) suggested the <code>authority-token</code> draft could go to telechat by Dec 16th. <code>dtn-node-id</code> would follow (at least 2-week delay), pending adoption of its dependent DTN WG document, potentially leading to editor's queue clustering.</li>
+</ul>
+</li>
+<li><strong>Presentation: ARI (Automated Certificate Management Environment Renewal Info) (draft-ietf-acme-ari-01)</strong>
+<ul>
+<li>New draft since IETF 111, presented at an interim.</li>
+<li>Initial server implementation deployed in Let's Encrypt staging; client implementation (Certbot) in progress.</li>
+<li><strong>Key Change</strong>: Renewal Info URL is now directly constructible from the subscriber certificate. It uses the <code>renewalInfo</code> base URL from the ACME directory, concatenated with case-insensitive hex-encoded SHA-1 hashes of the issuer key, issuer name, and certificate serial number (mimicking OCSP). This avoids caching issues and allows external monitoring.</li>
+<li><code>GET</code> is the only supported protocol for this endpoint, as it is item potent and does not require authentication, simplifying caching.</li>
+<li>Clarified client behavior for malformed responses or non-ideal polling frequencies.</li>
+<li><strong>Open Questions</strong>:
+<ul>
+<li><strong>Polling Semantics</strong>: The <code>Retry-After</code> header only specifies a minimum delay. Need to define semantics for a <em>suggested</em> maximum delay or preferred polling window to encourage frequent checks for updates (e.g., within 6 hours).</li>
+<li><strong>Callback Endpoint</strong>: Consideration of adding a mechanism for clients to notify the CA that a certificate has been replaced/renewed (e.g., in a pre-revocation scenario, allowing the CA to safely revoke the old cert).</li>
+</ul>
+</li>
+<li><strong>Call for Adoption</strong>: One expression of support on the mailing list.</li>
+</ul>
+</li>
+<li><strong>Presentation: Integrations (draft-ietf-acme-integrations-05)</strong>
+<ul>
+<li>Main change: Addressed a major issue regarding <code>CSR</code> attributes. It now points to a draft being presented at LAMPS (which updates RFC 7030 to specify how CSR attributes can be used by an RA).</li>
+<li>Terminology updated to align with RFC 8499 (DNS terminology) rather than CA/Browser Forum terminology, to broaden applicability beyond web PKI.</li>
+<li>Review needed, but full review is dependent on the progress of the LAMPS CSR attributes draft.</li>
+</ul>
+</li>
+<li><strong>Presentation: Subdomains (draft-ietf-acme-subdomains-00)</strong>
+<ul>
+<li>Newly adopted WG draft, previously an individual draft.</li>
+<li>Terminology additions: Referenced RFC 8499.</li>
+<li>Editorial nits fixed.</li>
+<li><strong>Key Discussion</strong>: Terminology for field names in JSON objects – <code>domain-namespace</code> vs. <code>subdomains</code>. The author is leaning towards aligning with RFC 8499 definitions. Consensus sought on the mailing list.</li>
+<li>The document is considered close to completion, with terminology being the primary remaining issue.</li>
+</ul>
+</li>
+<li><strong>Any Other Business (AOB)</strong>
+<ul>
+<li><strong>Client Certificates / Code Signing</strong>: Kathleen outlined potential new use cases for the <code>end-user-client-code-signing</code> draft. Text contributions are expected from a Linux Consortium effort that currently uses its own protocol, seeking to switch to ACME. This effort involves very short-lived certificates (seconds). <code>GENAPP</code> also has related use cases. Significant implementation interest is anticipated.</li>
+</ul>
+</li>
+<li><strong>Milestones Review</strong>
+<ul>
+<li>Existing milestones were out of date.</li>
+<li>Discussion on updating milestones: <code>dtn-node-id</code> (target December), <code>integrations</code> (target March, dependent on LAMPS draft), <code>subdomains</code> (target Spring), <code>client-code-signing</code> (target WG last call by next meeting, July 2022; Chairs suggested ISG submission milestone). ARI is too early for a milestone.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: Russ Housley will serve as note taker for the session.</li>
+<li><strong>Decision</strong>: After <code>draft-ietf-acme-authority-token</code> completes IETF Last Call, both <code>authority-token</code> drafts will be batched and submitted to the ISG.</li>
+<li><strong>Decision</strong>: The <code>dtn-node-id</code> draft will retain the &quot;dtn node id&quot; terminology for clarity to the ACME audience.</li>
+<li><strong>Action Item (Chairs)</strong>: Initiate mailing list discussion for open questions in the <code>ari</code> draft (polling semantics, callback endpoint), followed by a formal call for adoption.</li>
+<li><strong>Action Item (Chairs)</strong>: Send a message to the mailing list requesting reviews for the <code>integrations</code> draft.</li>
+<li><strong>Action Item (Authors/WG)</strong>: Continue discussion on the mailing list regarding terminology choice (<code>domain-namespace</code> vs. <code>subdomains</code>) for the <code>subdomains</code> draft.</li>
+<li><strong>Action Item (Chairs)</strong>: Update the working group milestones based on the discussion, including new targets for <code>dtn-node-id</code>, <code>integrations</code>, <code>subdomains</code>, and <code>client-code-signing</code>.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Authors to update drafts based on feedback and ongoing discussions.</li>
+<li><code>draft-ietf-acme-ari</code> will undergo further discussion on its open questions on the mailing list, followed by an adoption call.</li>
+<li><code>draft-ietf-acme-integrations</code> requires reviews, with full review possibly awaiting progress on the LAMPS CSR attributes draft.</li>
+<li><code>draft-ietf-acme-subdomains</code> needs consensus on terminology via mailing list discussion.</li>
+<li>Contributions are expected for <code>draft-ietf-acme-end-user-client-code-signing</code> to expand its use cases, with a goal for WG last call by the next IETF meeting.</li>
+<li>An interim meeting will only be scheduled if there is specific, significant content to discuss, such as new <code>client-code-signing</code> content or major <code>ARI</code> developments after an adoption call.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+**Session Date/Time:** 28 Jul 2022 20:00
+
+# acme
+
+## Summary
+
+The ACME working group meeting at IETF 114 discussed the status of several existing drafts, including the `acme-authority-token`, `acme-client`, `tnoth-list`, `dtn-node-id`, `integrations`, and `subdomains`. Key discussions revolved around progressing the long-stalled `tnoth-list` and its interdependent `acme-authority-token` documents. The `acme-detail-node-id` draft received a request for further review following recent changes. The `acme-revocation-information` (ARI) draft, after an in-room poll demonstrating strong support, was decided to be adopted as a working group document. Finally, a new proposal was presented by Brandon Weeks to integrate WebAuthn attestation statements with ACME for client certificate issuance, which garnered significant interest and a call for adoption.
+
+## Key Discussion Points
+
+*   **Administrative**: A note-taker (Aaron Gable) was secured. Standard IETF Note Well and in-person/remote participation guidelines were reviewed.
+*   **Document Status Update**:
+    *   `acme-authority-token` (draft-ietf-acme-authority-token): New version 08 released this month to address Ben Kaduk's discusses. It requires coordinated progress with `tnoth-list`.
+    *   `acme-client` (draft-ietf-acme-client): New version 05 from April, with light discussion.
+    *   `tnoth-list` (draft-ietf-acme-tnoth-list): Current version is from March 2021 with three outstanding discusses. It needs a new editor to take the pen and significant revisions. The document is intertwined with `acme-authority-token` and should progress in lockstep. Given the substantial changes anticipated and the 15-month delay, a working group re-confirmation of consensus is required.
+    *   `dtn-node-id` (draft-ietf-acme-dtn-node-id): Current version from just before IETF 113, waiting for external write-ups since March 2022.
+    *   `integrations` (draft-ietf-acme-integrations): Went through Working Group Last Call (WGLC) with little discussion. Ready to be pushed to IESG.
+    *   `subdomains` (draft-ietf-acme-subdomains): Just finished WGLC. Ready to be pushed to IESG.
+    *   `ari` (draft-ietf-acme-revocation-information): Previous adoption call on the mailing list yielded little response.
+*   **Current Work Items Presentations**:
+    *   **`acme-detail-node-id` (Bryan):** No new feedback since IETF 113. The COSE document is in RFC 48. Previous WGLC made breaking changes related to algorithm agility and conformance with RFC 8823 (email challenge). A consensus re-check is needed. Aaron Gable volunteered to re-review the document, having requested some of the changes. The chairs will reiterate a request for reviews.
+    *   **`acme-revocation-information` (ARI) (Aaron Gable):** Version 03, with minor changes to fix typos and clarify introductory text regarding alternative solutions. The suggested renewal algorithm text was updated from "client must perform specific calculations and should renew" to "client must attempt renewal based on suggested window and we recommend a specific algorithm." The author seeks feedback on this change. An in-room poll was conducted for adoption, showing strong support.
+*   **New Proposed Work (Brandon Weeks - ACME with WebAuthn Attestation):**
+    *   **Proposal**: A specification to combine the WebAuthn attestation statement format with ACME for issuing client certificates, primarily for devices like laptops, workstations, and servers.
+    *   **Rationale**: ACME is widely adopted and well-designed, unlike other certificate enrollment protocols (SCEP, CMP, EST, CMC). Modern devices (Android, Apple, Chrome OS, TPMs) increasingly support hardware-backed device attestation. WebAuthn is gaining mindshare as a de facto format for abstracting attestation.
+    *   **Draft Changes**: Adds a new ACME challenge type where the client returns a WebAuthn attestation statement. Uses ACME key authorization as the nonce. Specifies identifiers (RFC 4043 for platform, RFC 4108 for hardware module, though the latter received feedback). Includes informative text on using External Account Binding for pre-authentication in enterprise environments.
+    *   **Discussion Points**:
+        *   **Integration with `acme-client` draft**: Author suggests keeping it separate due to narrower focus on devices and specific use of attestation statements.
+        *   **Clarifying "Attestation"**: Hank requested clearer differentiation between key provenance and broader system trustworthiness evidence, and precise definitions of terms.
+        *   **Information in Client Certificate**: Discussion on reflecting device/security chip identity and key generation properties into certificates. Monty Wiseman and Sean Turner suggested defining a registry for quality distinctions rather than embedding detailed specification here due to complexity.
+        *   **Verification Procedures**: The document does not specify how CAs should verify attestations, which is a complex and often underspecified problem. Participants (Sean Turner, Aaron Gable, Carl Wallace) agreed that the document should acknowledge this complexity and refer to external documentation/best practices, rather than trying to fully specify verification. The chairs emphasized the need for verifiability and assurance against self-assertion.
+    *   **Implementation**: A fork of the Smallstep CA and client exist, implementing TPM attestation. Apple iOS 16 betas use this encoding in ACME. Android has it on their roadmap.
+    *   **Call for Adoption**: Brandon Weeks formally requested a call for adoption, citing existing vendor support and broad interest.
+
+## Decisions and Action Items
+
+*   **Decision**: The `acme-revocation-information` (ARI) draft (draft-ietf-acme-ari) will be adopted as a working group document. This was based on an in-room poll showing 17 votes for adoption and 0 against.
+*   **Action Item (Chairs)**: Send out a call for objections on the ACME mailing list for the adoption of `acme-revocation-information` (ARI).
+*   **Action Item (Chairs)**: Contact the authors of `tnoth-list` to identify the current editor and establish a timeline for updating the document.
+*   **Action Item (Chairs)**: Once `tnoth-list` is updated and a new version is issued, bring both `tnoth-list` and `acme-authority-token` back to the working group for a short (e.g., two-week) last call to reconfirm consensus, including STIR on the CC list for broader review.
+*   **Decision**: The `acme-integrations` and `acme-subdomains` drafts, having completed WGLC, are ready to be pushed to the IESG.
+*   **Action Item (Bryan - `acme-detail-node-id` author)**: Reiterate the request for working group review of the `acme-detail-node-id` draft to confirm breaking changes.
+*   **Action Item (Aaron Gable - `acme-detail-node-id` reviewer)**: Perform a review of `acme-detail-node-id` and provide feedback to the list.
+*   **Action Item (Brandon Weeks - ACME with WebAuthn Attestation author)**: Add informative text to the draft acknowledging the complexities of attestation verification and the need for CAs to correctly implement verification procedures.
+*   **Action Item (Chairs)**: Send out a call for adoption for Brandon Weeks's ACME with WebAuthn Attestation draft on the mailing list.
+
+## Next Steps
+
+*   The ACME chairs will initiate the mailing list processes for the adoption of the ARI draft and the new WebAuthn Attestation proposal.
+*   The chairs will follow up with the authors of `tnoth-list` to unblock its progress and coordinate with `acme-authority-token`.
+*   The `acme-detail-node-id` draft awaits further working group reviews.
+*   `integrations` and `subdomains` drafts will be forwarded to the IESG.

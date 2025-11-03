@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="emu.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-EMU-20220322-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 22 Mar 2022 12:00</p>
+<h1>emu</h1>
+<h2>Summary</h2>
+<p>The emu working group met at IETF 113 to discuss the status of existing working group drafts and evaluate several new proposals for potential adoption. Key discussions revolved around the finalization of EAP AKA Forward Secrecy, minor updates to EAP TLS EAP Types, and the scoping of EAP Usability. Several new drafts were presented, including EAP DPP for device bootstrapping, EAP IBS for identity-based signatures, EAP NOOB observations and a related new proposal (EAP Utter), and EAP Class for credential management in SAS networks. Decisions were made to move EAP AKA Forward Secrecy towards Working Group Last Call, and to conduct adoption calls on the mailing list for EAP DPP and EAP IBS.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>EAP AKA Forward Secrecy:</strong>
+<ul>
+<li>Version 06 includes minor updates, primarily updating references and changing &quot;PFS&quot; to &quot;Forward Secrecy&quot; for consistency with SARC group recommendations.</li>
+<li>An open issue regarding the encoding of public values (32 vs. 33 bytes) was discussed. While no strong objections were raised to the current 33-byte encoding, the authors were tasked with clarifying the rationale and considering library compatibility.</li>
+</ul>
+</li>
+<li><strong>EAP TLS EAP Types:</strong>
+<ul>
+<li>The draft is largely ready for publication, with multiple client/server implementations.</li>
+<li>A proposal to forbid client authentication using <em>only</em> client certificates (without a Phase 2) for TLS 1.3 in TTLS and PEEP was discussed. While some historical configuration options exist, there was general agreement that this usage is niche and better handled by other EAP types, though concerns about unexpected impacts on existing deployments were raised.</li>
+<li>An issue regarding client session resumption for TTLS+PAP and unexpected server responses was also noted, suggesting updates to the document to guide proper handling.</li>
+</ul>
+</li>
+<li><strong>EAP Usability:</strong>
+<ul>
+<li>This draft aims to simplify EAP configuration by offloading complex provisioning tasks (like certificate acquisition) to standard internet protocols (e.g., DNS, HTTPS, ACME, EST) and OS-specific tools, rather than embedding them within EAP itself.</li>
+<li>The discussion highlighted a clear distinction between the intended use case (user-centric devices with existing connectivity) and IoT bootstrapping scenarios (devices with no UI/network connection). The complexity of embedding large data transfers (like certificate chains) within EAP was cited as a reason for this approach.</li>
+</ul>
+</li>
+<li><strong>EAP DPP (Device Provisioning Protocol):</strong>
+<ul>
+<li>Proposed to integrate Wi-Fi's DPP bootstrapping keys with EAP, leveraging RFC 8773 (External PSK) and RFC 7250 (Raw Public Key) for TLS authentication.</li>
+<li>The mechanism would use a &quot;tls poke&quot; in the EAP identity response, authenticate the TEEP exchange with the DPP key, and then provision certificates via a PKCS10 exchange within TEEP.</li>
+<li>Questions were raised about the experimental status of RFC 8773, though it was noted that the TLS working group had previously suggested this approach.</li>
+</ul>
+</li>
+<li><strong>EAP IBS (Identity-Based Signatures):</strong>
+<ul>
+<li>Introduced as a method to enhance EAP authentication options, particularly for IoT and environments where X.509 online certificates are not supported, by using Identity-Based Signatures (IBS) like ECCSI.</li>
+<li>The proposal describes how to integrate IBS by specifying <code>extension server_certificate_type</code> and <code>client_certificate_type</code> (RFC 7250) and <code>signature_algorithm</code> (RFC 8446).</li>
+</ul>
+</li>
+<li><strong>EAP NOOB Observations &amp; EAP Utter:</strong>
+<ul>
+<li>Observations from an implementation attempt of EAP NOOB highlighted issues with JSON payload encoding (canonicalization, MAC calculation), ambiguous status fields, and a high number of messages.</li>
+<li>A new draft, EAP Utter (User Assisted Trust Establishment), was proposed, retaining NOOB's design principles but switching to CBOR for payload encoding to address JSON-related issues and enhance extendability.</li>
+</ul>
+</li>
+<li><strong>EAP Class:</strong>
+<ul>
+<li>Presented as an EAP method for secured network credential management, specifically for SAS networks (e.g., CBRS).</li>
+<li>Aims to provide non-IP based, active management of various credential types (user, network, device), relying on external communication channels for confidentiality.</li>
+<li>The protocol defines three phases: initial addition, provisioning (using encapsulated protocols like SPP), and validation. A core draft exists, with plans for a separate <code>eep_class_spp</code> draft as a template.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>EAP AKA Forward Secrecy:</strong>
+<ul>
+<li><strong>Decision:</strong> No strong objections to the current 33-byte public value encoding.</li>
+<li><strong>Action Item:</strong> Yari and John to collaboratively make a final decision on the public value encoding, update the draft if necessary to clarify rationale and library considerations, and report the conclusion to the mailing list.</li>
+<li><strong>Action Item:</strong> Chair to initiate Working Group Last Call (WGLC) after the authors' update and list report.</li>
+</ul>
+</li>
+<li><strong>EAP TLS EAP Types:</strong>
+<ul>
+<li><strong>Action Item:</strong> Alan to finalize the proposed changes (e.g., forbidding client-cert-only authentication, addressing session resumption) and publish a new draft.</li>
+<li><strong>Action Item:</strong> Discussion on the specific wording and implications of forbidding client-cert-only authentication will continue on the mailing list.</li>
+</ul>
+</li>
+<li><strong>EAP Usability:</strong>
+<ul>
+<li><strong>Action Item:</strong> Further discussion on the document's scope (e.g., explicitly limiting to user-centric devices vs. including IoT) to be conducted on the mailing list. An adoption call will not be made at this time.</li>
+</ul>
+</li>
+<li><strong>EAP DPP:</strong>
+<ul>
+<li><strong>Action Item:</strong> Chair to consult with TLS working group chairs regarding the experimental status of RFC 8773 and whether it poses a blocking issue for adoption.</li>
+<li><strong>Action Item:</strong> If the TLS consultation is favorable, the chair will initiate an adoption call for this draft on the mailing list.</li>
+</ul>
+</li>
+<li><strong>EAP IBS:</strong>
+<ul>
+<li><strong>Action Item:</strong> The chair will initiate an adoption call for this draft on the mailing list.</li>
+</ul>
+</li>
+<li><strong>EAP NOOB Observations &amp; EAP Utter:</strong>
+<ul>
+<li><strong>Action Item:</strong> Discussions regarding interest in EAP Utter and its potential future direction should continue on the mailing list and directly with the author.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Authors of EAP AKA Forward Secrecy to finalize encoding decision and report to the list.</li>
+<li>Alan to publish a new version of EAP TLS EAP Types and continue discussion on the list.</li>
+<li>Working group members to engage in mailing list discussions on the scope of EAP Usability.</li>
+<li>Chair to follow up with TLS WG chairs on EAP DPP and potentially initiate adoption call.</li>
+<li>Working group members to review EAP IBS for an upcoming adoption call on the list.</li>
+<li>Working group members interested in EAP NOOB/Utter to engage in discussion with Yan.</li>
+<li>Presenters of EAP Class to continue developing <code>eep_class_spp</code> and seek collaboration.</li>
+<li>The working group will aim to better align meeting times with presentation schedules for future IETF sessions.</li>
+<li>All working group members are encouraged to participate actively on the mailing list.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

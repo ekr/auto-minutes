@@ -1,0 +1,83 @@
+**Session Date/Time:** 25 Jul 2022 14:00
+
+# oauth Session Minutes - IETF 114
+
+## Summary
+
+The OAuth working group session at IETF 114 covered a wide range of topics, including updates on existing drafts and proposals for new work. Key discussions focused on a proposed step-up authentication mechanism, the novel Selective Disclosure JWT (SD-JWT) which garnered significant support for adoption, and updates to the OAuth 2.1 and Browser-Based Apps BCPs. Informational presentations also covered Multi-Subject JWTs, strategies for mitigating token theft, challenges in token and identity chaining across organizational boundaries, and the need for standardized RPC security in microservice and multi-cloud environments. Side meetings were scheduled for deeper technical discussions on several of these topics.
+
+## Key Discussion Points
+
+*   **Workgroup Status Updates:**
+    *   RFC 9207 was published.
+    *   JWK Thumbprint URI and JWT Response for Token Introspection are in the RFC Editor queue.
+    *   Publication for Rich Authorization Requests was requested.
+*   **OAuth Step-up Authentication Challenge Protocol (Vittorio & Brian):**
+    *   **Problem:** Resource servers often need a higher authentication level for certain operations but lack a standardized way to request it from clients, and clients lack a way to request it from authorization servers (AS).
+    *   **Proposal:** Extend RFC 6750 error codes with `insufficient_user_authentication`. The Resource Server (RS) would include OIDC `acr_values` and `max_age` parameters in the error header, allowing the client to request a new token with specific authentication requirements from the AS. The `acr` claim should be embedded in JWT access tokens and supported by introspection.
+    *   **Updates:** The draft is now an IETF Work Item. Clarifications were made that a step-up token doesn't necessarily replace the original. AS metadata was extended with `acr_values_supported` to signal support, though this implies `max_age` support which needs further discussion.
+    *   **Urgency:** The specification is already being adopted in production, emphasizing the need for timely feedback to prevent "instant legacy."
+*   **Selective Disclosure JWT (SD-JWT) (Daniel & Christina):**
+    *   **Problem:** Traditional JWTs disclose all claims. Emerging use cases (e.g., Verifiable Credentials) require selective disclosure where a holder can present a subset of issuer-signed claims to a verifier.
+    *   **Proposal:** The issuer signs hashes of claim values (value + unique salt) within the SD-JWT. The actual claim values and salts are provided to the holder in an unsigned "salt value container" (SVC). The holder presents the unmodified SD-JWT and a selected subset of the SVC to the verifier. The verifier re-hashes and matches digests.
+    *   **Technical Details:** The SVC uses JSON-encoded strings for `[salt, plaintext_value]` to ensure consistent hashing across different JSON implementations and data types.
+    *   **Status:** The specification is functionally complete, with four independent implementations already existing (including a Python reference). Microsoft and EU projects are showing interest. A new feature for blinding claim names is being explored.
+    *   **Discussion:** Questions were raised about JSON canonicalization (favoring simplicity over strict canonicalization for easier implementation) and the motivation for SD-JWT in OAuth (clarified as data disclosure, orthogonal to token theft).
+*   **Security BCP 2.1 and OAuth 2.0 for Browser-Based Apps BCP (Aaron Parecki):**
+    *   **OAuth 2.1 BCP Update:** Removed the "credentialed client" term and simplified definitions of confidential (has credentials) and public (does not have credentials) clients. A new normative section states resource servers *must* validate tokens. Redirect URI schemes were re-ordered by security.
+    *   **Browser-Based Apps BCP Update:** Focused on recommendations for Single-Page Applications (SPAs). PKCE requirement clarified for access token issuance. A new section on using Service Workers as OAuth clients was introduced, outlining trade-offs.
+    *   **Future Work:** Both documents require updates with the latest security BCP information. Browser-Based Apps also needs guidance on token storage (memory vs. local storage) and discussion on integrating BFF (Backend for Frontend) patterns like TMI-BFF.
+    *   **Pixi (PKCE) Discussion (Daniel):** A key question is whether Authorization Servers *must* support PKCE. Discussion points included the robust defense PKCE offers against token theft and CSRF, and its relationship to the `state` parameter (George and Justin noted they address parallel but orthogonal concerns, suggesting they should be used together).
+*   **Multi-Subject JWT / Nested JWT (Rifat):**
+    *   **Goal:** Define a standard way to embed one or more JWTs within another JWT, allowing for multiple subjects or related tokens.
+    *   **Use Cases:** Audit trails, primary/secondary subject relationships (e.g., parent-child), multiple primary subjects (e.g., married couple), delegation of authority (e.g., admin on user's behalf). Crucially, this includes token chaining across different Identity Providers (e.g., STIR telephony, NSM networking intermediaries) and ID tokens with claims from multiple issuers.
+    *   **Proposal:** Define a new claim within a JWT to embed other tokens and define their relationships.
+    *   **Discussion:** Mike Jones questioned the exact format of embedded JWTs in examples and the overall commonality across diverse use cases. George suggested looking at the "actor token" concept from OAuth Token Exchange.
+*   **Token Theft (Hirsch, GitHub):**
+    *   **Problem:** Current threats involve attackers compromising trusted cloud providers/integrators to steal batches of tokens, using them to access codebases and move laterally.
+    *   **Vulnerabilities:** Stolen tokens are often not sender-constrained, have excessively long lifetimes, and are over-permissioned.
+    *   **Mitigation Advice (for App Developers):** Encrypt tokens at rest, use expiring tokens, enable secret scanning, and leverage workload federation or HSMs to avoid storing credentials.
+    *   **Mitigation Advice (for Token Issuers):** Implement IP allowlisting for confidential clients, limit non-expiring tokens, support workload federation, and register token patterns for secret scanning.
+    *   **Token Binding:** RFC 8705 (mTLS) is not viable for GitHub due to platform limitations (browsers). DPoP (Demonstrating Proof-of-Possession) is promising for *device binding* in mobile and desktop apps. A profile for confidential clients using DPoP is needed. Web apps need stronger device binding.
+    *   **Unsolved Challenges:** Referred binding, TPM rate limits for high-volume scenarios, binding tokens for hosted/shared workloads (e.g., CI/CD), and privacy implications of durable device identification.
+*   **Token and Identity Chaining Between Protected Resources (Kelly Bergen, MITRE):**
+    *   **Problem:** A protected resource in one organization needs to access a protected resource in a different organization (multi-ICAM ecosystem). Token exchange is used, but specific identity and chain-of-custody requirements exist.
+    *   **Requirements:** Tokens presented to the second protected resource (PR2) must identify the first protected resource (PR1) via `client_id` and `cnf` claims. An `actor` claim must include PR1 and the issuer, and all previous actor claims, to verify the entire chain.
+    *   **Proposed Solution (Option 2):** When PR1 requests a token from AS1, AS1 generates a JWT assertion, sends it to AS2, which then generates the final token.
+    *   **New Claim: `chained_id`:** To ensure PR2 sees PR1's identity, AS1 would send a `chained_id` claim (containing PR1's `client_id` and `cnf`) to AS2, which AS2 then uses to populate the new access token.
+    *   **Discussion:** Rohan cautioned against opaque `client_id`s in `chained_id`. Rick Taylor suggested exploring if Rifat's multi-subject token work could provide a solution for this delegated authority problem.
+*   **RPC Security Standard (Atul Shibagwali):**
+    *   **Problem:** In microservice architectures, OAuth context (identity, scope) is often lost after the initial service, leading to internal RPCs with weak security (e.g., just mTLS). Third-party API keys are often long-lived and over-privileged. Multi-cloud deployments lack a standard security model.
+    *   **Consequences:** VPC compromises can grant attackers immense power. Lack of context makes it hard to limit damage.
+    *   **Proposed Solution Goals:** Preserve identity and scope at every RPC level, restrict scope downstream, work across 3rd party APIs and multi-cloud, allow independent verification, use short-lived tokens to limit replay, and ensure strong binding between services.
+    *   **Discussion:** Ben identified this as related to the Confused Deputy problem and suggested using an intermediary token issuing service. George provided links to similar work from Netflix. The core question is whether a standard is needed and if OAuth is the right group to address it.
+
+## Decisions and Action Items
+
+*   **Selective Disclosure JWT (SD-JWT):**
+    *   **Decision:** The working group supported a call for adoption of the SD-JWT draft as a working group document. This will proceed to the mailing list for formal adoption.
+    *   **Action Item:** Daniel and Christina to continue discussions on SD-JWT in side meetings and on the mailing list.
+    *   **Action Item:** Authors to consider capitalizing on EU Toolbox project assessments for an implementation report.
+*   **OAuth 2.1 BCP:**
+    *   **Action Item:** Aaron Parecki to aim to finish OAuth 2.1 this week.
+    *   **Action Item:** Continue discussions on remaining open issues (security considerations, native apps section, normative language migration) in side meetings.
+*   **OAuth 2.0 for Browser-Based Apps BCP:**
+    *   **Action Item:** Aaron Parecki to update the draft with the latest security BCP information.
+    *   **Action Item:** Incorporate guidance on token storage in browsers (e.g., memory vs. local storage trade-offs).
+    *   **Action Item:** Discuss covering BFF patterns (including TMI-BFF) in the spec, potentially combining efforts with the TMI-BFF document.
+*   **PKCE in Security BCP 2.1:**
+    *   **Action Item:** Discussion on whether Authorization Servers *must* support PKCE, and the relationship between PKCE and `state`, to continue on the mailing list and in side meetings.
+*   **Multi-Subject JWT:**
+    *   **Action Item:** Rifat, Dick, and Giuseppe to continue working on the document, spelling out details of use cases and the proposed claim structure.
+    *   **Action Item:** George to post his comments regarding actor tokens to the mailing list for further discussion.
+*   **Token and Identity Chaining:**
+    *   **Action Item:** Kelly Bergen to share the draft with the working group for feedback on the proposed profiles and the `chained_id` claim.
+    *   **Action Item:** Kelly Bergen and Rifat to discuss potential synergies between their respective drafts regarding delegated authority and token embedding.
+*   **RPC Security Standard:**
+    *   **Action Item:** Atul Shibagwali to continue socialising the problem statement and potential solutions at side meetings to gauge interest and gather existing knowledge/solutions within the IETF community.
+
+## Next Steps
+
+*   **Side Meetings:** Deep-dive discussions are scheduled for various topics, including DPoP shepherd open issues, conformance tests, SDKs, and specific topics from today's session.
+*   **Mailing List:** Formal call for adoption for SD-JWT. Continue discussions on PKCE requirements, multi-subject JWTs, token theft mitigations, and token/identity chaining.
+*   **Draft Development:** Authors will continue to refine and update their drafts based on feedback and ongoing discussions.

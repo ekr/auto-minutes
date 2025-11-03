@@ -1,0 +1,160 @@
+**Session Date/Time:** 07 Nov 2023 14:30
+
+```markdown
+# oauth
+
+## Summary
+
+This meeting focused on two main topics: a discussion on the OAuth working group's charter in light of recent document adoptions and a presentation on the latest changes to the Selective Disclosure for JSON Web Tokens (SD-JWT) specification. The charter discussion centered on defining the scope of the working group and its role in relation to other IETF efforts like JOSE and COSE. The SD-JWT presentation highlighted updates to the specification, including a new hash value for integrity protection.
+
+## Key Discussion Points
+
+*   **OAuth Charter Scope:**
+    *   Should the charter be changed to fit documents already adopted, or should the group determine its core remit first?
+    *   What constitutes an "extension" to OAuth, and how far should the scope extend?
+    *   Is the working group's identity clear, given that it's no longer building OAuth itself?
+    *   The group is doing a lot of good work, so is a course correction needed?
+    *   Should the charter include what is being discussed (i.e. jot)
+    *   Is it right that Jots were developed in oauth instead of JOSE
+    *   JWTs were developed within this group as a way to standardize the Access Token Format
+    *   Concern about the charter being "too welcoming" such that vaguely related topics are brought to the working group.
+
+*   **SD-JWT Updates:**
+    *   Introduction of `_st_hash` for presentation integrity, hashing the SD-JWT and disclosures.
+    *   Clarifications to the specification, including stricter verification requirements and reserved claim names.
+    *   Discussion of potential attack scenarios that motivated the addition of the new hash.
+    *   Need for agility of hash algorithm.
+
+*   **Key Binding in SD-JWT:**
+    *   Whether the key binding mechanism is orthogonal to selective disclosures and should be separated into another specification.
+    *   Whether formal modeling of the key binding aspect is worthwhile.
+
+*   **Future of SD-JWT:**
+    *   A profile on how to use SD-JWT within OAuth would be useful (for access tokens).
+
+## Decisions and Action Items
+
+*   **Charter Revision:** The OAuth working group will work on revising the charter to better reflect the work it has delivered and is currently doing, taking into account the points raised in the discussion.
+
+## Next Steps
+
+*   Continue discussion on the OAuth charter on the mailing list.
+*   Address remaining issues on the SD-JWT issue tracker, including cryptography clarifications.
+*   Consider a working group last call for SD-JWT once outstanding issues are resolved.
+```
+
+---
+
+**Session Date/Time:** 08 Nov 2023 13:30
+
+# oauth
+
+## Summary
+
+The OAuth working group held a meeting covering several topics, including resource server metadata, SD-JWT based verifiable credentials, attestation based client authentication, browser based apps, cross device flows, and OAuth status lists. Discussions focused on clarifying specifications, addressing open issues, and exploring future directions for each topic.
+
+## Key Discussion Points
+
+*   **Resource Server Metadata:**
+    *   Debated whether the WWW-Authenticate header should return the resource identifier or a resource metadata URL.
+    *   Discussed the implications of returning a full URL versus a logical identifier, including potential issues with dot-well-known construction and the relationship between the resource identifier and metadata location.
+    *   Concern raised regarding potential ISG pushback related to the well-known path construction.
+    *   Discussion of returning full URL to resource metadata to simplify client discovery process.
+*   **SD-JWT Based Verifiable Credentials:**
+    *   Discussed renaming the "type" claim to "verifiable credential type" (VCT) and defining the concept of a credential type.
+    *   Debated the normative use of DIDs for issuer key discovery and the potential for deferring to ecosystem-specific rules.
+    *   Explored mechanisms for verifiers to obtain issuer verification keys, including X.509 headers, well-known issuer metadata, and DID resolution.
+*   **Attestation Based Client Authentication:**
+    *   Addressed replay attack detection for client attestations, focusing on the use of jot IDs and nonces.
+    *   Discussed integrating attestation into token requests and PAR endpoints.
+    *   Explored the use of authenticate or assurance levels.
+    *   Concerns were raised that this effort overlaps with dynamic client registration.
+*   **Browser Based Apps:**
+    *   Updates on the restructuring of the draft to focus on threat models and different application architectures.
+    *   Discussion of sender constrained tokens and the use of depop.
+*   **Cross Device Flows:**
+    *   Introduced a new attack pattern: cross-device session transfer.
+    *   Discussed mitigating attacks by requesting binding without out-of-band data.
+    *   Described "authenticate and initiate" to authenticate the end-user.
+    *   Observed exploits include fake helpdesk scams and consent request overloads.
+*   **OAuth Status List:**
+    *   Discussion around creating a status list or a revocation mechanism.
+    *   Discussed having option for unsigned status list.
+    *   Addressed privacy considerations and compared to X.509 based revocation.
+    *   Determined it should scale and integrate well.
+
+## Decisions and Action Items
+
+*   **Resource Server Metadata:** Editors to take a pass at returning the metadata path directly in the WWW-Authenticate header, and also include security considerations in normative text.
+*   **SD-JWT Based Verifiable Credentials:** Discuss use of DID's offline.
+*   **Browser Based Apps:** Move section discussing sender constrained tokens higher in the document, to before the security considerations. Justin and Neil to review the latest version of the document.
+*   **Cross Device Flows:** Update the formal analysis section, and request reviewers for next version with new edits. Tony agreed to review.
+
+## Next Steps
+
+*   **Resource Server Metadata:** Resolve open issues and consider working group last call.
+*   **Browser Based Apps:** Justin and Neil to review the document.
+*   **Cross Device Flows:** Next version of the spec is expected to be available early next year, followed by reviewers.
+*   **OAuth Status List:** Provide an option for an unsigned status list, change from Gzip to Zillow, and continue to test the implementation.
+
+
+---
+
+**Session Date/Time:** 10 Nov 2023 12:00
+
+# oauth
+
+## Summary
+
+This OAuth working group meeting covered several key topics, including transaction tokens for microservices, identity chaining across trust domains, client attestation in dynamic client registration, OAuth for first-party applications, and global token revocation. Discussions focused on refining specifications, addressing security concerns, and exploring potential overlaps and synergies between different drafts.  Several drafts were considered for working group adoption.
+
+## Key Discussion Points
+
+*   **Transaction Tokens (George Fletcher):**
+    *   Purpose: Authorization within microservice environments, creating immutable context for transactions.
+    *   Discussion: Downscoping, use of `subject_id` claim, issuer claim requirement, sender constraint, inclusion of PII (IP addresses).  Consideration of SDJOT.
+    *   Downscoping defined as fining the authority to the transaction, not attenuation later.
+    *   ACTION: Justin will add an issue about the potential leverage of SDJOT.
+    *   ACTION: Mike will review the specification on the TxN claim.
+
+*   **Identity Chaining Across Trust Domains (Pedro Castellanos):**
+    *   Purpose: Preserving context as transactions move across trust boundaries using token exchange and assertion framework.
+    *   Discussion: Models for microservices acting as clients, high assurance use cases with authorization servers as clients, token type limitations (JWT only), and claim transcription.
+
+*   **Attestation for DCR (Ned Smith):**
+    *   Purpose:  Verify clients within a confidential computing environment during Dynamic Client Registration.
+    *   Discussion: Combination with attestation-based client authentication, separation of attestation from presentation, architectural considerations, terminology, and a Rats Verifier role. Merging the effort was recommended to avoid duplicated effort.
+
+*   **OAuth for First-Party Applications (Aaron Parecki):**
+    *   Purpose: Provide better UX for first-party mobile apps while using OAuth.
+    *   Discussion:  Authorization challenge endpoint, device session renaming to auth session, error responses, potential for FIDO/passkey integration, security concerns regarding unauthenticated flows, and relationship to PAR. Discussion about including an explicit launch endpoint and about how best to retrieve a Nonce.
+    *   ACTION: Jacob to review the specification.
+
+*   **Global Token Revocation (Aaron Parecki):**
+    *   Purpose:  Provide a simple API for applications to revoke tokens based on a user identifier.
+    *   Discussion:  Existing standards limitations (RFC 7009, OpenID Connect back channel logout, Shared Signals), existing proprietary implementations, security concerns with the 404 response indicating user existence, potential addition of a session identifier, and 200 or 204 as responses.
+    *
+## Decisions and Action Items
+
+*   **Transaction Tokens:**
+    *   Justin to create an issue on SDJOT.
+    *   Mike to look at the TXN claim.
+    *   Outcome: Adopted to WG on the mailing list.
+
+*   **Identity Chaining:**
+    *   Adopted to WG on the mailing list.
+
+*   **Attestation for DCR:**
+     *   No decision made. Need to have further investigation with Aaron.
+
+*   **Global Token Revocation:**
+     *   ACTION: To be considered at a later time.
+*   **OAuth for First-Party Applications (Aaron Parecki):**
+    * ACTION: Jacob will review the document and post comments to the mailing list.
+
+## Next Steps
+
+*   Confirm adoption decisions on the mailing list.
+*   Authors to address feedback from the meeting and continue refining their drafts.
+*   Further discussion and potential collaboration on attestation-related drafts.
+*   Continue discussing the nonce requirement for OAuth, with potential for a new launch endpoint.

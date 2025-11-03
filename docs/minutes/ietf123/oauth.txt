@@ -1,0 +1,109 @@
+**Session Date/Time:** 24 Jul 2025 07:30
+
+# oauth
+
+## Summary
+
+The OAuth working group meeting covered a variety of topics, including AI agent authentication, SD-JWT VC, updates to the OAuth security BCP, JOT security BCP, identity and authorization chaining across domains, client ID prefixing, and automatic client registration with SPIFFE. Discussions focused on security vulnerabilities, interoperability concerns, and potential solutions.  A formal vote was held on the inclusion of DID methods in the SD-JWT VC document.
+
+## Key Discussion Points
+
+*   **AI Agent Authentication (Jonathan Rosenberg, Pat White):**
+    *   Discussion of challenges in authorizing AI agents, specifically regarding the need to avoid god-like service tokens.
+    *   Two main problems identified:
+        *   Authenticating agents interacting with users over PSTN.
+        *   Escalating permissions for autonomous agents without a clear UI.
+    *   A third related problem: AI confirmation flows, draft Rosammer-checked-00 was submitted.
+    *   Jeff Normandoe suggested looking into Client Initiated Backchannel Authentication (CIBA).
+    *   Tim Cappalli argued that AI agent authentication should be directly in scope of OAuth.
+    *   Suggestion for separation between agents and authorization infrastructure to prevent agents from touching tokens.
+*   **SD-JWT VC (Brian Campbell):**
+    *   Review of changes since Bangkok, including minor editorial updates and a clarification of issuer signature mechanisms.
+    *   Rationale for not including DID methods directly in the specification due to complexity, interoperability concerns, and perceived reputational risk.
+    *   Extensive discussion on whether to include DID methods in the document or leave them to extensions.
+    *   Arguments for inclusion: Existing section 3-3-5 was agreed and should be kept until consensus, current facts are misleading
+    *   Arguments against inclusion: cognitive overhead, standardization for interoperability should take place in another working group.
+    *   Oliver noted previous removal of DID methods because they were not sufficient for interoperability.
+    *   Tony Nadlin pointed out that consensus is not necessarily unanimity.
+*   **OAuth Security BCP Updates (Pedram, Kai-Juan):**
+    *   Discussion of updating the BCP to include security considerations for audience injection and mix-up attacks.
+    *   The updated BCP will be a new RFC containing only the new content, specifically related to the identified attacks.
+    *   Kai-Juan presented new mix-up attack variants impacting integration platforms and agentic AI ecosystems.
+    *   Proposed solution: OAuth client should differentiate each integrated app with a distinct redirect URI.
+    *   Hannes suggested people read the documents, and get familiar with the underlying assumptions before the next discussion.
+    *   Tim Cappalli suggested to keep the work ongoing instead of rushing through with the audience vulnerability issue.
+*   **JOT Security BCP Updates (Honor, Mike Jones):**
+    *   Discussion of new attacks on JOT in the wild and the need to update the security BCP.
+    *   Five areas of focus: iteration count for password based key generation, JWWE/JWS confusion, case sensitivity, compression, and JSON serialized JWS.
+    *   Aaron Parecki provided feedback and suggestions on mitigating approaches and the use of specific deprecation notices and existing RFCs.
+    *   Philip Skokin emphasized the importance of implementers to adopt the BCP to become aware of the potential vulnerabilities
+*   **OAuth Identity and Authorization Chaining Across Domains (Brian Campbell):**
+    *   Discussion of a common pattern that preserves identity and authorization information across trust domains without end-user interaction.
+    *   Describes the local RFC 8693 token exchange locally to get a token to facilitate an RFC 7523 cross-domain access token acquisition
+    *   Exploration of how the work can be used in an enterprise context and specifically with Agentic AI.
+    *   Reference to Aaron Parecki's identity assertion authorization grant profile and its potential applications.
+    *   Aaron emphasized this solves direct, enterprise-related use cases independent of AI, although AI amplifies the problem it addresses.
+*   **Client ID Prefix (Brian Campbell presenting for Aaron Parecki):**
+    *   Discussion of the client ID metadata document and client ID prefix drafts as a means to address pre-registration of clients.
+    *   The client id prefix allows to resolve the client metadata at the specified URL, therefore reducing pre-registration requirements.
+    *   Laif raised the need for a proper trust management mechanism, similarities with OpenID Federation, and the need to align.
+*   **Automatic Client Registration with SPIFFE (Peter Castleman, Dag Snegan):**
+    *   Addressing the exponential growth of clients and secrets through automated client registration, leveraging SPIFFE for identity attestation and credential management.
+    *   Dmitry Telgan's register-on-first-use approach and use of SPIFFE JOT as a software statement in dynamic client registration were presented as approaches.
+    *   Brian suggested to combine the approach with his own draft.
+
+## Decisions and Action Items
+
+*   **SD-JWT VC:** A poll was conducted on whether DID methods should be included in the document. The results were 7 in favor, 14 against, and 9 with no opinion. **Decision:** DID methods will **not** be included in the SD-JWT VC document. The proponents should create a profile.
+*   **OAuth Identity and Authorization Chaining Across Domains:** The working group will start a last call for the identity and authorization chaining draft.
+*   **Security Discussions:** Schedule interim meetings to discuss, especially, the client ID prefix problem, and the BCP updates on the mixup attacks.
+*   The working group will do a call for adoption on the JOT BCP security updates on the mailing list.
+
+## Next Steps
+
+*   Post results of the SD-JWT VC poll on the mailing list.
+*   Start working group last call for the identity and authorization chaining draft.
+*   Schedule interim meeting to continue discussion on the client ID prefix draft and BCP mixup attack updates.
+*   Continue discussion of automatic client registration with SPIFFE on the mailing list and in future meetings.
+*   Explore combining efforts on addressing the automated identification problem with the approach presented in the client id prefix, and the token chaining.
+
+
+---
+
+**Session Date/Time:** 25 Jul 2025 12:30
+
+# oauth
+
+## Summary
+
+This meeting covered a variety of topics including token status lists, back-end tested client authentication, transaction tokens, client authentication with Spiffy, refresh token expiration, native app authentication, client extension claims, and deferred key binding. Several decisions were made regarding next steps for these drafts.
+
+## Key Discussion Points
+
+*   **Token Status List:** The draft is in shepherd review and guidance is sought to speed up the process.
+*   **Back-End Tested Client Authentication:** Discussions focused on the challenges with the challenge endpoint and potential optimizations for Depop usage, including potentially reusing the Deepop proof for client attestation.
+*   **Transaction Tokens:** The draft is considered ready for working group last call after addressing concerns regarding HTTP header format.
+*   **Client Authentication with Spiffy:**  Discussion centered on the use of ISS claims and the possibility of relaxing requirements when profiling documents.  Concerns were raised about supporting both Jot and X.509 ASWIT in the same draft.
+*   **Refresh Token Expiration:**  Questions raised regarding defining parameters for clients to request time-limited tokens and the use of "expires in" vs. "expires at."
+*   **Native App Authentication:** Addressing seamless native app authentication across trust domains. Browserless app to app communication.
+*   **Client Extension Claims:**  Adding custom claims to be able to be used by different authentication requirements. Fire, FAPI etc.
+*   **Pushed Client Registration**: Client IDs limitations were discussed as a whole. Ephemeral clients, SPA clients and client metadata fetch documents.
+*   **Deferred Key Binding:** Exploring options on how to handle binding tokens to keys where proof-of-possession is deferred to a later stage and potentially done by a different entity. Different use cases were presented from different implementations.
+
+## Decisions and Action Items
+
+*   **Token Status List:** Proceed with shepherd review. Chairs to look into speeding the review process.
+*   **Back-End Tested Client Authentication:** Authors to consider security analysis of Depop optimization and potential inclusion of a Deepop nonce in the challenge endpoint response. Andrew, Philip, and Aaron volunteered to review the document.
+*   **Transaction Tokens:**  Start working group last call.
+*   **Client Authentication with Spiffy:** Authors to create an issue regarding ISS claims. Working group to decide whether to split the draft into separate profiles for Jot and X.509 ASWIT.
+*   **Refresh Token Expiration:** Address concept of granting vs. consent. Rename parameters.
+*   **Pushed Client Registration:** Discuss what can be done with client registration and see if an interim meeting is possible to try to unite all solutions into the same area.
+*   **Deferred Key Binding:** Create a thread on the mailing list to discuss the next steps of the draft and gather feedback from the group.
+
+## Next Steps
+
+*   Continue working on drafts based on feedback.
+*   Schedule interim meeting to discuss approaches to identity and push client registration.
+*   Shepherd reviews to be completed.
+*   Working group last calls to be initiated.
+*   Discuss deferred key binding and if protocols or BCPs needs to be followed.

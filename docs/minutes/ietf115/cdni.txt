@@ -1,0 +1,62 @@
+**Session Date/Time:** 11 Nov 2022 12:00
+
+# cdni
+
+## Summary
+This was the Content Delivery Networks Interconnection (cdni) working group session. The meeting covered four working group drafts: HTTPS delegation using star, GPS delegation subset, capacity signaling component and triggers interface. There was also an update from Chris Lemons on streaming media tracing, and Alan Earl presented on an updated request routing interface. The working group discussed open issues and next steps for each draft.
+
+## Key Discussion Points
+
+*   **HTTPS Delegation Using Star (Acme Star):**
+    *   The draft has been updated with clarifications, figure adjustments, and property additions based on discussions with RFC 8739 authors.
+    *   Non-star Acme delegations are now supported, along with validity window properties.
+    *   The draft name is proposed to be changed to "cdni metadata for mitigations".
+    *   Kevin provided feedback, mainly JSON example mismatch and security considerations that need to be addressed.
+*   **GPS Delegation Subset:**
+    *   The draft had an issue with using FCI for signaling rather than capability advertisement.
+    *   A proposal was made to remove the FCI object and rely on delegated credential objects, but it doesn't work with svta 1.0 due to lack of support for link references and push mode.
+    *   A new proposal involves keeping the FCI object for announcing the maximum delegated credentials supported.
+    *   The Upstream CDN would manage credential expiry and reconfiguration.
+    *   The group discussed whether Upstream CDN would manage refresh or Downstream CDN requests new certificates.
+    *   Fred asked if the FCI objects used in the Acme delegation draft and the delegated credential draft should be aligned.
+*   **Capacity Signaling Component:**
+    *   The goal is to provide a mechanism for delegation partners to understand appropriate traffic delegation levels.
+    *   A new FCI payload is proposed for capacity limits, including a subscope within the FCI payload.
+    *   Kevin suggested using Footprints to specify the scope related to how it's being retrieved.
+    *   The group discussed the granularity of delegation (DNS vs. HTTPS) and the meaning of Footprints (eyeball definition vs. cache footprint).
+    *   The capacity signaling model is intended to signal a "happy path" but does not address SLA or reservation.
+    *   The advertised capacity is the amount of traffic the downstream CDN is willing to allow for delegation towards it (egress).
+    *   The decision to delegate is done on a per request basis by the Upstream CDN.
+    * Telemetry data is there specifically because the Upstream doesn't necessarily have an exact understanding of the effects on egress from the delegated traffic.
+*   **Triggers Interface:**
+    *   The triggers object structure was refactored to use a generic list of trigger specs for flexibility.
+    *   The trigger type was renamed to "action".
+    *   The group discussed structural consistency and whether URLs and patterns should be dictionaries for all spec objects.
+    *   Alan raised a point about the necessity of custom values for triggers, with an example of bandwidth policies around prepositioning.
+    *   There is the trading trigger extension that allows you to specify various triggers.
+*   **Streaming Media Tracing:**
+    *   The goal is interoperable tracing for streaming media.
+    *   The work is divided into three parts: pull, push, and export.
+    *   Currently, the group is working on request and response headers for HTTP using structured field values.
+    *   Headers will use a graph concept to represent successful and unsuccessful flows.
+    *   Configuration elements within cdni may find elements useful for logging.
+*   **Updated Request Routing Interface:**
+    *  A problem statement was made to embrace recursive request routing (HTTPRR) and open caching implementations.
+    *  RFC 7975 delivers basic fields of the request and doesn't have latency reduction and dynamic change from one another.
+    *  Features of the updated routing interface include: HTTP(S) based open caching interface, forward request exchange, two different modes of operation which depend on the setup on the DCDN.
+
+## Decisions and Action Items
+
+*   **HTTPS Delegation Using Star (Acme Star):** Fred will address Kevin's feedback in the next revision of the draft. Working group last call to be initiated after the update.
+*   **GPS Delegation Subset:** Further discussion on the mailing list to resolve the design and alignment with the Acme delegation draft. Christopher and Guillaume to provide new draft.
+*   **Capacity Signaling Component:** Andy and Ben will explore the use of Footprints as a new way to specify scope in the next draft.
+*   **Triggers Interface:** Near and Sanjay will make the change to the structure of the specs of the URL and the ccid. Review the RFC and verify that everything is consistent.
+*   **Streaming Media Tracing:** The information should be further dissiminated on the mailing list.
+* **Updated Request Routing Interface:** Bring a specification draft with further detail to the working group in the near future.
+
+## Next Steps
+
+*   Authors to update drafts based on meeting feedback.
+*   Further discussion on the mailing list for GPS Delegation subset.
+*   Working group to review updated drafts when available.
+*   Explore the path of the "cdni metadata for mitigations" draft.

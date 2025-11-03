@@ -1,0 +1,106 @@
+**Session Date/Time:** 24 Mar 2022 09:00
+
+# nmrg
+
+## Summary
+
+The nmrg session at IETF 113 provided status updates on several research group documents, including Intent-Based Networking (IBN) classifications and concepts, and the newly adopted Network Digital Twin (NDT) draft. Key technical discussions centered on the "Research Challenges in AI for Network Management" document, outlining a re-structured approach to AI challenges, and an in-depth exploration of Network Digital Twins. The NDT discussion included a technical comparison of different approaches to building performance-oriented digital twins (simulators, emulation, analytical models, Graph Neural Networks) and an overview of the "Network Digital Twin Concepts and Reference Architecture" draft. The session concluded with a proposal for the evolution of the Cooperative Layered SDN Architecture (CLASS) to include compute and data awareness, focusing on AI/ML integration.
+
+## Key Discussion Points
+
+### Research Group Status and Intent-Based Networking (IBN)
+
+*   **IBN Classification**: The IAB poll for this document is scheduled to end on April 14th, with the next step being an IETF conflict review if the poll is positive.
+*   **IBN Concepts and Definitions**: This document is currently under IRG review, with co-authors addressing received comments.
+*   **Network Digital Twin Concepts and Reference Architecture**: This document has been recently adopted as a research group document.
+*   **Network Measurement Intent**: A call for research group adoption for this document (an IBN use case) is open and will end on April 8th.
+*   **IBN Ecosystem Overview**: A broad overview of IBN activities in other SDOs, open-source projects, and research was presented, including:
+    *   **Linux Foundation ONAP Project**: Continues to develop IBN use cases across different releases.
+    *   **ETSI ZSM ISG**: Group Report 11 on Intent-Driven Autonomous Networks and a POC proposal for intent-based cross-domain service automation.
+    *   **ITU Focus Group on Autonomous Networks**: Activities include use cases and POCs related to IBN.
+    *   **TM Forum Autonomous Network Project**: Developing specific documents and models for intent in autonomous networks (e.g., IG1253).
+    *   **Research and Events**: Second edition of the IEEE NetSoft workshop on IBN, planned tutorials on TM Forum specifications for intent, and growing academic literature.
+
+### AI for Network Management (AI4NM)
+
+*   **"Research Challenges in AI for Network Management" Document Status**:
+    *   The document has been restructured from version 3 to version 4, moving from a flat list of challenges to a categorized structure.
+    *   Challenges are now grouped into:
+        1.  **AI Techniques**: Problems related to extending AI algorithms for network management needs.
+        2.  **Data-Driven AI**: Issues with data access, collection, representation, and knowledge extraction.
+        3.  **Decision-Making and Action**: Challenges in using AI for planning and executing network actions.
+        4.  **Acceptability**: Explanations, trust, and ensuring production readiness of AI solutions.
+    *   **Difficult Problems in Network Management**: A new section categorizes problems based on criteria like large solution space, uncertainty, real-time requirements, and data dependency.
+    *   **Open Issues**: The "Human in the Loop" and "Distributed AI" challenges need further detailed description. Editorial work remains.
+*   **Discussion on AI4NM Challenges**:
+    *   **Greenfield vs. Integration**: Question raised whether challenges focus solely on new AI solutions or also on augmenting/integrating AI into existing network management solutions. (Olga)
+    *   **Response**: The "Acceptability" section aims to address the incremental integration of AI into existing procedures and the challenge of moving from lab to production systems. Digital Twins could also help with incremental integration by providing a testbed.
+
+### Network Digital Twins (NDT)
+
+*   **Presentation: "How to Build a Digital Twin" by Albert Cabellos**:
+    *   **Definition**: Focused on a "performance network digital twin" taking network configuration and traffic load as inputs, and yielding network performance (delay, jitter, losses, utilization) as output.
+    *   **Comparison of Implementation Approaches**:
+        *   **Simulators (e.g., OMNeT++)**: Offer high accuracy but are computationally expensive and slow (e.g., 1 minute of 10Gbps link takes 11 hours to simulate). Impractical for real-time DT.
+        *   **Emulation**: Low accuracy (due to running network software on general-purpose CPUs instead of dedicated hardware), but useful for other DT purposes like training or debugging.
+        *   **Analytical Models (Queuing Theory)**: Very fast but show poor accuracy for realistic, non-synthetic traffic models (e.g., 68% error for TCP-like traffic).
+        *   **Neural Networks (specifically Graph Neural Networks - GNNs)**:
+            *   Require costly training data (network configurations, traffic loads, and measured performance).
+            *   Once trained, they are very fast (answers in ~100ms, potentially 10ms with accelerators) and offer high accuracy (error <10% even for networks 10x larger than training data).
+            *   Can model complex hardware behaviors/bugs if present in the training data.
+            *   Challenges include the expense of generating diverse and representative training data, especially for new features or topologies. The concept of "data-centric AI" (finding the minimum required data) is relevant.
+    *   **Discussion**:
+        *   GNNs require retraining for new network features/protocols, but not for changes in parameter values (e.g., routing configuration).
+        *   Delay has an additive property, making it easier to predict, unlike jitter or loss.
+        *   Vendor-specific training data can enable a vendor to deploy trained GNNs to larger customer networks, similar to self-driving car training.
+*   **Presentation: "Network Digital Twin Concepts and Reference Architecture" by Chen Zhen**:
+    *   **Document Scope**: Overview of NDT concepts, definitions, architecture, use cases, benefits, and challenges. Aims to promote adoption, establish reference architecture, and identify research directions.
+    *   **Draft Status**: Adopted by NMRG, v01 incorporates over 50 comments, with major changes focusing on structure, research background, and future directions.
+    *   **Motivations**: Addressing challenges in network O&M (new services, scale, complexity, high-risk optimization) through automation and autonomous operations, leveraging AI/ML and NDTs.
+    *   **Challenges**: Based on industrial DTs, challenges include data acquisition/processing, high-fidelity modeling, real-time two-way connection, unified platform, and environmental coupling. Specific NDT challenges include large scale, interoperability, data modeling, real-time requirements, and characteristics.
+    *   **Proposed Architecture**: A three-layer architecture with a Physical Network layer, Network Application layer, and an intermediate Network Digital Twin layer, which may include a data collection and change control sub-layer.
+    *   **Enabling Technologies**: Data collection (telemetry, sketch-based, semantic aggregation), data storage/services, network modeling (simulators for small scale; formal methods, mathematical models, AI/ML for large scale), visualization, and interfaces/protocols.
+    *   **Future Research Directions**: Deeper dives into enabling technologies, quantifying DTN benefits, AI/ML algorithms for modeling, knowledge injection for autonomous networks, integration with legacy NMS, and defining capability levels and evaluation metrics (accuracy, fidelity).
+*   **Open Discussion on NDT Research Directions (Chairs' Questions)**:
+    *   **Model Accuracy & Usefulness**: The usefulness of NDTs depends on the specific metrics and application scenarios. There might not be a single model fitting all needs; combining different models could be necessary. Collecting the "right data at the right time" is critical for NDT evaluation. (Jerome)
+    *   **Generality vs. Specificity**: A "chicken-and-egg" problem exists between discussing NDTs generally and getting lost in abstractness versus being too specific and limiting the scope. Agreeing on relevant inputs/outputs and use cases is crucial for concrete discussions. (Albert)
+    *   **Business Intent Integration**: NDTs should encompass "business intent" and high-level policies (e.g., security, customer SLAs) to enable effective self-optimization and self-correction. (Olga)
+    *   **Repeatability and Abstraction**: For NDTs, repeatability (strong control over variations to derive insights) and the ability to apply different levels of abstraction (focusing on specific aspects like security, radio conditions, congestion) are essential given the network's complexity. A "full twin" is likely unrealistic. (Diego)
+
+### Evolution of Cooperative Layered SDN Architecture (CLASS)
+
+*   **Background**: CLASS (RFC 8816) proposed a layered architecture for SDN, decoupling service control from transport network control, allowing independent evolution with cooperative programmability.
+*   **Motivation for Evolution**:
+    *   **Tighter Integration with Compute Environments**: Networks are increasingly integrating with distributed compute capabilities (local and hyperscaler), forming a "fabric" for connecting compute. This aligns with work in COIN RG and other IETF working groups.
+    *   **AI/ML for Network Operations**: Complementing network operations with AI/ML techniques.
+*   **Proposed Evolution**:
+    *   Retain Service Stratum and rename Transport Stratum to **Connectivity Stratum**.
+    *   Introduce a new **Compute Stratum** to manage and control distributed computing capabilities.
+    *   Define a new **Learning Plane** across all three strata (Service, Connectivity, Compute) responsible for collecting, processing, and sharing relevant data for AI/ML-driven operations, potentially leveraging AI4NM work and service assurance models.
+*   **Exploration Research Directions**:
+    *   Communication means/interfaces between strata and planes.
+    *   Preliminary scenarios, including legacy integration.
+    *   Link with ongoing NMRG activities (IBN, AI/ML).
+    *   Alternative architectural approaches (e.g., service-based, cloud-native).
+    *   Domain APIs between/within strata.
+    *   APIs and data models/ontologies for the Learning Plane.
+*   **Discussion**:
+    *   Consider liaison with the COIN Research Group to understand scope overlap and complementarity between NMRG and COIN activities for this work. (Laurent)
+
+## Decisions and Action Items
+
+*   **IBR-TF Intent Classification Document**: The IAB poll will conclude on April 14th. The document will proceed to IETF conflict review if the poll is positive.
+*   **Network Measurement Intent Document**: The call for NMRG adoption closes on April 8th.
+*   **AI for Network Management Challenges Document**: A smaller editorial team will be formed to finalize the document by mid-May, after which it will be opened for broader review. All contributors will be acknowledged. Comments are welcome before mid-May.
+*   **Network Digital Twin Concepts and Reference Architecture Document**: Adopted as an NMRG research group document.
+*   **Network Digital Twin Research Questions**: Continue collecting answers and inputs from the group to structure a set of research questions as an ongoing group activity.
+*   **CLASS Evolution**: The authors will set the scope of the draft aligned with NMRG, seek further feedback from the research group, and consider liaison with the COIN Research Group to prepare more detailed versions for the next IETF meeting.
+
+## Next Steps
+
+*   Organize a series of interim meetings specifically for follow-ups on Intent-Based Networking use cases.
+*   Explore proposals for dedicated interim meetings on "designing, deploying, and operating distributed AIs."
+*   The next plenary IETF meeting is planned, feasibility to be determined.
+*   Finalize the "Research Challenges in AI for Network Management" document by mid-May.
+*   Continue active discussion and input collection on the identified Network Digital Twin research questions on the mailing list.
+*   Further develop the CLASS evolution draft, taking into account NMRG scope and potential collaboration with COIN RG.

@@ -1,0 +1,72 @@
+**Session Date/Time:** 27 Jul 2022 19:00
+
+# masque
+
+## Summary
+
+The masque working group at IETF 114 reviewed the progress of the Connect-IP draft, discussing several open issues including URI templates, MTU handling for IPv6, ICMP error reporting, and address request/assign semantics. Significant technical discussion led to resolutions and planned text updates for Connect-IP. Two new work proposals were presented: "HTTP Access Service Description Objects" for composite service configuration, and a "Connect-UDP Listener Mode" extension for WebRTC. The session concluded with an initial discussion on re-chartering the working group, focusing on criteria for future work and an "off-ramp" strategy.
+
+## Key Discussion Points
+
+*   **Connect-IP Progress and Implementations:**
+    *   Connect-UDP and HTTP Datagrams drafts are in the RFC Editor's queue.
+    *   Connect-IP implementations are progressing, with active development at the hackathon, although cross-implementation interoperability is yet to be achieved due to underlying tunnel interface complexities.
+    *   Recent changes to the draft include improved URI template text, clarification on address assignment requirements, ICMP error communication, and MTU handling for IPv6.
+
+*   **Connect-IP Default URI Template (`.well-known/masque-ip`):**
+    *   Proposal to add a default URI template for Connect-IP, mirroring the `.well-known/masque-udp` template for Connect-UDP, supporting `target` and `ip_proto` parameters with `*` wildcards.
+    *   Discussion centered on consistency with Connect-UDP (which is already finalized) versus potential complexities with `*` in path components for URI template engines.
+    *   **Decision:** The working group agreed to include a default URI template for consistency. A new issue will be opened to clarify the behavior of empty vs. wildcard (`*`) values in path segments within URI templates to ensure clear implementation guidance.
+
+*   **Connect-IP MTU Handling for IPv6:**
+    *   Proposal to simplify MTU validation options to two: 1) client/proxy guarantee sufficient QUICK connection MTU, or 2) perform Path MTU Discovery (PMTUD) through the tunnel. The option to "coordinate with intermediaries" was deemed too complex and removed.
+    *   Discussion raised concerns about dynamic PMTUD in QUICK reducing MTU and the implications for tunneled IPv6 traffic.
+    *   **Decision:** The text will be updated to state that if the path MTU is insufficient for IPv6 (below 1280 bytes) when sending IP packets over datagrams, the stream *must* be closed to ensure RFC compliance. A non-normative note will suggest that clients should kill the stream if QUICK's PMTUD causes the MTU to drop below the IPv6 minimum.
+
+*   **Connect-IP ICMP Error Reporting:**
+    *   Proposal to use ICMP errors for communicating issues such as ACL violations, destination unreachable, bad source addresses, or packets too large. Specific ICMP types and codes were suggested.
+    *   Discussion focused on whether clients should always be prepared to receive ICMP, even if not explicitly requested, and the behavior of proxies in forwarding or generating ICMP. Reference to RFC 4301 for ICMP payload inspection in IPsec was made.
+    *   **Decision:** Clarify that proxies *may* generate ICMP errors for policy violations (e.g., source/destination not allowed). Clients *must* be prepared to receive these without crashing. The minimum behavior required is point-to-point ICMP error reporting; a full tunnel would require explicit ICMP protocol request. Text will be considered to allow proxies to intelligently forward only relevant ICMP.
+
+*   **Connect-IP Address Request/Assign Semantics:**
+    *   Issue identified with ambiguity in `address_request` semantics, especially for client-to-proxy scenarios.
+    *   **Decision:** Clients *must* send an `address_request` capsule if they desire an assigned IP address. Sending an all-zeros address signifies no specific preference. Both `address_request` and `address_assign` capsules can contain multiple address/prefix combinations (e.g., IPv4 and IPv6). `Address_assign` capsules are cumulative, reflecting all current address assignments. If a client sends a packet from a source address not assigned to it, the proxy should drop the packet and return an ICMP error. Zero-RTT optimistic packet sending with arbitrary source addresses is not generally supported or guaranteed. Text updates are planned to clarify partial fulfillment and the cumulative nature of `address_assign` (including the possibility of an empty `address_assign` to indicate no assignment or removal).
+
+*   **HTTP Access Service Description Objects (New Work Proposal):**
+    *   Ben Schwartz proposed a JSON-based format to describe composite services that combine multiple MASQUE components (e.g., Connect-UDP, Connect-IP, DoH, OHTP relay) to simplify client configuration and capability discovery.
+    *   Discussion points included the proposal's scope (crossing multiple working groups), complexity of combining disparate information (keys, authentication, capabilities), and the target audience for deployment. While some expressed interest in client-side utility (e.g., Android system settings), concerns were raised about server-side complexity and the working group's charter.
+    *   **No decision on adoption.** Further discussion needed, particularly regarding charter fit and deployment interest.
+
+*   **Connect-UDP Listener Mode (New Work Proposal):**
+    *   David Scenazi proposed a small extension to Connect-UDP to support WebRTC by allowing multiple targets from the same source, addressing the limitations of Connect-UDP's single 5-tuple per stream and the overhead of Connect-IP for browser-based WebRTC.
+    *   The extension involves the client sending `*` as a target, using a `Connect-UDP-Listen` header to register a `context_id`, and then embedding IP address and UDP port in each datagram.
+    *   Strong support was voiced for its simplicity and utility for WebRTC, with notes on potential security implications (e.g., running HTTP/3 servers) and similarities to TURN's NAT policies.
+    *   **No decision on adoption.** Strong interest in pursuing this work was noted.
+
+*   **Re-chartering Discussion:**
+    *   With Connect-UDP and HTTP Datagrams finalized, and Connect-IP nearing completion, the working group discussed re-chartering. The consensus is that MASQUE is not intended to be a long-lived working group.
+    *   Key questions for the next charter phase revolve around: 1) criteria for in-scope/out-of-scope work (e.g., explicitly named extensions vs. criteria-based extensions vs. open-ended); 2) specific "real-world" needs not yet addressed; and 3) the role of proxy discovery.
+    *   Opinions varied from a very open charter (David) to a more scoped approach with suggested areas (Tommy), potentially with a time-box for re-evaluation. The need for clear "off-ramps" for extensions to other, more long-lived working groups was highlighted. Configuration and client authorization were suggested as important areas.
+    *   **No decision on re-chartering.** Input will be used to draft a re-charter proposal.
+
+## Decisions and Action Items
+
+*   **Connect-IP Default URI Template:**
+    *   **Decision:** Include default URI template for Connect-IP, consistent with Connect-UDP.
+    *   **Action Item:** Open a new GitHub issue to clarify the semantics of empty vs. wildcard (`*`) values within URI template path components.
+*   **Connect-IP MTU Handling:**
+    *   **Decision:** Remove "coordinate with intermediaries" option. Clarify that if PMTUD indicates insufficient MTU for IPv6 (below 1280 bytes) when using datagrams, the stream *must* be closed for RFC compliance.
+    *   **Action Item:** Update draft text to reflect this decision and add a non-normative note regarding client behavior if QUICK's PMTUD reduces MTU.
+*   **Connect-IP ICMP Error Reporting:**
+    *   **Decision:** Clarify that proxies *may* generate ICMP errors for policy violations, and clients *must* be prepared to receive them.
+    *   **Action Item:** Update draft text to detail minimum ICMP handling behavior and consider incorporating guidance from RFC 4301.
+*   **Connect-IP Address Request/Assign Semantics:**
+    *   **Decision:** Clients *must* send `address_request` if an address is desired. `address_request` and `address_assign` capsules are cumulative and can contain multiple address/prefix combinations. Proxies should drop packets from non-assigned sources and send ICMP errors.
+    *   **Action Item:** Update draft text to reflect these semantics, including partial fulfillment and the cumulative nature of `address_assign` (including the option for an empty `address_assign`).
+
+## Next Steps
+
+*   Continue to refine the Connect-IP draft, addressing open issues and seeking cross-implementation interoperability.
+*   Further discussions on the "HTTP Access Service Description Objects" and "Connect-UDP Listener Mode" proposals to assess charter fit, deployment interest, and technical details.
+*   Draft a re-chartering proposal for the MASQUE working group, taking into account the feedback received on scope, criteria for future work, and exit strategies.
+*   Working group members are encouraged to send thoughts on extensions and re-chartering to the mailing list.

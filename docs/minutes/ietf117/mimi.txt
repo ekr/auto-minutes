@@ -1,0 +1,74 @@
+**Session Date/Time:** 24 Jul 2023 20:00
+
+# mimi
+
+## Summary
+The mimi working group met to discuss open requirements and design considerations for more instant messaging interoperability. Key topics included the concept of an owning provider, the scope of client-to-server interactions, transport service design requirements, linearized matrix, and meaning delivery service drafts.  The group explored different notions of ownership (hub, policy enforcement, policy control), policy control models, and whether client-to-server interactions should bypass provider servers.  Emphasis was placed on policy definition and enforcement.
+
+## Key Discussion Points
+*   **Owning Provider:**
+    *   Richard Barnes presented different notions of ownership: hub, policy enforcement, and policy control.
+    *   Edgar suggested another notion of ownership is simply responsible for storing the state associated with the mean
+    *   Rowan clarified the role of policy enforcer is also the commit sequencer, where one provider will be responsible for which of the commits will be fanned out.
+    *   Jonathan Rosenberg emphasized existing gatekeepers will need the the ability to influence policies for their services.
+    *   A straw man was proposed where a single hub handles distribution and sequencing, a single owning provider sets policy or the policy envelope, the policy is consistently viewed by everyone involved, and every server enforces the policy.
+*   **Client-to-Server Interaction Scope:**
+    *   Richard outlined two architectures: client-to-server-to-server-to-client (everything provider-mediated) and client-to-server-to-server-to-client (clients connect directly to the hub).
+    *   Jonathan opposed clients bypassing provider servers.
+    *   Rafael suggested keeping the direct client-to-hub connection as an open question if the clients can satisfy all the authentication requirements to act like a server.
+    *   Rowan suggested treat a client-to-hub directly connection as another client on the hub server.
+*   **Transport Design Requirements:**
+    *   Rowan presented requirements for message transport, emphasizing exclusive actions (submit commit, claim key package, group info) and provisional/fan-out messages.
+    *   Avoid thinking in HTTP semantics and focus on sending blobs, then asynchronously getting back information about request
+    *   Ordering requirements: staples welcome to commit and group info to commit
+    *   Efficiency and key package fetching: Fetching multiple key packages should be done with one operation
+*   **Linearized Matrix:**
+    *   Travis and Matthew presented linearized matrix as a transport and framework.
+    *   Implementation efforts: Eigen server, Matrix Hurion, Synapse (dual stack), Android Messages integration
+    *   Matrix's approach to defining policy rules, assigning rank
+    *   GRPC (alternative transport) should be a consideration
+    *   MLS fit: MLS currently a layer on top, but could be integrated more deeply, it also supports double ratchet and experimental support for MLS out of band.
+    *   Deciding whether MLS should be layered on top of the transport, or should it be the foundation for all of the operations
+
+## Decisions and Action Items
+*   **Decision:** Adopt the straw man proposal for owning provider (Richard to send a draft to the mailing list).
+*   **Decision:** Client-to-server interactions bypassing provider servers are out of scope, at least for now.
+*   **Action Item:** Richard will send a draft of the owning provider straw man proposal to the mailing list.
+*   **Action Item:** Rowan will take some homework from discussion about policy enforcements, and try to figure out basic needs, like Discord, plus users want the ability to only send messages.
+
+## Next Steps
+*   Discuss transport design requirements in more detail on Wednesday.
+*   Continue exploration of user discovery drafts on Wednesday.
+*   Resolve issues regarding ordering and security concerns in the linearized matrix approach, specifically how the interaction of MLS will be managed
+*   Explore the integration of more of the delivery service's functionality into linearized matrix
+
+---
+
+**Session Date/Time:** 26 Jul 2023 16:30
+
+# mimi
+
+## Summary
+
+This mimi session covered several key topics including a deep dive into Rafael's media delivery service proposal for MLS, discussions surrounding transport draft adoption, updates to the content format draft, and presentations on user discovery. A significant portion of the meeting was dedicated to debating the best path forward for transport and delivery service specifications, balancing immediate interoperability needs with long-term goals of leveraging MLS and minimizing metadata exposure. While there was no immediate consensus to adopt the delivery service draft, there was agreement on the importance of further exploration and potential collaboration between different proposals.
+
+## Key Discussion Points
+
+*   **Media Delivery Service (MDS):** Rafael presented a detailed overview of the MDS proposal, emphasizing its role in message ordering, key package availability, and client authentication within MLS groups. The discussion touched on the layering of the protocol stack and the need for a canonical approach to delivery service implementation with MLS. Authentication between client and hub servers and server-to-server using MLS certificates was detailed and debated.
+*   **Transport Draft Adoption:** The working group debated whether to adopt the current MDS draft or linearized Matrix proposal. Matthew from Matrix argued for a phased approach to adoption to allow for easier migration paths for gatekeepers who need to comply with the Digital Markets Act (DMA) timelines. Arguments against included the benefits of low crypto stack implementations, strong MLS charter obligations and difficulty accommodating all variant implementations of double ratchet.
+*   **Content Format Draft Update:** Rowan provided a brief update on the content format draft and solicited feedback on open issues, including message ID choices and message sorting.
+*   **User Discovery:** Jonathan Rosenberg presented the Glados draft, outlining a user discovery architecture designed to map phone numbers to service-specific identifiers, prioritizing ease of use and protection against malicious actors. Giles Hogman presented Google's alternative approach to user discovery, leveraging a DNS-like model with private information retrieval (PIR) to protect user social graphs.
+*   **Privacy and Metadata Reduction:** Discussion around metadata reduction, including different techniques for credential storage and privacy. Importance was placed on the need to protect privacy properties due to heightened importance in this space.
+
+## Decisions and Action Items
+
+*   **No Adoption Call Today:** After a show of hands using the online tool, the working group did not achieve consensus on adopting the MDS draft today.
+*   **Design Team Formation:** There was widespread interest in forming a design team to explore a potential merged solution for transport and delivery service specifications, aiming to combine strengths of the MDs and linearized Matrix proposals. The makeup and goals of this design team needs to be specified.
+*   **Interim Meeting Scheduling:** The chairs will work to re-establish a bi-weekly interim meeting schedule, targeting a potential future adoption call at a specific interim once the design team has made progress.
+*   **User Discovery Requirements:** Schedule more discussion on user discovery, especially for requirements gathering on privacy properties.
+
+## Next Steps
+
+*   The chairs will discuss the formation of a design team with the authors of the MDS and linearized Matrix proposals.
+*   The design team will be tasked with exploring a potential merged solution for transport and delivery service specifications, focusing on balancing immediate interoperability needs with long-term goals of leveraging MLS and minimizing metadata exposure.
+*   The authors of the user discovery drafts will share their writeups and presentation materials with the mailing list for further discussion and clarification of requirements.

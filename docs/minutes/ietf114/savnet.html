@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="savnet.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-SAVNET-20220725-1900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 19:00</p>
+<h1>savnet</h1>
+<h2>Summary</h2>
+<p>This was the inaugural meeting of the savnet working group. The session focused on establishing the working group's charter, milestones, and initial presentations detailing gap analyses, problem statements, and requirements for Source Address Validation (SAV) in both intra-domain and inter-domain networks. Preliminary solution approaches were also introduced to inform further discussion on requirements and feasibility. Key discussions revolved around the practical challenges of deploying SAV, the scope of what the working group can realistically address (e.g., compromised routers, misconfiguration vs. algorithm flaws), the difficulty of incentivizing deployment, and the potential scaling implications of proposed solutions.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Working Group Status and Charter</strong>:</p>
+<ul>
+<li>The savnet working group was approved in June of this year.</li>
+<li>The charter includes defining problem statements, use cases, requirements, SAV architecture documents (for intra- and inter-domain), and definitions for operation and management.</li>
+<li>Charter items require analysis of current solutions, defining conditions for architecture improvement, privacy analysis, threat models, and comparison to existing mechanisms.</li>
+<li>Milestones include adopting problem/use case/requirement documents (November this year) and architectural documents, with work planned to conclude by March 2025.</li>
+</ul>
+</li>
+<li>
+<p><strong>Intra-domain SAV: Gap Analysis, Problem Statement, and Requirements (Dan Lee)</strong>:</p>
+<ul>
+<li><strong>Background</strong>: Source Address Validation (SAV) is crucial for defending against spoofing attacks (e.g., reflection attacks). Existing methods include ingress filtering (ACL, strict uRPF) defined in RFC 2827 and RFC 3704.</li>
+<li><strong>Identified Gaps</strong>:
+<ul>
+<li><strong>Improper Block</strong>: Occurs with asymmetric routing or multi-homed subnets (e.g., a subnet advertising half its prefix to one router and half to another) when strict uRPF is applied. ACLs require manual, error-prone updates.</li>
+<li><strong>Vulnerability in Inbound Direction</strong>: Ingress filtering only checks traffic originating from directly connected subnets, failing to block spoofing traffic from external sources transiting the network.</li>
+<li><strong>Misbehaved Router</strong>: If a router is compromised or fails to strictly implement SAV, spoofing traffic may pass through. (Discussion point: Scope of considering compromised routers was raised as a significant challenge and suggested to be explicitly defined).</li>
+<li><strong>Misaligned Incentive</strong>: Deployment of ingress filtering only guarantees the <em>deployed</em> subnet won't <em>send</em> spoofed traffic, but doesn't protect it from <em>receiving</em> reflection attacks from non-deployed subnets.</li>
+</ul>
+</li>
+<li><strong>Problem Statement</strong>: Existing mechanisms suffer from inaccurate validation (improper block under asymmetric routing), limited protection (cannot block inbound spoofing or handle misbehaving routers), and misaligned incentives (reflection attacks still occur).</li>
+<li><strong>Requirements</strong>:
+<ol>
+<li>Must discover real data plane forwarding paths to avoid improper blocks.</li>
+<li>Must work for all intra-domain spoofing traffic (all directions) to block as close to the source as possible. (Discussion point: Feasibility of validating traffic from &quot;all directions&quot; and creating &quot;direct incentives&quot; was questioned, suggesting these might be aspirations rather than strict requirements due to technical/administrative/policy limitations and the BCP 38 deployment challenge).</li>
+<li>Must provide direct incentives to mitigate reflection attacks from undeployed areas.</li>
+<li>Must not induce excessive overhead (avoid data plane packet modification, limit control plane messages).</li>
+</ol>
+</li>
+<li><strong>Preliminary Solution Idea</strong>: Hub-by-hub prefix notification to learn real incoming interfaces and generate local SAV tables. (Discussion point: Concern raised about trusting end-hosts and the need for a &quot;zero trust&quot; approach, or how to include host-level filtering in the problem statement).</li>
+</ul>
+</li>
+<li>
+<p><strong>Inter-domain SAV: Gap Analysis, Problem Statement, and Requirements (Len Chun Chi)</strong>:</p>
+<ul>
+<li><strong>Background</strong>: RFC 8704 improved on earlier ingress filtering (RFC 2827, 3704) with Enhanced Feasible Path uRPF (EFP uRPF) for directly connected single-home stub ASes, and loose uRPF for provider/peer interfaces.</li>
+<li><strong>Identified Gaps</strong>:
+<ul>
+<li><strong>Improper Permit</strong>:
+<ul>
+<li>Loose uRPF on provider interfaces may improperly permit reflection attacks.</li>
+<li>EFP uRPF Algorithm B may improperly permit spoofing within the customer cone if it allows source addresses from all customer interfaces. (Discussion point: Whether this is a flaw in the algorithm when correctly implemented or a misconfiguration issue).</li>
+</ul>
+</li>
+<li><strong>Improper Block</strong>:
+<ul>
+<li><code>NO_EXPORT</code> BGP community can lead to improper blocking by EFP uRPF if the forwarding path is chosen via an AS that doesn't propagate the route. (Discussion point: <code>NO_EXPORT</code> often creates reachability issues, highlighting a conflict between routing objectives and validation behavior. Operators prioritize not breaking existing traffic).</li>
+<li>Anycast/Direct Server Return (DSR) scenarios where the response source address (Anycast IP) is not advertised via BGP by the responding AS, leading to improper blocking.</li>
+</ul>
+</li>
+<li><strong>Misaligned Incentive</strong>: Similar to intra-domain, victims with SAV deployed can still be attacked, and existing inter-domain SAV is vulnerable to spoofing from provider/peer interfaces.</li>
+</ul>
+</li>
+<li><strong>Problem Statement</strong>: Inaccurate validation (local RIB doesn't match real data plane, complex topologies/tunnels) and misaligned incentives (victim still suffers reflection attacks).</li>
+<li><strong>Requirements</strong>:
+<ol>
+<li>Must discover real data plane forwarding paths to avoid improper blocks and reduce improper permits.</li>
+<li>Must provide direct incentives to help deployed areas mitigate reflection attacks from undeployed areas and support incremental deployment.</li>
+<li>Must not induce excessive overhead (avoid packet modification, limit control plane messages).
+(Acknowledged that similar concerns about feasibility and incentives apply as with the intra-domain requirements).</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Working Group Direction (David Lamparter)</strong>:</p>
+<ul>
+<li>Suggested shifting perspective from constructing a &quot;perfect filter&quot; to focusing on &quot;defense in depth.&quot;</li>
+<li>Proposed asking: &quot;For any specific router, what can <em>that</em> router do to help?&quot; This approach could make scope questions (trust, compromise) less relevant and accelerate progress.</li>
+</ul>
+</li>
+<li>
+<p><strong>BAR-SAV Solution Proposal (Igor Lubashev)</strong>:</p>
+<ul>
+<li><strong>Context</strong>: BCP 38 (2000) approaches rely on BGP updates. RFC 8704 (2020) improves this by considering origin AS, but still has limitations. Adoption rates remain low (15% since 2015).</li>
+<li><strong>Motivation</strong>: Solutions need to be technically better, deployable, offer immediate benefits to early adopters, and ideally incentivize non-adopters, while being easy for small networks.</li>
+<li><strong>Approach</strong>: BAR-SAV (BGP, ASP, RPKI ROA based SAV) augments BGP updates with information from AS Path (ASP) and Route Origin Authorizations (ROAs). It uses the full AS path (not just origin AS) and secure RPKI data.</li>
+<li><strong>Algorithm Overview</strong>: Two phases:
+<ol>
+<li><strong>Discover Customer Cone</strong>: Iteratively identifies customer ASNs using ASP data and BGP AS paths.</li>
+<li><strong>Discover Prefixes</strong>: Uses ROA information to identify prefixes authorized by ASNs in the customer cone, and merges with BGP-advertised prefixes from customer cone origin ASNs.</li>
+</ol>
+</li>
+<li><strong>Benefits</strong>: Claims to improve on RFC 8704 and allow DSR by publishing ROA even if a prefix isn't advertised via BGP.</li>
+<li><strong>Discussion</strong>: Questioned the reliability of IRR data vs. RPKI (RPKI adoption growing, IRR less reliable). Concern raised about RPKI object transience (blips in existence) potentially causing filter issues and support calls, suggesting that filter logic needs to handle temporary unavailability of RPKI data gracefully.</li>
+</ul>
+</li>
+<li>
+<p><strong>Intra-domain SAV Solution Proposal (Yang Xing)</strong>:</p>
+<ul>
+<li><strong>Approach</strong>: Extends Interior Gateway Protocols (IGP) to advertise &quot;protected prefixes.&quot;</li>
+<li>Routers independently calculate SAV information (prefix, incoming interface) based on shortest path trees.</li>
+<li><strong>Inter-Area Problem</strong>: For inter-area routing, ABRs need to advertise the &quot;total cost&quot; (or reverse cost) from the prefix origin to the ABR via IGP extensions. This allows routers in other areas to determine the correct incoming interface.</li>
+<li><strong>IGP Extensions</strong>: Proposes <code>prefix-sav-sub-TLV</code> (to identify protected prefixes) and <code>prefix-reverse-cost-sub-TLV</code> (to carry total reverse cost) for IS-IS and OSPFv2/v3.</li>
+<li><strong>Considerations</strong>: Need to analyze interaction with policy-based routing (PBR) and QoS, as these can alter forwarding paths.</li>
+<li><strong>Discussion</strong>: Questioned reliance on trusted BGP for intra-domain SAV. Asked about the ability to determine <em>all</em> valid paths, not just one. Raised concerns about scaling, as disaggregating summarized routes to get accurate SAV information could blow up router CPU/memory usage, similar to existing routing challenges.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>No specific technical decisions were made during this initial meeting, beyond confirming the working group's charter and proceeding with the planned work items.</li>
+<li><strong>Action Item</strong>: Participants were encouraged to review the meeting minutes in the data tracker and add or correct any points they raised during the discussion to ensure accuracy.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussions on the mailing list.</li>
+<li>Refine problem statements, use cases, and requirements in forthcoming drafts, taking into account the issues and questions raised regarding scope, feasibility, incentives, and scaling.</li>
+<li>Solution proposals (like BAR-SAV and the IGP extension for intra-domain SAV) will continue to be presented to inform the discussion on requirements and potential gaps, but the focus for now remains on defining the problem space and requirements clearly.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

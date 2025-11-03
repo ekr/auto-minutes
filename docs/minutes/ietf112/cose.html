@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="cose.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-COSE-20211110-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 10 Nov 2021 14:30</p>
+<h1>cose</h1>
+<h2>Summary</h2>
+<p>The cose working group session covered the status of existing documents, including COSE Hash Algorithms and RFC 8152bis (algs and struct), COSE X.509, and COSE Countersign. A significant discussion point arose regarding a proposed change to allow integer <code>key_id</code> values in the RFC 8152bis-struct document, with differing views on whether this constituted a &quot;breaking change&quot; and its implications for the IETF standards track process. Two new drafts were presented for potential working group adoption: C509 for a COSE X.509 certificate profile, and COSE HPKE for Hybrid Public Key Encryption. Finally, a draft proposing faster verification of ECDSA signatures was introduced, focusing on optimizing JWS signatures.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>COSE Hash Algorithms:</strong> The document is awaiting answers to RFC Editor questions. The chairs will compile responses in 1-2 weeks after working group review of proposed answers.</li>
+<li><strong>RFC 8152bis-algs and -struct:</strong> Both documents are in AUTH48.
+<ul>
+<li><strong><code>kid</code> (key_id) as Integer vs. Byte String in <code>struct</code> draft:</strong> A PR proposes allowing <code>kid</code> to be an integer type in addition to a byte string.
+<ul>
+<li><strong>Arguments against:</strong> Mike Jones (chair) strongly opposed, considering it a &quot;breaking change&quot; not suitable for transition from Proposed Standard to Internet Standard. He argued it would break existing implementations, necessitate pulling the document from the RFC Editor queue, and that numeric byte string representation is sufficient.</li>
+<li><strong>Arguments for:</strong> Karsten claimed the process allows for small fixes based on experience, and that CBOR encoding would prevent misinterpretation, thus not being a breaking change in practice. John agreed, comparing it to adding new algorithms.</li>
+<li><strong>IETF AD (DKG) perspective:</strong> Acknowledged valid concerns from both sides. Stated that such a change would likely require a specific Working Group Last Call and an IETF Last Call. Suggested a separate document to update the Internet Standard as an alternative.</li>
+<li><strong>Versioning:</strong> Bob suggested that if changes are made, versioning is typically used to ensure compatibility. Karsten argued explicit versioning is not needed as CBOR's major type already distinguishes data types.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>COSE X.509 Certificate Profile:</strong> The document is in IESG evaluation.
+<ul>
+<li>Several GitHub issues are resolved or marked as fixed, but participants were asked to review if their concerns were fully addressed.</li>
+<li>The media type issue needs further discussion between the chairs and Karsten to formulate appropriate text.</li>
+<li>Clarification and strong recommendations for protecting <code>x5t</code> and <code>x5chain</code> parameters are needed.</li>
+</ul>
+</li>
+<li><strong>COSE Countersign:</strong> The document is ready to be sent to the IESG, as the shepherding write-up by Michael Richardson has been completed.</li>
+<li><strong>New Draft: C509 (COSE X.509 Certificate Profile):</strong>
+<ul>
+<li>The base specification is considered stable and mature, with existing Rust code. Reviews are encouraged.</li>
+<li><strong>Revocation (CRLs, OCSP):</strong> A proposal was made to move CRLs (and potentially OCSP) into a separate draft to expedite the core C509 specification.
+<ul>
+<li>Discussion centered on the implications: separating could speed up the core C509 but might create a gap if no mandatory revocation mechanism is specified. A normative reference could link the two, but risks delaying core C509 publication.</li>
+<li>Concerns were raised about the historical issues with OCSP (e.g., must-staple, privacy implications) in the X.509 world, suggesting these lessons be applied.</li>
+<li>Mozilla's &quot;CRL light&quot; was mentioned as a potential alternative to explore.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>New Draft: COSE HPKE (Hybrid Public Key Encryption):</strong>
+<ul>
+<li>This work originated in the SUIT working group for firmware encryption but is proposed for broader adoption in COSE.</li>
+<li>It defines a three-layer structure for encryption and supports detached payloads.</li>
+<li>Implementation experience exists (ARM, based on Happy Key).</li>
+<li><strong>Discussion:</strong> Questions included the use of unauthenticated HPKE modes (relying on COSE signature for authentication) and the specific use case for AES Key Wrap as a deterministic authenticated encryption mode for key distribution. A broader question was raised about HPKE's role as the future of key exchange in COSE, especially concerning post-quantum KEMs.</li>
+</ul>
+</li>
+<li><strong>New Draft: Fast Verification of ECDSA Signatures:</strong>
+<ul>
+<li>Rene introduced a method to accelerate ECDSA signature verification without changing the signature format.</li>
+<li>The &quot;trick&quot; relies on the malleability property of ECDSA, where two valid signatures exist (one with an odd y-coordinate for the ephemeral signing key, one with an even). By adopting a convention (e.g., always picking the even y-coordinate option), the ephemeral signing key can be recovered from the signature itself, enabling faster algebraic verification.</li>
+<li>This could offer significant speed-ups for single (30%) and batch (6x) verifications, particularly relevant for JWS signatures in applications like e-health QR codes.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>COSE Hash Algorithms:</strong>
+<ul>
+<li><strong>ACTION:</strong> Working Group members to review the proposed answers to RFC Editor questions in the GitHub repository.</li>
+<li><strong>ACTION:</strong> Chairs to provide answers to the RFC Editor within 1-2 weeks.</li>
+</ul>
+</li>
+<li><strong>RFC 8152bis-struct <code>kid</code> change:</strong>
+<ul>
+<li><strong>DECISION:</strong> No immediate change will be made to the document in AUTH48. Further discussion will take place on the mailing list or in future sessions regarding this change and its impact on the standards process.</li>
+</ul>
+</li>
+<li><strong>COSE X.509 Certificate Profile:</strong>
+<ul>
+<li><strong>ACTION:</strong> Participants involved in X.509 discussions to review the GitHub issues and confirm resolutions.</li>
+<li><strong>ACTION:</strong> Chairs and Karsten to discuss and propose text for the media type issue.</li>
+<li><strong>ACTION:</strong> Chairs to create a GitHub issue and work on phrasing to strongly recommend protection of <code>x5t</code> and <code>x5chain</code> parameters.</li>
+</ul>
+</li>
+<li><strong>COSE Countersign:</strong>
+<ul>
+<li><strong>ACTION:</strong> The document will be sent to the IESG immediately.</li>
+</ul>
+</li>
+<li><strong>C509 (COSE X.509 Certificate Profile):</strong>
+<ul>
+<li><strong>DECISION:</strong> The revocation parts (CRLs, OCSP) will be separated into a new, distinct draft to allow the core C509 specification to progress more quickly.</li>
+<li><strong>ACTION:</strong> Working Group members are encouraged to provide reviews for the C509 draft.</li>
+<li><strong>ACTION:</strong> John to share information on Mozilla's &quot;CRL light&quot; for future discussion.</li>
+</ul>
+</li>
+<li><strong>COSE HPKE:</strong>
+<ul>
+<li><strong>ACTION:</strong> Chairs to issue a Call for Adoption on the mailing list for the COSE HPKE draft.</li>
+</ul>
+</li>
+<li><strong>Fast Verification of ECDSA Signatures:</strong>
+<ul>
+<li><strong>ACTION:</strong> Interested parties are encouraged to reach out to Rene to discuss the draft further.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussions on the <code>kid</code> integer/byte string change for RFC 8152bis-struct, considering process implications and alternatives.</li>
+<li>Progress the core C509 draft, while simultaneously working on the separate draft for revocation mechanisms (CRLs, OCSP, and potentially &quot;CRL light&quot;).</li>
+<li>Evaluate the COSE HPKE draft for working group adoption based on the upcoming Call for Adoption.</li>
+<li>Further explore the technical merits and potential adoption path for fast ECDSA signature verification within the working group.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

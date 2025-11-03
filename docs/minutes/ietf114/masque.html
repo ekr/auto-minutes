@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="masque.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-MASQUE-20220727-1900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 27 Jul 2022 19:00</p>
+<h1>masque</h1>
+<h2>Summary</h2>
+<p>The masque working group at IETF 114 reviewed the progress of the Connect-IP draft, discussing several open issues including URI templates, MTU handling for IPv6, ICMP error reporting, and address request/assign semantics. Significant technical discussion led to resolutions and planned text updates for Connect-IP. Two new work proposals were presented: &quot;HTTP Access Service Description Objects&quot; for composite service configuration, and a &quot;Connect-UDP Listener Mode&quot; extension for WebRTC. The session concluded with an initial discussion on re-chartering the working group, focusing on criteria for future work and an &quot;off-ramp&quot; strategy.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Connect-IP Progress and Implementations:</strong></p>
+<ul>
+<li>Connect-UDP and HTTP Datagrams drafts are in the RFC Editor's queue.</li>
+<li>Connect-IP implementations are progressing, with active development at the hackathon, although cross-implementation interoperability is yet to be achieved due to underlying tunnel interface complexities.</li>
+<li>Recent changes to the draft include improved URI template text, clarification on address assignment requirements, ICMP error communication, and MTU handling for IPv6.</li>
+</ul>
+</li>
+<li>
+<p><strong>Connect-IP Default URI Template (<code>.well-known/masque-ip</code>):</strong></p>
+<ul>
+<li>Proposal to add a default URI template for Connect-IP, mirroring the <code>.well-known/masque-udp</code> template for Connect-UDP, supporting <code>target</code> and <code>ip_proto</code> parameters with <code>*</code> wildcards.</li>
+<li>Discussion centered on consistency with Connect-UDP (which is already finalized) versus potential complexities with <code>*</code> in path components for URI template engines.</li>
+<li><strong>Decision:</strong> The working group agreed to include a default URI template for consistency. A new issue will be opened to clarify the behavior of empty vs. wildcard (<code>*</code>) values in path segments within URI templates to ensure clear implementation guidance.</li>
+</ul>
+</li>
+<li>
+<p><strong>Connect-IP MTU Handling for IPv6:</strong></p>
+<ul>
+<li>Proposal to simplify MTU validation options to two: 1) client/proxy guarantee sufficient QUICK connection MTU, or 2) perform Path MTU Discovery (PMTUD) through the tunnel. The option to &quot;coordinate with intermediaries&quot; was deemed too complex and removed.</li>
+<li>Discussion raised concerns about dynamic PMTUD in QUICK reducing MTU and the implications for tunneled IPv6 traffic.</li>
+<li><strong>Decision:</strong> The text will be updated to state that if the path MTU is insufficient for IPv6 (below 1280 bytes) when sending IP packets over datagrams, the stream <em>must</em> be closed to ensure RFC compliance. A non-normative note will suggest that clients should kill the stream if QUICK's PMTUD causes the MTU to drop below the IPv6 minimum.</li>
+</ul>
+</li>
+<li>
+<p><strong>Connect-IP ICMP Error Reporting:</strong></p>
+<ul>
+<li>Proposal to use ICMP errors for communicating issues such as ACL violations, destination unreachable, bad source addresses, or packets too large. Specific ICMP types and codes were suggested.</li>
+<li>Discussion focused on whether clients should always be prepared to receive ICMP, even if not explicitly requested, and the behavior of proxies in forwarding or generating ICMP. Reference to RFC 4301 for ICMP payload inspection in IPsec was made.</li>
+<li><strong>Decision:</strong> Clarify that proxies <em>may</em> generate ICMP errors for policy violations (e.g., source/destination not allowed). Clients <em>must</em> be prepared to receive these without crashing. The minimum behavior required is point-to-point ICMP error reporting; a full tunnel would require explicit ICMP protocol request. Text will be considered to allow proxies to intelligently forward only relevant ICMP.</li>
+</ul>
+</li>
+<li>
+<p><strong>Connect-IP Address Request/Assign Semantics:</strong></p>
+<ul>
+<li>Issue identified with ambiguity in <code>address_request</code> semantics, especially for client-to-proxy scenarios.</li>
+<li><strong>Decision:</strong> Clients <em>must</em> send an <code>address_request</code> capsule if they desire an assigned IP address. Sending an all-zeros address signifies no specific preference. Both <code>address_request</code> and <code>address_assign</code> capsules can contain multiple address/prefix combinations (e.g., IPv4 and IPv6). <code>Address_assign</code> capsules are cumulative, reflecting all current address assignments. If a client sends a packet from a source address not assigned to it, the proxy should drop the packet and return an ICMP error. Zero-RTT optimistic packet sending with arbitrary source addresses is not generally supported or guaranteed. Text updates are planned to clarify partial fulfillment and the cumulative nature of <code>address_assign</code> (including the possibility of an empty <code>address_assign</code> to indicate no assignment or removal).</li>
+</ul>
+</li>
+<li>
+<p><strong>HTTP Access Service Description Objects (New Work Proposal):</strong></p>
+<ul>
+<li>Ben Schwartz proposed a JSON-based format to describe composite services that combine multiple MASQUE components (e.g., Connect-UDP, Connect-IP, DoH, OHTP relay) to simplify client configuration and capability discovery.</li>
+<li>Discussion points included the proposal's scope (crossing multiple working groups), complexity of combining disparate information (keys, authentication, capabilities), and the target audience for deployment. While some expressed interest in client-side utility (e.g., Android system settings), concerns were raised about server-side complexity and the working group's charter.</li>
+<li><strong>No decision on adoption.</strong> Further discussion needed, particularly regarding charter fit and deployment interest.</li>
+</ul>
+</li>
+<li>
+<p><strong>Connect-UDP Listener Mode (New Work Proposal):</strong></p>
+<ul>
+<li>David Scenazi proposed a small extension to Connect-UDP to support WebRTC by allowing multiple targets from the same source, addressing the limitations of Connect-UDP's single 5-tuple per stream and the overhead of Connect-IP for browser-based WebRTC.</li>
+<li>The extension involves the client sending <code>*</code> as a target, using a <code>Connect-UDP-Listen</code> header to register a <code>context_id</code>, and then embedding IP address and UDP port in each datagram.</li>
+<li>Strong support was voiced for its simplicity and utility for WebRTC, with notes on potential security implications (e.g., running HTTP/3 servers) and similarities to TURN's NAT policies.</li>
+<li><strong>No decision on adoption.</strong> Strong interest in pursuing this work was noted.</li>
+</ul>
+</li>
+<li>
+<p><strong>Re-chartering Discussion:</strong></p>
+<ul>
+<li>With Connect-UDP and HTTP Datagrams finalized, and Connect-IP nearing completion, the working group discussed re-chartering. The consensus is that MASQUE is not intended to be a long-lived working group.</li>
+<li>Key questions for the next charter phase revolve around: 1) criteria for in-scope/out-of-scope work (e.g., explicitly named extensions vs. criteria-based extensions vs. open-ended); 2) specific &quot;real-world&quot; needs not yet addressed; and 3) the role of proxy discovery.</li>
+<li>Opinions varied from a very open charter (David) to a more scoped approach with suggested areas (Tommy), potentially with a time-box for re-evaluation. The need for clear &quot;off-ramps&quot; for extensions to other, more long-lived working groups was highlighted. Configuration and client authorization were suggested as important areas.</li>
+<li><strong>No decision on re-chartering.</strong> Input will be used to draft a re-charter proposal.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Connect-IP Default URI Template:</strong>
+<ul>
+<li><strong>Decision:</strong> Include default URI template for Connect-IP, consistent with Connect-UDP.</li>
+<li><strong>Action Item:</strong> Open a new GitHub issue to clarify the semantics of empty vs. wildcard (<code>*</code>) values within URI template path components.</li>
+</ul>
+</li>
+<li><strong>Connect-IP MTU Handling:</strong>
+<ul>
+<li><strong>Decision:</strong> Remove &quot;coordinate with intermediaries&quot; option. Clarify that if PMTUD indicates insufficient MTU for IPv6 (below 1280 bytes) when using datagrams, the stream <em>must</em> be closed for RFC compliance.</li>
+<li><strong>Action Item:</strong> Update draft text to reflect this decision and add a non-normative note regarding client behavior if QUICK's PMTUD reduces MTU.</li>
+</ul>
+</li>
+<li><strong>Connect-IP ICMP Error Reporting:</strong>
+<ul>
+<li><strong>Decision:</strong> Clarify that proxies <em>may</em> generate ICMP errors for policy violations, and clients <em>must</em> be prepared to receive them.</li>
+<li><strong>Action Item:</strong> Update draft text to detail minimum ICMP handling behavior and consider incorporating guidance from RFC 4301.</li>
+</ul>
+</li>
+<li><strong>Connect-IP Address Request/Assign Semantics:</strong>
+<ul>
+<li><strong>Decision:</strong> Clients <em>must</em> send <code>address_request</code> if an address is desired. <code>address_request</code> and <code>address_assign</code> capsules are cumulative and can contain multiple address/prefix combinations. Proxies should drop packets from non-assigned sources and send ICMP errors.</li>
+<li><strong>Action Item:</strong> Update draft text to reflect these semantics, including partial fulfillment and the cumulative nature of <code>address_assign</code> (including the option for an empty <code>address_assign</code>).</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue to refine the Connect-IP draft, addressing open issues and seeking cross-implementation interoperability.</li>
+<li>Further discussions on the &quot;HTTP Access Service Description Objects&quot; and &quot;Connect-UDP Listener Mode&quot; proposals to assess charter fit, deployment interest, and technical details.</li>
+<li>Draft a re-chartering proposal for the MASQUE working group, taking into account the feedback received on scope, criteria for future work, and exit strategies.</li>
+<li>Working group members are encouraged to send thoughts on extensions and re-chartering to the mailing list.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

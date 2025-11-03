@@ -1,0 +1,59 @@
+**Session Date/Time:** 28 Jul 2022 20:00
+
+# dmarc
+
+## Summary
+
+The DMARC Working Group session primarily focused on resolving outstanding issues for the DMARC Bis draft, particularly the "tree walk" mechanism and the impact of DMARC `p=reject` policies on mailing list interoperability. Discussions around the tree walk included clarifying examples and addressing concerns about maximum lookup depth. The debate on mailing list interoperability centered on whether to use a `SHOULD NOT` or `MUST NOT` normative statement to guide implementers regarding `p=reject` policies given their known breakage of forwarded mail streams. Minor updates and future work for reporting documents were also briefly touched upon. The working group aims to finalize DMARC Bis soon, with several items delegated to offline discussion and the mailing list.
+
+## Key Discussion Points
+
+### DMARC Bis - Tree Walk Issue
+*   **Current Status**: Version 15 of the draft includes updated tree walk examples, with diffs available.
+*   **New Examples**: John Levine added a more complex Public Suffix Domain (PSD) example (e.g., mega.bank.example, giant.bank.example where bank.example is a PSD) to illustrate the `psd` flag's effect on the tree walk.
+*   **"Bad" Examples**: The chairs and John Levine agreed that a "bad" example of PSD usage was not necessary, as incorrect usage is hard to exemplify meaningfully and is unlikely to occur in plausible real-world scenarios.
+*   **Max Depth of Tree Walk**: Seth Blank raised a concern that the current `max depth of 5` for the tree walk might inadvertently exclude complex organizational structures (e.g., federal agencies, universities with deep sub-organizations) from finding their intended DMARC policy, which was an original use case for the tree walk. This creates a trade-off with preventing abuse from overly long domain names.
+    *   John Levine explained that the `5` was chosen because the deepest label ever found in the Public Suffix List (PSL) is `4` from the root, making `5` a conservative choice. He also noted that deep organizational names often remain within the same organization, minimizing the impact of the `jump` rule.
+    *   Murray suggested documenting the rationale for choosing `5` in the shepherd write-up or the document itself.
+*   **DNS Directorate Review**: Murray inquired if the tree walk mechanism had been reviewed by DNS experts. Tim Wilsinski confirmed that DNS folks were monitoring the discussion and offered to draft text for the shepherd write-up regarding the DNS aspects. He also volunteered to shepherd the DMARC Bis document.
+*   **Algorithm Tweaks**: Ali expressed that the current algorithm for finding the organizational domain might need further minor tweaks and requested that specific text proposals be submitted to the mailing list.
+
+### DMARC Bis - Mailing List Interoperability
+*   **Barry's Concern**: Barry Lieber highlighted that DMARC `p=reject` policies "blatantly break" long-standing internet protocols for mailing lists. He proposed a normative `SHOULD NOT` statement in the DMARC Bis draft for domains that may post to mailing lists, arguing `p=reject` was intended for transactional mail.
+*   **Support for Normative Statement**: Murray supported using `BCP14 SHOULD NOT`, indicating willingness to defend it to the IESG. Pete Resnick questioned why it shouldn't be a `MUST NOT` if it causes damage, citing RFC2119.
+*   **Practicality vs. Protocol**: John Levine voiced concern that a `MUST NOT` might make the IETF appear "out of touch" given that many mailing lists have already implemented workarounds for DMARC breakage. He suggested acknowledging workarounds while still guiding best practices.
+*   **Seth's Perspective (Individual)**: Seth Blank strongly disagreed with `MUST NOT` or `SHOULD NOT`, emphasizing DMARC's value in protecting domains from spoofing. He suggested documenting the impact on forwarded mail streams rather than prohibiting `p=reject`, and questioned if ARC (Authenticated Received Chain) could provide a solution.
+*   **"Stupid" Perception**: Jim Fenton argued that the IETF would look "stupid" for *not* clarifying that previous mandates (e.g., by DHS) to publish `p=reject` based on informational RFCs were problematic. He supported a `MUST NOT` for compliance-oriented organizations.
+*   **Ali's Counterpoint**: Ali noted that `p=none` is largely ineffective and that the IETF itself relies on mailing lists, yet is standardizing DMARC. He believed mailing lists can adapt and that `MUST NOT` would be disregarded.
+*   **ARC as a Solution**: Braun Gondwana suggested exploring a pathway for ARC, possibly through a DNS record on receiving MX servers, to allow intermediates to determine if receivers support ARC and thus avoid rewriting `From` headers. He noted recent ARC updates from Microsoft and potential for data sharing.
+*   **Reframing the Problem**: John Levine suggested reframing the issue to emphasize that enforcing `p=reject` can lead to legitimate mail being lost (e.g., US Census mail rejected by Gmail due to lack of DMARC alignment).
+*   **Beyond Mailing Lists**: Jim Fenton pointed out that the breakage problem extends beyond mailing lists to other forwarding scenarios like alumni domains.
+
+### Reporting Documents (Aggregate and Failure Reports)
+*   **Aggregate Report (RFC7489bis)**: Alex Brockman (editor) stated he had been holding off on major changes, pending DMARC Bis stabilization, but noted no monumental impacts. There are still open tickets needing discussion, but none are deemed critical.
+*   **XML Validation**: Ali proposed adjusting the aggregate report syntax for automatic XML verification with existing tools. Alex requested specific proposals if needed.
+*   **Failure Reporting (RFC7489bis)**: Ali suggested making failure reports header-only due to privacy concerns and very low actual deployment of full content reports.
+*   **Privacy Concerns & Operational Impact**: Seth Blank raised the `RFC6973` privacy impact of failure reports as a critical issue requiring mailing list discussion. He also noted that almost no major mailboxes send failure reports, indicating low operational adoption.
+*   **Message-ID Uniqueness**: Pete Resnick confirmed that RFC5322 states `Message-ID` "must be globally unique" with best-effort guarantees, acknowledging spammers may disregard this.
+
+### Other Issues
+*   **DMARC Bis Closure**: Todd Hurt indicated that few outstanding issues remain in GitHub, with only a minor reformatting of Section 4.8 being discussed on the mailing list.
+*   **IANA Registry for PSD Flag**: Tim Wilsinski filed an issue regarding the IANA registry for the `psd` flag.
+*   **IDNA and Tree Walk**: Victor questioned whether IDNA's alternative label separators (beyond periods) impact the tree walk. John Levine and other IDNA experts dismissed this as irrelevant to current A-label processing, considering it a "pit of hopeless despair" from older IDNA specifications.
+
+## Decisions and Action Items
+
+*   **Tree Walk Max Depth**: John Levine and Seth Blank will discuss Seth's `max depth` concerns offline and report their findings to the mailing list.
+*   **Tree Walk Algorithm Tweaks**: Ali is requested to post specific text proposals for any further tweaks needed for the organizational domain finding algorithm.
+*   **Shepherd for DMARC Bis**: Tim Wilsinski volunteered and was accepted as the shepherd for the DMARC Bis document. He also offered to write text for the DNS portion of the shepherd write-up.
+*   **Mailing List Interoperability**: The current text in DMARC Bis is deemed insufficient. The working group must address the impact of DMARC `p=reject` on forwarded mail streams. The exact normative strength (`SHOULD NOT` vs. `MUST NOT`) and accompanying explanatory text will be decided via mailing list discussion.
+*   **Reporting Documents - Aggregate Syntax**: Ali's proposal for XML syntax adjustments for aggregate reports will be considered if specific proposals are submitted.
+*   **Reporting Documents - Failure Report Privacy**: The `RFC6973` privacy impact of failure reports and the proposal for stripped-down (header-only) failure reports will be discussed on the mailing list.
+
+## Next Steps
+
+*   John Levine and Seth Blank to resolve the `max depth` issue and post an update to the mailing list.
+*   Ali to propose specific text changes for organizational domain finding.
+*   The DMARC Working Group to engage in detailed mailing list discussions on the normative language for `p=reject` policies and their impact on forwarded mail, including mailing lists and other forwarding scenarios.
+*   Further discussions on the aggregate and failure reporting documents, particularly regarding XML syntax validation and the privacy implications of failure reports (`RFC6973`), will take place on the mailing list.
+*   Await DNS directorate review of the DMARC Bis draft.

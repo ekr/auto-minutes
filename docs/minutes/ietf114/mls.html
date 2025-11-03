@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="mls.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-MLS-20220729-1630">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 29 Jul 2022 16:30</p>
+<h1>mls</h1>
+<h2>Summary</h2>
+<p>The mls working group session provided updates on the status of core documents, notably announcing that Draft 16 of the MLS Protocol document is ready for AD review, incorporating a significant change to a balanced binary tree structure. New drafts for Federation and Extensions were introduced, with the Extensions document serving as a home for more application-specific functionalities. A new proposal for Content Negotiation was discussed, addressing the need for applications to signal and discover supported data formats within MLS groups. This last proposal sparked considerable debate regarding media type complexities, IANA registry usage, and its alignment with the working group's charter, leading to a decision to consult the Area Director before pursuing adoption.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Status Update</strong>
+<ul>
+<li><strong>Architecture Draft:</strong> Awaiting author responses to chairs' questions before forwarding to the AD for review.</li>
+<li><strong>Federation Draft:</strong> Has been revived and updated.</li>
+<li><strong>Extensions Draft:</strong> A brand new document to house application-specific extensions.</li>
+<li><strong>Protocol Document:</strong> Received positive feedback from security researchers during Working Group Last Call (WGLC).</li>
+</ul>
+</li>
+<li><strong>MLS Protocol Document (Draft 16) Update</strong>
+<ul>
+<li>After WGLC and several interims, Draft 15 was released and led to a &quot;clean&quot; second WGLC, resulting in Draft 16.</li>
+<li><strong>Key Change in Draft 15:</strong> Switched from using a left-balanced binary tree to a <em>balanced binary tree</em>, ensuring the number of leaves is always a power of two (a full tree).
+<ul>
+<li><strong>Mechanistically:</strong> Adding a leaf now involves doubling the tree size and adding blank nodes; removing a leaf involves halving the tree (taking the left subtree).</li>
+<li><strong>Benefits:</strong> Simplifies tree mathematics, particularly around the parent hash, as the structure beneath a node remains constant.</li>
+<li><strong>Impact:</strong> While it introduces more &quot;virtual&quot; blank nodes on the right, these are generated on-the-fly and do not significantly impact protocol performance.</li>
+</ul>
+</li>
+<li><strong>Draft 16 Changes:</strong> Only minor edits, including adding a missing field in <code>to_be_signed</code> group info and moving a reference to informative.</li>
+<li><strong>Current Status:</strong> Draft 16 is ready for submission for AD review.</li>
+</ul>
+</li>
+<li><strong>Architecture Document Update</strong>
+<ul>
+<li>The document aligns well with the protocol.</li>
+<li>Authors were advised to focus on completing current work before proposing future additions.</li>
+</ul>
+</li>
+<li><strong>Federation Document Update</strong>
+<ul>
+<li>A non-normative document focused on outlining interoperability and federation scenarios.</li>
+<li>Provides high-level guidelines for applications and deployment (e.g., server interoperability, client-server communication).</li>
+<li>Includes security considerations and is updated to align with newer protocol drafts.</li>
+<li>It does <em>not</em> specify wire formats for federated messages, acknowledging that the MLS WG charter does not accommodate normative federation details. It serves as a placeholder, potentially to be referenced by future normative documents from other groups (e.g., MIMI WG).</li>
+</ul>
+</li>
+<li><strong>Extensions Document Introduction</strong>
+<ul>
+<li>Created to house functionalities deemed too specific for the core protocol document.</li>
+<li>The <code>AppAck</code> mechanism (previously in the protocol document) is the first extension.</li>
+<li>&quot;Targeted messages&quot; is a proposed additional extension.</li>
+<li><strong>Discussion:</strong> Whether to have individual small documents for each extension or a single &quot;catch-all&quot; document. The consensus was to use a single document for currently proposed small, &quot;low-hanging fruit&quot; extensions, with the understanding that complex extensions might warrant separate documents in the future. Precedent from TLS (RFC 6066) was noted for multi-extension documents.</li>
+</ul>
+</li>
+<li><strong>Content Negotiation Draft Introduction</strong>
+<ul>
+<li><strong>Problem Statement:</strong> MLS currently lacks mechanisms to:
+<ol>
+<li>Discover application formats supported by group members.</li>
+<li>Signal the required application formats within a group.</li>
+<li>Specify the format of opaque application data. This complicates long-lived groups and interoperability.</li>
+</ol>
+</li>
+<li><strong>Proposal:</strong> Two new MLS extensions:
+<ol>
+<li><code>accepted_media_types</code>: Included in a key package to declare a client's supported IANA media types (e.g., <code>image/jpeg</code>, <code>text/plain</code>, <code>vnd.examplecorp+json</code>).</li>
+<li><code>required_media_types</code>: Included in the group context to specify media types all group members must support.</li>
+</ol>
+</li>
+<li><strong>Application Data Framing:</strong> If <code>required_media_types</code> is present, application data would be framed with a small TLS presentation language struct containing a <code>media_type</code> field (zero-length implies the first <code>required_media_type</code>) and <code>application_content</code>.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li><strong>Media Type Complexity:</strong> Concerns were raised about handling media type parameters (e.g., <code>charset=utf-8</code>) and the inherent complexity of certain top-level types (e.g., <code>model</code>, <code>font</code>, <code>multi-part</code>). <code>multi-part alternative</code> was highlighted as particularly problematic due to historical issues in email.</li>
+<li><strong>Registry vs. Open Use:</strong> A suggestion was made to initially establish an <em>MLS-specific registry of permitted MIME types</em> with an expert, starting restrictively and gradually opening up, rather than allowing any IANA media type or vendor type from the start, to ensure interoperability.</li>
+<li><strong>Charter Applicability:</strong> A significant concern was raised that this draft touches upon &quot;enabling interoperability among applications,&quot; which the MLS WG charter explicitly states is <em>not</em> a goal for the base protocol. The question is whether such a goal is permissible for an extension document.</li>
+<li><strong>WG Expertise:</strong> The discussion revealed the specialized nature of media type and MIME expertise, leading to questions about whether the MLS WG is the appropriate venue or if it should be punted to a group like MIMI.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> MLS Protocol Draft 16 is ready for the Area Director (AD) review.</li>
+<li><strong>Action Item:</strong> The chairs will consult with the AD (Paul) regarding the Content Negotiation draft's alignment with the MLS working group charter and whether it can be adopted given the charter's restrictions on application-level interoperability.</li>
+<li><strong>Action Item:</strong> The chairs encourage working group members to read and provide feedback on the new Extensions and Content Negotiation drafts.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The MLS Protocol Document (Draft 16) will proceed to AD review, followed by the broader IESG review process.</li>
+<li>The Architecture Document will continue its path to AD review once author responses are incorporated.</li>
+<li>Further discussion and review of the Federation and Extensions drafts are encouraged.</li>
+<li>Pending AD feedback on the charter, the Content Negotiation draft will either be considered for adoption within MLS, or its development may be considered for a future working group like MIMI.</li>
+<li>Rohan (author of Content Negotiation) is encouraged to continue garnering interest and review for his draft.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

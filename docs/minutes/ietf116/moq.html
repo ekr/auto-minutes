@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="moq.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF116-MOQ-20230330-0400">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF116-MOQ-20230331-0300">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 30 Mar 2023 04:00</p>
+<h1>moq</h1>
+<h2>Summary</h2>
+<p>The Media over QUIC (moq) working group met to discuss several draft proposals related to real-time media delivery, relay architectures, and transport protocols. Key topics included scenarios for unified ingest and distribution, layering and adaptation strategies for large fan-out scenarios, object model requirements, and the integration of transport-level prioritization. A presentation was also given on deadline-aware relay extensions.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Scenarios Draft:</strong> The scenarios draft aims to define requirements for interactive real-time use cases, including unified ingest and distribution, relay architectures, and authorization. Emphasis was placed on supporting diverse network conditions and client capabilities.</li>
+<li><strong>Layering and Adaptation:</strong>  Discussion centered on the need for layering and adaptation strategies in large fan-out scenarios to enable scalable real-time media delivery.  Expressing dependencies between layers and objects was highlighted as a key requirement.</li>
+<li><strong>Object Model:</strong>  The working group discussed the object model and the properties that individual objects should have, including unique names, association with tracks and groups, and the ability to be cached and served individually by relays. Incremental delivery of objects (pipelining) was considered important.</li>
+<li><strong>Transport Protocol Delta:</strong> The focus was on building a unified media delivery protocol that can meet the requirements of both live streaming and interactive applications. A key debate revolved around tracks being tied to web transport sessions versus tracks that are independent data model.</li>
+<li><strong>Prioritization and Bundling:</strong> Discussion about prioritization focused on balancing flexibility for application-specific prioritization schemes with the ability to map to existing transport-level prioritization mechanisms. The concept of &quot;bundles&quot; as a prioritization domain was discussed, with differing views on whether it should be tied to transport sessions.</li>
+<li><strong>Native QUIC vs. WebTransport:</strong> A debate emerged regarding the need to support native QUIC in addition to WebTransport. Use cases for embedded devices and simplified implementations were cited as reasons for native QUIC support. Some raised concerns about increased complexity and discovery challenges.</li>
+<li><strong>Deadline-Aware Relay Extensions:</strong> A presentation introduced the concept of adding a &quot;deadline&quot; parameter to object headers to indicate the application's time sensitivity requirements. This could allow relays to make better decisions about scheduling and dropping overdue objects.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>The chairs will address the issue of users being unable to tag issues in the warp repository.</li>
+<li>Authors to use the mailing list to discuss proposals or ideas.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Authors to address use of mailing lists for proposals/ideas</li>
+<li>Victor will work on including the bundle URL in a setup message, similar to WebTransport connect, to support native QUIC.</li>
+<li>The group will explore sending catalog messages over a dedicated track with a separate draft for media-specific catalog formats.</li>
+<li>Further discussion on the mailing list is needed to address concerns around bundling, prioritization, and the trade-offs between native QUIC and WebTransport.</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 31 Mar 2023 03:00</p>
+<h1>moq</h1>
+<h2>Summary</h2>
+<p>This meeting covered several key aspects of the moq protocol, including catalog vacation, architectural issues (track independence and version negotiation), framing adoption calls, use cases/requirements draft updates, and a demonstration of an open-source proof-of-concept implementation. The meeting included significant discussion on track independence and associated naming/grouping considerations.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Catalog Vacation:</strong> A proposal for catalogs for moq compliant streaming formats was presented. The discussion focused on decoupling the transport layer from the streaming format, the responsibilities of each layer, and how to address and serialize catalogs. Concerns were raised about how to pass changes to the web codec decoder config data when it happens in the middle of a stream.</li>
+<li><strong>Architectural Issues:</strong>
+<ul>
+<li><strong>Version Negotiation:</strong>  A simple handshake format similar to TLS was discussed for version negotiation. A suggestion was made to add a field for the streaming format to the handshake. There was concern about the potential latency introduced by an additional round trip.</li>
+<li><strong>Track Independence:</strong> A major debate ensued on whether tracks should be independent components of the data model or if groupings of tracks should be baked in. Several viewpoints were presented, covering naming conventions, prioritization domains, orchestration domains, authorization, and the potential for multiple levels of grouping.  There was strong support for track independence and the separation of concerns regarding naming, prioritization and authorization.</li>
+</ul>
+</li>
+<li><strong>Framing Adoption Calls:</strong> The chairs discussed the criteria for adopting drafts, emphasizing that drafts need not be complete but should represent a reasonable starting point for working group efforts.</li>
+<li><strong>Use Cases/Requirements Draft Updates:</strong> An update on the use cases and requirements draft was provided, including a timeline for adoption feedback and plans to merge content from the scenarios draft. The importance of generic requirements applicable to all media over QUIC drafts was highlighted.</li>
+<li><strong>Open Source Demonstration:</strong> A proof-of-concept implementation demonstrating ultra-low latency live streaming and live rewind was presented. It was built using web transport, web codecs and leveraged workers in the player. The implementation showed metrics about in flight request, dropping objects, and latency. The code was released as open source.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Version Negotiation:</strong> The working group will proceed assuming the proposed version negotiation handshake will be used, and deal with any change requirements if they arise.</li>
+<li><strong>Track Independence:</strong> Tracks should be treated as independent components of the data model. Properties such as prioritization domain and orchestration domain should be handled separately from the track name. Colin to share a list of proposed properties with the note taker.</li>
+<li><strong>Use Cases/Requirements Draft:</strong> Ali volunteered to work on the terminology draft, potentially starting with a Google document and then moving to the IETF working group wiki.</li>
+<li><strong>Interim Meeting:</strong> The chairs will take the question of organizing an interim virtual meeting to the list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Chairs will start working on framing the Adoption call for the upcoming drafts.</li>
+<li>Working group to provide feedback on adoption of the use cases/requirements draft by April 14th.</li>
+<li>Spencer to merge content from the scenarios draft into the use cases/requirements draft.</li>
+<li>Continue the discussion about prioritization schemes and relay behavior on the mailing list.</li>
+<li>Explore the possibilities for the future use cases to leverage the new POC released from Jo.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

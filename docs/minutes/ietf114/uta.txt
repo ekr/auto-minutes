@@ -1,0 +1,53 @@
+**Session Date/Time:** 27 Jul 2022 17:30
+
+# uta
+
+## Summary
+
+The uta session at IETF 114 covered updates and discussions on several key drafts. Rich Salz presented a proposal to add IP address support to TLS certificate validation in RFC 9110bis, which the working group decided to pursue within the existing document. Hannes Tschofenig provided an update on the IoT TLS 1.3 Profile, highlighting the removal of 0-RTT, concerns about deterministic ECDSA randomness, and ongoing discussions regarding certificate status checking for long-lived connections. Joe presented updates to the Syslog over TLS/DTLS draft, noting its adoption as a working group item and the explicit decision to prohibit 0-RTT. An open mic discussion included a new use case for IP address range certificates and a proposal for a TLS client extension to solicit certificates.
+
+## Key Discussion Points
+
+*   **IP Address Identities in Certificates (RFC 9110bis)**
+    *   Martin Thompson's PR#54 proposes adding support for IP addresses (IP-ID) in the Subject Alt Name (SAN) extension, similar to DNS-ID, to RFC 9110bis (validation model).
+    *   This would update the current draft which explicitly excludes IP addresses.
+    *   Use cases for HTTPS connections to IP addresses (e.g., Cloudflare's 1.1.1.1 resolver) were cited as a strong motivation.
+    *   Concerns were raised about the late addition and the ripple effects on document wording, but the effort was deemed manageable by authors.
+    *   A suggestion was made by Alexey Melnikov to address IP addresses in a separate document due to potentially different properties, but Martin Thompson argued against this, citing interactions with existing elements and the complexity of surgical amendments.
+    *   The discussion touched on name constraints for IP-IDs, noting that RFC 5280 defines them, but this document does not currently cover name constraints, which is a broader issue.
+    *   Ben Schwartz introduced a related use case from the ADD working group: the need for certificates to cover entire IP address subnets (e.g., for ISPs providing encrypted DNS on IPv6 home gateways). This would require a new identifier format for X.509.
+*   **IoT TLS 1.3 Profile (`draft-ietf-uta-tls13-iot-profile`)**
+    *   **0-RTT Removal:** The use of 0-RTT was removed from this profile. The CoAP working group indicated no current interest or need for this feature for their use cases. It may be re-introduced in a separate specification if demand arises.
+    *   **Deterministic ECDSA:** The document's recommendation for deterministic ECDSA was debated. While based on prior DTLS 1.2 IoT recommendations and TLS 1.3, there are renewed concerns about the quality of random number generation (RNG) on IoT devices, particularly regarding fault injection attacks. The draft now carries over generic TLS 1.3 recommendations for randomness, acknowledging implementation challenges on IoT hardware.
+    *   **Terminology:** Michael Richardson's detailed review led to addressing terminology around "intermediate CA" vs. "subordinate CA."
+    *   **Feature Disparity (Renegotiation):** A significant open issue is the absence of renegotiation in TLS 1.3, which was used in TLS 1.2 in industrial IoT for long-lived connections to periodically re-check certificate revocation status (e.g., via OCSP).
+        *   Martin Thompson suggested exploring "exported authenticators" as an application-layer mechanism to refresh credential currency.
+        *   Stefan (Siemens) clarified the industrial IoT requirement: applications use timers to re-check certificate revocation status, requiring storing the certificate post-handshake in the application layer.
+        *   Victor de Carney questioned the underlying threat model for re-checking certificate status on an already established session.
+    *   **Other Open Issues:** Client certificate validation and SNI hiding (awaiting Michael Richardson's feedback), and profiling of DTLS timers for high-latency, high-loss IoT mesh networks.
+*   **Syslog over TLS/DTLS Updates (`draft-ietf-uta-syslog-tls`)**
+    *   The draft has been adopted as a working group item.
+    *   It updates cipher suites and transport protocols (including TLS 1.3) to modern standards, driven by compliance needs from IEC TC57 WG15.
+    *   **0-RTT Prohibition:** The draft explicitly states that 0-RTT (early data) "MUST NOT" be used with Syslog over TLS/DTLS due to the lack of inherent replay protection in Syslog and the expectation of long-lived connections, making 0-RTT less relevant.
+    *   A call for working group reviews was made to prepare for Working Group Last Call.
+*   **Open Mic: Client Certificate Solicitation**
+    *   Victor de Carney proposed a TLS extension that would allow a client to signal to the server its desire to present a client certificate, even if the server defaults to not soliciting one. This is relevant for applications like ESMTP where the application layer could do it, but a TLS layer solution might be more appropriate. The question of which working group (UTA, TLS) or charter tweak would be appropriate was raised.
+
+## Decisions and Action Items
+
+*   **Decision:** The working group will proceed with adding IP address identity support to RFC 9110bis (PR#54), within the existing document, rather than creating a separate one.
+*   **Decision:** The 0-RTT feature has been removed from the IoT TLS 1.3 Profile (`draft-ietf-uta-tls13-iot-profile`) and will be parked in a separate specification.
+*   **Decision:** The Syslog over TLS/DTLS draft (`draft-ietf-uta-syslog-tls`) will explicitly state that 0-RTT (early data) "MUST NOT" be used.
+*   **Action Item:** Alexey Melnikov to review PR#54 (IP address identities) within the next few days.
+*   **Action Item:** All volunteers for reviewing PR#54 are encouraged to do so as quickly as possible.
+*   **Action Item:** Hannes Tschofenig to ping Michael Richardson for feedback on remaining open issues (client certificate validation, SNI hiding) in the IoT profile.
+*   **Action Item:** Hannes Tschofenig and Stefan to explore "exported authenticators" and clarify the problem statement and threat model for certificate refresh requirements in long-lived IoT TLS connections.
+*   **Action Item:** Victor de Carney and Hannes Tschofenig volunteered to review `draft-ietf-uta-syslog-tls`.
+*   **Action Item:** Victor de Carney is encouraged to write up a draft proposal for a TLS client extension to solicit certificates.
+
+## Next Steps
+
+*   **IP Address Identities:** Editors (Rich Salz, Peter Andre) will sort through the comments and PR#54 with community feedback. Further discussion on the mailing list will confirm the path forward.
+*   **IoT TLS 1.3 Profile:** Expect a couple more iterations to address open issues and integrate feedback before the document is ready for shepherding.
+*   **Syslog over TLS/DTLS:** Proceed with working group reviews, aiming for Working Group Last Call (WGLC) soon.
+*   **Client Certificate Solicitation:** Victor de Carney to draft a proposal, to be discussed on mailing lists or in a relevant working group.

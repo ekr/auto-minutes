@@ -1,0 +1,78 @@
+**Session Date/Time:** 07 Nov 2022 08:00
+
+# Technology Deep Dive
+
+## Summary
+This session provided a technical overview of QUIC, covering its fundamental principles, immediate value proposition, and the technologies it enables. The session included presentations on QUIC's architecture and handshake process, with a focus on security and denial-of-service mitigation. It also explored how QUIC facilitates new advancements such as Mask and media delivery over QUIC.
+
+## Key Discussion Points
+*   **QUIC as a Transport Protocol:** QUIC is positioned as a new transport protocol parallel to TCP and TLS, deliberately compressing multiple layers for improved acceleration and deployment.
+*   **Multi-Streaming:** QUIC offers multi-streaming capabilities within a single connection, providing multiple ordered byte streams suitable for web applications with numerous independent objects.
+*   **UDP Foundation:** QUIC is built on UDP to navigate existing internet infrastructure with middleboxes and firewalls, enabling user-space deployment while recreating and improving TCP functionalities.
+*   **Baked-in Encryption:** Encryption is integral to QUIC, protecting both data and headers using TLS 1.3 for key negotiation, preventing ossification by middleboxes and allowing for protocol evolution.
+*   **Zero RTT:** QUIC enables zero round trip time connection setup with transport and crypto handshake, providing low-latency connections.
+*   **Connection Migration:** QUIC supports connection migration for improved resilience.
+*   **Troubleshooting and Debugging:** QUIC allows for the logging of transport and network-level traces alongside application-level traces due to its user-space implementation, simplifying debugging processes.
+*   **Address Validation and Amplification Mitigation:** QUIC includes denial-of-service mitigations, employing address validation techniques, such as retry mechanisms and implicit tokens, to prevent handshake amplification attacks.
+*   **Layering Architecture:** QUIC's architecture is viewed more as a software architecture than strict layering, where components provide capabilities and interact with each other, with TLS providing cryptographic assurances.
+
+## Decisions and Action Items
+*   Hold questions until the panel discussion tomorrow (Tuesday) at 8:30 AM.
+
+## Next Steps
+*   Attend the second Technology Deep Dive session tomorrow to delve deeper into QUIC deployments at scale, debugging techniques, and participate in the panel discussion.
+
+
+---
+
+**Session Date/Time:** 08 Nov 2022 07:30
+
+```markdown
+# Technology Deep Dive
+
+## Summary
+
+This session provided an in-depth look at various aspects of deploying, observing, and debugging QUIC.  Discussions covered practical experiences at Google with QUIC load balancing, mitigating blackholing, and handling zero-RTT issues, along with practical guidance on using Wireshark and qlog for troubleshooting.
+
+## Key Discussion Points
+
+*   **QUIC Load Balancing:**
+    *   Discussed challenges of using Anycast with QUIC, particularly related to connection migration and flapping BGP routes.
+    *   Highlighted the use of encrypted connection IDs within QUIC to improve linkability and routing.
+    *   Quick LB draft has a single connection ID format. Rotation of keys is possible using configuration IDs.
+    *   Goal is deploying by Q2 or Q1 of next year.
+*   **Blackholing Mitigation:**
+    *   Explained that five-tuples can be blackholed, causing connection timeouts and poor user experience.
+    *   Described a strategy to close connections after five consecutive probe timeouts.
+    *   Port migration (changing the client-side port) was presented as an effective solution to overcome blackholing.
+*   **Zero-RTT Challenges:**
+    *   Highlighted the complexity of implementing zero-RTT in QUIC due to multiple packet number spaces and key management.
+    *   Shared experiences of a Google outage caused by a "contagion" bug related to resumption information sent by Google front ends. Key point was that rollbacks didn't work because the state was in clients.
+    *   Emphasized the importance of thorough testing and robust tooling to ensure zero-RTT actually improves performance.
+*   **Observing and Debugging QUIC:**
+    *   Stressed that QUIC is not TCP, TLS, or HTTP; it's a new transport protocol with its own considerations.
+    *   Emphasized the importance of understanding TLS for debugging QUIC handshakes.
+    *   Discussed the use of Wireshark (version 3.4+) with SSL key log files for dissecting and decrypting QUIC packets.
+    *   Highlighted the benefits of using qlog and cuviz for richer insights into QUIC connection behavior.
+    *   Qviz is an excellent tool for visualizing QLOG output.
+    *   Explained the importance of initial and handshake packet types.
+*   **QUIC Applicability and Manageability:**
+    *   Mentioned RFC 9308 - QUIC Applicability, which discusses transport protocol features and adapting an application to work on QUIC
+    *   Mentioned RFC - Manageability Draft which discusses how to analyze quick.
+*   **BGP over QUIC:**
+     * There were multiple bgp over quick drafts.
+     * The quick working group is available for early reviews.
+     * Key distribution seems like a potential challenge.
+
+## Decisions and Action Items
+
+*   **Action Item:** Re-export the slides with the timeline for the Google Outage (Ian).
+*   **Action Item:** George Michaelson asked if someone could write a library that allows single packet transactional work reliably across address Mobility.
+
+## Next Steps
+
+*   Continue deployment of QUIC load balancing.
+*   Further explore and refine blackholing mitigation techniques.
+*   Improve testing and tooling for zero-RTT implementations.
+*   Address version ossification to ensure future-proof accessibility.
+```

@@ -1,0 +1,66 @@
+**Session Date/Time:** 23 Mar 2022 09:00
+
+# moq
+
+## Summary
+
+The moq (Media over QUIC) BoF session was held to discuss current challenges in media delivery, particularly for live streaming, and to assess whether there is sufficient interest and a clear problem statement that would benefit from standardization within the IETF, potentially leveraging QUIC. Presentations covered a range of use cases from interactive media and live broadcast chains to user-generated content, highlighting issues with existing ingestion and distribution protocols like RTMP, WebRTC, HLS/DASH, and SRT. A key theme was the potential of QUIC to address head-of-line blocking, improve codec agility, simplify deployment at scale, and enable novel interactive experiences, though discussions also touched on congestion control, latency definitions, and the role of relays. Polls conducted at the end indicated strong consensus among participants that significant unmet use cases exist in both live media distribution and ingest/contribution, and that these two areas should be addressed together.
+
+## Key Discussion Points
+
+*   **BoF Purpose:** To identify common media delivery challenges, assess interest in standardization, determine IETF's role, and find contributors. Potential outcomes included forming a working group, more discussion, or concluding no problem exists.
+*   **Motivation for QUIC:** QUIC offers general-purpose functionality (e.g., multiplexing, reduced head-of-line blocking) that is highly applicable to media delivery, especially given its widespread deployment for HTTP/3.
+*   **Use Cases Overview (James):**
+    *   **Interactive Media:** Cloud gaming, remote desktop (1:1), video conferencing (1:1, M:M).
+    *   **Live Media:** Ingest (camera to broadcast chain, diverse client types), Syndication (fan-out to distribution networks, no further transcoding), Streaming (consumer playback).
+    *   **On-Demand Media:** Briefly mentioned.
+    *   Key requirements highlighted differences in throughput, resiliency, and bi-directionality (e.g., for outside broadcasts).
+    *   Synchronization of multiple media streams (audio, video, multi-language) was identified as an important, cross-cutting concern for the solution space.
+*   **Challenges in Live Media Ingestion (Ying):**
+    *   **Requirements:** High visual quality (4K HDR), codec agility, low/ultra-low latency (<1 second), ease of encoder adoption, ease of large-scale deployment (load balancing, service updates).
+    *   **Current Protocol Issues:**
+        *   **RTMP:** Stagnant, lacks official new codec support, head-of-line blocking over TCP.
+        *   **WebRTC:** Quality degrades quickly for conversational latency, challenging for premium content, complex browser integration.
+        *   **HLS/DASH:** Segment-based, higher latency (even with LL versions), low encoder adoption for ingest, manifest/playlist overhead.
+        *   **SRT:** Good for point-to-point contribution (broadcast), but UDP-based load balancing is complex for large-scale deployment, and congestion control algorithm (live mode) may be problematic at scale.
+    *   Conclusion: No perfect solution exists for high-end, ultra-low latency, large-scale ingestion. QUIC offers potential for deployment and latency benefits.
+*   **Congestion Control and Latency Trade-offs:**
+    *   The challenge of balancing quality and latency in the face of congestion was a recurring theme.
+    *   WebRTC's tendency to reduce quality for conversational latency was discussed, with some arguing it's an implementation/configuration issue rather than a protocol flaw.
+    *   The role of QUIC's BBR congestion control and its suitability for live video (frame-based delivery, application-limited video) was raised, suggesting a need for optimization for media.
+    *   Some participants emphasized that congestion control is critical, while others suggested networks are often elastic enough for ingest, or that application protocols should have more control.
+    *   A need for clear terminology for different latency tiers (e.g., milliseconds vs. seconds) was expressed.
+*   **Media Distribution over QUIC (Warp by Luke):**
+    *   **Differences from Ingest:** Fan-out to many viewers, multiple hops (CDNs), no direct viewer feedback to encoder.
+    *   **Congestion Management:** Relies on ABR (adaptive bitrate) and buffering; frame dropping is an option but less common.
+    *   **Latency & Compatibility:** Viewer preferences dictate latency tolerance. Broad device compatibility (TVs, browsers, phones) is a major constraint.
+    *   **Current Protocol Issues:**
+        *   **HLS:** Head-of-line blocking (segment dependencies), requires large buffers, ABR can be slow.
+        *   **WebRTC (Twitch's attempt):** Lack of quality control, forces real-time, browser integration issues, complexity of RTP over WebRTC data channels.
+    *   **Warp Solution:** Uses WebTransport (QUIC streams per segment), CMAF for HLS fallback, server-side ABR, prioritization scheme.
+    *   **HTTP/3 vs. WebTransport:** Discussion on whether HTTP/3 with priority headers (e.g., HP Extensible Priorities draft) could provide similar benefits to WebTransport for distribution. WebTransport preferred for custom QUIC control and browser support.
+*   **Design Solution Space (Colin):**
+    *   Proposed a "north star" architecture solving difficult use cases (e.g., interactive stadium views, scalable interactive participants in large meetings).
+    *   Emphasized solving problems not easily achievable with existing protocols.
+    *   **Role of Relays/CDNs:** Critically important for both ingress (edge relays for RTT reduction) and distribution (large number of PoPs, 5G edge compute). Relays must be explicitly considered in design.
+    *   **Ingress and Egress:** Ingress and distribution strategies are highly related and should be designed to work together, potentially using the same underlying protocol.
+    *   **QUIC Capabilities:** QUIC can reliably achieve interactive (WebRTC-like) latencies today; further improvements might require changes to QUIC itself.
+    *   **Key Areas for Focus:** Prioritization mechanisms, streams vs. datagrams (for audio), content naming, and the interface between congestion control and media applications.
+*   **General Discussion Themes:**
+    *   Strong consensus that it's time for a new media delivery protocol, with QUIC seen as a key enabler due to its architecture and deployment potential, especially for publication/subscribe models and CDN integration.
+    *   Debate on whether to prioritize ingest or distribution. Many argued both are critical and related. Ingress (e.g., RTMP) was highlighted as a major pain point.
+    *   The "latency vs. quality" trade-off was re-framed by some as "latency vs. resilience," arguing the channel dictates quality, and latency impacts how resilient delivery is.
+    *   A call for side meetings to clearly define and agree upon a list of requirements for a potential working group.
+    *   Concerns about the complexity of WebRTC for large-scale, high-quality media delivery and the effort required to maintain multiple transport stacks.
+
+## Decisions and Action Items
+
+1.  **Poll 1: Unmet Use Cases in Live Media Distribution:** A poll was conducted asking, "Are there use cases in live media distribution not met by today's protocols?" **Result: 55 participants answered "Yes," indicating strong agreement.**
+2.  **Poll 2: Unmet Use Cases in Live Media Ingress (Contribution):** A poll was conducted asking, "Are there use cases in live media ingress (contribution) not met by today's protocols?" **Result: 66 participants answered "Yes," indicating even stronger agreement.**
+3.  **Poll 3: Joint Work for Use Cases:** A poll was conducted asking, "Should work on these two sets of use cases (distribution and ingest/contribution) be done together?" **Result: 50 participants answered "Yes," 8 answered "No" (out of 58 responses), indicating a strong preference for addressing both together.**
+
+## Next Steps
+
+1.  Proponents of the moq BoF will scope the potential work based on the discussion and poll results.
+2.  Further discussion on the proposed scope and potential charter elements will take place on the moq mailing list.
+3.  The goal is to work towards drafting a charter for a potential IETF working group to address media delivery challenges over QUIC.

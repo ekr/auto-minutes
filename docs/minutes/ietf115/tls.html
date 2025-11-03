@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="tls.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-TLS-20221110-0930">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 10 Nov 2022 09:30</p>
+<h1>TLS Working Group Meeting - IETF 115</h1>
+<h2>Summary</h2>
+<p>The TLS working group discussed the progress of several drafts, with a focus on updates to RFC 8446 and 8447, the deprecation of various key exchange methods, a new architectural approach for the well-known ECH config list, and the potential adoption of a draft standardizing the TLS keylog file format. Key decisions were made regarding the direction of 8447bis, the plan for deprecating Finite Field Diffie-Hellman Ephemeral (FFDHE), and the adoption of the TLS keylog file draft.</p>
+<h2>Key Discussion Points</h2>
+<h3>Working Group Status Update</h3>
+<ul>
+<li><strong>Published RFCs:</strong> RFC 9257 (external pre-shared Keys) and RFC 9258 (importing external PSKs for TLS 1.3) were published.</li>
+<li><strong>Delegated Credentials:</strong> Moving forward with Richard Barnes shepherding the draft.</li>
+<li><strong>RFC for TLS 1.3 and 1.2:</strong> Through multiple Working Group Last Calls (WGLC), pending chair write-up and addition of security considerations.</li>
+<li><strong>Compact TLS:</strong> The draft expired, but remains a live item with ongoing PRs.</li>
+<li><strong>Encrypted Client Hello (ECH) and Hybrid KEM in TLS 1.3:</strong> Paused, awaiting implementation experience.</li>
+<li><strong>SNIP:</strong> Expected to move forward around March.</li>
+<li><strong>Expired Drafts:</strong> Batch signatures and semi-static were briefly discussed at the end of the session.</li>
+</ul>
+<h3>RFC 8446bis: TLS Protocol Version 1.3</h3>
+<ul>
+<li><strong>Purpose:</strong> To clarify existing text and fix terminology in RFC 8446.</li>
+<li><strong>Unsolicited Extensions (PR 1275):</strong> Clarification to state that extensions not offered by the peer cannot be sent. Proposed to merge.</li>
+<li><strong>Key Update Limits:</strong> Incorporating limits from DTLS (RFC 9147) into TLS 1.3. Text needs refinement.</li>
+<li><strong>Bogus Tickets:</strong> Proposed to use the existing <code>unknown_psk_identity</code> alert for invalid tickets, closing a redundant PR for a new alert.</li>
+<li><strong>PSKs with Certificates (RFC 8773 updates):</strong> Text clarification needed regarding the use of PSKs with certificates.</li>
+<li><strong>HRR Clarification Issues:</strong> Long-standing issues regarding HelloRetryRequest (HRR) behavior, raised by David Benjamin, remain unresolved. Consensus could not be reached on improving the text. It was proposed to defer these issues, prioritizing completion over substantive changes.</li>
+<li><strong>Future of TLS 1.3:</strong> A long-term plan was proposed to move TLS 1.3 to Internet Standard status within six months, contingent on an interoperability report.</li>
+</ul>
+<h3>RFC 8447bis: IANA Considerations for TLS 1.3</h3>
+<ul>
+<li><strong>Document Type (Obsolete vs. Update):</strong> The current draft obsoletes RFC 8447, making review difficult. It was proposed to change it to an &quot;update&quot; document for clarity and ease of IANA application, which garnered support.</li>
+<li><strong>&quot;D&quot; (Discouraged) Meaning:</strong> The definition of &quot;D&quot; in the recommended column (&quot;discouraged and should not or must not be used&quot;) was discussed. It was suggested to remove the normative &quot;should not or must not&quot; from the registry description itself, instead relying on linked documents for normative guidance.</li>
+<li><strong>Registration Policy for State Transitions:</strong> Clarification was sought regarding ISG approval for all state transitions (Yes/No/Discouraged). It was clarified that ISG approval is needed for all transitions, and &quot;Standards Action&quot; is specifically for moving to a &quot;Y&quot; (Recommended) state.</li>
+<li><strong>Explorer Labels Registry Policy:</strong> The policy is currently &quot;specification required&quot;. David Schenazi proposed changing it to &quot;expert review&quot; to accommodate internal uses without requiring a full public specification. Discussion ensued on whether an Internet Draft (even if never published as an RFC) qualifies as a &quot;specification&quot; and the balance between encouraging documentation and allowing flexible code point allocation. The AD noted they would consult the IESG on this.</li>
+</ul>
+<h3>Deprecating Select Key Exchange Methods</h3>
+<ul>
+<li><strong>Draft Goals:</strong> Deprecate RSA key exchange, static Finite Field Diffie-Hellman (FFDHE), and static Elliptic Curve Diffie-Hellman (ECDH), and limit FFDHE to sufficiently large groups.</li>
+<li><strong>FFDHE Group Structure:</strong> The primary open issue is the requirement around FFDHE group structure. The authors proposed imposing no requirement, arguing web clients have already disabled it and email clients using opportunistic TLS would likely ignore strict deprecation rather than fall back to cleartext.</li>
+<li><strong>Opportunistic TLS Carve-out:</strong> A significant discussion revolved around whether to include a carve-out for opportunistic TLS clients (e.g., SMTP) who might fall back to cleartext if FFDHE is fully deprecated. Concerns were raised about setting a precedent for such carve-outs and the potential for slowing ecosystem evolution. Referencing RFC 7435, which allows more liberal settings for opportunistic protocols, it was suggested that such clients could simply ignore the new RFC without an explicit carve-out.</li>
+<li><strong>Poll on Full Deprecation:</strong> A poll was conducted on supporting the full deprecation of FFDHE. Out of 39 participants, 34 supported deprecation, and 5 did not.</li>
+</ul>
+<h3>Well-known ECH Config List</h3>
+<ul>
+<li><strong>New Approach (draft-ietf-tls-wkechcl-01):</strong> This version, co-authored by Ben Schwartz and Rich Sauls, proposes a new architecture. Instead of an authoritative DNS zone talking to an ECH frontend, a &quot;Zone Factory&quot; (component of an authoritative DNS server) directly queries the origin server for ECH keys and configuration via a <code>/.well-known/tls-ech-config</code> JSON blob.</li>
+<li><strong>Motivation:</strong> This change aims to support a broader range of deployments, especially those using CNAMEs and multi-CDNs, and make it easier to adopt good practices.</li>
+<li><strong>HTTP Freshness:</strong> The draft proposes using HTTP freshness headers (ETags, Last-Modified) for caching key rotation, rather than explicit TTLs in the JSON.</li>
+<li><strong>Client Behavior:</strong> It was re-emphasized that this mechanism is <em>not</em> for browsers or TLS clients to directly query, but for the Zone Factory populating DNS records.</li>
+<li><strong>Feedback:</strong> The new direction was generally well-received as a more generic and sensible approach for broader deployments.</li>
+</ul>
+<h3>TLS Keylog File</h3>
+<ul>
+<li><strong>Purpose:</strong> To standardize the format of the <code>SSLKEYLOGFILE</code> environment variable, widely used for debugging TLS implementations (e.g., with Wireshark).</li>
+<li><strong>Current Documentation:</strong> The current authoritative documentation resides in the NSS source tree, lacking a stable home.</li>
+<li><strong>Proposal:</strong> Document the format in an IETF RFC to provide a stable, standard reference with IETF change control.</li>
+<li><strong>Security and Privacy:</strong> The draft includes substantial warnings and guardrails regarding the significant security and privacy risks associated with enabling and using the keylog file. It was noted that this is not a protected format like PKCS#8.</li>
+<li><strong>Poll on Adoption:</strong> A poll was conducted on interest in adopting <code>draft-thompson-tls-keylog-file</code> in the TLS working group. Out of 33 participants, 28 supported adoption, and 5 did not. No objections were voiced at the microphone.</li>
+</ul>
+<h3>Expired Drafts</h3>
+<ul>
+<li><strong>Batch Signatures:</strong> David Benjamin indicated he no longer has time to drive this and no one else has stepped up. The working group will let it expire and potentially mark it as abandoned.</li>
+<li><strong>Semi-static:</strong> Ecker indicated he still cares about this draft but is currently focused on 8446bis, requesting it be revisited later.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>RFC 8446bis:</strong> Ecker to finalize the outstanding points, produce a new draft, and initiate a Working Group Last Call.</li>
+<li><strong>RFC 8447bis:</strong>
+<ul>
+<li>The chair will revise the draft to change its relationship from &quot;obsolete&quot; to &quot;update&quot; RFC 8447.</li>
+<li>The chair and Ecker will revise the definition of &quot;D&quot; (Discouraged) to remove normative &quot;should not or must not&quot; language, relying instead on linked documents for such guidance.</li>
+<li>David Schenazi will submit a PR to change the &quot;Explorer Labels Registry&quot; policy from &quot;specification required&quot; to &quot;expert review,&quot; with possible instructions for experts.</li>
+</ul>
+</li>
+<li><strong>Deprecating Key Exchange Methods:</strong> The chairs will formulate a phrasing for a mailing list consensus call on fully deprecating FFDHE. Nimrod to assist with phraseology.</li>
+<li><strong>Well-known ECH Config List:</strong> Ben Schwartz and Stephen Farrell will continue refining <code>draft-ietf-tls-wkechcl-01</code> in its new architectural direction.</li>
+<li><strong>TLS Keylog File:</strong> The TLS working group will adopt <code>draft-thompson-tls-keylog-file</code>.</li>
+<li><strong>Batch Signatures Draft:</strong> The draft will be allowed to expire and be marked as abandoned by the chairs.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Ecker to complete 8446bis work and initiate WGLC.</li>
+<li>Chair to revise 8447bis and consult IESG on &quot;draft as specification&quot; policy.</li>
+<li>David Schenazi to submit PR for Explorer Labels registry.</li>
+<li>Chairs to launch a mailing list discussion for consensus on FFDHE deprecation.</li>
+<li>Ben Schwartz and Stephen Farrell to continue work on the ECH config list draft.</li>
+<li>The TLS working group to formally adopt and begin work on <code>draft-thompson-tls-keylog-file</code>.</li>
+<li>Ecker to revisit the semi-static draft after 8446bis is complete.</li>
+<li>Progress on moving TLS 1.3 to Internet Standard will be pursued in the coming months.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

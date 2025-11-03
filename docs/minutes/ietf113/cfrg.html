@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="cfrg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-CFRG-20220324-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 24 Mar 2022 13:30</p>
+<h1>cfrg</h1>
+<h2>Summary</h2>
+<p>The cfrg session covered a range of cryptographic topics, including updates on existing drafts, a new proposal for key blinding in signature schemes, a discussion on signature algorithm robustness against fault injection attacks, an overview of verifiable distributed aggregation functions (VDAF), an exploration of an AES-GCM exploit for hidden communications, a proposal for a dual PRF construction, and an introduction to the AEGIS family of authenticated encryption algorithms. The session concluded with a discussion on proposed additions to HPKE (RFC 9180) to address serialization and lossy network issues. Key themes included the need for robust cryptographic constructions, efficient implementations, and considerations for constrained environments and security implications.</p>
+<h2>Key Discussion Points</h2>
+<h3>1. Document Status Update</h3>
+<ul>
+<li><strong>RFC 9180 (HPKE)</strong>: Published.</li>
+<li><strong>Misraff Depend (Aspect 2)</strong>: In RFC queue, depends on Hash-to-Curve (in IESG review).</li>
+<li><strong>Dragonfly VRF</strong>: Waiting for document shepherd.</li>
+<li><strong>KangarooTwelve</strong>: Waiting for chairs' review after second research group last call.</li>
+<li><strong>CFRG Pairing-Friendly Curves</strong>: Expired but being refreshed by a new co-editor.</li>
+<li><strong>Ristretto Draft</strong>: Updated based on Crypto Review Panel feedback. Suggestion to move to Research Group Last Call soon.</li>
+<li><strong>Crypto Review Panel</strong>: New membership announced. Concerns were raised about long review times (e.g., 4 months for a document that was promised in one month). Panel is not a substitute for regular CFRG operations.</li>
+</ul>
+<h3>2. Key Blinding for Signature Schemes (Chris Wood)</h3>
+<ul>
+<li><strong>Problem</strong>: Digital signature schemes inherently link a signature to a long-term public key, which can leak information about the prover. This is undesirable for unlinkability in scenarios like Tor hidden services, private airdrops, and rate-limiting protocols.</li>
+<li><strong>Goal</strong>: An unforgeable signature scheme where per-message public keys are independently distributed from long-term prover keys, and signatures leak no information about long-term signing keys.</li>
+<li><strong>Proposed Solution</strong>: Extend existing digital signature schemes with two functions:
+<ul>
+<li><code>Blinding/Unblinding</code>: Takes a public key and a blinding key (another private key) to produce a blinded public key.</li>
+<li><code>BlindKeySign</code>: Produces a signature valid under the correspondingly blinded public key.</li>
+</ul>
+</li>
+<li><strong>EdDSA Variant</strong>: Straightforward, based on RFC 8032.</li>
+<li><strong>ECDSA Variant</strong>: More complex; instead of algebraic multiplication, it hashes the input blinding key to a scalar to break algebraic relationships and prevent related-key attacks, relying on the random oracle model.</li>
+<li><strong>Current Status</strong>: Implementations available, test vectors provided. Security analysis is underway.</li>
+</ul>
+<h3>3. Signature Algorithms for ADHOC (Steven Farrell)</h3>
+<ul>
+<li><strong>Context</strong>: LAKE working group defining ADHOC (authentication key establishment for small devices). Needs mandatory-to-implement (MTI) signature algorithms for authentication.</li>
+<li><strong>Specific Concern</strong>: Adversary control over provisioned devices, enabling fault injection attacks to extract signing keys in relatively inexpensive, less protected commercial devices.</li>
+<li><strong>Question to CFRG</strong>: Is there a significant difference in vulnerability between EdDSA, ECDSA, and RSA in this fault injection context? Can CFRG recommend anything better?</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li>EdDSA's determinism vs. ECDSA's randomness. A &quot;bad random number generator&quot; in ECDSA can negate its advantage.</li>
+<li>Suggestions for adding noise/randomness to EdDSA (Mattson's draft).</li>
+<li>Fault injection attacks are broad, not limited to crypto, and affect all schemes at some level.</li>
+<li>The problem extends to how implementations are structured (e.g., skipping verify calls).</li>
+<li>There was an IPR concern regarding Mattson's draft.</li>
+</ul>
+</li>
+</ul>
+<h3>4. Verifiable Distributed Aggregation Functions (VDAF) (Chris Patton)</h3>
+<ul>
+<li><strong>Context</strong>: New IETF PPM (Privacy Preserving Measurement) working group. Goal to standardize cryptographic techniques for aggregate statistics without revealing individual measurements (multi-party computation).</li>
+<li><strong>Role of VDAF</strong>: Core cryptographic component of the PPM protocol.</li>
+<li><strong>Architecture</strong>: Clients secret-share measurements to two or more Aggregators. Aggregators perform verification and preparation, then combine output shares. A Collector un-shares the final aggregate result.</li>
+<li><strong>Instantiations</strong>:
+<ul>
+<li><strong>Prio</strong>: Clients encode measurements as vectors, secret-share them. Aggregators verify shares sum to a valid input, then sum vectors. Collector sums aggregate shares.</li>
+<li><strong>Poplar</strong>: Addresses &quot;heavy hitters&quot; problem (which N-bit strings occur at least T times). Uses Incremental Distributed Point Functions (IDPF) shares. Aggregators evaluate IDPF shares on candidate prefixes, verify well-formedness, then sum output shares into hit counts.</li>
+</ul>
+</li>
+<li><strong>Progress</strong>: Prio specification complete with reference implementation and test vectors. Poplar specification in progress. Security analysis underway.</li>
+</ul>
+<h3>5. AES-GCM Exploit for Hidden Communications (Marc Stöttinger)</h3>
+<ul>
+<li><strong>Context</strong>: Malware in critical infrastructure might hide communication within legitimate traffic, especially with crypto key management devices (CKMDs) protecting key material.</li>
+<li><strong>Exploit</strong>: AES-GCM can be exploited if sender and receiver security proxies are compromised (but not the CKMDs themselves).</li>
+<li><strong>Mechanism</strong>: The compromised sender replaces or XORs a subliminal message into the authentication tag of an AES-GCM encrypted message. The compromised receiver, using AES-GCM's stream cipher properties and knowledge of the IV, can recover the original plaintext and extract the subliminal message by re-encrypting/decrypting operations.</li>
+<li><strong>Properties</strong>: Bidirectional, protocol-agnostic, hard to detect without access to the secret key, high capacity due to frequent MAC transmission.</li>
+<li><strong>Mitigations</strong>: GCM-SIV (Synthetic Initialization Vector) which prevents nonce reuse. Generating IVs on CKMDs (though this could create CKMD-originated subliminal channels). Using distinct keys or segmented IVs per direction.</li>
+</ul>
+<h3>6. Dual PRF Construction (Nimrod Aviram)</h3>
+<ul>
+<li><strong>Context</strong>: Many modern protocols (TLS 1.3, Signal, hybrid key exchange) combine multiple keys into a single session secret using a Key Derivation Function (KDF). HMAC is often used for this.</li>
+<li><strong>Problem</strong>: HMAC, while a PRF, is generally not a &quot;dual PRF&quot; (meaning its output is indistinguishable from random even if an attacker controls one input key while the other is uniform). Existing proofs for TLS 1.3 often implicitly assume HMAC acts as a dual PRF.</li>
+<li><strong>Proposed Construction</strong>: A new dual PRF using an underlying hash function (e.g., SHA-256) and an &quot;expanding injective one-way function&quot; (F).
+<ul>
+<li>It involves two HMAC computations with swapped key/data roles, XORing their outputs, and a final hash.</li>
+<li>The F function expands input using multiple hash computations with block-specific prefixes to ensure injectivity and robustness against hash function breaks (e.g., MD5-level breaks).</li>
+</ul>
+</li>
+<li><strong>Properties</strong>: Fully practical, uses only symmetric cryptography, cheap to compute (e.g., ~6 microseconds overhead compared to HKDF), and has a security proof.</li>
+<li><strong>Comparison</strong>: Much cheaper than asymmetric crypto. Slower than HKDF but negligible overhead in typical protocol key schedules.</li>
+<li><strong>Goal</strong>: Standardize a robust dual PRF to improve protocol security.</li>
+</ul>
+<h3>7. AEGIS Family of Authenticated Encryption Algorithms (Bart Preneel)</h3>
+<ul>
+<li><strong>Introduction</strong>: Fast, nonce-based AEAD family (e.g., AEGIS-128L, AEGIS-256). Claims to be twice as fast as AES-GCM (0.287 cycles per byte).</li>
+<li><strong>Design</strong>: Inspired by Pelican-MAC, uses AES rounds, 128-bit key/IV, large internal state (1024 bits in AEGIS-128L). Stream cipher with built-in MAC generation.</li>
+<li><strong>Security Properties</strong>:
+<ul>
+<li>AEGIS-128L: 128-bit security for confidentiality/authentication.</li>
+<li>AEGIS-256: 268-bit security against key search.</li>
+<li>Key-committing (unlike GCM), resistant to key partitioning attacks.</li>
+<li>Does <em>not</em> achieve resistance to nonce reuse (by design for performance reasons, consequences less severe than GCM).</li>
+<li>Not designed to be compactly committing (for franking).</li>
+</ul>
+</li>
+<li><strong>Security Evaluation</strong>: Selected in OpenCesar competition. Independent analysis available. Recent FSE attacks (on non-draft versions with fewer rounds) are not considered a concern, similar to reduced-round AES attacks.</li>
+<li><strong>Performance</strong>: Highly parallelizable, uses AES instructions efficiently. Benchmarks show significant speedup over AES-GCM.</li>
+</ul>
+<h3>8. HPKE Additions (Dan Harkins)</h3>
+<ul>
+<li><strong>Context</strong>: HPKE (RFC 9180) is published, but needs extensions for certain use cases.</li>
+<li><strong>Problem 1: NIST Key Serialization</strong>: The current serialization for NIST curves is over twice as long as necessary, impacting constrained devices.
+<ul>
+<li><strong>Proposed Solution</strong>: New KEMs for NIST curves that use RFC 6090 compact output serialization.</li>
+</ul>
+</li>
+<li><strong>Problem 2: Lossy Networks</strong>: HPKE assumes guaranteed in-order delivery due to internal sequence counters for AEAD. Packet loss or reordering causes sender/receiver desynchronization.
+<ul>
+<li><strong>Proposed Solution A</strong>: Use a deterministic AEAD like AES-SIV if plaintext provides sufficient probabilism to guarantee semantic security.</li>
+<li><strong>Proposed Solution B</strong>: Implement a rolling replay window (analogous to IPsec RFC 2401) to handle out-of-order and dropped packets. This requires exporting the 4-octet sequence number into the ciphertext.</li>
+</ul>
+</li>
+<li><strong>Current Status</strong>: Draft (01 version) and running code (hpke-wrap) available, including test vectors for compact representation and SIV.</li>
+<li><strong>Discussion</strong>: Existing HPKE has many algorithm combinations already. Some debate on whether these are &quot;engineering&quot; changes suitable for IETF vs. CFRG. Concerns about implications of deterministic AEAD. IANA registry policy (&quot;specification required&quot;) allows additions without full RFC, but expert review process needs to be established/clarified.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Ristretto Draft</strong>: Chairs to review and consider moving to Research Group Last Call soon based on community interest.</li>
+<li><strong>Key Blinding Draft</strong>: Discussion for adoption will continue on the mailing list; chairs will discuss adoption.</li>
+<li><strong>Signature Algorithms for ADHOC (Mattson's Draft)</strong>: The adoption call for Mattson's draft (regarding adding noise/randomness to EdDSA) needs to be rerun with IPR disclosure.</li>
+<li><strong>Signature Algorithms for ADHOC</strong>: Interested parties are encouraged to continue the discussion on the cfrg mailing list. Steven Farrell will start a new thread.</li>
+<li><strong>Verifiable Distributed Aggregation Functions (VDAF)</strong>: Chairs tentatively agree to an adoption call for the VDAF draft.</li>
+<li><strong>Dual PRF Construction</strong>: Discussion will continue on the mailing list; chairs will consider whether to take on a draft.</li>
+<li><strong>AEGIS Family</strong>: Discussion for adoption will continue on the mailing list; chairs will consider adoption.</li>
+<li><strong>HPKE Additions</strong>: Chairs will investigate and clarify the IANA registry expert review process for HPKE algorithm additions. Chris Wood will send an email reminder to the chairs.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Chairs to follow up on the Ristretto draft's progression.</li>
+<li>Chairs to organize a rerun of the adoption call for Mattson's draft with IPR disclosure.</li>
+<li>Chairs to initiate an adoption call for the VDAF draft.</li>
+<li>Chairs to consider an adoption call for the AEGIS family draft.</li>
+<li>Chairs to discuss and investigate the IANA registry expert process for HPKE extensions and consider an adoption call for the HPKE additions draft, focusing first on compact serialization and the replay window.</li>
+<li>Continued technical discussion on the cfrg mailing list for Key Blinding, Signature Algorithms for ADHOC, Dual PRF construction, and AEGIS family.</li>
+<li>Volunteers are sought to brainstorm ways to improve the clarity, consistency, and correctness of cfrg documents, including pseudo-code and terminology.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

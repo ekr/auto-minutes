@@ -1,0 +1,99 @@
+**Session Date/Time:** 10 Nov 2022 13:00
+
+# dtn
+
+## Summary
+
+The dtn working group meeting covered updates on the IPN Naming Scheme, administrative records for BPV7, COSE BPSEC security contexts, the DTN Management Architecture, and a demonstration of IPv6 support for DTN. Key discussions revolved around clarifying IPN URI semantics, the need for PKI in BPSEC, defining a common CLA service model, and an architectural framework for DTN management in challenged networks. Several points from the IPN update were deemed contentious and deferred to the mailing list for further discussion.
+
+## Key Discussion Points
+
+### IPN Naming Scheme Update
+- **Background**: The `ipn:node.service` URI scheme is used for bundle sources and destinations, requiring uniqueness for interoperability. Existing RFCs (6260, 7116, 9171) define it, but there are perceived problems and inconsistencies.
+- **Perceived Problems**:
+    -   Misleading name of the single IANA "cbhe" registry for node numbers, which predates BPV7.
+    -   Inconsistencies across RFCs regarding IPN definition, particularly node number uniqueness.
+    -   Single flat numbering space for node numbers leads to inefficient encoding (Cbor) for late allocations and lacks reserved low numbers for private/experimental use.
+- **Proposed Solutions in Draft**:
+    -   **Clarify IPN usage for BPV7**: Consolidate rules from existing RFCs. Proposed rules:
+        -   Node number `0` is reserved for `ipn:0.0` (null endpoint).
+        -   Node numbers `>= 2^64` must not be used (Cbor encoding limit).
+        -   **Contentious**: All IPN URIs co-located on a single bundle processing node *must* share the same node number. This was heavily debated, with arguments for allowing multiple node numbers per node for flexibility (e.g., multi-homing) and for maintaining a strict one-to-one relationship for routing simplicity.
+        -   Service number `0` for administrative endpoint should be `MUST` (was `MAY` in BPV7).
+    -   **Rename and Clone IANA Registries**:
+        -   Rename `cbhe` registries to `bpv6 node numbers` and `bpv6 URI service numbers`.
+        -   Create new `bpv7` registries, copying policies but making low numbers private use.
+        -   Discussion: Some questioned the need for two separate registries for the same URI scheme, despite protocol differences.
+    -   **Reserve Low Numbers for Private Use**: Allows efficient encoding for lab/experimental setups without IANA registration. Discussion on the trade-off of using precious low numbers for private use versus production.
+    -   **Introduce New Numbering Authority Prefixes**: A hierarchical numbering scheme allowing organizations to manage sub-allocations efficiently, reducing IANA contention and enabling global uniqueness with flexible encoding. These components are optional.
+- **Uniqueness Discussion**: The enforcement of uniqueness was clarified to be through RFC specification and testing, not external policing. The definition of a "node" itself was raised as a potential area for further clarity.
+
+### BPV7 Administrative Records
+- The document has been recently adopted by the working group.
+- No substantial feedback or comments received yet, other than an editorial change clarifying IANA registration policy.
+- This document is a dependency for work in the ACME working group and the Security Area.
+
+### COSE BPSEC Security Context Records
+- **Problem**: Current BPV7 default security contexts use symmetric keys, limiting use cases. PKI security is needed for larger, internet-facing DTN networks and aligns with modern internet best practices.
+- **Proposal**: Use COSE (CBOR Object Signing and Encryption) algorithms within BPSEC.
+- **Goals**: Avoid altering existing BPSEC structures or PKI infrastructure, reuse COSE tools/protocols, and leverage future COSE developments (e.g., compressed certificates, post-quantum crypto).
+- **Mechanism**: COSE acts as a container; the draft proposes a minimum interoperability profile focusing on PKI algorithms (elliptic curve, RSA) usable with existing X.509 PKI and certificate profiles (RFC 9174).
+- **Discussion**:
+    -   Relationship with ACME document for node ID validation: This document focuses on *using* certificates for end-to-end BPSEC, while ACME addresses *issuance* and *validation* of certificates for DTN node IDs. Concerns were raised about the robustness of ACME's current experimental method for node ID validation.
+    -   Leveraging existing PKI: Suggestion to look at established large-scale PKI frameworks like ICAO's international PKI to avoid re-invention.
+
+### DTN Management Architecture (DTNMA)
+- **Rename**: Formerly Asynchronous Management Architecture (AMA), now DTN Management Architecture (DTNMA) to better reflect its focus on DTN.
+- **Core Problem**: Managing DTN devices in challenged (asynchronous, disruptive, delayed) and constrained (compact encodings needed) networks.
+- **Three Main Components**: Support for asynchronous behavior, an autonomy engine for self-management, and compact encodings.
+- **Distinction from Existing Work**: SNMP, Netconf, Restconf, and Corecomp don't fully address the intersection of autonomy, asynchronous behavior, and efficient encodings simultaneously.
+- **Updated Reference Model**: Introduces an "autonomy engine" configured via "policy". Key enablers for self-management:
+    1.  **Pre-shared definitions**: Standardized Application Data Models (ADMs) and autonomy models agreed upon during brief connectivity.
+    2.  **DTNMA Agent Self-Management**: The managed device's autonomy engine acts on local policy during disconnection.
+    3.  **Command-Based Management**: A command-and-control interface for policy transfer, avoiding bulk data updates.
+- **Autonomy Model**: Policy expressions (rules: if stimulus then action) are sent by the manager to populate a local rule database on the agent. Agent reactions can include impacting its local rule database, issuing application controls, generating reports, or updating a runtime data store.
+- **Discussion**:
+    -   Clarification that "applications and services" on the managing device are distinct from those on the managed device.
+    -   Transport reliability: The architecture separates the reference model from specific protocol specifications. Reliability (e.g., custody transfer bundles) would be implemented at the protocol layer, or acknowledgements handled through subsequent device behavior/reporting.
+    -   Coexistence with non-challenged networks: The architecture is intended to be robust enough for DTN challenges but also leverage strengths of underlying network segments, possibly via interoperable bridges.
+    -   Reference to BPV7: While the abstract mentions BPV7, the model is intended to be applicable beyond just BPV7, including other bundle protocols or non-BP scenarios.
+
+### IPv6 Support for DTN Demonstration
+- **Motivation**: IPv4 address scarcity and NAT hinder end-to-end connectivity. IPv6 offers abundant addresses, restoring end-to-end reachability, especially for mobile and fixed access networks.
+- **Opportunity**: IPv6 enables BP-based applications to reach the terrestrial network edge, facilitating scalable protocol testing and new application development.
+- **Implementation**: IPv6 support added to JPL's ION implementation (open source branch) for UDPCL, LTP over UDP, and TCPCL. Tested on LAN and public networks.
+- **Live Demo**: Scott Johnson successfully demonstrated `bping` across IPv6-enabled CLAs (UDP, LTP over UDP, TCP) between California and Florida, and locally.
+- **Question to WG**: Which other IP-based CLAs should receive IPv6 functionality next?
+- **Discussion**: Consensus that all IP-based CLAs should support both IPv4 and IPv6. Also, reiteration that CLAs are not limited to IP, with non-IP examples (e.g., UART for Laura radios) being actively developed.
+
+## Decisions and Action Items
+
+### Decisions
+- Brian Sipos's slides for CLA service definition can be presented if time permits within his existing slots.
+- Mark Blanche's draft on service registry/application framework can be discussed during Open Mic if time permits.
+- The `bpv7 administrative records` draft has been adopted as a working group document.
+
+### Action Items
+- **Rick Taylor**: Drive mailing list discussion on contentious points from the IPN Naming Scheme Update, including:
+    -   Single vs. multiple IANA registries for IPN.
+    -   Clarity and definitions of private use vs. experimental ranges.
+    -   Strictness of the one-to-one relationship between a node and its node number(s).
+    -   Limiting the size of numbering authority and assigned node numbers.
+- **Alberto**: Post to the mailing list specific arguments regarding allowing multiple node numbers per node for the IPN scheme.
+- **Brian Sipos**: Post to the mailing list about IPv6 and interface distinctions in the context of IPN addressing.
+- **Working Group Members**:
+    -   Review the `bpv7 administrative records` draft and provide comments to the mailing list within the next few months.
+    -   Review the `Cosi BPSEC security context records` draft and provide feedback, including whether it should be adopted as a working group document.
+    -   Join the mailing list discussion on the `CLA Service Definition` draft.
+    -   Review the `DTN Management Architecture` document and provide comments to the mailing list.
+- **Brian Sipos**: Start a mailing list thread to solicit comments on the `CLA Service Definition` draft.
+- **Scott Johnson**: Consider porting other IP-based CLAs to IPv6 in the ION implementation.
+- **All Presenters**: Post additional questions and requests for review to the mailing list for their respective documents.
+
+## Next Steps
+
+- Continue detailed discussions on the contentious points of the IPN Naming Scheme Update via the mailing list.
+- Progress review and adoption discussions for the `Cosi BPSEC security context records` and `CLA Service Definition` drafts.
+- Encourage comprehensive review and feedback for the `DTN Management Architecture` document.
+- Further development and porting of IP-based CLAs to IPv6.
+- Potential interim working group meeting if there is sufficient interest and need for further focused discussion.

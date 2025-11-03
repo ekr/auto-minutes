@@ -1,0 +1,104 @@
+**Session Date/Time:** 25 Mar 2022 09:00
+
+# avtcore
+
+## Summary
+
+The avtcore session covered several document updates and liaison discussions. Key topics included resolving encryption structure ambiguities in Cryptex, clarifying references for the Skip media subtypes, and updating the multiplexing document `RFC 7983bis` for Quick. A significant discussion revolved around the W3C Web Transport liaison on congestion control, with the working group agreeing to provide guidance leveraging past `rmcat` work. New work proposals included an `SDP for RTP over Quick` draft and a "Game Moves over Quick" payload format, with the latter seeing rough consensus for a call for adoption.
+
+## Key Discussion Points
+
+*   **Administrative**
+    *   **Note Well**: Standard IETF policies on IPR, recording, and code of conduct were reiterated.
+    *   **IPR Declarations**: No objections were raised regarding IPR declarations for the BBC payload format.
+    *   **Agenda Bash**: Colin Jennings proposed a brief discussion on "short tags" at the end of the session if time allowed.
+
+*   **Document Status**
+    *   `AV1/VP9`: Still held in MISREF due to an indirect reference on frame marking.
+    *   `Cryptex` (draft-ietf-avtcore-rtp-rtcp-sdes-crypt-06):
+        *   Currently in IETF last call.
+        *   Richard Barnes identified ambiguity in the document's definition of encryption, specifically "punctured encryption" (not encrypting the extension header).
+        *   The discussion focused on two main options: 1) an AEAD-style approach synthesizing contiguous authenticated data and plaintext (preferred), or 2) a stream cipher + HMAC approach.
+        *   The working group confirmed the intent was always the AEAD-like approach, considering memcopy overhead for `CSRC`s as minimal. This resolution is seen as an editorial improvement.
+    *   `BBC Payload Format`: An email was sent to the list regarding IPR declarations on March 8th; no objections were received in the meeting.
+
+*   **Liaison Statements**
+    *   `MPEG Green Metadata`: Stefan indicated an update might be needed to the IETF liaison tracker.
+    *   `W3C Web Transport API Feedback Request`:
+        *   W3C requested guidance on congestion control and measurements for their Web Transport API, having found issues with existing congestion control mechanisms (e.g., BBRv1 probe RTT interfering with video ingestion) in various use cases (e.g., video ingestion, interactive).
+        *   They asked if selectable congestion control is advisable and what measurements could be offered.
+        *   Moe N. referenced the `rmcat` working group's past efforts, suggesting AVTCORE is unlikely to achieve a new consensus on media congestion control. He recommended iterating on existing controls like `BBRv2` and `GCC` and providing application feedback.
+        *   Colin J. (co-chair of `rmcat`) agreed, mentioning `RFC 8888` on congestion control feedback as a relevant resource and the `IRTF Congestion Control Research Group` for algorithm advice.
+        *   Jonathan L. emphasized the need for an API to signal information up and down the stack, highlighting current practical implementations using media over `TCP` despite its limitations for real-time.
+        *   Suas S. suggested a joint request across multiple WGs to the Quick working group, but it was noted Quick has stated they don't handle congestion control, pointing instead to congestion control groups.
+        *   The discussion converged on pointing to existing `rmcat` work and iterating on current algorithms, with a reminder that Quick doesn't define congestion control itself.
+
+*   `Skip` (draft-ietf-avtcore-rtp-rtcp-skip-02): RTP Payload Format for SKIP
+    *   This RFC aims to provide information on `audio/skip` and `video/skip` media subtypes to commercial network administrators, who are often unaware of SKIP.
+    *   Changes from previous versions include updating section 4.1 regarding legacy text, clarifying not to re-packetize SKIP (as it's real-time and encrypted), and stipulating marker bit usage.
+    *   Normative references to SKIP standards (14.2 and 10) have been moved to the informational section, as the specifications are generally not publicly available, though they are available upon request.
+    *   Ted Hardy noted that he was unable to obtain the documents previously, suggesting the last call should explicitly state their unavailability.
+    *   Richard Barnes raised a concern about IANA registrations listing published specifications if they are not publicly available, leading to confirmation that an informational reference is sufficient.
+    *   Mike Fowler and Dan K. confirmed that the encryption is at the application layer (payload), not the RTP layer, and that video use cases could include H.264 within the secure channel, with negotiation occurring internally. The network sees it as encrypted traffic.
+    *   Colin J. reiterated that the group's role is payload type registration; the content of the "black box" is not within the scope of review.
+
+*   `RFC 7983bis` (draft-ietf-avtcore-rfc7983bis-02): RTP Multiplexing over a Single Port
+    *   This updates `RFC 7983` by documenting Quick multiplexing for `SRTP`, `SRTCP`, `STUN`, `TURN`, `DTLS`, `CRTP`, and `Quick`.
+    *   Version 02 clarifies multiplexing scenarios: 1) Quick for data exchange while retaining RTP/RTCP for media, and 2) RTP over Quick (less stringent requirements).
+    *   All normative references are now published RFCs.
+    *   Magnus suggested considering `Quickv2` and its "greasing" mechanisms, which intentionally alter bit patterns for version negotiation and compatibility testing. `Quickv2` aims for backward compatibility with `v1` but may change demultiplexing assumptions.
+    *   Lucas P. provided a link to a draft on Quick bit greasing.
+
+*   `SDP for RTP over Quick` (draft-dawkins-avtcore-rtp-over-quic-sdp):
+    *   Spencer Dawkins is tracking issues related to RTP over Quick and media over Quick on a new GitHub repository.
+    *   Key open questions: double encryption, distinguishing between mappings on streams/datagrams, Quick connection management in path failure.
+    *   A significant point of discussion was whether to use `SAVPF` (Secure Audio/Video Profile with Feedback) as a hint for middleboxes or simply `AVP` (Audio/Video Profile) and rely on explicit signaling, given Quick's inherent encryption.
+    *   Colin J. questioned the fundamental sense of running full RTP over Quick, suggesting a "different protocol that reuses payload formats."
+    *   Bernhard C. noted that practical commercial applications are using something close to RTP over Quick for frames (e.g., `web codecs`).
+    *   Magnus W. discussed double encryption's limited use cases (e.g., EKT, throwaway encryption).
+    *   Jonathan L. suggested that AVTCORE's expertise is in transport, not defining object state, implying the "codec" part might be better defined elsewhere. Stefan W. suggested an "RTP light" document for Quick.
+    *   Moe N. highlighted that implementation-wise, using `SRTP` libraries might be easier than unbinding them. James P. suggested decoupling RTP payload formats from RTP itself.
+
+*   **Game Moves over Quick** (draft-jennings-avtcore-game-moves-rtp-payload):
+    *   Colin Jennings presented a proposal for an RTP payload format for game moves and game state data, driven by requirements for low latency, large scale, and synchronization with A/V (e.g., Webex Hologram, metaverse applications).
+    *   The proposed solution uses a schema-based, binary-encoded, extensible format (e.g., for hand joint angles, object locations/velocities).
+    *   Stefan W. questioned if this is a "codec" (like haptics in MPEG) and if AVTCORE is the right venue.
+    *   Suas S. argued for RTP due to its inherent time synchronization with audio/video streams.
+    *   Sergio argued for data channels, citing browser API exposure issues, but Colin noted that large distribution systems often gateway from WebRTC to classic RTP.
+    *   Jonathan L. expressed concern about AVTCORE's expertise in defining object states/game moves vs. transport, preferring a codec/payload format split. Moe N. hoped for a "simple" data type that doesn't require a full SDO.
+    *   Bernhard C. supported AVTCORE as a venue, noting the interest from people building such systems who are looking for RTP/WebRTC solutions.
+    *   Stefan W. cautioned against "quick and dirty" projects in the IETF, stressing the need for clear focus.
+    *   Colin J. reiterated that AVTCORE has defined payload formats for specialized content (e.g., MIDI, text for hearing impaired) by bringing in domain experts. The work is low-risk architecturally.
+    *   Rough consensus emerged that this work is within AVTCORE's scope, given its expertise in RTP payload formats and the need for synchronization.
+
+*   **Short Tags**: Colin Jennings briefly mentioned a desire to discuss short tags further, possibly via an interim call or on the mailing list.
+
+## Decisions and Action Items
+
+*   **Cryptex**: The pull request from Richard Barnes and Sergio Garcia regarding the AEAD-like encryption structure (synthesizing contiguous authenticated data/plaintext) is to be merged.
+*   **W3C Web Transport Liaison**:
+    *   Moe N. and Colin J. volunteered to draft a response to the W3C Web Transport working group, referencing `rmcat` work and `RFC 8888`, and advising on iterating on existing congestion control algorithms like `BBRv2` and `GCC`.
+    *   The response should also clarify that the Quick working group does not handle congestion control.
+*   **Skip**:
+    *   The document will proceed to Working Group Last Call (WGLC).
+    *   The chairs (Jonathan L. and Bernhard C.) will determine the shepherd for the document.
+    *   The WGLC announcement should note that the normative references to external SKIP documents are available *upon request*, and a procedure for successful requests will be investigated.
+*   **RFC 7983bis**:
+    *   The document needs a new revision (`-03`) to:
+        *   Take into account `Quickv2` and its "greasing" mechanisms.
+        *   Add a normative reference to the "Quick bit grease" draft (if it exists or is stable enough) and advise against negotiating this extension if demultiplexing.
+        *   Potentially reference `Quickv2` informatively if it's not ready for normative reference.
+    *   After this revision, the document will proceed to Working Group Last Call.
+*   **Game Moves over Quick**:
+    *   The chairs will initiate a Call for Adoption on the mailing list for `draft-jennings-avtcore-game-moves-rtp-payload`.
+    *   The Call for Adoption period may be extended to allow more experts and community members to engage.
+
+## Next Steps
+
+*   **Cryptex**: Merge the pull request resolving the encryption structure ambiguity.
+*   **W3C Web Transport Liaison**: Moe N. and Colin J. to draft the response.
+*   **Skip**: Chairs to prepare for Working Group Last Call and finalize the shepherd.
+*   **RFC 7983bis**: Bernhard C. to produce a new revision addressing `Quickv2` compatibility and bit greasing before WGLC.
+*   **SDP for RTP over Quick**: Spencer Dawkins will continue collecting questions and working on answers, potentially developing an "RTP light" profile for Quick. Architectural work may be needed to clarify the relationship between RTP and Quick.
+*   **Game Moves over Quick**: Chairs to issue a Call for Adoption. Colin J. to seek co-authors and community engagement.
+*   **Short Tags**: Chairs to arrange a follow-up discussion (e.g., phone call, interim meeting).

@@ -1,0 +1,99 @@
+**Session Date/Time:** 24 Mar 2022 09:00
+
+# httpapi
+
+## Summary
+
+The httpapi working group session covered updates on several in-progress documents, including Rate Limit Headers and Media Type registrations. A new GitHub project board was introduced to improve document tracking. Key discussions focused on the structure of rate limit headers (separate fields vs. consolidated structured fields) and the challenges of registering new media types for YAML-based API specifications. The working group also reviewed open issues for the HTTP Problem (RFC 7807 bis) document, particularly concerning the extension mechanism for standard problem detail members. Finally, a new draft on date/timestamp in HTTP requests for anti-replay was presented, and plans for future document adoption and process improvements were discussed.
+
+## Key Discussion Points
+
+*   **Administrative Items**:
+    *   Martin and Mark volunteered to take minutes.
+    *   The agenda was reviewed with no further changes.
+    *   Daryl showcased the new GitHub project board, a beta feature, to track issues across all working group documents, grouped by repository. It allows authors to update issue statuses independently, aiming to streamline progress tracking.
+*   **Rate Limit Headers (draft-ietf-httpapi-ratelimit-headers)**:
+    *   Roberto presented the latest draft, which aims to standardize existing rate limiting practices using structured fields.
+    *   Current fields: `Rate-Limit-Limit` (list of structured fields, optional quota), `Rate-Limit-Remaining` (integer), `Rate-Limit-Reset` (delta seconds).
+    *   **Technical Choices**: Uses delta seconds for `Rate-Limit-Reset` (avoids NTP skew), structured fields for flexibility, no mention of infrastructure concepts.
+    *   **Field Dependencies**: `Rate-Limit-Limit` and `Rate-Limit-Reset` are required; `Rate-Limit-Remaining` is recommended.
+    *   **Issues Needing Input**:
+        *   **Splitting Quota Policies**: Proposal to separate "expiring limit" from other quota policies into distinct header fields (e.g., `Rate-Limit-Limit` for expiring limit and `Rate-Limit-Policies` for other quotas). Implementers expressed preference for separation due to parsing complexity and distinct meanings.
+        *   **Upper Bound for `Rate-Limit-Reset`**: Whether to suggest an upper bound for the delta seconds value to avoid excessively long waits.
+        *   **Field Names**: Editors believe current names (similar to existing API gateways) should be maintained to align with current practice.
+    *   **Discussion on Field Structure**:
+        *   Mark and Martin advocated for combining information into a single structured field (e.g., a dictionary) for conciseness and better use of structured field parsers, arguing that relying solely on implementer preference without technical arguments might hinder better design.
+        *   Roberto emphasized that implementers' feedback indicated they prefer separate fields and are not willing to change existing layouts, making a single field less likely to be adopted.
+        *   Brian and Eric argued that implementer preference has value itself for adoption, especially for API developers who are not HTTP experts.
+        *   Hunter stressed the need for conceptual clarity for libraries, as casual users might just use regex or rely on libraries.
+        *   Rich mentioned a related need in Oblivious HTTP (OHAI) for multi-party rate limiting, suggesting a new field for addressing parties.
+    *   **Outcome**: The discussion on splitting fields vs. consolidating will continue on the mailing list.
+*   **Media Types for API Specifications (draft-ietf-httpapi-yaml-mediatypes)**:
+    *   Roberto presented the draft aiming to register widely used, but unregistered, media types for API specifications (e.g., Open API, JSON Schema) and YAML itself.
+    *   Goals: Increased interoperability, content negotiation, simplified development.
+    *   Proposed registrations: `application/yaml`, `application/json-ld+yaml`, `application/openapi+yaml`, `application/schema+json`, `application/schema+yaml`.
+    *   **Challenges**: Engagement with media types mailing list, fragment identifier considerations, normative language in registrations, JSON-LD specific issues, and disagreement on `application/schema+yaml`.
+    *   **Discussion**:
+        *   Mark stressed the importance of formal liaison channels for consensus with external communities (e.g., OpenAPI, JSON Schema, YAML, Linked Data).
+        *   Martin suggested splitting the document into smaller, easier-to-publish pieces (e.g., `application/yaml` and `+yaml` suffix first) due to the complexity and different levels of agreement across registrations.
+        *   Eric volunteered to help with `application/yaml` registration.
+        *   Mani (co-author) confirmed involvement in ongoing work on multiple suffixes, showing engagement with the right people.
+    *   **Outcome**: Roberto will revise the draft, potentially splitting it, and seek further feedback on the mailing list, with Eric's assistance for YAML.
+*   **HTTP Problem (RFC 7807 bis) Issues Review (Mark Nottingham)**:
+    *   **Issue #21: Mapping Problem Details into a Header**: Discussion on adding problem details in a response header for cases where the body is unavailable or not to be parsed by intermediaries.
+        *   **Outcome**: Mark will create a PR to explore this, acknowledging it might be dropped if too complex.
+    *   **Issue #22: Requiring a specification document for registry entries**: A mechanical fix for an incorrect text about registration policy.
+        *   **Outcome**: PR is ready for merging.
+    *   **Issue #23: Multiple Problems**: Discussion on how to handle multiple problems in a single response, including deleting text about status code 207 and adding warnings about limitations.
+        *   **Outcome**: PR is ready for merging; general agreement.
+    *   **Issue #36 (Related to #24 and #26): Extending Problem Details with New Standard Members**: This issue addresses the current limitation of 7807, which only allows problem-type-specific members or vendor extensions.
+        *   **Options Discussed**:
+            1.  Status quo (don't allow new standard members).
+            2.  Use a naming convention for new standard properties (e.g., a prefix, possibly a URI).
+            3.  Mint a new media type for problem details.
+            4.  Define new conventions that problem types can opt into (e.g., via JSON Schema vocabularies/dialects).
+        *   **Group Preference**: Leaned towards option 2 (prefixed names) to allow generic tools to understand standard extensions without fragmenting the media type or requiring type-specific opt-in.
+        *   **Outcome**: This will be discussed further on the mailing list.
+    *   **Issue #25: JSON-LD Context**: Request to add JSON-LD context support.
+        *   **Outcome**: Waiting for a PR from a proponent; will be dropped if no PR is provided by last call.
+*   **Date/Timestamp in HTTP Requests (draft-nottingham-httpapi-timestamp-request)**:
+    *   Martin presented a new draft exploring the use of adding current time (timestamp) in HTTP requests, primarily for anti-replay mechanisms in contexts like OHAI.
+    *   **Key points**: Addresses replayability, state commitment issues on servers, client/server clock skew (and potential remediation by retrying with response's date), and caching interactions (CDNs fixing dates).
+    *   **Discussion**:
+        *   Mark questioned if this is solely for API consumers/designers or could reside in http core/OHAI.
+        *   Roberto expressed concern about relying on `Date` for guaranteed information, suggesting a broader "timestamp" focus.
+        *   Daryl saw correlation with APIs due to problem types and potential relevance for signed requests, even if niche.
+        *   Martin clarified it's complementary to idempotency keys.
+    *   **Outcome**: Martin will revise the draft (e.g., "timestamp" instead of "date") and bring it to the mailing list for further discussion and potential adoption.
+*   **New Working Group Documents**:
+    *   **Link Template**: Re-issuing a call for adoption on the mailing list.
+    *   **Health Check**: Eric is following up with the author, Aki, on moving this individual draft to the working group.
+*   **Any Other Business (AOB)**:
+    *   **Milestones**: Francesca requested updating working group milestones in the data tracker for better planning and visibility, potentially using "next/later" instead of strict dates. Chairs will discuss offline and propose.
+    *   **Twitter Bot**: Discussion about setting up a Twitter bot for httpapi to increase community visibility. Mark Nottingham offered to help set up a bot similar to the HTTP Working Group's.
+    *   **HTTP/2 (RFC 7540 bis) Update**: Francesca provided an update: IETF Last Call ends March 28th, internationalization directorate review requested, next telechat for ballots is April 7th.
+
+## Decisions and Action Items
+
+*   **Rate Limit Headers**: Discussion on splitting quota policies and structured field usage to continue on the mailing list.
+*   **Media Types**: Roberto to revise the draft, potentially splitting it into multiple documents, and seek further feedback on the mailing list. Eric will assist with YAML registration. Formal liaison through official channels emphasized.
+*   **HTTP Problem (RFC 7807 bis)**:
+    *   Mark Nottingham to create a PR for mapping problem details into a header (Issue #21).
+    *   PRs for "requiring a specification document" (Issue #22) and "multiple problems" (Issue #23) are ready for merging.
+    *   Discussion on extending problem details with new standard members (Issue #36) to continue on the mailing list, with a preference for prefixed member names.
+    *   JSON-LD context (Issue #25) will be dropped if no PR is submitted.
+*   **Date/Timestamp in HTTP Requests**: Martin to revise the draft (e.g., rename to "timestamp"), then bring it to the mailing list for further discussion on adoption.
+*   **Link Template**: Chairs will re-issue a call for adoption on the mailing list.
+*   **Health Check**: Eric to continue engaging with the author (Aki) regarding adoption into the working group.
+*   **Milestones**: Chairs (Daryl, Rich) to discuss with Francesca offline and propose updated milestones, potentially using priority labels instead of strict dates, to the working group.
+*   **Twitter Bot**: Daryl to connect with Mark Nottingham to set up a Twitter bot for the httpapi WG.
+*   **HTTP/2 (RFC 7540 bis)**: Note about IETF Last Call ending March 28th and telechat on April 7th. Rich to post a note to the list to align deadlines for objections.
+
+## Next Steps
+
+*   Continue discussions on Rate Limit Headers and HTTP Problem extensions on the mailing list.
+*   Roberto to revise the Media Types draft, potentially splitting it, and continue community engagement.
+*   Martin to revise the Date/Timestamp draft and seek adoption input on the mailing list.
+*   Chairs to issue a call for adoption for Link Template and propose updated milestones.
+*   Daryl to coordinate setting up a Twitter bot.
+*   Monitor IETF Last Call for HTTP/2 (RFC 7540 bis).

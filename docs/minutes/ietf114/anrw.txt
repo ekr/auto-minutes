@@ -1,0 +1,124 @@
+**Session Date/Time:** 26 Jul 2022 14:00
+
+# anrw
+
+## Summary
+
+The anrw session featured a keynote address and four paper presentations, covering a range of research topics pertinent to internet protocols and architecture. Key themes included the challenges posed by the traditional layering model in modern web protocols, the evaluation of next-generation congestion control algorithms, machine learning for network outage classification, and the performance of QUIC with BBR congestion control over satellite networks. Discussions highlighted the need for improved tools and methodologies for diagnosing cross-layer issues, more comprehensive metrics for congestion control deployment, and innovative approaches to network management and transport optimization.
+
+## Key Discussion Points
+
+*   **Administrative Remarks**
+    *   Reminders regarding mandatory masking policy at IETF/IRTF events.
+    *   Standard Notewell disclosure on Intellectual Property Rights (IPR).
+    *   Confirmation of audio/video recording for online and in-person participation.
+    *   Emphasis on the IRTF's role in longer-term internet research, distinct from IETF's standards-making.
+    *   Special thanks to the program committee, co-chair TJ, review task force, and sponsors (Akamai, Comcast).
+
+*   **Keynote: "Layer Four and Three Quarters" by Lucas Pardue (Cloudflare)**
+    *   **Critique of Layering**: The traditional OSI layering model, while beneficial, increasingly struggles to reflect reality, especially with modern web protocols requiring cross-layer signaling and cooperation.
+    *   **Modern HTTP Landscape**: Cloudflare data indicates high adoption of encrypted traffic (HTTPS), HTTP/2, and rapidly growing HTTP/3 (QUIC) usage (over 25% global requests). Plaintext HTTP/1.1 is a tiny fraction of traffic.
+    *   **Challenges in Diagnosis**: Current tooling (e.g., Chrome error messages, network logs) is often inadequate for diagnosing complex cross-layer issues in HTTP/2 and HTTP/3. It's difficult to scale knowledge beyond experts.
+    *   **Real-world Examples**:
+        *   **Malformed HTTP/3 Requests**: Implementations react differently to malformed requests (e.g., missing HTTP method), highlighting a lack of consistent error handling despite spec guidance.
+        *   **HTTP/2 DoS and Ping Floods**: Interaction between HTTP/2 ping frames (e.g., for BDP estimation in gRPC/Rust Hyper's adaptive window) and server-side DoS mitigations can lead to connection closures, though often fixable with protocol adjustments.
+        *   **HTTP/2 Flow Control**: A basic flow control misconfiguration (server not giving enough window) in HTTP/2 caused deflated upload speeds in speed tests, remaining undetected for a long time.
+    *   **HTTP as a Substrate**: The evolution of HTTP (datagrams, capsule protocol, proxy UDP/IP over HTTP via MASQUE WG) and QUIC (WebTransport, Media over QUIC) is making it a more complex substrate, further blurring layer boundaries.
+    *   **Call to Action**: The internet community needs to improve at finding, fixing, and documenting cross-layer problems more rapidly and robustly. This knowledge needs to be scaled to non-experts and end-users.
+    *   **Discussion**: Questions arose about prioritizing measurement, diagnosis, and signaling between layers, and whether new standards or formal methods could address these. Lucas highlighted the difficulty of capturing sufficient debug data (e.g., voluminous packet traces) and the need for more intelligent logging/tracing on demand.
+
+*   **Paper: "Is it really necessary to go beyond a fairness metric for next generation congestion control?" by Shafiqul Islam (University of Oslo)**
+    *   **Problem**: Traditional congestion control (CC) evaluation uses Jain's Fairness Index based on throughput, which may be insufficient for real-world deployment decisions.
+    *   **Harm Concept**: The paper explores the "harm concept" from HotNet, which assesses how harmful a new CC algorithm (alpha) is to existing ones (beta), by comparing alpha-beta competition to beta-beta competition across various performance metrics (delay, loss, FCT, not just throughput).
+    *   **Methodology**: Experiments were conducted on a physical testbed using Reno, Cubic, BBR, and Vegas across varied link capacities (10-100 Mbps) and RTTs (10-100 ms). High BDP scenarios were specifically analyzed.
+    *   **Results**:
+        *   The harm metric provided more nuanced insight than the fairness index alone.
+        *   BBR showed significant harm to Cubic, while Reno significantly harmed Vegas.
+        *   In a case study, BBR was shown to capture 1.6 times more resources than Cubic when competing against Reno in 50% of the high BDP cases.
+    *   **Conclusion**: A harm-based approach is more effective for assessing the safe deployability of next-generation CC mechanisms.
+    *   **Discussion**: Acknowledged the complexity of collecting the necessary experimental data for harm evaluation, especially at scale. Question raised about ensuring fair comparison across CC algorithms with different RTT sensitivities.
+
+*   **Paper: "Cloud Cross-Layer Network Outage Classification" by Jan Marius Evan (Oslo Metropolitan University)**
+    *   **Problem**: A global network for video conferencing services experienced frequent packet loss, leading to many customer support cases (2855 over 2 years), but only ~35% received a proper root cause analysis.
+    *   **Approach**: Classify network outages using machine learning (Support Vector Machine) with data collected from various network layers.
+    *   **Data Sources**: SNMP (optical signals, interface errors, buffer overflows), software crash logs, configuration change logs, BFD (Layer 2 bidirectional forwarding detection) logs, and UDP ping (Layer 2 and Layer 3 packet loss measurements).
+    *   **Root Cause Analysis**: Identified that most critical outages (causing customer complaints) were due to Layer 2 issues, especially simultaneous outages in multiple L2 providers.
+    *   **Two-Stage ML Classification**:
+        1.  **Stage 1 (BFD data)**: Identified common Layer 2 outages with high accuracy. BFD is low-impact and easy to collect.
+        2.  **Stage 2 (UDP ping data)**: Classified other outage types, including Layer 3 issues. This data is more resource-intensive to collect.
+    *   **Results**: High accuracy for classifying common L2 outages. Overall good classification for other root causes, though distinguishing between very similar causes (e.g., equipment maintenance vs. failure) remained challenging.
+    *   **Conclusion**: Machine learning is effective for classifying network outages, providing valuable feedback for network operations and customer support, improving customer experience by enabling prompt, informed responses.
+    *   **Discussion**: The ML system makes no automatic network decisions, acting as a diagnostic aid. The low impact on network equipment (reusing existing protocols like BFD) makes it practical.
+
+*   **Paper: "On the suitability of BBR congestion control for QUIC over GEO-SATCOM networks" by Aitor Martin (University of Stavanger)**
+    *   **Context**: Increasing interest in using Geosynchronous Satellite Communication (GEO-SATCOM) for 5G/6G backhauling and the growing deployment of QUIC.
+    *   **SATCOM Challenges**: Long propagation delays (high RTT), propagation errors, and potential bandwidth asymmetry (e.g., congested uplink affecting ACKs). QUIC's encrypted headers prevent the use of traditional TCP Performance Enhancing Proxies (PEPs).
+    *   **Focus**: Evaluate the performance and fairness of BBR (versions 1 and 2) with QUIC over emulated GEO-SATCOM links. Also examine the impact of packet loss, bandwidth asymmetry, and QUIC implementation choice.
+    *   **Experimental Setup**: Teacup testbed emulating satellite (600ms RTT, 20Mbps downlink) and terrestrial (100ms RTT) scenarios, including asymmetric uplink. Used ngtcp2 (with BBRv2) and PicoQUIC implementations.
+    *   **Key Findings**:
+        *   **Goodput**: PicoQUIC outperformed ngtcp2 significantly, especially in satellite scenarios. BBRv2 was slightly less aggressive than BBRv1. High packet loss (1%) combined with long RTT was particularly problematic for BBRv2.
+        *   **Bandwidth Asymmetry**: ngtcp2 performance dropped dramatically under asymmetric bandwidth. PicoQUIC maintained good performance due to an optimized ACK policy that sends fewer ACKs, highlighting the importance of such strategies for SATCOM.
+        *   **Fairness**: Cubic maintained good fairness with many parallel flows. BBRv1/v2 showed significant drops in fairness when competing against themselves. BBRv2 demonstrated improved fairness against Cubic compared to BBRv1.
+        *   **Latecomers**: BBR flows allowed latecomers to gain a fair share faster than Cubic. BBRv1 latecomers were aggressive, overtaking existing flows. BBRv2 was less aggressive but exhibited an issue recovering available bandwidth after other flows started, possibly due to long RTTs or implementation specifics.
+    *   **Conclusion**: BBR can offer better performance on lossy satellite links, and BBRv2 improves fairness. However, challenges remain for BBRv2 with high packet loss, long RTT, and bandwidth asymmetry. Satellite-optimized ACK policies (like PicoQUIC's) are crucial.
+    *   **Discussion**: The findings on ACK patterns are particularly novel and relevant for the QUIC working group.
+
+*   **Paper: "Prioritizing Forward Error Correction for HTTP/3" by Nushin Nourestani (University of Alberta)**
+    *   **Problem**: While HTTP/3 (QUIC) provides multi-streaming to avoid head-of-line blocking at the application layer, high-priority resources (HTML, CSS, JavaScript) still need to be fully downloaded before use. Packet loss introduces retransmission delays (function of RTT) which increase page load time.
+    *   **Proposal**: Use Forward Error Correction (FEC) specifically for high-priority resources over HTTP/3. This recovers lost data sooner than retransmission, reducing page load time.
+    *   **Mechanism**: Leverages HTTP/3's extensible prioritization scheme, allowing the client to signal high-priority resources to the server. The server can then apply FEC (pre-computed repair data) to these specific resources.
+    *   **Implementation**: Implemented FEC using ngtcp2 (an open-source QUIC implementation) and the OpenFEC library. Experiments conducted on an emulated testbed (Emulab) with NetEm for delay and packet loss.
+    *   **Early Results**: In a scenario with 100ms RTT and 10% packet loss for a small high-priority resource (7 QUIC frames), FEC recovered lost frames in 7ms, compared to 103ms for retransmission, leading to reduced overall job completion time.
+    *   **Conclusion**: Prioritized FEC for high-priority resources can effectively reduce page load time by enabling faster recovery from packet loss.
+    *   **Discussion**: Acknowledged that 10% packet loss is very high in real-world scenarios but chosen for demonstration. Further work includes improving implementation and studying congestion control impacts.
+
+## Decisions and Action Items
+
+*   No formal decisions were made during this session.
+*   **Recommendation (from Keynote)**: The internet community should focus on developing better methods and tools for finding, fixing, and documenting cross-layer issues, and work to scale this knowledge beyond experts to broader audiences.
+
+## Next Steps
+
+*   Attendees were encouraged to return for the afternoon session, which will feature invited talks on formal methods and verification in protocols and development, exploring a new potential area of investigation for the IRTF.
+
+---
+
+**Session Date/Time:** 26 Jul 2022 19:00
+
+# anrw
+
+## Summary
+
+This ANRW session, chaired by Colin Perkins, focused on "Protocol Specification Techniques." The primary goal was to initiate a discussion within the IETF/IRTF communities on *how* protocols are specified, moving beyond traditional natural language prose towards exploring formal methods, structured languages, and other techniques. Three invited talks explored automated analysis of RFCs, disambiguation tools, and best practices for cryptographic specification, highlighting challenges such as ambiguities, consistency issues, and the need for improved verification and validation methods.
+
+## Key Discussion Points
+
+*   **Motivation for Improved Specification:** Historically, IETF RFCs primarily use English prose, occasionally supplemented by formal languages like ABNF or YANG. This session aimed to question if this approach is sufficient, given the need for consistent, correct, and verifiable protocol specifications and implementations.
+*   **Automated FSM Extraction for Attack Synthesis (Max von Hippel):**
+    *   Presented a methodology to automatically extract Finite State Machines (FSMs) from natural language RFCs (TCP, DCCP) using technical language embeddings (BERT) and machine learning (neural CRF) for information extraction into an XML-based intermediary representation.
+    *   A heuristic algorithm then extracts the FSM, which is used with a model checker (`korg`) to synthesize attacks (identify bugs).
+    *   **Findings:** RFCs contain significant ambiguities and omissions, leading to missing or incorrect transitions in the extracted FSMs. The DCCP RFC was found to be more ambiguous and complex than TCP in this analysis.
+    *   **Future Work:** Automating the highlighting of ambiguities, suggesting bug fixes, extracting logical properties, supporting secure protocols, and developing an "RFC author in the loop" software suite for continuous feedback.
+    *   **Q&A Highlight:** Discussed the limitations and utility of graphical FSMs in RFCs, noting discrepancies between diagrams and text. Acknowledged FSMs are better suited for communication protocols with handshakes than for cryptographic protocols with secrecy properties.
+*   **Tools for Disambiguating RFCs (Jane Yen):**
+    *   Highlighted that the high volume of RFC publications (200-300 per year) involves extensive human effort, and ambiguities lead to differing interpretations and potentially buggy/vulnerable implementations (e.g., ICMP checksum).
+    *   Introduced SAGE, a system that applies Natural Language Processing (NLP) techniques (semantic parsing extended with domain-specific terms and idiomatic usage) to transform sentences into "logical forms."
+    *   SAGE identifies "true ambiguities" when NLP yields more or less than one logical form, and uses checking rules to eliminate "false ambiguities" arising from NLP limitations. Unambiguous logical forms can then generate executable code snippets.
+    *   **Challenges:** Current SAGE limitations include parsing only packet formats/pseudocode (not state machines), difficulties with inter-sentence context, mismatches between text and diagrams, aggregating information from multiple/evolving RFCs, handling protocol stacks, and differentiating logical functionality from performance guidelines.
+    *   **Future Work:** Designing a user interface tool to guide authors in inputting essential, unambiguous protocol information to generate both readable English text and executable code, with an initial focus on stateful protocols.
+*   **Specifying Cryptographic Standards (Chris Wood):**
+    *   Argued that while the CFRG charter defines its outputs as "informational RFCs," in practice, these documents (e.g., HMAC, HKDF, EdDSA) are critical foundational standards for IETF security protocols, demanding high quality and rigor.
+    *   Defined specification quality across functional, syntax, and implementation aspects, each tailored to different audiences (protocol designers, API designers, implementers).
+    *   **Examples of Issues:** RFC 8032 (EdDSA) led to interoperability and security issues due to ambiguous recommendations. The OPAQUE draft is highly complex, requiring deep understanding of many dependencies.
+    *   **Case Study (Hash-to-Curve):** Presented this draft as an example of good practice, structuring the specification to clearly separate functional descriptions, API syntax, and detailed implementation pseudocode, minimizing potential for error.
+    *   **Recommendations:**
+        1.  **Audience-Centricity:** Tailor communication, ensure consistency in pseudocode format, and make pseudocode as close as possible to required reference implementations.
+        2.  **Conceptual Consistency:** Reduce cognitive load by reusing formats and concepts, using shared vocabulary, and improving consistency across different drafts (not just within a single document).
+        3.  **Embrace Formal Methods:** Leverage existing work in formally verified cryptographic algorithms (e.g., HACL*), which can generate test vectors and optimized implementations, reducing implementation errors. Discussed the format for canonical reference implementations.
+    *   **Call to Action:** CFRG outputs should be treated as standards. There's a need for more tooling (like the previous talks' systems) and for seriously exploring formal methods within CFRG/IRTF.
+*   **Cross-Cutting Themes:** The talks highlighted a common need for more precise and less ambiguous protocol specifications, better tools to analyze and generate them, and a clearer understanding of how to balance human readability with machine verifiability. The problem of consistency, both within a single document and across a suite of related documents, was a recurring challenge.
+
+## Next Steps
+
+*   **Gauge Interest for IRTF Work:** Colin Perkins invited attendees interested in pursuing research and development in protocol specification techniques within the IRTF to contact him and add their names to the session's Hedgedoc for follow-up discussions and potential future calls.
+*   **Future ANRW Call for Papers:** Attendees were reminded to look out for the next ANRW call for papers.

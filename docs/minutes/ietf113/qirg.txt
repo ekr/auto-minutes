@@ -1,0 +1,49 @@
+**Session Date/Time:** 22 Mar 2022 12:00
+
+# qirg
+
+## Summary
+
+The `qirg` session included updates on the group's active drafts, a research presentation on a low-level instruction set architecture for quantum networks (NetQASM) and an associated platform (Quantum Network Explorer), and an open discussion on key challenges and future directions for the quantum internet. Discussions covered the status of the "principles" and "use cases" drafts, the technical details of programming quantum network applications, and conceptual issues like appropriate terminology for quantum data movement and the potential need for a quantum transport layer.
+
+## Key Discussion Points
+
+*   **Administrative and RG Status**
+    *   **`draft-ietf-qirg-principles`**: The draft, under review for two years, has had comments from Marie-Jose Montpetit addressed on the mailing list and is currently back for another read. It was not presented at this meeting. Authors and chairs believe all comments have been addressed.
+    *   **`draft-ietf-qirg-use-cases` (now v10)**: This draft was presented by Kaushik.
+        *   **Updates**: Mostly small changes since v7 (July last year). Version 10 was uploaded March 6th.
+        *   **Key Addition**: Section 3.2.2 now includes an application on quantum sensors: "Interferometric Telescopes using Quantum Information." This technique uses quantum entanglement between distant telescopes to achieve higher resolution and overcome channel loss limitations via quantum repeaters.
+        *   **Review Status**: Rodney (as an individual reviewer) noted that comments from March 13th still needed to be fully addressed, suggesting the authors would produce a Version 11.
+        *   **Wordsmithing**: The responsibility for grammar and wordsmithing before final review rests with the authors; the RFC editor performs copy-editing at the end.
+    *   **Other Status**: A seminar in February by Mark Kaplan (Very Cloud) is available on YouTube. The QRG was mentioned in a publication about standardization efforts, explicitly noting that QRG does *not* do standardization work.
+
+*   **NetQASM and Quantum Network Explorer (QNE) Presentation by Bart van der Veen (Q-Tech)**
+    *   **NetQASM**: A low-level instruction set architecture for hybrid quantum-classical programs in a quantum internet. It aims to enable application programming by defining how high-level applications are represented, programmed, and executed.
+    *   **Execution Model**: Nodes are programmable, consisting of a classical Application Layer (CPU) and a Quantum Processing Unit (QPU). The Application Layer handles classical processing and communication, delegating quantum operations to the QPU by sending "NetQASM routines" (blocks of NetQASM instructions). Qubits can persist across separate QPU routine executions.
+    *   **NetQASM Language**: An assembly-like language, similar to OpenQASM, but extended with instructions for remote entanglement generation (`create epr`, `receive epr`, `wait all`). These instructions interact with the node's network stack.
+    *   **Python SDK**: A higher-level Software Development Kit in Python allows writing applications with classical processing and communication. Quantum operations are automatically compiled to NetQASM routines.
+    *   **Implementation & Demonstration**: The SDK can run programs on simulators (SquidASM, SimulaQron) and has been demonstrated on real hardware (two nodes based on NV centers in diamonds), showcasing the first full software and quantum network stack on hardware.
+    *   **Quantum Network Explorer (QNE)**: An online platform (quantum-network.com) for general information and an editor to run and visualize pre-programmed quantum network applications (e.g., QKD simulations). These programs are written using the Python SDK.
+    *   **Future Plans for QNE**: Connect to physical quantum internet hardware, allow users to upload their own NetQASM-based applications for simulation and execution on hardware.
+    *   **Q&A Highlights**:
+        *   **Multi-node Entanglement**: `create epr` specifies a target node ID for entanglement generation.
+        *   **Fidelity**: Application specifies minimum desired fidelity for EPR pairs; the network stack handles achieving this (e.g., via distillation).
+        *   **Inter-node Coordination**: Currently handled manually within the classical parts of the application code; no global synchronization entity.
+        *   **NetQASM Routine Transmission**: Routines are sent from the Application Layer to the QPU for each call, as their content can be runtime-dependent (e.g., based on classical communication).
+
+*   **Open Discussion**
+    *   **Terminology for Quantum Data Movement**: Rodney raised concern about the word "transmit" in the `use-cases` draft, as it implies encoding data on a photon. He advocated for a more neutral term that covers both direct transmission and quantum teleportation, as the network layer often provides end-to-end entanglement as a service, which can then be *used* for moving data. Suggestions like "state synchronization" were considered but deemed insufficient.
+    *   **Distributed Quantum Computing (DQC)**: Discussion confirmed active research in DQC. It's a non-trivial challenge to distribute quantum computation over multiple nodes to leverage network resources and potentially reduce per-node qubit requirements. It differs significantly from classical distributed computing and requires identifying optimal methods for resource distribution (e.g., parallelization vs. entanglement between all nodes). Simon Benjamin was mentioned as a relevant researcher.
+    *   **Quantum Internet vs. Quantum Communications**: A point was raised that many current "use cases" focus on point-to-point quantum communications rather than true "quantum internet" functionality, which implies uniform mechanisms for inter-island communication (analogous to IP for classical internet).
+    *   **Need for a Quantum Transport Layer**: Prompted by NetQASM's reliance on an underlying network stack to handle entanglement generation, the discussion explored the potential need for a "quantum transport layer" or "quantum sockets." This layer would abstract away the mechanisms (teleportation, direct transmission, etc.) used to provide quantum services between applications, similar to TCP/UDP in classical networks. This is currently an undefined but recognized area of research.
+
+## Decisions and Action Items
+
+*   **`draft-ietf-qirg-use-cases`**: The authors are to address the remaining comments from Rodney (as an individual reviewer) on the mailing list and aim to produce a Version 11 of the draft. This is required before the RG Last Call can proceed.
+*   **Draft Wordsmithing**: Authors of all QRG drafts are responsible for ensuring high-quality grammar and language before submitting for final review; the RFC editor provides copy-editing services post-RG Last Call.
+
+## Next Steps
+
+*   **`draft-ietf-qirg-use-cases`**: Continue revisions and discussion on the mailing list to reach convergence on open issues.
+*   **Quantum Network Explorer (QNE)**: Q-Tech will continue development towards connecting QNE to real quantum internet hardware and enabling user-uploaded applications for execution.
+*   **Potential Future Work for QRG**: The concept of a "quantum transport layer" or "quantum sockets" was identified as a significant area for future research and standardization-adjacent discussion within QRG. Participants are encouraged to consider leading or contributing to such an effort.

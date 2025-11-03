@@ -1,0 +1,82 @@
+**Session Date/Time:** 10 Nov 2022 13:00
+
+# satp
+
+## Summary
+
+The Secure Asset Transfer Protocol (SATP) BOF session at IETF 115 aimed to discuss the problem space, proposed solutions, and suitability of the IETF for standardizing secure, interoperable digital asset transfers between disparate networks. Discussions covered the need for a standardized protocol to address fragmentation and proprietary solutions in digital asset exchanges, particularly in global trade and regulated finance. Two primary use cases were presented: asset transfer and asset-related data sharing. The session included a status report on the progress made since IETF 114 and gauged community interest and support for forming an IETF working group. While there was strong consensus that the problem needs to be solved and that the IETF is the right venue, concerns were raised regarding operator engagement and the scope of the proposed work. The ISG/ADs will deliberate on the next steps.
+
+## Key Discussion Points
+
+*   **Introduction & Goals:**
+    *   The BOF introduced the Secure Asset Transfer Protocol (SATP) to address the lack of interoperability standards for digital asset transfers.
+    *   Main goals for the BOF: determine if the problem needs solving, if the IETF is the right venue, if there are enough participants, if the scope is well-defined, and if a working group is likely to succeed.
+    *   Attendees were reminded of the Note Well, Code of Conduct (including mask wearing), and session recording.
+
+*   **Problem Space and Goals (Thomas Hardiker):**
+    *   **Motivation:** The growing number of digital asset networks primarily rely on proprietary solutions, leading to security and data privacy challenges. A lack of written technical standards inhibits industry adoption and interoperability.
+    *   **Goal:** To enable the movement of a "value-bearing data object" from one network to another, satisfying properties like atomicity, consistency, isolation, and durability (ACID). Transfers must be verifiable by authorized third parties for dispute resolution.
+    *   **Scope (the "yellow area"):** Focus is on defining the interaction *between* gateways (analogous to BGP), not the internal workings of the underlying networks. Networks are assumed to be opaque.
+    *   **Assumptions:**
+        1.  Common understanding/semantics of data objects and validity.
+        2.  Underlying networks are opaque (permissioned, private).
+        3.  Gateways are trusted (liable for correct protocol execution, manage keys, sign messages, often backed by legal agreements).
+        4.  Need for "views" or "data sharing" – extracting specific information from an asset without transferring ownership (e.g., an auditor reviewing a transaction).
+    *   **Architecture:** Adopts an intra-domain/inter-domain routing model, where gateways hide internal network complexities.
+    *   **Proposed Documents:** Initial drafts include an architecture document, SAT Core protocol, and use cases document.
+
+*   **Clarifying Questions on Problem Space:**
+    *   **Gateway Trust:** Gateways must be trusted to correctly run the SATP protocol. This trust is established through pre-existing agreements, certificates (e.g., X.509), and legal frameworks that define liabilities, similar to Certificate Authorities (CAs) or existing financial inter-bank agreements. Key management details are outside the protocol's scope.
+    *   **Auditability/Verifiability:** Discussion clarified that auditability serves two purposes:
+        1.  Ensuring atomicity, consistency, and crash recovery of the transfer itself (preventing double-spending due to protocol failures).
+        2.  Enabling authorized third parties (e.g., regulators, auditors) to inspect transaction logs, based on contractual agreements between participating entities. This is distinct from general "surveillance."
+    *   **Relation to other IETF work:** Questions about overlap with Tigris (personal wallets) and SKIT (software supply chain). While there are similarities in transferring "smooth stuff between wallets" or "transparency issues," the unique ACID properties and financial/institutional context for value-bearing assets were highlighted as distinctions.
+    *   **Engagement with other SDOs:** ISO TC307 (blockchain standard) was mentioned as providing high-level, descriptive standards, with an expectation for IETF to deliver prescriptive technical engineering protocols.
+
+*   **Use Case 1: Global Trade and Supply Chains (Rama Rao):**
+    *   **Problem:** Current paper-based, manual global trade processes are costly, slow, prone to fraud, lack real-time visibility, and hinder information sharing between numerous participants across different countries and institutions.
+    *   **Specific Example:** The "who blinks first" problem between buyer and seller in international trade, often mitigated by documents like a Bill of Lading (BoL). A BoL acts as a title to goods, used as collateral for financial institutions extending loans (e.g., Letter of Credit).
+    *   **Interoperability Need:** Trade financing (e.g., bank networks) and shipping logistics (e.g., carrier networks generating BoLs) operate on separate, opaque networks. Financial institutions need secure, verifiable access to BoL data from logistics networks.
+    *   **SATP Role:** This is an example of "asset-related data sharing" (providing a "view" into the BoL's existence and properties) rather than an asset transfer, bridging two disparate networks via neutral gateways using a standardized protocol.
+
+*   **Use Case 2: Regulated Finance (Martin Highley):**
+    *   **Problem:** The financial services industry is rapidly moving towards "tokenization" – digitally representing various assets (real estate, future revenue, money like CBDCs) and trading them on new, often fragmented and proprietary trading venues. This leads to walled gardens, limited liquidity, and inefficient markets.
+    *   **SATP Role:** To connect these diverse networks with a technically driven standard, enabling transparency and seamless transfer of digital assets across venues.
+    *   **Industry Drivers:** Major financial institutions (e.g., Standard Chartered, BNY Mellon) are investing heavily in tokenization. The Swift hackathon (October 2022) demonstrated the implementation of a draft SATP for inter-network asset transfers (tokenized gold).
+    *   **Trust Implications:** For blockchain-based assets, the network's smart contracts would need to grant the Gateway the power to manage/override ownership during transfer.
+    *   **Why IETF:** Other standards groups exist (ISO for frameworks, proprietary vendor solutions), but the IETF offers a neutral, open, and collaborative venue for technical protocol specification.
+
+*   **Status Report (Thomas Hardiker):**
+    *   **Progress Since IETF 114:** Weekly meetings (averaging 10 attendees), documentation of assumptions, collection of use cases (including input from the Digital Dollar Project).
+    *   **Current Focus:** Two key flows: asset transfer and asset-related data sharing. Draft architecture and use cases documents are available on GitHub.
+    *   **Engagement:** Consistent weekly meetings with global participation, Zoom sessions are recorded. Mailing list activity is lower due to discussions happening on calls.
+    *   **Justification for IETF:** Emphasized IETF as the "home of interoperability," for rigorous technical review, and its history of producing written specifications (RFCs). Acknowledged looking at other SDOs like ITU, ISO, IEEE, W3C.
+    *   **Active Supporters:** Several organizations (Quant, MIT, Compelio, TradeLens/Maersk) are implementing, testing, or deploying aspects related to SATP. Some government entities (e.g., Port of Adelaide/Australian Government) are customers of such deployments. These groups have expressed willingness to participate in an IETF working group.
+
+*   **Open Discussion on BOF Formation:**
+    *   **Scope Refinement:** Suggestions to distinguish between an "Minimal Viable Product" (MVP) focusing on core asset transfer and deferring more complex use cases (like Bill of Lading data sharing) until later.
+    *   **Community Engagement Concerns (Eric Burger, Richard Barnes):** Concerns were reiterated about whether enough "consumers" of the protocol (i.e., network operators, not just vendors or proponents) are present or willing to actively participate, both in the BOF and a potential future WG.
+    *   **IETF Process & Liaisons:** The need for a threat model to be included in the charter/milestones was highlighted. The importance of liaison statements with other SDOs (ISO, ITU) and IETF working groups (SKIT, Tigris) was stressed to ensure coordination and avoid duplication.
+    *   **Trust Assumption:** The benefits of the trusted gateway assumption (avoiding decentralization complexities, focusing on protocol) were supported.
+
+## Decisions and Action Items
+
+*   **Poll Results:**
+    *   **Is this a problem that needs to be solved (somewhere)?** 36 "Yes," 2 "No." (Strong consensus for problem existence)
+    *   **Is the IETF the right place to create the digital asset transfer protocol?** 35 "Yes," 3 "No." (Strong consensus for IETF as the venue)
+    *   **Are you a participant that will actively implement or deploy the results?** 12 "Yes."
+    *   **Are you an operator of an asset network that will use the SAT protocol?** 5 "Yes."
+    *   **Are you willing to help review documents?** 28 "Yes."
+    *   **Are you willing to help edit or author documents?** 12 "Yes."
+
+*   **Action Items for Proponents/Chairs:**
+    *   Address the inclusion of a **threat model** in the proposed charter or initial working group documents.
+    *   Incorporate **liaison statements** in the charter for coordination with other SDOs (e.g., ISO, ITU) and relevant IETF working groups (e.g., SKIT, Tigris).
+    *   Continue efforts to actively engage **actual operators of asset networks** to ensure their participation and requirements are met.
+
+## Next Steps
+
+*   The IESG/ADs will review the BOF discussion and poll results to deliberate on the formation of a working group for SATP.
+*   The outcome of this deliberation will be posted to the SATP mailing list.
+*   Proponents are encouraged to refine the draft charter and documents based on the feedback received, particularly regarding the threat model and liaison coordination.
+*   Continued community engagement on the mailing list and potential interim meetings will be crucial.

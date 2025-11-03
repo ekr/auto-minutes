@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="tls.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-TLS-20220323-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 23 Mar 2022 09:00</p>
+<h1>tls Session Minutes - IETF 113</h1>
+<h2>Summary</h2>
+<p>The tls working group session at IETF 113 covered updates on several in-progress drafts, including Compact TLS (CTLS), TLS 1.3 (8446bis), SNI Privacy (SNIP), Hybrid Key Exchange, and Deprecating Obsolete Key Exchange Methods. There was also a presentation on Encrypted ClientHello (ECH) privacy analysis and an introduction to the Authcam draft. Key discussions focused on technical clarifications, security implications, and the path forward for each document, particularly in light of ongoing post-quantum cryptography (PQC) standardization efforts.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Administrivia and Document Updates</strong></p>
+<ul>
+<li>Two RFCs published since the last meeting: DTLS CID and Deprecate MD5 and SHA1.</li>
+<li>Three documents at the RFC Editor: DTLS 1.3, Ticket Requests, External PSK Guidance.</li>
+<li>Delegated Credentials is in IETF Last Call.</li>
+<li>Cross-SNI and Flags Extensions drafts are paused pending implementation experience.</li>
+</ul>
+</li>
+<li>
+<p><strong>Compact TLS (CTLS)</strong></p>
+<ul>
+<li><strong>Goal</strong>: To move to Experimental RFC, close to completion.</li>
+<li><strong>Recent Changes (Ben Schwartz)</strong>: Allowed optional elements in profiles, moved profile to ClientHello, clarified conditional sequence numbers (stream/datagram), and refined alerts/encryption computation.</li>
+<li><strong>Open Issues</strong>:
+<ul>
+<li><strong>Length Field (Issues 39 &amp; 41 - Fragmentation)</strong>: Discussed the removal of the length field and lack of fragmentation information for UDP. Proposed solution: Introduce profiling for different framing types (no framing, length-only, full DTLS-like framing) to cater to TCP and UDP, with potential future optimizations for the &quot;full&quot; framing.</li>
+<li><strong>Optional Optimizations (Random values, Finished value)</strong>: Karthik Bhargavan suggested emitting random values (relying on DHE randomness) and the finished value (relying on AAD for integrity). <strong>Decision:</strong> These are deferrable via the profiling mechanism and will not be included in the current version, allowing for future extensions based on justified use cases.</li>
+<li><strong>Transcript Reconstruction</strong>: Richard Barnes's concept of treating CTLS as a compression layer. Hannes raises concerns about implementation complexity, RAM, and computational effort for embedded systems. Richard clarified the intent was logical equivalence rather than mechanical expansion. <strong>Decision:</strong> The working group needs to take a clear stance on whether to include this concept, with an analysis confirming its impact on implementation. Initial sentiment leans towards not requiring a mechanical expansion.</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Eckert will incorporate discussed changes, and then the document will proceed to Working Group Last Call.</li>
+</ul>
+</li>
+<li>
+<p><strong>TLS 1.3 (RFC 8446bis)</strong></p>
+<ul>
+<li><strong>Goal</strong>: Clarify existing text, remove problematic language, and avoid substantive changes that would necessitate a protocol version increment.</li>
+<li><strong>Open Issues</strong>:
+<ul>
+<li><strong>ECDHE Recommendations</strong>: John Mattson proposed recommending new ECDHE exchanges at specific intervals (e.g., hourly, 100GB) for Perfect Forward Secrecy (PFS). <strong>Decision:</strong> No change to the document. Current key update mechanisms provide PFS.</li>
+<li><strong>PSK Alert Granularity</strong>: John Mattson proposed repurposing certificate alerts for PSKs. Concerns were raised about potential confusion with mixed authentication types and the historical utility of granular certificate alerts. <strong>Decision:</strong> The working group leans towards not introducing granular PSK alerts. If any alert is needed, a single &quot;Ticket Invalid&quot; alert would be preferred.</li>
+<li><strong>PSK Hash vs. Negotiated Hash (Issue 1227)</strong>: Clarification needed on whether to use the PSK-associated hash or the negotiated hash for message hash re-injection. <strong>Decision:</strong> The document will be modified to clarify that the <em>negotiated hash</em> should be used consistently for message hash re-injection and to explicitly state which hash is used at various points in the transcript.</li>
+<li><strong>HRR Model Confusion (Issues 1223, 1224)</strong>: David Benjamin highlighted ambiguity in how decisions are made across ClientHello messages (CH1 vs. CH2), especially with Hello Retry Request (HRR) and Encrypted ClientHello (ECH). <strong>Decision:</strong> The goal is to make minimal changes to reduce ambiguity without extensive rework. David Benjamin is requested to propose a minimal Pull Request (PR) to address this.</li>
+<li><strong>Issues to be Closed</strong>:
+<ul>
+<li>Issue 1206 (Cookie Guidance): No changes needed; current guidance is sufficient.</li>
+<li>Discussion on &quot;Recommended/Not Recommended&quot; terminology: This topic belongs in RFC 8447bis and not 8446bis.</li>
+<li>Guidance on multiple identities in post-handshake authentication: Deemed an application-level issue.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Next Steps</strong>: Eckert will complete remaining changes and a new draft will be published, followed by Working Group Last Call (anticipated end of April/beginning of May).</li>
+</ul>
+</li>
+<li>
+<p><strong>SNIP (SNI Privacy)</strong></p>
+<ul>
+<li><strong>Updates (Martin Thompson)</strong>: Document underwent significant editorial rework for improved clarity and comprehensibility. An appendix was removed.</li>
+<li><strong>Status</strong>: No current implementations.</li>
+<li><strong>Decision:</strong> The document will remain in a &quot;parked&quot; state until implementation interest emerges. Martin Thompson expressed willingness to set up an interoperability event if server-side implementation work is undertaken.</li>
+</ul>
+</li>
+<li>
+<p><strong>Encrypted ClientHello (ECH) Privacy</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Vincent Cheval</li>
+<li><strong>Analysis</strong>: Presented a formal security analysis of ECH using symbolic models (ProVerif) to verify privacy goals (client/server identity, unlinkability, extension privacy) for TLS 1.3, building on a comprehensive feature model.</li>
+<li><strong>Key Findings</strong>: ECH aims to encrypt sensitive backend server information (e.g., SNI) but faces challenges with Hello Retry Request (HRR). The current ECH design links the encryption of inner ClientHello messages (first and HRR-generated second) to mitigate HRR-based attacks.</li>
+<li><strong>Verification</strong>: Achieved proofs for most security properties for vanilla TLS and many for ECH, though some ECH proofs required deactivating certain features due to computational resource limitations (memory, time).</li>
+<li><strong>Assumptions</strong>: Standard cryptographic assumptions, privacy of HPKE private key, and backend server PSK/long-term certificates.</li>
+<li><strong>Discussion</strong>: Clarification on &quot;one RTT and zero RTT disabled&quot; (means application data not included in the proof, stopping at the ClientFinished message). Questions on applicability to complex enterprise scenarios (proxies, firewalls), which is theoretically possible but impacts verification complexity. Discussion on assumptions regarding consistent ECH configuration across backend servers.</li>
+</ul>
+</li>
+<li>
+<p><strong>Hybrid Key Exchange</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Douglas Stebila</li>
+<li><strong>Goal</strong>: Enable simultaneous use of traditional and post-quantum key exchange in TLS 1.3 to provide early PQC security and reduce risk.</li>
+<li><strong>Mechanism</strong>: Defines new key exchange groups for combinations of algorithms. Key shares and shared secrets are concatenated. This approach is NIST-approved for FIPS compliance if one component is FIPS compliant.</li>
+<li><strong>Discussion on Concatenation Safety</strong>: Concerns raised by Nimrod Avaram and colleagues regarding the safety of concatenation if the hash function is not collision-resistant, especially under specific conditions (variable-length first keying material, ephemeral key reuse).</li>
+<li><strong>Conclusion</strong>: The specific attack does not apply to this draft because standardized TLS 1.3 Diffie-Hellman groups use <em>fixed-length</em> shared secrets, thus violating a critical condition of the attack.</li>
+<li><strong>Decision:</strong> No technical changes are needed to the draft regarding this attack, but the document will clearly state the requirement for fixed-length shared secrets.</li>
+<li><strong>Status</strong>: No known pending tasks. Interoperable implementations exist. The specific PQC algorithms will be identified outside this document (post-NIST Round 3).</li>
+<li><strong>Working Group Last Call (WG Last Call)?</strong>: Discussion arose about the appropriateness of a WG Last Call before NIST's PQC algorithm selection.
+<ul>
+<li><strong>Views</strong>: Some expressed concern that it's too early if the algorithms are unknown. Chairs and others argued that a WG Last Call could encourage review and ensure the mechanism is ready once algorithms are finalized, as the document is intentionally algorithm-agnostic.</li>
+<li><strong>Further Discussion</strong>: Explored implications of future variable-length secrets and potential downgrade attacks if not properly protected. Nimrod Avaram highlighted the difficulty of proving security without strong hash function assumptions. Nicholas commented on the document's current looseness regarding ephemeral key reuse, pending NIST standards for KEMs.</li>
+</ul>
+</li>
+<li><strong>Decision:</strong> Chairs will consider issuing a WG Last Call to encourage broad review, with the understanding that final publication is contingent on NIST PQC algorithm selection.</li>
+</ul>
+</li>
+<li>
+<p><strong>Deprecating Obsolete Key Exchange Methods</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Nimrod Avaram</li>
+<li><strong>Goal</strong>: Deprecate RSA Key Exchange, limit Finite Field Diffie-Hellman (FFDH) to ephemeral form with appropriate group properties, and discourage static Elliptic Curve Diffie-Hellman (ECDH).</li>
+<li><strong>Rationale</strong>: RSA lacks PFS and is vulnerable to black-box attacks (e.g., DROWN). Static ECDH lacks PFS and is susceptible to secret reuse attacks. FFDH needs minimum security properties.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Venue</strong>: A question was raised (via Jabber by Utas) whether this is configuration guidance (suited for the UTA working group, like RFC 7525) rather than a TLS working group protocol deprecation.</li>
+<li><strong>Historical Precedent</strong>: David Benjamin noted that the TLS working group has historically deprecated broken algorithms (e.g., SHA-1/MD5, TLS 1.0/1.1, RC4) and that the UTA group has sometimes requested TLS WG to deprecate algorithms first.</li>
+<li><strong>Duplication of Work</strong>: Stephen Farrell argued against duplication of work, suggesting UTA and RFC 7525bis as the appropriate venue.</li>
+</ul>
+</li>
+<li><strong>Decision:</strong> Chairs will discuss internally to determine the appropriate working group and process for this document.</li>
+</ul>
+</li>
+<li>
+<p><strong>ICA (Intermediate Certificate Authority) Suppression</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Panos Kampanakis</li>
+<li><strong>Problem</strong>: TLS handshakes carry substantial authentication data (signatures, public keys, cert chains, SCTs, OCSP), which can cause slowdowns, especially for post-quantum signatures (10+ KB) and lead to extra round trips in QUIC. Also an issue for constrained mesh networks.</li>
+<li><strong>Proposed Solution</strong>: Utilize a TLS flag to signal ICA suppression to the peer. This requires the client to pre-acquire and maintain a fresh list of Intermediate CAs.</li>
+<li><strong>Benefits</strong>: Reduces authentication data size (e.g., 1.5-6 KB for PQ signatures), aids post-quantum and EMU (Extensible Mobile User) use cases. Described as &quot;low-hanging fruit.&quot;</li>
+<li><strong>Precedents</strong>: Mozilla Firefox's ICA preload list, browser revocation whitelists, and CTLS certificate dictionaries.</li>
+<li><strong>Challenges</strong>: For Web PKI, the &quot;long tail&quot; of clients with outdated ICA lists could be problematic, requiring servers to still send intermediates or risk failures. More complex mechanisms (e.g., named lists) might be needed for web-scale deployment.</li>
+<li><strong>Next Steps</strong>: Discussion to continue on the mailing list and GitHub. No request for working group adoption at this time, pending further refinement and NIST algorithm selection.</li>
+</ul>
+</li>
+<li>
+<p><strong>Authcam Updates</strong></p>
+<ul>
+<li><strong>Presenter</strong>: Nimrod Avaram</li>
+<li><strong>Goal</strong>: Replace traditional signature-based authentication with Key Exchange Message (KEM)-based authentication in TLS, aiming for better post-quantum security and potentially smaller/more efficient handshakes.</li>
+<li><strong>Changes</strong>: Document restructured for readability (protocol diagrams separated from implementation details). Full use of HPKE (Hybrid Public Key Encryption) and added certificate request context to keying caps messages.</li>
+<li><strong>&quot;Authcam Abridged&quot;</strong>: A companion document providing Q&amp;A, intuition, and clarification of open questions and security aspects.</li>
+<li><strong>Motivation</strong>: NIST PQC signature schemes are anticipated to be large or computationally challenging for constrained devices. KEMs are seen as a promising alternative. This effort provides an opportunity to re-examine TLS authentication beyond just &quot;scribbling PQ&quot; onto existing designs.</li>
+<li><strong>Academic Work</strong>: Ongoing academic work includes Tamarind proofs and extensions to the TLS 1.3 model.</li>
+<li><strong>Ask to WG</strong>: Solicit feedback on the document's fit, readability, open issues, and potential experiments. Encourage questions and contributions.</li>
+<li><strong>Next Steps</strong>: Encourage broad feedback and discussion within the working group.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>CTLS</strong>:
+<ul>
+<li><strong>Decision</strong>: Defer optimizations to omit random values and finished value; these can be added later via the profiling mechanism.</li>
+<li><strong>Action Item</strong>: Eckert to incorporate changes regarding framing options and prepare for WG Last Call.</li>
+</ul>
+</li>
+<li><strong>TLS 1.3 (8446bis)</strong>:
+<ul>
+<li><strong>Decision</strong>: No changes to recommend specific ECDHE intervals.</li>
+<li><strong>Decision</strong>: Lean towards a single &quot;Ticket Invalid&quot; alert for PSK issues, rather than repurposing granular certificate alerts.</li>
+<li><strong>Decision</strong>: Clarify document to consistently use the <em>negotiated hash</em> for message hash re-injection.</li>
+<li><strong>Decision</strong>: Seek minimal changes to reduce HRR/ECH ambiguity.</li>
+<li><strong>Decision</strong>: Close Issue 1206 (Cookie Guidance), issue on &quot;Recommended/Not Recommended&quot; (refer to 8447bis), and issue on multiple identities in post-handshake authentication (application issue).</li>
+<li><strong>Action Item</strong>: Eckert to make remaining changes, David Benjamin to propose a minimal PR for HRR/ECH, then prepare for WG Last Call.</li>
+</ul>
+</li>
+<li><strong>SNIP</strong>:
+<ul>
+<li><strong>Decision</strong>: Document to remain parked until implementation interest.</li>
+</ul>
+</li>
+<li><strong>Hybrid Key Exchange</strong>:
+<ul>
+<li><strong>Decision</strong>: The document will explicitly state the requirement for fixed-length shared secrets.</li>
+<li><strong>Action Item</strong>: Chairs to consider issuing a WG Last Call to encourage review, with final RFC publication contingent on NIST PQC algorithm selection.</li>
+</ul>
+</li>
+<li><strong>Deprecating Obsolete Key Exchange Methods</strong>:
+<ul>
+<li><strong>Action Item</strong>: Chairs to discuss and determine the appropriate working group (TLS WG vs. UTA) and process for this document.</li>
+</ul>
+</li>
+<li><strong>ICA Suppression</strong>:
+<ul>
+<li><strong>Decision</strong>: No request for WG adoption at this time.</li>
+<li><strong>Action Item</strong>: Continue discussion on the mailing list and GitHub.</li>
+</ul>
+</li>
+<li><strong>Authcam</strong>:
+<ul>
+<li><strong>Action Item</strong>: Authors to solicit feedback from the working group to refine the draft.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>CTLS</strong>: Expect a new draft with proposed changes, followed by a Working Group Last Call.</li>
+<li><strong>TLS 1.3 (8446bis)</strong>: A new draft is expected (end of April/beginning of May), followed by a Working Group Last Call.</li>
+<li><strong>SNIP</strong>: Authors and chairs will monitor for implementation interest.</li>
+<li><strong>Hybrid Key Exchange</strong>: A WG Last Call may be initiated by the chairs soon.</li>
+<li><strong>Deprecating Obsolete Key Exchange Methods</strong>: Chairs will provide guidance on the document's future venue.</li>
+<li><strong>ICA Suppression</strong>: Further discussion and refinement are needed before seeking WG adoption.</li>
+<li><strong>Authcam</strong>: Authors actively seek feedback from the working group.</li>
+<li><strong>General</strong>: The working group continues to monitor NIST PQC algorithm standardization announcements.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,63 @@
+**Session Date/Time:** 23 Mar 2022 12:00
+
+# drip
+
+## Summary
+
+The DRIP working group met to discuss the status of its core documents, ongoing ASTM coordination, and implementation progress. The DRIP Architecture document and the ERR ID (RID) document are currently in IETF and Working Group Last Call, respectively. An update on ASTM F-38 committee activities highlighted a pending intellectual property conflict related to the F-3411-19 revision. Implementation efforts at Linköping University demonstrated progress on OpenHIP, Iroha blockchain-based registries, and challenges with Bluetooth 5. A significant portion of the session focused on the Authentication Formats and Registries drafts, including a detailed overview of the proposed registration processes and remaining technical challenges regarding federation and key management. Plans for future interoperability testing and demonstrations were also outlined.
+
+## Key Discussion Points
+
+*   **Document Status:**
+    *   The first DRIP RFC has been published.
+    *   DRIP Architecture draft is in IETF Last Call.
+    *   ERR ID (RID) draft is in Working Group Last Call.
+    *   Milestones include completing the Registries draft by year-end and OAuth by the next IETF.
+*   **ASTM Coordination:**
+    *   ASTM F-38 committee released two UAS Remote ID documents for ballot, including a revision of F-3411-19 (the basis for much DRIP work).
+    *   The F-3411-19 ballot closed with one negative ballot related to an intellectual property conflict, requiring resolution.
+    *   The ASTM "Means of Compliance" document passed unanimously.
+    *   A question was raised whether DRIP will need its own "means of compliance" draft to detail how DRIP RFCs address aspects not covered by F-3411 (dynamic session IDs, trackability by authorized parties, linking to operator/serial number).
+    *   Successful field tests were conducted last summer, with another planned this summer to test interoperability.
+*   **Implementation Update (Linköping University):**
+    *   **Architecture:** Components include Observer (Android app), Drone (Raspberry Pi/add-ons), Registry (Iroha blockchain), and various users.
+    *   **OpenHIP:** Implemented on drones, requiring updates for hierarchical HITS format changes. Python scripts for registration/lookup.
+    *   **Broadcast:** Drones broadcast in STM format with DRIP extensions; experiments with Wi-Fi, Bluetooth 4, and Bluetooth 5.
+    *   **Registry:** Iroha blockchain provides a permission-based registry supporting DRIP requirements, capable of handling hundreds of drones in limited geographical areas.
+    *   **Bluetooth 5:** Faced challenges with full feature support across devices (e.g., Raspberry Pi 4). Achieved ~10km range with a development kit.
+    *   **OpenSSL 3.0 Migration:** Significant effort required to update OpenHIP due to deprecated calls in OpenSSL 1.x. Code compiles but needs thorough testing.
+    *   **NAT Traversal (RFC 9028):** Basic implementation completed, further testing needed. The utility for DRIP, especially for remote registry access, was questioned.
+    *   **Formal Verification:** Efforts are underway to formally verify DRIP security protocols using modern tools.
+    *   **Real-world Demonstrations:** Involvement in EU projects (e.g., drone flying taxis, ambulance services) in Norway and Finland, with plans to integrate DRIP prototypes.
+*   **Authentication Formats Draft:**
+    *   The Forward Error Correction (FEC) section is now fully filled in and requires extensive review.
+    *   Specific polynomial specification for Reed-Solomon FEC might be necessary to avoid collisions.
+    *   Ready for Working Group Last Call, pending review responses.
+*   **Registries Draft:**
+    *   Underwent a major rewrite for improved organization and clarity, with a title change proposed to "DRIP Entity Tags Registration and Lookup."
+    *   Clarified that DRIP is not strictly bound to DNS, EPP, or RDAP (though they serve as a baseline for implementation) nor exclusively to DEETs (DRIP Entity Tags).
+    *   **Registration Process:** Outlined three key operations:
+        1.  **Serial Number Registration:** Manufacturer registers UA with the Manufacturer's Registry of Aircraft (MRA) using a DEET, including UA-specific information (e.g., make, model, weight).
+        2.  **Operator Registration:** At a Remote ID Registry (USS).
+        3.  **Session ID Registration:** UA generates key pair and DEET, which is passed via the operator to the Remote ID Registry. This process generates the **broadcast attestation**, crucial for over-the-air authentication messages.
+    *   **Key Rollover and Federation:** Discussed the challenge of distributing trust and managing multiple root registry servers with distinct key pairs while maintaining security, which needs further exploration.
+    *   Suggestion to split EPP and RDAP sections into separate documents to be considered by the working group.
+
+## Decisions and Action Items
+
+*   **Auth Draft Review:** The FEC section requires extensive review, especially concerning specific polynomial requirements for Reed Solomon. Working group members are encouraged to provide guidance.
+*   **Registries Draft:**
+    *   Adam to collaborate with Bob to integrate RAA/HDA text into the Registries draft.
+    *   Adam to incorporate Andre's implementation text (likely in an appendix).
+    *   Working group discussion is needed on whether to split EPP and RDAP sections into separate documents.
+    *   Adam will respond to Rich's review comments and prepare for WG Last Call.
+*   **RID Draft (Bob):** Address Med's comments next week. Engage with IANA for review of new IANA considerations. Aim for dash-18 release by end of next week; comments on dash-17 are requested by early next week.
+*   **Future Interoperability:** Adam (AX implementation) plans to coordinate with Andre (Linköping University) for DRIP-to-DRIP interoperability testing.
+
+## Next Steps
+
+*   **Draft Progression:** Advance Authentication Formats and Registries drafts towards Working Group Last Call.
+*   **Interim Meeting:** Adam plans an interim meeting (in a few weeks/a month) to conduct a deep dive into the 22 Z-diagrams illustrating the registry processes and flows, seeking working group feedback to refine the draft.
+*   **IETF 114 Demonstration:** Adam intends to perform a full demonstration of the AX implementation of UAS Remote ID at IETF 114 in Philadelphia, including serial number and session ID registration, flight, and data reception.
+*   **Federation and Key Management:** Further discussion and research are needed on how to manage federated registries and key rollover, particularly for the root registry, to ensure security and distributed trust.
+*   **ASTM "Means of Compliance":** Consider whether DRIP needs its own "means of compliance" document.

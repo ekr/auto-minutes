@@ -1,0 +1,93 @@
+**Session Date/Time:** 27 Jul 2022 17:30
+
+# calext
+
+## Summary
+
+The calext session covered updates and open discussion points for the JS Contact and JS Calendar specifications, including their mappings to vCard and iCalendar, respectively. Key topics included the definition and mapping of the `label` property in JS Contact, the handling of `replyTo` and `sentTo` properties in JS Calendar for scheduling, proposed vendor extension naming schemes, and a potential correction to a `VTODO` duration constraint in RFC 5545.
+
+## Key Discussion Points
+
+*   **JS Contact Status and Publications:**
+    *   JS Contact (o3) and JS Contact vCard Mapping (o2) RFCs are in progress.
+    *   A new draft, "vCard Extensions for JS Contact," defines vCard properties and parameters needed for mapping.
+    *   All three drafts are planned for co-publication.
+
+*   **JS Contact Main Changes:**
+    *   Clarified that `id` values in options objects must be persisted to facilitate patching.
+    *   Introduced a `resources` property, combining various URI-based vCard properties, with a specialization for `onlineServices` to specify canonical service names.
+    *   New vCard properties and parameters are being defined, some with shared semantics with iCalendar properties.
+
+*   **JS Contact Label Property Discussion:**
+    *   The `label` property in JS Contact is intended for human-readable, non-semantic text, motivated by Apple Address Books' `x-ab-label`.
+    *   In vCard, a `LABEL` parameter exists for `ADDRESS` (delivery address) in RFC 6350 but is not in IANA. An older `LABEL` property in vCard 3 was obsoleted.
+    *   Apple Address Books use `x-ab-label` with property groupings, seemingly for very short identifiers (e.g., "home," "work").
+    *   **Question:** Is the current JS Contact `label` definition (free-form text) aligned with common use cases like `x-ab-label` (short identifiers)? Is arbitrary node tagging needed?
+    *   **Opinion:** The `label` property should be at least as powerful as `x-ab-label`. A clear mapping from existing data (e.g., `x-ab-label`) to JS Contact is important. If JS Contact `label` is clarified to be for short identifiers, using `x-ab-label` directly might be appropriate for mapping.
+
+*   **JS Contact Property Groups Discussion:**
+    *   vCard allows grouping properties (e.g., `item1.email`, `item1.tel`) using opaque identifiers, but RFC 6350 specifies no further semantic meaning.
+    *   The mapping RFC preserves these groups using JSON pointers.
+    *   **Question:** Should property groups be a first-class feature in JS Contact?
+    *   **Opinion:** Apple Address Books are the only known system widely using them. While preservation in mapping is necessary, there's no strong demand for them as a first-class JS Contact feature currently.
+
+*   **JS Contact Properties Not Intended for Standard Mapping:**
+    *   `PID` and `CLIENTPID` (vCard for synchronization): Not intended for standard JS Contact properties, though values can be preserved. Their utility for synchronization was questioned.
+    *   vCard temporal values:
+        *   `date-time` and `date` types (partial values): Not intended for support in standard JS Contact properties due to lack of use cases.
+        *   `date-and-or-time` for anniversaries: Supported, including partial dates, but not time-only.
+        *   **Proposal:** Support time components for birthdays (e.g., exact time of birth).
+
+*   **JS Calendar Status and Publications:**
+    *   Similar to JS Contact, three RFCs are in progress, including an extensions draft for new iCalendar properties.
+    *   Some definitions (e.g., `propId` parameter) will be shared between vCard and iCalendar extensions.
+    *   A standard mapping for unknown properties to an extension property mechanism using URNs (in the IETF namespace) is defined.
+
+*   **JS Calendar `replyTo` and `sentTo` Discussion:**
+    *   JS Calendar's `replyTo` (multivalued) allows different scheduling methods (IMIP, Web, Other) for RSVPs/invites.
+    *   `participant.sentTo` defines where to send invites (without a Web method).
+    *   **Problem:** iCalendar's `ORGANIZER` or `ATTENDEE` properties typically allow only one calendar address (URI, often mailto), creating ambiguity when mapping from multivalued JS Calendar properties. The `Web` method has no iCalendar mapping.
+    *   **Options Discussed:**
+        1.  Keep JS Calendar multivalued and define a heuristic for iCalendar mapping (e.g., prioritize IMIP). (Concerns: rule complexity, potential data loss/overwrite).
+        2.  Merge `Other` and `IMIP` methods into a single `ITIP` method. (Aims for clarity).
+        3.  Use separate properties for each scheduling method.
+        4.  Maintain current design, explicitly rename `Other`. The multi-value property provides a namespace for extensibility, allowing servers to introduce new scheduling methods without clients needing explicit knowledge.
+        5.  Simplify the approach, focusing on existing ITIP mechanisms and separating organizer from reply-to addresses.
+        6.  Separate identification from scheduling mechanism. A canonical identifier (the single URI) could serve for ITIP if mailto and no other mechanisms are present, with an array of alternative, preferential reply mechanisms.
+
+*   **JS Calendar `sendBy` Property:**
+    *   JS Calendar `sendBy` is the email address from the `From` header of the email containing calendar data.
+    *   iCalendar `SENT-BY` parameter on `ATTENDEE` is defined differently.
+    *   **Proposal:** Rename JS Calendar `sendBy` to `sendFrom` to avoid confusion, and preserve the iCalendar `SENT-BY` parameter during mapping.
+
+*   **JS Calendar Vendor Extension Naming Scheme:**
+    *   Current scheme uses a domain and property name, but no IETF-authorized domain exists.
+    *   **Proposal:** Allow `https` URIs (pointing to property definitions) or URNs in the IETF namespace for extensions. This makes properties self-documenting.
+
+*   **JS Calendar Unknown Properties and Vendor Extensions:**
+    *   Previous consensus suggested unknown properties should be ignored but stored.
+    *   **Option 1:** Validate known properties, ignore/store others. Risk of name squatting if future standard properties clash with existing unknown properties.
+    *   **Option 2 (Proposal):** Only properties without a prefix are standard JS Calendar. All other properties *must* be prefixed with an `https` URI or a URN referencing the defining RFC. This aims to prevent name clashes and ensure self-documentation.
+    *   **Concerns:** This might bloat the payload, introduce quoting complexities for patching with slashes in URIs, and potentially cause implementations to reject perfectly valid objects if they don't know about a specific extension.
+
+*   **Tasks Update: `VTODO` Duration Constraint in RFC 5545:**
+    *   RFC 5545 explicitly disallows `DURATION` on a `VTODO` without a `DTSTART`. This restriction was not present in RFC 2445.
+    *   **Problem:** This constraint hinders compatibility with project management tools (where tasks may have durations but no fixed start time if dependent on other tasks) and standalone "floating" tasks with only a duration.
+    *   **Opinion:** This constraint appears to have been added by mistake during the rewrite of RFC 2445 to 5545, as the author does not recall the reasoning, and it's not mentioned in the appendix of RFC 5545 as a change. Libraries like `libical` do not enforce it.
+    *   **Proposal:** Drop the constraint to allow `DURATION` on its own for `VTODO`.
+
+## Decisions and Action Items
+
+*   **JS Contact Label Property:** No immediate decision; Mario and the presenter will further investigate `x-ab-label` usage and propose a way forward.
+*   **JS Contact Property Groups:** Agreed to preserve property groups during mapping but not to introduce them as a first-class feature in JS Contact.
+*   **JS Contact Temporal Values:** Agreed to support time components in birthday definitions.
+*   **JS Calendar `sendBy` Property:** Agreed to rename JS Calendar `sendBy` to `sendFrom` and to preserve the iCalendar `SENT-BY` parameter on participants.
+*   **JS Calendar Vendor Extension Naming Scheme:** Agreed to allow `https` URIs or URNs in the IETF namespace for extensions.
+*   **Tasks `VTODO` Duration:** Agreed that the constraint in RFC 5545 is likely an error and should be removed.
+
+## Next Steps
+
+*   **JS Contact Label Property:** Mario and the presenter will continue work on this, including mailing list discussions to gather more input and clarify `x-ab-label` semantics.
+*   **JS Calendar `replyTo` and `sentTo`:** Further discussion is required on the mailing list to reach consensus. Rick S. will draft a proposal for this.
+*   **JS Calendar Unknown Properties and Vendor Extensions:** No consensus was reached on the proposal for prefixing all non-standard properties. This topic requires further discussion.
+*   **Tasks `VTODO` Duration:** Ken M. (or the presenter) will consult with the Area Director (Murray, acting for Francesca) to determine the appropriate mechanism (errata vs. update) for removing the `DTSTART` constraint on `VTODO` durations.

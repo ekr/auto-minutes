@@ -1,0 +1,99 @@
+**Session Date/Time:** 11 Nov 2021 12:00
+
+# lsr
+
+## Summary
+
+The lsr (Link State Routing) working group session covered the status of existing drafts, including several Yang models and SRv6 extensions, and proceeded with detailed presentations and discussions on new and updated individual drafts. Key outcomes included the immediate working group adoption of the "Fast Flooding" merged draft and a decision to initiate a Working Group Last Call (WGLC) for the "Flood Reflection" draft. Several other drafts proposing extensions for ASLA, prefix unreachable announcements, 5G edge computing, Path MTU, Flow ID label capabilities, unicast property advertisement, link bit error ratio, and stub link attributes were presented, with discussions deferred to the mailing list for further technical review and to address concerns regarding use cases, IGP appropriateness, and interoperability.
+
+## Key Discussion Points
+
+*   **Administrative and Working Group Document Status**:
+    *   The chairs provided an overview of the Note Well and IPR policies.
+    *   Existing RFCs (9088, 9089, 9127) and drafts (BFD Yang, OSPF/IS-IS Yang models, SRv6 encodings for IS-IS, extended attributes errata, reverse metric) were briefly reviewed. The reverse metric draft is awaiting IETF last call completion.
+    *   The group was encouraged to focus on completing existing working group documents rather than taking on new work, with specific mention of the OSPFv3 extensions for SRv6 as a priority.
+    *   A call was made for authors of experimental RFCs/drafts to report on deployments, but no updates were available from Wemo or Tony.
+
+*   **Fast Flooding (Les Ginsberg, Tony Li)**:
+    *   An updated, merged draft combining two previous fast flooding proposals was presented.
+    *   Consensus has been reached that congestion control algorithms can be sender-side implemented without requiring all nodes to use the same algorithm. However, flow control requires TLVs for interoperability.
+    *   The combined draft focuses on providing tools for implementers to experiment with different approaches.
+    *   The draft introduces a new Flooding Parameters TLV with six candidate sub-TLVs and discusses receiver performance improvements.
+    *   Two main algorithms (from draft-ginsberg and draft-ukraine) are described.
+    *   **Request**: Working group adoption, with an emphasis on early allocation for the tTLV code point.
+
+*   **Flood Reflection (Tony P)**:
+    *   Update on version 4, incorporating discussions and implementation/deployment experience.
+    *   Clarified two deployment modes: "no tunnel" and "L1 tunnel".
+    *   Introduced tunnel type discovery based on RFC 9012 for automatic tunnel setup.
+    *   Detailed changes include handling of multiple TLV instances, advertising sub-TLVs in L2 (not just L1), uniform IS-IS metric on flood reflector adjacencies, and uniform cluster ID within an IS-IS area.
+    *   Implementation experience indicates expected scalability gains and non-forklift deployment.
+    *   Ongoing work includes BGPLS and auto flood reflection.
+    *   **Request**: Working group last call.
+    *   **Discussion**: Questions raised about auto-setup of tunnels and a comparison to OSPF TTZ, particularly regarding tunnel usage. The chair noted that the draft had been extensively clarified.
+
+*   **Application Specific Link Attributes (ASLA) - Any Application Bit (Shraddha Hegde)**:
+    *   Proposed a new 'A' (Any Application) bit in ASLA to allow operators to advertise attributes applicable to all current and future applications, addressing perceived limitations in RFC 8919/8920.
+    *   Defines precedence rules: application-specific bits take precedence over the 'A' bit.
+    *   **Request**: Further review, comments, and working group adoption.
+    *   **Discussion**: Concerns raised by Les Ginsberg and Chris Bowers about potential interoperability issues, the creation of multiple competing standards, and whether the proposed solution resolves existing issues or introduces new complexities compared to the zero-length SABM (Specific Application Bit Mask) approach. Discussions on this topic will continue on the mailing list.
+
+*   **Prefix Unreachable Announcement / Passive Interface (PA/PI) (Aigen Wang)**:
+    *   Presented a solution for prefix unreachable announcements using IGPs to signal node/link failures and trigger control plane switchovers.
+    *   Compared this "PM solution" with an "Event Notification" solution, concluding PM is easier to implement, deploy, and debug, and utilizes existing IGP formats.
+    *   **Request**: Working group adoption.
+    *   **Discussion**: Les Ginsberg questioned whether this problem should be solved by IGPs at all, or by BGP/other mechanisms, suggesting consensus on the IGP role is needed first. Chris Bowers acknowledged the adoption request as a way to gauge working group interest but noted limited non-author support. Tony Li expressed a strong opinion against adding such functionality to IGPs, suggesting lower priority or alternative mechanisms. Discussion to continue on the mailing list.
+
+*   **5G Edge Computing Service Extensions for SRv6 (Linda Dunbar)**:
+    *   Proposed IGP extensions for SRv6 in 5G edge computing environments to enable load balancing across multiple anycast servers based on site cost/preference.
+    *   Leverages anycast to distribute traffic, eliminate single points of failure, and handle client mobility.
+    *   Introduces a new flag in Flex-Algo definitions and a new sub-TLV in OSPF to advertise aggregated site costs.
+    *   **Discussion**: Concerns raised by Shraddha Hegde and Chris Bowers about using metrics for load balancing due to potential for oscillations and the need for hysteresis. AC suggested existing OSPF mechanisms (Type 2 external routes) might achieve similar results if only aggregated metrics are used. Discussion to continue on the mailing list.
+
+*   **IGP Extension for Path MTU (PMTU) (Jing Guo)**:
+    *   Proposed IS-IS and OSPF extensions to advertise link MTU via new sub-TLVs to enable ingress nodes to compute path MTU for SR policies.
+    *   **Discussion**: Jeff Tantsura and Les Ginsberg expressed skepticism about the reliability of advertised MTUs in real-world deployments and suggested looking into existing code points for IS-IS. AC questioned the general utility, suggesting that in SR environments, one might just use the lowest MTU in the domain or a node-based capability. Discussion to continue on the mailing list.
+
+*   **Flow ID Label Capabilities (FALC) and Label Depth (FRLD) (Shaowen Ma)**:
+    *   Proposed signaling FALC and FRLD using IGP and BGP-LS, modeling after RFC 9088/9089 for Entropy Label capabilities.
+    *   A one-bit FALC flag is borrowed from IS-IS prefix attribute flags (RFC 7794).
+    *   **Discussion**: Chris Bowers questioned if this capability, being for performance measurement rather than direct forwarding, is appropriate for IGP advertisement. AC and Les Ginsberg noted that this is a node property, not a prefix property, and should align with existing router capabilities advertisements rather than prefix reachability. Discussion to continue on the mailing list.
+
+*   **Unicast Property Advertisement (Yuanbo Li)**:
+    *   Proposed updates to OSPFv2 (RFC 7684) and OSPFv3 (RFC 8362) to introduce a new "unicast flag" in a variable-length prefix attribute TLV to identify prefixes as unicast.
+    *   **Discussion**: AC questioned the use case for routers needing to know if a prefix is anycast, as anycast is often designed to be transparent. Concerns were also raised by AC and Chris Bowers regarding the proposed processing rules for the flag, especially regarding backward compatibility and the interaction with existing flags, suggesting that existing flags should still be set correctly even with new advertisements. Discussion to continue on the mailing list.
+
+*   **Link Bit Error Ratio (LBER) (Yao Liu)**:
+    *   Proposed IS-IS extensions to advertise unidirectional link bit error ratio (LBER) via a new sub-TLV, intended to enhance cSPF or aid controllers in path computation.
+    *   **Discussion**: AC, Chris Bowers, and Randy Turner (in chat) expressed strong skepticism about the utility of LBER at the routing level. They argued that for post-FEC bit errors, a link is generally considered unusable and taken out of service, while pre-FEC errors are often expected. The consensus was that packet loss is a more relevant and useful metric for routing decisions. Discussion to continue on the mailing list.
+
+*   **Stub Link Attributes (Aigen Wang)**:
+    *   Proposed IS-IS and OSPF extensions to advertise stub interface/link attributes where there is no suitable existing mechanism.
+    *   Proposed defining a new sub-TLV for stub link attributes and a link type for stub links.
+    *   **Request**: Working group adoption.
+    *   **Discussion**: Linda Dunbar questioned its difference from a prefix LSA and its use for aggregate costs. The chair indicated that an immediate adoption call would not be made, pending further discussion on the mailing list, particularly on whether such a mechanism is truly needed or if existing methods could suffice for identifying stub links. AC commented that the encoding and placement for its original purpose (inter-AS TE) were fine, but the need for this additional link type for TE was still questionable.
+
+## Decisions and Action Items
+
+*   **Fast Flooding (Les Ginsberg, Tony Li)**:
+    *   **Decision**: The merged Fast Flooding draft will proceed with immediate working group adoption.
+    *   **Action Item**: Chairs to initiate the adoption call and decide whether it will be a Standards Track or Experimental RFC.
+
+*   **Flood Reflection (Tony P)**:
+    *   **Decision**: The Flood Reflection draft will be sent for Working Group Last Call (WGLC).
+    *   **Action Item**: Chairs to initiate the WGLC on the mailing list.
+
+*   **Application Specific Link Attributes (ASLA) - Any Application Bit (Shraddha Hegde)**:
+    *   **Action Item**: Continue discussions on the mailing list, specifically addressing interoperability concerns and the interaction with existing ASLA mechanisms.
+
+*   **Prefix Unreachable Announcement / Passive Interface (PA/PI) (Aigen Wang)**:
+    *   **Action Item**: Further discussion needed on the mailing list regarding whether this problem should be solved by IGPs and the merits of the proposed solution versus alternatives.
+
+*   **All Other Individual Drafts (5G Edge Computing, PMTU, FALC/FRLD, Unicast Property, LBER, Stub Link)**:
+    *   **Action Item**: Continue discussions on the mailing list to address concerns raised, clarify use cases, and assess the appropriateness of proposed IGP extensions.
+
+## Next Steps
+
+*   Working group members are encouraged to actively review and provide feedback on the Fast Flooding draft post-adoption and during the WGLC for Flood Reflection.
+*   The mailing list should be utilized for in-depth technical discussions on all other individual drafts, particularly concerning the fundamental questions raised about the scope and appropriateness of IGP extensions for specific use cases (e.g., load balancing via metrics, reliability of advertised MTUs, non-forwarding capabilities, generic anycast identification, bit error rates, stub link identification).
+*   The chairs expressed hope for a face-to-face meeting in March to facilitate more impromptu side discussions.

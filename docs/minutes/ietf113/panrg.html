@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="panrg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-PANRG-20220324-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 24 Mar 2022 12:00</p>
+<h1>panrg</h1>
+<h2>Summary</h2>
+<p>The panrg session covered several key research areas, starting with administrative announcements and a discussion on integrating SCION-related work into the IRTF/IETF. Presentations included updates on the Path Properties draft, a novel &quot;Sidecar&quot; protocol for performance-enhancing proxies (PEPs) in encrypted transport scenarios like QUIC, wide-area network auto-scaling for cloud applications, a polynomial key-based architecture for source routing (Polka), and a proposal for trusted paths between endpoints and intermediate nodes using BNGs. A virtual interim meeting was decided upon to further discuss SCION engagement.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Administrative Announcements</strong>
+<ul>
+<li>Attendees reminded of the IRTF Note Well and encouraged to use the on-screen QR code for joining the microphone queue.</li>
+<li>Gareth and Carsten volunteered to take minutes.</li>
+</ul>
+</li>
+<li><strong>SCION Engagement in IRTF/IETF</strong>
+<ul>
+<li>There was significant discussion in a prior side meeting (Tuesday) about how to integrate aspects of SCION, including work related to the Path Properties draft, into the IRTF/IETF.</li>
+<li><strong>Decision</strong>: A virtual interim meeting will be scheduled between the current IETF meeting and the next one in Philadelphia to brainstorm and discuss which parts of SCION work fit into panrg and how to engage with other IETF groups. Spencer Dawkins encouraged scheduling this early.</li>
+</ul>
+</li>
+<li><strong>Path Properties Draft Update (Cyril Hrubis)</strong>
+<ul>
+<li><strong>Key Changes</strong>:
+<ul>
+<li>Replaced &quot;host&quot; with &quot;endpoint,&quot; defined as the first or last node on a path. This was an iteration, having previously moved from &quot;endpoint&quot; to &quot;host&quot; and now back with a clearer definition.</li>
+<li>Defined an &quot;end-to-end path property&quot; as a path property defined on both endpoints and the virtual link between them.</li>
+<li>Clarified context-dependency of definitions (e.g., path notion in SCION for routing vs. data plane).</li>
+<li>Added a new definition: &quot;routing domain identifier,&quot; for path elements in the same administrative domain, using a common routing protocol (e.g., AS number, OSPF area ID).</li>
+<li>Minor changes: Added a discussion section with links to mailing list and GitHub, rephrased recursive administrative domain definition, extended acknowledgements.</li>
+</ul>
+</li>
+<li><strong>Discussion on &quot;Endpoint&quot; Definition</strong>:
+<ul>
+<li>Brian Trammell expressed satisfaction, finding it sufficient and necessary.</li>
+<li>A poll on readiness for last call showed mixed results, with some not having read the latest draft or needing more time.</li>
+</ul>
+</li>
+<li><strong>Discussion on &quot;Routing Domain Identifier&quot;</strong>:
+<ul>
+<li>Deng Jian raised concerns about ambiguity with existing routing protocols (e.g., ISIS) that use &quot;domain&quot; differently.</li>
+<li>Cyril clarified it's intended as a generic identifier for grouping nodes by ownership and communication protocol.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Service Awareness (or &quot;How to use PEPs in an Encrypted World&quot;) (Michael Scharf)</strong>
+<ul>
+<li><strong>Problem</strong>: Performance-enhancing proxies (PEPs) are traditionally disliked due to ossification and lying to TCP. QUIC's encrypted headers make traditional PEPs impossible, hindering performance over challenging links (e.g., satellite, millimeter wave).</li>
+<li><strong>Proposed Solution</strong>: A &quot;Sidecar&quot; protocol designed solely for non-critical PEP functions.
+<ul>
+<li><strong>Principles</strong>: Opt-in, non-criticality (main protocol doesn't rely on it for reliability), local host interface (API to a library), minimal changes to main protocols.</li>
+<li><strong>Functionality</strong>:
+<ul>
+<li>Data Plane: Manipulate queues, retransmit packets using hashes of transport headers (not full headers).</li>
+<li>Control Plane: Local communication, ACKs via hashes (e.g., UDP options).</li>
+</ul>
+</li>
+<li><strong>Example Use Cases</strong>:
+<ul>
+<li>Congestion control for fluctuating capacity links (e.g., millimeter wave): Sidecar proxy acts back to sender's sidecar, which notifies QUIC to increase congestion window.</li>
+<li>Wi-Fi ACK aggregation: Access point sidecar acts on behalf of the client, reducing ACK traffic.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Open Questions/Research Areas</strong>: Overhead of hashes/ACKs, cumulative ACKs with hashes, discovery and negotiation of sidecar proxies, trust models, independence from main protocol.</li>
+<li><strong>Community Feedback</strong>: Positive reception, with Marcus Schöler from Ericsson noting similar ongoing work (&quot;lightweight PEP,&quot; multi-domain congestion control) and interest in collaboration.</li>
+</ul>
+</li>
+<li><strong>Wide Area Networks for Cloud Auto-scaling (Berta Serracantó)</strong>
+<ul>
+<li><strong>Scenario</strong>: Users (branch) connect via an SDN to applications in the cloud, managed by a cloud orchestrator.</li>
+<li><strong>Problem</strong>: Cloud auto-scaling (horizontal: more replicas; vertical: more resources per replica) doesn't typically inform the network, potentially leading to network bottlenecks.</li>
+<li><strong>Solution</strong>: <strong>Network Auto-scaling</strong>:
+<ul>
+<li>Horizontal: Dynamically changing overlay paths.</li>
+<li>Vertical: Changing underlay path characteristics (e.g., bandwidth).</li>
+</ul>
+</li>
+<li><strong>Prototyping</strong>: Uses public cloud, <code>cn1-operator</code> monitors app, <code>cn1-reader</code> pulls changes from external service registry, <code>adapter</code> notifies SD-WAN controller.</li>
+<li><strong>Results</strong>: Demonstrated successful traffic switching with minimal delay impact and proactive network adaptation matching cloud auto-scaling events, preventing performance degradation during traffic surges.</li>
+</ul>
+</li>
+<li><strong>Polka: Polynomial Key-Based Architecture for Source Routing (Rafael Salles)</strong>
+<ul>
+<li><strong>Problem</strong>: Endpoints lack information about traffic paths. SDN table-based solutions suffer from high state configuration, scalability issues, and capacity limits in tables.</li>
+<li><strong>Solution</strong>: Polka provides strict source routing by encoding paths using polynomials, with changes only at the edge, requiring no state in the core network.</li>
+<li><strong>Requirements</strong>: Topology agnostic, fixed headers, programmable switches.</li>
+<li><strong>Mechanism</strong>: Uses three polynomials: Route ID (calculated via CRT), Node ID (for each core node), Path ID (for each core node's output port). Forwarding uses a mod operation between Route ID and Node ID.</li>
+<li><strong>Implementation</strong>: Aims to reuse CRC hardware for polynomial mod operations, P4 language, leveraging the Red Project (VM2, Tofino).</li>
+<li><strong>Protection</strong>: Achieved by encoding multiple paths within the same Route ID, allowing for re-encoding at a switch if a path segment fails.</li>
+</ul>
+</li>
+<li><strong>Trusted Path between Endpoints and Intermediate Nodes (Zhan Li)</strong>
+<ul>
+<li><strong>Concept</strong>: Leverage the Broadband Network Gateway (BNG) as a trusted entity at the ingress of an enterprise network, maintaining per-connection state and trust relationships with users.</li>
+<li><strong>Goal</strong>: Enable endpoints to trust path-related information from the Ingress PE and allow the Ingress PE to trust user suggestions for path decisions (if verified by the BNG).</li>
+<li><strong>Mechanism</strong>:
+<ul>
+<li>Ingress PE -&gt; Client: Ingress PE signs messages with its private key; client verifies with public key.</li>
+<li>Client -&gt; Ingress PE: BNG signs client suggestions with its private key, or uses an IPsec tunnel between BNG and Ingress PE to verify user traffic. This provides a trusted relationship facilitated by the BNG.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: A virtual interim meeting will be scheduled to discuss SCION work integration into the IRTF/IETF.
+<ul>
+<li><strong>Action Item</strong>: Chairs to schedule the virtual interim between now and the Philadelphia meeting and announce logistics on the mailing list.</li>
+</ul>
+</li>
+<li><strong>Path Properties Draft</strong>:
+<ul>
+<li><strong>Action Item</strong>: Further discussion and review of the Path Properties draft, particularly the &quot;routing domain identifier&quot; definition and overall readiness, is encouraged on the mailing list.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>SCION Engagement</strong>: Attendees interested in SCION-related work should look for announcements regarding the virtual interim meeting.</li>
+<li><strong>Path Properties Draft</strong>: Review the latest version of the draft and provide comments on the mailing list, especially regarding the endpoint and routing domain identifier definitions.</li>
+<li><strong>Service Awareness &amp; PEPs</strong>: Continue the discussion on the panrg mailing list, particularly on discovery mechanisms and trust models. Individuals with similar work (e.g., Ericsson) are encouraged to connect with Michael Scharf.</li>
+<li><strong>Future Meeting</strong>: panrg expects to hold another hybrid meeting in Philadelphia.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

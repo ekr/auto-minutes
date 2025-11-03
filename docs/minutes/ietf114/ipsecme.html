@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="ipsecme.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-IPSECME-20220725-1900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 19:00</p>
+<h1>ipsecme</h1>
+<h2>Summary</h2>
+<p>The ipsecme working group session covered updates on existing drafts, presentations on two new proposals, and a discussion regarding the working group's charter. Key technical discussions revolved around a proposed IPv4 Downstream Fragmentation Notification extension for IKEv2 and a Count-Based SA Extension aimed at optimizing hardware SA utilization. A proposal for Multi-SA Performance to improve IPsec throughput was well-received and will move to a working group adoption call. The chairs initiated a process to update the working group charter to reflect completed work and new potential items.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Document Status Updates:</strong></p>
+<ul>
+<li><strong>Published RFCs:</strong> One RFC (<code>IPsec EC Attack Version 2 Intermediate</code>) published since the last IETF.</li>
+<li><strong>IESG Evaluation:</strong> Three documents in IESG evaluation.</li>
+<li><strong>IETF Last Call / AD Evaluation:</strong> <code>Multiple Key Exchanges</code> is stable; early IANA allocation request suggested.</li>
+<li><strong>AD-IKE:</strong> Deemed stable and ready for IETF Last Call by authors and chairs.</li>
+<li><strong>G-I-Version-2:</strong> Still awaiting reviews; authors reminded volunteers.</li>
+<li><strong>Auth-Announce:</strong> Recently updated, not yet ready for last call but reviews are welcome.</li>
+<li><strong>IPsecTFS Implementation:</strong> Reference implementation (based on VPP) and a Linux version are now published on GitHub. Links to be shared on the mailing list and code repository.</li>
+</ul>
+</li>
+<li>
+<p><strong>IPv4 Downstream Fragmentation Notification for IKEv2:</strong></p>
+<ul>
+<li><strong>Problem:</strong> IPv4 fragmentation in security gateways consumes resources and can lead to security issues due to limited ID space. ICMP &quot;Packet Too Big&quot; messages are often blocked.</li>
+<li><strong>Proposal:</strong> A new IKEv2 extension for a downstream Security Gateway to notify the sending gateway about fragmentation and suggest an MTU value. Aligns with RFC 8900 for layer-specific fragmentation handling.</li>
+<li><strong>Discussion Points:</strong>
+<ul>
+<li><strong>Transport Area Review:</strong> Strong consensus that this draft requires early review by the Transport Area Working Group (TSVWG) due to their expertise and prior work on Path MTU Discovery (PMTUD), notably RFC 4821 and RFC 8899 (PLPMTUD for UDP).</li>
+<li><strong>Existing PMTUD:</strong> Concerns were raised that the proposal might reinvent existing PMTUD mechanisms or duplicate logic already in sending hosts.</li>
+<li><strong>MTU Reporting:</strong> Reporting a specific MTU value was seen as engaging in MTU discovery, which is a complex area. A simpler notification indicating &quot;fragmentation is happening&quot; might be less problematic.</li>
+<li><strong>IKEv2 Message Handling:</strong> Questions about the message ID logic and the nature of the notification (informational, potentially one-way but requiring implicit round-trip context).</li>
+<li><strong>Implementation Complexity:</strong> Significant interaction between the IKE daemon and the kernel would be required; the draft should acknowledge this without defining the kernel-level mechanisms.</li>
+<li><strong>Outer Fragmentation:</strong> The idea of a Security Gateway performing outer fragmentation was viewed negatively, as it prevents detection of path changes.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Count-Based SA Extension:</strong></p>
+<ul>
+<li><strong>Problem:</strong> Hardware IPsec accelerators have fixed SA entry limits. Byte-count-based SA lifetimes, combined with non-linear traffic patterns, make it difficult to predict SA expiry. This can lead to simultaneous re-keys and accumulation of redundant SAs, causing significant hardware underutilization (up to 40% observed).</li>
+<li><strong>Proposal:</strong> During IKEv2 SA negotiation, peers use a notify payload to propose a <code>re-key value</code> (random number) and a <code>count-based lifetime range</code>. Based on these, a designated initiator/responder for re-keying is determined, and soft/hard lifetimes are set with a randomized component.</li>
+<li><strong>Discussion Points:</strong>
+<ul>
+<li><strong>Implementation Guidance vs. Protocol:</strong> The general consensus was that this is more of an implementation detail or best practice for re-keying management rather than a protocol requiring explicit negotiation. IKEv2's policy-based re-keying already handles this locally.</li>
+<li><strong>Asymmetric Traffic:</strong> With asymmetric traffic, simultaneous re-keying is less likely as the sending side typically runs out of its SA lifetime first.</li>
+<li><strong>Security Concerns with Packet Loss:</strong> If the designated re-keyer experiences packet loss, the sending side might exceed its cryptographically safe byte count before the receiver triggers a re-key, creating a security risk.</li>
+<li><strong>Existing Solutions:</strong> Current implementations (e.g., strongSwan, Libreswan) already use &quot;re-key fuzz&quot; (randomized offsets) to spread out re-key events.</li>
+<li><strong>Negotiation Issues:</strong> Reintroducing lifetime negotiation at the protocol level could lead to interoperability issues, as seen in IKEv1, where implementations often failed if exact values didn't match.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Multi-SA Performance:</strong></p>
+<ul>
+<li><strong>Problem:</strong> Single IPsec tunnels limit throughput on high-speed interfaces (e.g., 10/40 Gbps NICs), often bottlenecked by a single CPU, resulting in a significant performance drop (e.g., from 27 Gbps to 3.5 Gbps).</li>
+<li><strong>Proposal:</strong> Negotiate multiple child SAs with identical traffic selectors, but explicitly bind them to specific CPUs. The kernel's acquire mechanism is extended for per-CPU acquisition.</li>
+<li><strong>Status:</strong> An early version of the draft also included Quality of Service (QoS), but this was removed to simplify the scope. An implementation exists in the Linux kernel and IKE daemon.</li>
+<li><strong>Performance Data:</strong> Tests show a significant increase from ~3.5 Gbps (single tunnel) to 27 Gbps (8 CPUs with this protocol) on Intel i40e cards.</li>
+<li><strong>Support:</strong> Strong interest from the working group, including a willingness to support adoption and provide reviews.</li>
+</ul>
+</li>
+<li>
+<p><strong>Charter Update Discussion:</strong></p>
+<ul>
+<li>The working group's current charter items are largely completed or in the publication queue (PPK, Implicit IV, HRC, Post-Quantum, Multiple Key Exchanges, TCP Base).</li>
+<li>Remaining items in charter: GDOI, Constrained IPSec, Signature Algorithm Negotiation, Security Labels (most with no current work).</li>
+<li>Existing unchartered items that the WG has adopted: ADD (encrypted DNS), IKEv2 History. The Multi-SA Performance draft fits a similar category as a small enhancement.</li>
+<li><strong>Specific Drafts:</strong>
+<ul>
+<li><code>ipsec-ikev2-sats-payloads</code>: Author believes it's done; suggests WG adoption call.</li>
+<li><code>DICE-ESP</code>: Paused to align with new rule syntax from Ashake RFC.</li>
+<li><code>cookie-revised</code>: Ready for adoption if the WG deems the problem (a minor IKEv2 issue) important enough.</li>
+<li><code>beyond-64k-payloads</code> (for large Post-Quantum keys): Its urgency is reduced as NIST did not select very large-key algorithms in the initial round. Also includes &quot;mixed transport mode&quot; (IKE over TCP, ESP over UDP) as a robust delivery mechanism.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>IPv4 Downstream Fragmentation Notification:</strong>
+<ul>
+<li><strong>Decision:</strong> The document will be discussed further on the mailing list.</li>
+<li><strong>Action Item:</strong> The author (Daniel) will consult with Transport Area experts regarding the draft's approach to fragmentation and MTU discovery.</li>
+</ul>
+</li>
+<li><strong>Count-Based SA Extension:</strong>
+<ul>
+<li><strong>Decision:</strong> The document will be discussed further on the mailing list, focusing on whether it should be pursued as an informational/best practices document rather than a protocol extension.</li>
+</ul>
+</li>
+<li><strong>Multi-SA Performance:</strong>
+<ul>
+<li><strong>Decision:</strong> A working group adoption call will be issued for this draft.</li>
+<li><strong>Action Item:</strong> Chairs to issue the adoption call.</li>
+</ul>
+</li>
+<li><strong><code>beyond-64k-payloads</code> (Post-Quantum):</strong>
+<ul>
+<li><strong>Decision:</strong> This draft will be put on hold until NIST publishes requirements for Post-Quantum algorithms that necessitate such large payload handling (e.g., &gt;64KB keys).</li>
+</ul>
+</li>
+<li><strong>Charter Update Process:</strong>
+<ul>
+<li><strong>Action Item:</strong> Chairs to initiate a mailing list discussion to collect proposals for items to be added to and removed from the charter.</li>
+<li><strong>Action Item:</strong> Aim to prepare an updated charter for AD approval after the November IETF meeting.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Mailing List Discussions:</strong> Continue technical discussions on the <code>IPv4 Downstream Fragmentation Notification</code> and <code>Count-Based SA Extension</code> drafts, exploring the best path forward (protocol vs. informational/best practice).</li>
+<li><strong>Transport Area Consultation:</strong> The author of the <code>IPv4 Downstream Fragmentation Notification</code> draft will engage with TSVWG experts.</li>
+<li><strong>Working Group Adoption Call:</strong> The chairs will issue an adoption call for the <code>Multi-SA Performance</code> draft.</li>
+<li><strong>Charter Review:</strong> The working group will engage in a comprehensive review of its charter, proposing updates to reflect current work and future directions.</li>
+<li><strong>Code Demo:</strong> Stephen Classer is available to demonstrate the <code>Multi-SA Performance</code> code.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

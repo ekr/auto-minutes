@@ -1,0 +1,121 @@
+**Session Date/Time:** 11 Nov 2021 16:00
+
+# ippm
+
+## Summary
+
+The IP Performance Measurement (IPPM) working group session covered updates on several adopted documents, including IOM Data Integrity, IOM Deployment, IOM Conf State, Explicit Flow Measurements, Connectivity Monitoring, and STAMP Extensions for SR. Significant discussion points included refining security sections, aligning with YANG models for configuration, and clarifying measurement methodologies. The session also featured several "elevator pitches" for new proposed work, touching on topics such as advanced one-way delay measurements, enhanced alternate marking, IOM kernel implementation profiles, direct loss measurement, self-contained alternate marking, postcard-based telemetry, encryption for performance data, user device monitoring, and high-precision service metrics. A key announcement was the publication of RFC 9097 (One-Way IP Capacity Measurement).
+
+## Key Discussion Points
+
+### IOM Data Integrity and Deployment Drafts
+
+*   **IOM Data Integrity Draft**:
+    *   Status changed from Informational to Standards Track.
+    *   Adopted Method 3 (symmetric key-based signature) for integrity protection.
+    *   Editorial changes made for generic applicability to all IOM options and terminology alignment.
+    *   Concern raised about lack of active implementation/testing.
+    *   **Feedback**: The security section (Section 6) needs completion before a security review. The working group is seeking input on preferred hashing and signature algorithms to include, with a suggestion to focus on a small, optimal set.
+*   **IOM Deployment Draft**:
+    *   Revised to align limited domains with RFC 8799 and IOM data terminology.
+    *   Authors plan to keep the draft updated with deployment experiences (Linux kernel, FIDO VPP, Wireshark).
+    *   **Feedback**: Suggested including IOM encapsulation over BIER, which authors agreed to address. Al Morton was thanked for extensive review.
+
+### IOM Conf State Draft
+
+*   **Updates**:
+    *   Changed IOM capabilities query and response formats from TLV to container, and response contents from sub-TLV to object, to align with ICMPv6 extensions (e.g., RFC 8335).
+    *   Positive feedback from 6MAN WG, with chairs indicating no objection if IPPM reaches rough consensus.
+    *   Confirmed container/object headers are applicable to MPLS, SFC, and BIER ping.
+    *   Clarified that namespace IDs "MUST" be included in echo requests.
+    *   Added optional pre-conditions for the feature's operation (e.g., explicit path, single path, ECMP processing).
+    *   A new bit was borrowed from tracing capabilities objects to indicate 16-bit or 32-bit egress interface ID.
+*   **Feedback**: Frank Brockners suggested aligning the IOM capabilities bit field definitions with the IOM YANG model to avoid re-inventing definitions, and to treat ICMP as a network management protocol with appropriate security language (e.g., "shoulds" for AH/ESP headers, similar to NETCONF RFCs). This discussion was noted for further exploration on the mailing list.
+
+### Explicit Flow Measurements ("I Want More Than One Spin Bit") Draft
+
+*   The draft was recently adopted by the IPPM Working Group.
+*   **Concept**: Utilizes multiple marking bits in packet headers for various performance measurements.
+*   **Proposed Metrics**:
+    *   **RTT**: Spin bit, Delay bit, and a "Hidden RTT" which masks the true end-to-end RTT by delaying reflection on the client side, allowing for segment measurements without revealing the full path RTT.
+    *   **Round-trip Packet Loss**: Using spin bit and T-bit.
+    *   **One-way Packet Loss**: Options include the Square bit (from RFC 8321), Loss Event bit (L-bit), or Reflection Square bit (R-bit).
+*   **Implementations**: Existing experiments and field implementations across various platforms (Android, Ericsson, Akamai, UCAM, Huawei).
+*   **Updates (post-adoption)**: Emphasized the "beneficial approach" per RFC 1965 and updated all relevant RFC references.
+*   **Next Steps**: The draft presents a range of options, and the next phase involves selecting the most suitable bits for specific protocols (e.g., QUIC, TCP).
+
+### Connectivity Monitoring Draft
+
+*   Status changed from Standards Track to Experimental.
+*   **Concept**: Proposes a loss-based connectivity metric using three measurement loops per monitored connection/path.
+*   **Methodology**: Connectivity loss is declared if no packet is received within one measurement interval on *all* measurement loops for a monitored interface. The timing involves sending the next measurement packet only after receiving the previous one from the loop with the longest delay.
+*   **Feedback**: Greg Mirsky raised concerns about terminology overlap with fault management OAM (e.g., BFD) and the definition of "connectivity loss." He noted that BFD typically requires three consecutive lost packets to declare a session down, and suggested that declaring loss on the first packet might lead to state flapping. The author clarified that the proposed method also accounts for multiple missed packets over time before declaring loss and committed to adding text relating to fault management OAM.
+
+### STAMP Extensions for SR Draft
+
+*   **Updates (v02)**: Minor editorial changes, converted Network Information (NI) to table format, and has no open issues.
+*   **Related Work**: Noted ongoing work on STAMP for SRv6 in the SPRING WG and a new encapsulation for pseudo wires in MPLS.
+*   **Next Steps**: Authors are seeking further review and comments and plan to request a working group last call after one more IETF.
+
+### Proposed Work (Elevator Pitches)
+
+*   **Responsiveness Under Working Conditions**:
+    *   **Problem**: Persistent bufferbloat, lack of clear definition and measurement tools for end-user experience.
+    *   **Proposal**: Standardized metric for "Responsiveness Under Working Conditions" using modern protocols (HTTP/2, HTTP/3, QUIC, TLS) and measuring all connection stages (DNS, TCP, TLS).
+    *   **Method**: Creates "working conditions" by filling buffers with realistic traffic (e.g., multiple HTTP/2 bulk transfers), then measures responsiveness through additional GET requests on background connections or separate short-lived connections.
+    *   **Metric**: "Round Trips Per Minute" (RPM), a user-friendly number.
+    *   **Implementation**: Currently in MacOS Monterey and iOS 15, with server-side implementations on GitHub.
+    *   **Next Steps**: Call for contributions and feedback on methodology.
+*   **Protocol for One-Way IP Capacity Measurement (v08)**:
+    *   **Context**: This is the underlying protocol used for the recently published RFC 9097.
+    *   **Key Feature**: The "Test Controller" function always resides with the server, even when sending and receiving roles change for uplink/downlink tests. This controller uses feedback to adjust load.
+    *   **Flexibility**: The load adjustment algorithm is pluggable, allowing for measurements beyond just RFC 9097 capacity (e.g., hybrid Type 2 measurements).
+    *   **Updates**: Version 8 will be the last described version, future updates will be v9+. Options for payload content and interface diagnostic measurements were discussed.
+    *   **Next Steps**: Authors welcome revisions to security modes and plan to seek an early security director review if the WG adopts it.
+*   **Error Performance Measurement in Packet Switch Networks (EPM)**:
+    *   **Concept**: Defines metrics for error performance (e.g., availability/unavailability) based on conformance to Service Level Objectives (SLOs).
+    *   **Updates**: New co-authors. Sections added on "Anything as a Service" (XaaS) and mobile communication availability, arguing EPM provides more accurate real-time data than traditional MTBF/MTTR.
+    *   **Next Steps**: Authors seek working group adoption.
+*   **One-Way Delay Measurement based on Reference Delay**: Proposes a new method for accurate end-to-end one-way delay measurement without clock synchronization, leveraging "reference delay" from deterministic networking.
+*   **One-Way Delay Measurement based on Deterministic Networking**: Another proposal for one-way delay measurement using a centralized control node and deterministic links to collect flow information from network elements.
+*   **Enhanced Alternate Marking**: Seeks discussion on extending the "Flow Monitor Identification field" for more entropy, potentially using a next header approach, following IESG input during IPv6 Alternate Marking review.
+*   **IOM Linux Kernel Implementation Profile**: Describes the IOM profile used by the Linux kernel, aiming to enable interoperable implementations. Discussion needed on whether this is the appropriate working group.
+*   **Simple Direct Loss**: Defines a straightforward packet format for inline counter stamping to measure direct loss, supporting alternate marking, 32/64-bit counters, and DHCP scope counters.
+*   **Self-Contained AutoMark**: Proposes a mechanism where block ID and color information are inserted directly at the coloring point, simplifying monitoring by potentially replacing the need for separate monitor reports.
+*   **Postcard-Based Telemetry**: Positioned as a standalone method in the "postcard mode" family of on-path flow telemetry, distinct from existing IOM trace and instruction-based telemetry. Discussion requested on its suitability for standardization within IPPM, particularly its relation to existing IOM protocols.
+*   **Encryption for Performance Data**: Highlighted the sensitivity of performance measurement data and the need for encryption. A side meeting was announced for interested implementers.
+*   **User Devices Explicit Monitoring**: A sibling draft to Explicit Flow Measurements, suggesting placing measurement probes on user devices (smartphones, PCs) to leverage their hardware for scalability, precision, and coordinated network monitoring.
+*   **High Precision Service Metrics**: Defines new metrics to capture service compliance with SLOs for precision services (e.g., capturing the number of violating packets or violated time units for latency objectives). Discussion will be held to differentiate it from EPM.
+
+## Decisions and Action Items
+
+*   **IOM Data Integrity Draft**:
+    *   **Action**: Authors to complete the security section (Section 6).
+    *   **Action**: Working group to provide feedback on preferred hashing and signature algorithms for the integrity option.
+*   **IOM Deployment Draft**:
+    *   **Action**: Authors to include IOM encapsulation over BIER.
+*   **IOM Conf State Draft**:
+    *   **Action**: Discussion on aligning with the IOM YANG model and refining security language for ICMP-based measurements to be continued on the mailing list.
+*   **Protocol for One-Way IP Capacity Measurement**:
+    *   **Decision**: The current version (v08) will be the last described, with future updates starting at v09+.
+    *   **Action**: Authors welcome revisions to security modes.
+*   **Connectivity Monitoring Draft**:
+    *   **Action**: Author to add text clarifying relation to fault management OAM and BFD, and discuss further on the mailing list.
+*   **STAMP Extensions for SR Draft**:
+    *   **Action**: Authors to seek more review comments.
+    *   **Decision**: A working group last call will be requested after one more IETF.
+*   **Postcard-Based Telemetry Draft**:
+    *   **Action**: Discussion to determine if this can be defined as an IOM protocol, aligning with the existing IOM family.
+*   **High Precision Service Metrics Draft**:
+    *   **Action**: Authors to review the EPM draft and discuss on the mailing list how efforts can be combined or differentiated.
+
+## Next Steps
+
+*   **General**: Continued discussion on the mailing list for all drafts, especially regarding technical details, security considerations, and potential working group adoption.
+*   **IOM Data Integrity**: Completion of security section and gathering feedback on algorithms are prerequisites for a potential security review.
+*   **IOM Conf State**: Detailed discussions on YANG model alignment and security wording will proceed on the mailing list.
+*   **Explicit Flow Measurements**: The working group and authors will focus on selecting the most appropriate marking bits for different protocols.
+*   **Connectivity Monitoring**: Further discussion on terminology and the definition of "connectivity loss" in relation to fault management.
+*   **STAMP Extensions for SR**: Continued reviews and preparations for a working group last call.
+*   **New Proposed Work**: Authors are encouraged to refine their drafts based on initial feedback, seek collaborators, and drive discussion on the mailing list towards potential working group adoption.
+*   **Side Meeting**: Attendees interested in encryption for performance measurement data were invited to a side meeting.

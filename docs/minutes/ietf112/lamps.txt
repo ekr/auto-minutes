@@ -1,0 +1,107 @@
+**Session Date/Time:** 08 Nov 2021 16:00
+
+# lamps
+
+## Summary
+
+The lamps session covered a wide range of topics, including updates on existing RFCs and several new drafts related to CMP, email header protection, end-to-end encryption guidance, document signing, CSR attributes, and Post-Quantum Cryptography (PQC) integration. Key discussions revolved around algorithm deprecation in CMP, the impact of header protection on legacy email clients, the need for review on stalled drafts, and a significant debate on different approaches (composite vs. non-composite) for PQC migration in authentication, key exchange, and CMS. The working group made decisions on deprecating outdated algorithms in CMP and agreed to advance several drafts to Working Group Last Call (WGLC) or adoption calls after authors incorporate feedback.
+
+## Key Discussion Points
+
+*   **RFC 7299 Update**: The update is in the RFC Editor's queue, with OIDs already assigned by IANA. An RFC is expected within approximately one month.
+*   **CMP Algorithms Update**:
+    *   The draft underwent Working Group Last Call (WGLC) and Area Director review.
+    *   **Decision**: Deprecate the use of MD5, SHA-1, DSA, RC5, CAST-128, and Triple DES (with three keys) from RFC 4210 Appendix D. PBMAC is retained, but PBMAC1 is recommended.
+    *   **Discussion**: Section 7 (algorithm choice guidelines) was updated for clarity. A proposal to add a table illustrating a "balanced set" of algorithms (e.g., bits of security, key size, CMP protection, central key generation) was discussed. The group agreed that adding such a table is helpful, with editors to determine the final format.
+*   **CMP Updates and Lightweight Profile**:
+    *   John Gray was added as an author due to significant contributions.
+    *   RFC 4210 errata were fixed, the `hashElks` field was moved, a new CRL update retrieval message type was added, and the root CA certificate transfer mechanism was refined.
+    *   **Decision**: The polling mechanism in CMP was extended to cover all message types, not just enrollment, using an error message with a "status waiting" state to initiate polling for non-enrollment messages.
+    *   OID registration for the new CRL update message is required. A proposal to reorder pre-registered OIDs in the ASN.1 module was clarified; changing assigned OID *values* is not permissible, but ordering within the ASN.1 module is acceptable.
+    *   A minor update is still needed in section 4.1.6.1 regarding key agreement key management.
+*   **Lamps Email Header Protection**:
+    *   The document has been stalled, with two major options (wrapped vs. injected messages) lacking clear guidance, particularly concerning legacy client handling.
+    *   **Discussion**: Bernie proposed sticking to the wrapped approach for signed-and-encrypted messages (as per current standard, fixable by clients) but allowing injected messages for signed-only (multi-part signed).
+    *   DKG proposed a different evaluation criterion: minimize changes in experience for legacy clients, ignoring any security *increase* for legacy clients. This aims to incentivize adoption by compliant clients. Concerns were raised about the UI impact of wrapped messages on legacy clients (e.g., looking like an attachment, causing confusion).
+    *   DKG suggested dropping the "legacy display" proposal, using injected headers, and for HTML messages, including a hidden `div` containing obscured headers (e.g., subject) that compliant clients could hide, degrading gracefully for others.
+    *   The discussion highlighted a preference to differentiate between signed-only and encrypted messages, with more flexibility desired for signed messages to avoid confusing legacy users.
+*   **End-to-End Encrypted Mail Guidance**: The document is stalled, with outstanding `FIXME`s. A plea was made for working group members to review and contribute.
+*   **Document Signing EKU**:
+    *   The draft was updated based on list comments, clarifying the definition of document signing and adding a new section on the handling process (with an example based on signing internet drafts).
+    *   Security considerations for cross-protocol attacks were added, and no new privacy considerations were identified.
+    *   A call for working group adoption was initiated. No immediate concerns were voiced in the session, but broader feedback from the mailing list, particularly from a previously vocal individual, is expected.
+*   **CSR Attributes**:
+    *   RFC 7030 was deemed unclear regarding CSR attributes, leading to ambiguities in existing implementations (e.g., BRISKI, ANIMA).
+    *   **Discussion**: The design team proposes defining a new attribute that allows specific callouts for generic names (e.g., DN, Subject Alternative Name - SAN), rather than allowing arbitrary attributes initially.
+    *   Sean suggested defining a *new* attribute using extensible ASN.1 to allow future additions, or specific new attributes for DN/SAN. The document aims for backward compatibility.
+*   **PQC CHEM in Certificates**:
+    *   A new draft proposes how to include NIST PQC Key Encapsulation Mechanism (CHEM) algorithms in X.509 certificates, following the format of RFC 8410.
+    *   **Discussion**: Key points for discussion include:
+        *   Whether to use algorithm identifiers with OIDs that implicitly define parameters, or a generic NIST OID with separate parameter OIDs. A preference for OIDs that imply parameters (no explicit parameters in the structure) was noted.
+        *   Appropriate Key Usage extensions (Key Agreement was initially assumed, but Key Transport from RFC 5990 for RSA KEM was suggested as an alternative). CHEMs represent a new API that doesn't cleanly fit existing Key Agreement/Transport models.
+        *   The need to synchronize with CMS efforts on CHEM integration.
+*   **PQC Migration Discussion (NSA Framework)**:
+    *   A framework for PQC migration was introduced, emphasizing a quick transition to *post-quantum only* solutions, with hybrid designs serving solely as a transition. The concept of "forward compatibility" (hybrid systems communicating with PQC-only systems) was highlighted.
+    *   **Definitions**:
+        *   **Composite Design**: Traditional and PQC algorithms function as *one entity* (e.g., negotiated as a pair).
+        *   **Non-Composite Design**: Traditional and PQC algorithms function *discretely as individual entities* (e.g., two separate certificates).
+    *   **Pros/Cons**: Non-composite designs were presented as having advantages for long-term PQC migration due to simpler validation, broader crypto agility, and easier interoperability with non-hybrid-aware systems, despite requiring more logistical protocol changes upfront. Composite designs could build on existing structures but face challenges with deprecation, new OID definition, and require an additional transition phase to PQC-only.
+    *   **Discussion**:
+        *   The framework applies to key exchange as well as authentication, though details may differ.
+        *   Some working groups (e.g., TLS) show a preference for non-composite signatures to avoid bandwidth for legacy clients.
+        *   Mike (presenting later) noted that for *online* protocols (IKE, TLS), multi-cert (non-composite) offers flexibility. However, for *offline* protocols (code signing, S/MIME) where stripping attacks are a concern and negotiation is absent, non-composite solutions are harder to manage; composite designs might be more suitable there.
+        *   The sentiment emerged that Lamps might need to provide *both* composite and non-composite tools for other working groups to choose from based on their specific protocol environments.
+*   **PQC CMS Content Encryption**:
+    *   **Fitting CHEMs into CMS**: How to integrate CHEMs into CMS content encryption (enveloped data). Three approaches were discussed:
+        *   Generalizing RFC 5990's RSA KEM to use `KeyTransRecipientInfo` with a "dummy" OID and parameters.
+        *   Using `OtherRecipientInfo` with a custom structure.
+        *   Defining a new top-level `ChemRecipientInfo` type. The latter two options offer better semantic clarity and potential flexibility (e.g., for User Keying Material - UKM), but defining a new top-level structure in CMS (a full standard) requires careful consideration of backward compatibility.
+    *   **Composite Content Encryption**: How to encrypt for a recipient with multiple public keys (whether in a single composite certificate or multiple separate certificates).
+        *   Work has progressed on combining different mechanisms for this.
+        *   The choice between a generic `CompositeKeys` container and `ExplicitCompositeKeys` (explicit pairs of OIDs) leans towards explicit pairs.
+        *   For signatures, existing `SignedData` in CMS allows for multiple signatures, but an attribute might be needed to clarify "OR" vs. "AND" relationships. Mike believes the work on composite signatures remains relevant even in a multi-cert world.
+        *   The underlying mechanism for wrapping the Content Encryption Key (CEK) (e.g., one-time pad XOR vs. AES keywrap) will influence the `KeyTrans` vs. `CHEM` decision.
+
+## Decisions and Action Items
+
+*   **Decision (CMP Algorithms Update)**:
+    *   Deprecate MD5, SHA-1, DSA, RC5, CAST-128, and Triple DES (with three keys) from RFC 4210 Appendix D.
+    *   Add a table of balanced algorithm sets to Section 7 of the draft, with editors to decide on the best format.
+*   **Decision (CMP Updates / Lightweight Profile)**:
+    *   Extend CMP polling mechanism to cover all message types using error messages with "status waiting".
+    *   Introduce new general message types for CRL update retrieval.
+*   **Action Items**:
+    *   **Hendrick**:
+        *   Submit an updated CMP Algorithms draft (incorporating the balanced algorithm tables) by the end of the current week.
+        *   Make necessary changes to the CMP Updates and Lightweight Profile drafts (including the minor update in section 4.1.6.1 for CMP Updates).
+    *   **Chairs**:
+        *   Initiate Working Group Last Call (WGLC) for the CMP Algorithms Update draft, followed by CMP Updates, and then Lightweight Profile (after authors submit their next updates). All three CMP-related drafts should be reviewed before publication.
+        *   Initiate a Working Group Adoption Call for the Document Signing EKU on the mailing list.
+    *   **DKG**:
+        *   Modify the Lamps Email Header Protection draft to implement the chosen approach (likely injected headers, dropping legacy display, and an HTML `div` for the subject in HTML messages).
+        *   Coordinate with Bernie and Alexei to agree on the proposed changes before WGLC.
+    *   **Working Group Members**:
+        *   Review and contribute feedback to the End-to-End Encrypted Mail Guidance draft.
+    *   **Michael (CSR Attributes author)**:
+        *   Prepare an updated CSR Attributes draft incorporating discussions (defining a new attribute for generic name or specific DN/SAN attributes). Aim for an adoption call in January/March.
+    *   **Sean (PQC CHEM in Certificates author)**:
+        *   Clarify the appropriate key usage (Key Agreement vs. Key Transport) for PQC CHEMs in certificates.
+        *   Post an updated draft for a call for adoption.
+    *   **Ali, Rebecca, Daphne**:
+        *   Publish an informational draft detailing their PQC migration framework (composite vs. non-composite authentication).
+        *   Consider expanding their analysis to include store-and-forward (offline) protocols.
+    *   **Mike (PQC CMS Content Encryption author)**:
+        *   Initiate several mailing list threads to discuss higher-order design decisions for PQC CMS content encryption, including:
+            *   The necessity and use cases for composite vs. non-composite/dual atomic structures.
+            *   The best approach for integrating CHEMs into CMS (KeyTransRecipientInfo, OtherRecipientInfo, or a new ChemRecipientInfo).
+            *   The underlying mechanism for wrapping the CEK.
+    *   **John (PQC CMS Content Encryption co-author)**: Consider creating a new draft specifically for composite KEM construction.
+
+## Next Steps
+
+*   Working Group Last Calls will be initiated for the CMP-related documents following author updates.
+*   The Lamps Email Header Protection draft will be updated and moved towards WGLC after the authors address the discussed design choices.
+*   The End-to-End Encrypted Mail Guidance draft requires active review and contributions to move forward.
+*   Calls for adoption are anticipated for the Document Signing EKU, CSR Attributes, and PQC CHEM in Certificates drafts once further revisions are completed.
+*   Discussions on the mailing list are expected to clarify key design decisions for PQC integration into CMS, including the preferred framework for composite and non-composite structures, and how to best integrate CHEMs.
+*   The working group will need to assess whether to standardize both composite and non-composite PQC tools to offer flexibility for various protocol environments.

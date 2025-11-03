@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="tls.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-TLS-20211109-1600">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 09 Nov 2021 16:00</p>
+<h1>tls</h1>
+<h2>Summary</h2>
+<p>The TLS working group discussed the status of several in-flight drafts, including &quot;Exported Authenticators,&quot; &quot;TLS Flags,&quot; and &quot;DTLS 1.3,&quot; addressing open issues and seeking consensus on proposed resolutions. Key decisions included clarifying security considerations for &quot;Exported Authenticators,&quot; refining IANA guidance and &quot;recommended&quot; flag semantics for &quot;TLS Flags,&quot; and adopting specific changes for DTLS 1.3 to align it more closely with TLS 1.3 regarding AEAD outbox limits and handshake message transcripts. An implementation report on ECH highlighted progress and ongoing challenges. New work was introduced on a &quot;Pseudorandom CTLS Extension&quot; for obfuscating CTLS wire images and an exploration of &quot;Zero-Knowledge Proofs Meets TLS&quot; to address network visibility challenges without compromising privacy.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Exported Authenticators</strong>:
+<ul>
+<li>Discussed Ben Kadlec's comment regarding potential security issues with the exporter secret not incorporating the entire handshake transcript.</li>
+<li>Jonathan Hoyland's analysis proposed adding security considerations.</li>
+<li>Ekr raised concerns about the clarity and completeness of the proposed security consideration text, specifically on how application data or resumption master secret relates to securing the Exported Authenticator.</li>
+</ul>
+</li>
+<li><strong>TLS Flags</strong>:
+<ul>
+<li><strong>IANA Expert Guidance</strong>: Discussion on the level of specificity for assigning flag numbers (e.g., 0-7 for mandatory, 8-31 for working group specific, etc.). Martin Thompson suggested broader, less specific guidance, potentially reserving a small block (e.g., 0-7 or 0-15) for working group discretion and allocating others sequentially.</li>
+<li><strong>&quot;Recommended&quot; Flag Semantics</strong>: Addressed ambiguity of the &quot;recommended&quot; (Y/N) column in IANA registries. Consensus was to clarify by referring to RFC 8447 and potentially updating 8447 to offer more nuanced states (e.g., Recommended, Discouraged, No Opinion, Unevaluated) rather than a simple Y/N.</li>
+<li><strong>DTLS 1.2 Applicability</strong>: Considered a request to extend the flags extension to DTLS 1.2. Concerns were raised about the implementation burden for dual-stack clients/servers and the potential need for separate flags registries.</li>
+</ul>
+</li>
+<li><strong>DTLS 1.3</strong>:
+<ul>
+<li><strong>AEAD Record Limits</strong>: Addressed the issue of AEAD outbox/epoch being limited to 16 bits, leading to frequent rekeying (total records ~2^40). Two proposals were discussed:
+<ol>
+<li>Expand outbox to 64 bits, embed lower 16 bits of epoch in nonce (16-bit epoch, 48-bit record ID).</li>
+<li>Expand sequence number to 64 bits, use the entire sequence number in the nonce, removing the epoch, to harmonize with TLS 1.3.</li>
+</ol>
+</li>
+<li><strong>Handshake Message Transcript</strong>: Discussed how DTLS handshake framing fields (message type, fragment offset, fragment length) are included in the message hash, creating a divergence from TLS 1.3. A proposal was made to exclude these fields from the transcript to align DTLS 1.3 with TLS 1.3.</li>
+<li><strong>RFC 7457 Reference</strong>: Discussed whether to include a reference to RFC 7457 (U-TLS draft).</li>
+</ul>
+</li>
+<li><strong>Encrypted Client Hello (ECH) Implementation Report</strong>:
+<ul>
+<li>Draft 13 is the current interop and deployment target, with open issues parked for future resolution based on implementation experience.</li>
+<li>Several implementations exist (BoringSSL, OpenSSL forks, NSS), some already interoperable.</li>
+<li>Identified pain points: DNS provisioning/plumbing for <code>ECHConfig</code> validation, IP address parsing for <code>public_name</code>, and complexities with split mode configurations, especially combined with HRR.</li>
+<li>Positive feedback: relatively straightforward to upgrade existing ESNI servers to ECH.</li>
+</ul>
+</li>
+<li><strong>RFC 8447bis (IANA Recommended Column)</strong>: Further discussion on the proposed changes to the &quot;recommended&quot; column in TLS IANA registries. Ideas included a &quot;Status&quot; column with richer values (e.g., Recommended, Discouraged, No Opinion) and the handling of experimental code point ranges. There was general agreement to refine the status definitions but to avoid creating a separate experimental code point management process outside of IANA.</li>
+<li><strong>ECH Supporting Drafts (PEM, Well-known URI)</strong>: Discussion on two drafts: a PEM format for <code>ECHConfig</code> and private keys, and a well-known URI for publishing <code>ECHConfig</code> (useful for DNS processes). Ekr expressed reservations about adopting the PEM draft and suggested the well-known URI draft might be better placed outside the TLS working group.</li>
+<li><strong>Pseudorandom CTLS Extension</strong>: Introduced as an experimental draft to make the CTLS wire image purely pseudorandom, aiming for security, privacy, and protocol agility benefits. It proposes using a strong tweakable pseudorandom permutation (STPRP). Early feedback included concerns about NAT Slipstream attacks, key sharing across profiles, and the need for a concrete STPRP construction and harmonization with CTLS.</li>
+<li><strong>Zero Knowledge Proofs Meets TLS</strong>: Presentation on new research exploring the use of Zero-Knowledge Proofs (ZKPs) to address network visibility challenges (e.g., DNS filtering, malware scanning) for network operators without requiring decryption of TLS traffic. A use case for DNS filtering was presented. The current prototype shows high, but potentially improving, proof generation costs (15s per session setup, 3s per DNS query) but fast verification (5ms). Discussion included TLS 1.3's &quot;ZKP-hostile&quot; design (due to complex key schedule, expensive SHA256) and the potential for &quot;ZKP-friendly&quot; TLS design considerations.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Exported Authenticators</strong>:
+<ul>
+<li><strong>Decision</strong>: Clarify the security consideration text to address Ekr's concerns regarding the client finished message's role in securing the Exported Authenticator.</li>
+<li><strong>Action Item</strong>: Ekr to review the revised text.</li>
+</ul>
+</li>
+<li><strong>TLS Flags</strong>:
+<ul>
+<li><strong>Decision (IANA Expert Guidance)</strong>: Revise text to provide more general guidance for IANA experts on flag assignment, reserving a small initial block (e.g., 0-7 or 0-15) for working group discretion, and allocating others sequentially.</li>
+<li><strong>Decision (&quot;Recommended&quot; Flag Semantics)</strong>: Clarify the meaning of the &quot;recommended&quot; column by referencing RFC 8447, with further general improvements to 8447's column semantics to be discussed in a separate context. The column should reflect the same meaning as for other IANA registries.</li>
+<li><strong>Decision (DTLS 1.2 Applicability)</strong>: The <code>tls-flags</code> extension will remain for TLS 1.3 and DTLS 1.3 only, not extending to DTLS 1.2.</li>
+</ul>
+</li>
+<li><strong>DTLS 1.3</strong>:
+<ul>
+<li><strong>Decision (AEAD Record Limits)</strong>: Adopt proposal 257: Expand the AEAD sequence number to 64 bits and use the entire sequence number in the nonce, removing the epoch, to harmonize with TLS 1.3.</li>
+<li><strong>Action Item</strong>: Ekr to run the proposed changes by cryptographers and integrate them into the draft.</li>
+<li><strong>Decision (Handshake Message Transcript)</strong>: Exclude DTLS handshake framing fields (message type, fragment offset, fragment length) from the message hash calculation to align the transcript with TLS 1.3.</li>
+<li><strong>Action Item</strong>: Ekr to prepare a Pull Request (PR) for this change.</li>
+<li><strong>Decision (RFC 7457 Reference)</strong>: Close the PR to reference RFC 7457.</li>
+</ul>
+</li>
+<li><strong>RFC 8447bis (Recommended Column)</strong>:
+<ul>
+<li><strong>Action Item</strong>: Joe to revise the draft based on working group feedback, focusing on clearer status definitions for the &quot;Recommended&quot; column (e.g., &quot;Status&quot; with specific values like Recommended, Discouraged, No Opinion) and dropping the separate experimental code point range in favor of streamlining existing IANA processes.</li>
+<li><strong>Action Item</strong>: Chairs will initiate a working group adoption call after the draft updates.</li>
+</ul>
+</li>
+<li><strong>ECH Supporting Drafts (PEM, Well-known URI)</strong>:
+<ul>
+<li><strong>Action Item</strong>: Steven to update the drafts to reflect ECH.</li>
+<li><strong>Action Item</strong>: Chairs to discuss offline with Steven the appropriate venue for these drafts (TLS WG or another working group) and whether to pursue adoption. Ekr explicitly opposed adopting the PEM format draft within the TLS WG.</li>
+</ul>
+</li>
+<li><strong>Pseudorandom CTLS Extension</strong>:
+<ul>
+<li><strong>Action Item</strong>: Authors to continue developing the draft, focusing on clarifying requirements, proposing a concrete STPRP construction within the document (e.g., in an appendix), ensuring harmonization with CTLS, and consulting CFRG for cryptographic recommendations.</li>
+</ul>
+</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue interop and deployment efforts for ECH (Draft 13 target), tracking pain points for potential future specification updates.</li>
+<li>Chairs to initiate an adoption call for the updated RFC 8447bis draft on the mailing list.</li>
+<li>Steven to update the ECH supporting drafts; Chairs to determine path forward.</li>
+<li>Authors of the Pseudorandom CTLS Extension to continue work as per action items, with future consideration for working group adoption.</li>
+<li>Continue exploring the research area of Zero-Knowledge Proofs in TLS for network visibility and privacy.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

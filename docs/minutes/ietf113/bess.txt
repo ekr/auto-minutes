@@ -1,0 +1,86 @@
+**Session Date/Time:** 21 Mar 2022 09:00
+
+# bess
+
+## Summary
+
+The BESS session covered a range of updates on existing drafts, new proposals, and administrative items. Key discussions included the status of various EVPN-related documents nearing RFC publication or working group adoption, and detailed presentations on EVPN VPWS inter-domain gateways, domain path extensions for EVPN routes, IP aliasing enhancements, and a new DF selection mechanism for multi-homed EVPN. Additionally, new drafts were introduced concerning BGP SAFIs for SRv6 Mobile User Plane (MUP) and its YANG model, enhancing IPv6 address observability in EVPN, and improvements to MAC dampening procedures. Technical feedback was solicited for several drafts, and specific action items were assigned for document progression.
+
+## Key Discussion Points
+
+*   **Administrative Updates**:
+    *   One RFC published: "Operational Aspect for Proxy-ARP in EVPN Environments".
+    *   Two documents in RFC Editor Queue.
+    *   Multiple documents under AD review, IESG review, or shepherd review.
+    *   Two documents ready for Working Group Last Call (WGLC).
+    *   Two WGLCs in progress, requiring author IPR replies and comment resolution.
+    *   Potential overlap identified between `draft-ietf-bess-bgp-multicast-controller` and IDR P2MP Segment Routing work, requiring coordination.
+    *   `draft-ietf-bess-evpn-geneve` still awaiting updated version from authors addressing all comments.
+*   **EVPN VPWS Gateway Solution (`draft-rabalam-bess-evpn-vpws-interconnect-gateway`)**:
+    *   Aimed at interconnecting EVPN VPWS services across multi-domain networks, supporting heterogeneous transport and optimized multi-homing.
+    *   Three options: Service Interworking (draft's focus), Inter-domain Option B, Transport Interworking.
+    *   The Service Interworking solution extends RFC 9014 for EVPN VPWS, using D-Path for loop prevention and best path selection.
+    *   Redundancy solutions proposed: Anycast Gateways and EVPN Multi-homing with Interconnect Ethernet Segment.
+    *   **Feedback**: Discussion around the term "Service Interworking" and potential past IETF issues. Concerns about Route Distinguisher rewrite and its implications for routing. Document name confusion on agenda due to last-minute change.
+*   **Domain Path for EVPN (`draft-rabalam-bess-evpn-dpath`)**:
+    *   Extends the use of the D-Path attribute (currently for L3 routes in EVPN-IPVPN interworking) to all EVPN route types for control plane loop protection, traceability, and best path selection.
+    *   Updates include allowing D-Path for IMET routes (Type 3) and modifications for MAC-IP routes (Type 2).
+    *   Introduced a case to install looped MAC-IP routes if no other path is available, for fast convergence.
+*   **IP Aliasing (`draft-rabalam-bess-ip-aliasing`)**:
+    *   Introduced a "Centralized Routing Model" use case, where CNFs/VNFs peer with a centralized leaf (PEC) instead of local leaves.
+    *   The solution leverages Layer 3 Ethernet Segments on local PEs to resolve prefixes and avoid tromboning traffic through the centralized leaf.
+*   **DF Selection for Multi-Homed EVPN in Separate Fabrics (`draft-garg-bess-df-selection-for-multi-homed-evpn`)**:
+    *   Addresses active-active firewall deployment in multi-site EVPN fabrics, where firewalls share virtual credentials but prefer local traffic.
+    *   Proposed a new DF selection mode to allow multiple designated forwarders for the same ES/BD combination.
+    *   **Feedback**: Code point 2 for DF algorithm is already allocated for preference-based DF election. Suggestion to consider using the default gateway extended community from RFC 7432-bis instead of a new ES construct.
+*   **BFD for SRv6 Services (`draft-zhuang-bess-bfd-srv6-services`)**:
+    *   Aims to improve MVPN fast failover for SRv6 services where traditional BFD has limitations.
+    *   Proposed upstream PEs perform DF selection to prevent traffic redundancy and downstream PEs perform Anycast RPF.
+    *   Introduced a new "Upstream DF Selection Community" for MVPN routes to inform downstream PEs.
+*   **IPv6 Only PE Design (`draft-ietf-bess-ipv6-only-pe-design` and `draft-mishra-bess-ipv6-only-pe-design-all-sappy`)**:
+    *   The BCP draft (`ipv6-only-pe-design`) was updated to re-include inter-AS scenarios for testing.
+    *   A new standards-track draft (`ipv6-only-pe-design-all-sappy`) was introduced, focusing on a design framework supporting all SAPIs over a single IPv6-only BGP peering.
+    *   **Test Results**: Successful testing with Juniper showed full dual-stack functionality (IPv4/IPv6 NLRI forwarding) over a single IPv6-only BGP peering in PE-edge scenarios, with both IPv4 and IPv6 cores.
+*   **MUP SAFi for BGP (`draft-patel-bess-mup-safi-bgp`)**:
+    *   Defines a new BGP SAFi and extended community for the SRv6 Mobile User Plane (MUP) architecture (defined in DMM WG).
+    *   Introduces four new route types (Interwork/Direct Segment Discovery, Type 1/2 Session Transform Routes) to carry mobile user plane session and routing information.
+    *   **Feedback**: Discussion clarified that N3RAN and N6DN are separate VRF-like instances, and the architecture draft provides stitching rules. The goal is to use BGP as a fabric for SRv6-GTP translation, not to replace 3GPP signaling directly.
+*   **YANG for SRv6 MUP (`draft-nanduri-bess-srv6-mup-yang`)**:
+    *   A YANG model augmenting the existing BGP YANG model (`ietf-bgp`) for configuring SRv6 MUP capabilities.
+    *   Also augments the `bgp-policy` model for match and set options.
+*   **Enhancing IPv6 Address Observability in EVPN (`draft-leclanche-bess-ipv6-address-observability`)**:
+    *   Highlights issues with IPv6 Stateless Address Autoconfiguration (SLAAC) in operational networks (lack of determinism, control, and state).
+    *   Proposes leveraging RFC 8505 (Stateless ND Proxy) and RFC 8929 (ND for ownership) within EVPN to achieve reliable, stateful, and deterministic IPv6 address management.
+*   **MAC Dampening Backup (`draft-basu-bess-mac-dampening-backup`)**:
+    *   Proposes a structured approach to MAC dampening beyond RFC 7432, defining a `Mac Freeze Timer` and iterative adjustments to dampening parameters.
+    *   Goal is to converge to a complete MAC freeze while providing opportunities for administrator intervention.
+    *   **Feedback**: Since the proposed mechanism primarily resides within a single device and involves no new control plane signaling, it was suggested the draft should be informational rather than standards track, with expanded benefits for standardization.
+
+## Decisions and Action Items
+
+*   **EVPN Fast DF Recovery**: Authors to reply to the IPR call.
+*   **EVPN E-Multihoming Split Horizon**: Co-authors to reply to the IPR call. Jorge (Chair) to publish a new version addressing working group comments.
+*   **draft-ietf-bess-bgp-multicast-controller**: Chairs to work with IDR chairs and co-authors of relevant drafts to manage potential overlap with IDR P2MP Segment Routing policies.
+*   **draft-ietf-bess-evpn-geneve**: Samia (author) to cross-check if all comments have been addressed in the latest version (v3). Chair to re-check comments on the archive list.
+*   **draft-rabalam-bess-evpn-vpws-interconnect-gateway**: Discuss Route Distinguisher rewrite implications on the mailing list.
+*   **draft-rabalam-bess-evpn-dpath**: Update the draft to clarify best path selection by referring to and modifying RFC 7432-bis.
+*   **draft-garg-bess-df-selection-for-multi-homed-evpn**: Authors to remove the requested code point 2 for DF algorithm, as it is already assigned for preference-based DF election. Consider if the RFC 7432-bis default gateway extended community can address the use case instead of a new ES construct.
+*   **draft-basu-bess-mac-dampening-backup**: Authors to consider changing the document status to informational and expand on the benefits of standardizing an implementation-dependent procedure without control plane signaling.
+
+## Next Steps
+
+*   **EVPN Unequal Cost Load Balancing**: Await feedback/agreement from IDR chairs.
+*   **EVPN-FXC and MHPA**: Chair to re-read updated versions of the drafts.
+*   **EVPN L2 Ping**: Progress towards working group adoption.
+*   **EVPN Resilient Multicast Source**: Prepare for Working Group Last Call.
+*   **BGP-LS S-N document**: Prepare for Working Group Last Call.
+*   **draft-rabalam-bess-evpn-vpws-interconnect-gateway**: Authors to seek further feedback from the working group, then eventually request working group adoption.
+*   **draft-rabalam-bess-evpn-dpath**: Authors to synchronize changes with RFC 7432-bis draft, seek more working group feedback, then prepare for working group adoption.
+*   **draft-rabalam-bess-ip-aliasing**: Authors requesting working group adoption.
+*   **draft-garg-bess-df-selection-for-multi-homed-evpn**: Authors to engage in further discussion and feedback on the mailing list, considering the feedback received.
+*   **draft-zhuang-bess-bfd-srv6-services**: Authors to specify more details for failure scenarios and welcome comments on the mailing list.
+*   **draft-mishra-bess-ipv6-only-pe-design-all-sappy**: Further questions and discussion to be taken to the mailing list.
+*   **draft-patel-bess-mup-safi-bgp**: Authors to submit version 01, seek working group feedback, and then consider working group adoption.
+*   **draft-nanduri-bess-srv6-mup-yang**: Authors to submit a revision, focusing on configuration examples, security considerations, and feedback on desired operational data to model.
+*   **draft-leclanche-bess-ipv6-address-observability**: Ready for working group adoption.
+*   **draft-basu-bess-mac-dampening-backup**: Authors to revise the draft based on feedback, particularly regarding its status as informational.

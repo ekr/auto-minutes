@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="lamps.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF119-LAMPS-20240318-0530">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF119-LAMPS-20240320-0500">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 18 Mar 2024 05:30</p>
+<pre><code class="language-markdown"># lamps
+
+## Summary
+This LAMPS meeting covered several draft updates, focusing on documents in the RFC editor's queue or undergoing Working Group Last Call. Key topics included header protection, email security guidance, PKIX-related documents, CSR attestation, and CMS-related drafts. The group discussed proposed changes, open issues, and future directions for several documents, with a strong emphasis on aligning work with other IETF groups, especially the CFRG.
+
+## Key Discussion Points
+*   **Header Protection and Email Security Guidance:** Discussions centered on case sensitivity in header names within the &quot;HP Removed&quot; and &quot;HP Obscured&quot; header fields.  The consensus was that clarification was sufficient. The group also debated whether the email security guidance draft should be BCP or informational, ultimately deciding to proceed with informational.
+*   **PKIX Updates (4210bis):** Hendrick presented updates to RFC 4210bis, including incorporating changes from CMP updates (RFC 9480), supporting CAM keys, and adding a section on CAM-based message protection. Open issues related to mandatory schemas for CMP, root key updates, and potential incompatibilities with password-based MAC were discussed. Concerns were raised about whether proposed changes could imply a requirement to directly connect with a CA.
+*   **CMP and CAM related documents:** Discussion on the need for review of the CAM-related parts of the CMP documents by a crypto expert.  The novel approach of establishing a MAC key via CAM for integrity protection was specifically highlighted as needing scrutiny.
+*   **CSR Attestation:** Michael presented updates to the CSR attestation draft, focusing on the addition of a &quot;hint&quot; to the evidence statement to aid parsing. He requested feedback on a proposed new IANA registry for tracking OIDs registered in other SDOs to improve implementer awareness. Concerns raised about how OIDs are collected and the process for private OIDs.
+*   **CMS-related drafts (Kyber):** A major re-write was undertaken based on RFC 5990bis and aligned with CMS Camry. There were discussions about mandatory-to-implement components, specifically KMac and SHA-2. There was discussion about the use of SHA-2 vs SHA-3 in the document.
+*   **Composite Cams:** Discussion on composite CAMS were deferred to a future CFRG meeting. There was discussion about whether or not to move forward with the composites CAMS document and discussion about problems with the current key combiners.
+
+## Decisions and Action Items
+*   **Header Protection:** Authors to consider adding a note clarifying case-insensitive comparison of header names in the HP fields.
+*   **Email Security Guidance:** Proceed with publishing the email security guidance draft as informational.
+*   **RFC 4210bis:**
+    *   Authors to bring concerns about the mandatory schema up to the mailing list.
+    *   Merge the provided pull request for the update to root key update.
+    *   Issue about the size of the key for CRMF was closed.
+    *   Merge the pull request regarding the root see a key update content.
+    *   Sean Turner and Mike Elsworth will seek out review of the CAM-related portions of the CMP documents.
+*   **CSR Attestation:** Authors to refine the proposed IANA registry based on feedback, and discuss with IANA about the feasibility and appropriate process for the second registry.
+*   **CMS-Kyber:** Add an &quot;or&quot; operator with justification and let people fight about it. It was decided that both SHA-3 and SHA-2 must be used in the document.
+*   **7030 CSR attributes:** Working group last call to begin.
+
+## Next Steps
+*   Authors to post updated drafts incorporating feedback received during the meeting.
+*   Continued work on implementations and hackathon artifacts for several drafts.
+*   The composite Cams draft will pause depending on future CFRG design decisions.
+*   The LAMPS working group will continue the agenda in the next session.
+
+
+---
+
+**Session Date/Time:** 20 Mar 2024 05:00
+
+# lamps
+
+## Summary
+
+This LAMPS working group meeting covered several draft proposals, including mitigations for CMS attacks, updates to CMC, composite signatures for MLDSA, hash-based signatures for X.509, instant messaging EKU, and remote attestation for CSRs. Key discussions revolved around the technical details, potential interoperability issues, security considerations, and use cases for each proposal. A call for adoption was held for the composite signatures draft, and the group agreed to proceed with the adoption process.  Several drafts are candidates for adoption, and the working group has requested OIDs from IANA and has asked for feedback on others.
+
+## Key Discussion Points
+
+*   **CMS Attack Mitigation:** Discussed a draft to mitigate an attack against CMS authenticated envelope data using CCM or GCM by binding the encryption algorithm identifier into the key derivation function (KDF).
+    *   Concerns raised on the overhead of requiring HKDF in all cases.
+    *   Discussion on potentially updating CMS itself to only support this technique.
+*   **CMC Updates:** Presented changes to the CMC draft, including adding HSMAC-SHA2 support, removing TLS 1.0, and aligning agent types.
+    *   Question raised on why TLS 1.3 wasn't used instead of 1.2, but the update is following BCP guidance.
+    *   Discussed adding support for key agreement recipient info.
+*   **Composite Signatures:** Updates on version 13 of the composite signatures draft, including changing the ASCII Duran coded string to a Dur encoded OID and simplifying pre-hashing algorithms.
+    *   Discussion about the CMS-specific nature of using a DER encoding of an OID as a domain separator.
+    *   Debate on removing some of the supported signature combinations. Suggestions included removing MLDSA-65 or RSA PSS.
+    *   Discussion of a prehash algorithm dependency in composite signature happening in a particular layer in the implementation.
+*   **Hash-Based Signatures:** Discussed splitting the hash-based signatures draft into two documents: one for stateful signatures and one for SPHINCS+.
+    *   A call for adoption was recently started on the mailing list.
+*   **Instant Messaging EKU:** Proposed an extended key usage (EKU) for instant messaging to prevent unintended certificate issuance.
+    *   Group had no concerns regarding the proposal.
+*   **Remote Attestation for CSRs:** Presented a draft for providing freshness of attestation evidence in CSRs using nonces, focusing on CMP and EST protocols.
+    *   Discussion around denial-of-service resistance and state management for nonce requests.
+    *   Consideration of adding support for other enrollment protocols.
+    *   The attester may know the verifier, but the process of passing a nonce may not be standardized.
+
+## Decisions and Action Items
+
+*   **Composite Signatures:** Based on a show of hands, the working group will proceed with a call for adoption of the composite signatures draft.
+*   **Hash-Based Signatures:** Group to express their opinion on the mailing list thread for adoption.
+*   **Instant Messaging EKU:** Proceed with a call for adoption of the EKU draft.
+*   **Remote Attestation for CSRs:** The WG to conduct a call for adoption.
+    *   Address comments on RATS list, and consider the role of the verifier during adoption.
+
+## Next Steps
+
+*   Authors to address comments received during the meeting and update drafts accordingly.
+*   Chairs to initiate calls for adoption on the mailing list for applicable drafts.
+*   Working group to continue discussion on open issues and potential improvements to the draft proposals.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

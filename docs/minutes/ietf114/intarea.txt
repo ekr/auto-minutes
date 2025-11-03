@@ -1,0 +1,76 @@
+**Session Date/Time:** 28 Jul 2022 14:00
+
+# intarea
+
+## Summary
+
+The intarea working group meeting at IETF 114 covered updates on pending drafts, including the status of the IP parcels adoption call and the renaming of the internet addressing draft. Presentations included a deep dive into the AERO/OMNI architecture and IP parcels by Fred Templin, a discussion on the future of internet addressing considerations by Luigi Iannone, a proposal for service routing in MEC environments by Zongping Li, and an update on IANA considerations for IEEE 802 parameters by Donald Eastlake. Key discussions revolved around the scope and next steps for internet addressing, the suitability of intarea as a venue for certain drafts, and the call for adoption of new work items.
+
+## Key Discussion Points
+
+*   **Chair Updates**:
+    *   The call for adoption of `draft-templin-intarea-ip-parcels` had not yet reached consensus. The call was extended until the end of the current IETF week to allow for discussion following the presentation.
+    *   `draft-iannone-intarea-internet-addressing-gap-analysis` was moved out of intarea and renamed to `draft-iannone-internet-addressing-considerations`.
+*   **IP Parcels, AERO, and OMNI (Fred Templin)**:
+    *   **Background**: The internet was originally envisioned as a network of networks (Cat-Net model). Today's internet is a monolithic routing domain due to architectural layering issues and address translation, hindering true end-to-end global addressing.
+    *   **AERO/OMNI (Adaptation Layer)**: Proposed as a new architectural layer to restore end-to-end communication over disjoint internetworks. Gateways operating at this layer can span partitions.
+    *   **Mechanism**: Original IPv6 packets are encapsulated within the adaptation layer (OA packets), fragmented if necessary, and then encapsulated again as carrier packets for transport across segments.
+    *   **Multi-net Traversal**: OA gateways forward OA packets below IP but above the link layer. Carrier packets transport OA packets/fragments across first-hop segments, re-encapsulating at each next-hop.
+    *   **Six M's of Mobile Internetworking**: The adaptation layer naturally addresses multi-link, multi-net, mobility, multicast, multi-hop, and MTU assurance.
+    *   **IP Parcels**: A new construct inspired by MTU assurance. Permits a single IP packet to carry multiple upper-layer protocol segments (a "packet of packets").
+        *   **Goal**: Support larger packets for better performance, flexible packaging, and encourage diverse MTUs.
+        *   **Structure**: Comprised of segments from the same 5-tuple. Up to 64 concatenated segments. Uses the IPv6 Jumbo Payload option (RFC 2675). Proposed for IPv4 by reusing RFC 1063's obsoleted probe MTU option. Max size up to 4 megabytes.
+        *   **Integrity**: Includes separate integrity checks for each upper-layer protocol segment. The lost transmission unit is a single segment, not the entire parcel, improving resilience.
+        *   **Path Qualification**: A procedure using hop-by-hop options and ICMP replies to determine parcel-capable paths.
+    *   **Discussion**: D. Card (Critical Technologies) asked about interaction with TCP options; Templin confirmed options would only appear in the first parcel's TCP header.
+*   **Internet Addressing Considerations (Luigi Iannone)**:
+    *   **Evolution**: Drafts `problem-statement` and `gap-analysis` evolved into `internet-addressing-considerations`. The term "gap" was removed as it implies a missing solution, which was not the document's intent.
+    *   **Purpose**: To stimulate discussion about potential architectural limitations or shortcomings of the current internet addressing model, not to propose immediate solutions.
+    *   **IAB/IESG Retreat**: The IAB/IESG discussed the drafts, questioning their intent and suggesting potential next steps (IRTF RG, IAB workshop, new WG, keeping in intarea).
+    *   **Community Feedback**:
+        *   Suresh Krishnan (Cisco): Believes `intarea` is not the right venue for such a large body of work and suggests a new WG or IRTF RG. Emphasized incremental deployability.
+        *   Andrew Campling: Suggested an IAB workshop to flesh out long-term technical direction.
+        *   Joel Halpern (Ericsson): Criticized the document for being too broad, mixing existing solutions, proposed ideas, and application-layer concerns. Stated it was hard to use as a basis for charting or concrete discussion.
+        *   Colin Perkins: Agreed the draft is "incredibly broad," covering topics suitable for multiple research groups and engineering efforts. Called for focusing the work on specific problems and deciding on a clear direction (research vs. engineering).
+        *   Stu Card (Ax Enterprise): Agreed on the importance of the work and the need for a venue to discuss these issues holistically. Questioned why IETF rather than IRTF.
+        *   Dino Farinacci: Suggested focusing on "one specific problem to solve" that is well-defined, concise, and allows for exploration of compatible, incrementally deployable solutions.
+        *   Dominique Lizansky (LastPass Legal): Reiterated the need for specific problems and solutions and cautioned against overly complex developments.
+    *   **Author's Response**: Luigi acknowledged the document's breadth and the need for clarity and scope refinement. Agreed that the intent was to trigger discussion, and future work would involve structuring it for charting or solution exploration.
+*   **Service Routing in Multi-access Edge Computing (MEC) (Zongping Li)**:
+    *   **Proposal**: A mechanism to directly access local MEC services without DNS by hashing the domain name to derive a special destination IP address. This is intended to be quicker for connection establishment.
+    *   **IP Address Options**: Discussed using MEC prefixes, Unique Local Addresses (ULAs), or the full 128 bits for the hashed domain name.
+    *   **Requirements**: Network support for forwarding the service routing IP, and content servers supporting binding between the service routing IP and traditional destination IP.
+    *   **Hash Conflicts**: Acknowledged potential for conflicts and suggested solutions like focusing on essential services or changing the hashing algorithm.
+    *   **Fixed Clients**: Proposed a similar mechanism for fixed clients, potentially involving tunnels between BNGs and MECs.
+    *   **Discussion**:
+        *   Eric Vyncke: Questioned if `intarea` is the correct working group, suggesting `v6ops` might be more appropriate.
+        *   Carlos Bernardos: Noted that MEC development primarily occurs in 3GPP and questioned the direct impact or need for IETF involvement. Zongping Li clarified that IETF agreement on IP address usage would be needed.
+*   **IANA Considerations for IEEE 802 Parameters (Donald Eastlake)**:
+    *   **Purpose**: To revise RFC 7042 (BCP 175) to reflect current IANA considerations for IEEE 802 parameters. This is part of a series of updates, replacing previous versions rather than patching.
+    *   **Key Updates**:
+        *   **MAC Address Assignment**: Details assignment of MAC addresses under the IANA OUI (00:00:5e), covering both 48-bit and 64-bit addresses.
+        *   **Extended Ethertypes**: Discusses the `88B7` hex Ethertype for OUIs and how IANA can assign more.
+        *   **New Additions**:
+            *   CBOR tags for MAC addresses and Ethernet protocol identifiers.
+            *   **Structured Local Address Plan (SLAP)**: A mechanism for 48-bit MAC addresses, dividing the local address space (where the U/L bit, now "X bit," is 1) into four quadrants for different uses (local administrator, CID holder, reserved, standard assigned for dynamic allocation).
+            *   **Company IDs (CIDs)**: For organizations that need an identifier but not a block of globally unique MAC addresses.
+            *   Pointers to other IANA-assigned blocks (e.g., Continuity Fault Management, LLDP code points).
+        *   **IESG Statement on Ethertypes**: Includes a statement that requests for Ethertypes must now go through the IESG.
+        *   **Allocation Procedure**: For small/medium blocks, a designated expert approves; for large blocks, IESG ratification is required after expert approval.
+        *   **IPv6 Multicast**: Noted that IPv6 multicast MAC addresses (starting with 33) fall into the administratively assigned SLAP quadrant, which has caused some past contention but is generally accepted.
+    *   **Discussion**:
+        *   J.C. Zuniga: Recommended adoption of the draft within `intarea` for further discussion and potential additional references.
+        *   Carlos Bernardos: Suggested including a reference to RFC 8948 (DHCP extensions for SLAP quadrants).
+
+## Decisions and Action Items
+
+*   **IP Parcels (Fred Templin)**: The call for working group adoption remains open until the end of the IETF 114 week. No decision on adoption has been reached.
+*   **Internet Addressing Considerations (Luigi Iannone)**: No immediate decision on working group adoption or the path forward. Authors will refine the document's scope and address clarity issues raised. A side meeting was scheduled for further discussion.
+*   **Service Routing in MEC (Zongping Li)**: No decision was made on adoption or placement in a working group. The chairs will continue discussion with the author about the appropriate venue (e.g., `v6ops` or 3GPP).
+*   **IANA Considerations (Donald Eastlake)**: The `intarea` chairs will initiate a call for working group adoption for `draft-eastlake-iana-802-parameters-bis`. Authors were encouraged to incorporate suggested references (e.g., RFC 8948).
+
+## Next Steps
+
+*   **IP Parcels**: Continue discussion on the `intarea` mailing list. The chairs will close the call for adoption by the end of the current IETF week.
+*   **Internet Addressing Considerations**: Authors to refine the draft based on feedback, focusing on clearly defined problems. Community discussion on the mailing list and at the planned side meeting to explore the best path forward (e.g., new WG, IRTF RG, IAB workshop).
+*   **IANA Considerations**: `intarea` chairs will start a call for adoption. Donald Eastlake to review and potentially add RFC 8948 as a reference.

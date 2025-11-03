@@ -1,0 +1,93 @@
+**Session Date/Time:** 21 Mar 2022 13:30
+
+# mops
+
+## Summary
+
+The mops (Media Operations) working group session covered updates on the Media over QUIC (MoQ) BoF, the Streaming Video Alliance (SVA) activities, and DASH-IF's work on WebRTC integration. The session also included discussions on the `draft-ietf-mops-xr-ops-reqs` and `draft-ietf-mops-ops-cons` working group documents, addressing scope, technical content, and AD review comments. Finally, the working group reviewed and updated its milestones.
+
+## Key Discussion Points
+
+*   **Logistics and Introductions**:
+    *   Sanjay Mishra volunteered to lead note-taking. Eric Vyncke agreed to monitor the Jabber chat.
+    *   Attendees were reminded of IETF BCPs and the ombuds team.
+    *   Blue sheet signing via QR code or on-site tool was highlighted, along with using the Meetecho queue for questions.
+
+*   **Media over QUIC (MoQ) BoF Update (Magnus Westland)**:
+    *   The MoQ BoF is scheduled for Wednesday at 10:00 CET in Grand Ballroom 2.
+    *   **Goal**: To judge the need and scope of interest in working on one or more new media delivery protocols built on QUIC.
+    *   **QUIC capabilities**: Attractive features include multiplex streams, unreliable datagrams, congestion control, TLS security, path migration, and user-space implementation.
+    *   **Scope areas**: Addressing latency requirements for various applications (gaming, remote desktop, telephony, video conferencing, live media) and on-demand media (though less targeted). Live media delivery (ingest, syndication, content delivery) is seen as a starting point.
+    *   **Hybrid use cases**: Combining aspects of multiple use cases, such as live all-employee meetings with interactive Q&A (live media + video conferencing).
+    *   **Discussion**: Sanjay Mishra raised the importance of CDNs and multi-CDN considerations. Glenn Dean suggested considering transitions between QUIC and other transports in media workflows. Mo Zini highlighted that MoQ drafts (QICR) explicitly mention relay nodes, functioning as CDNs.
+
+*   **Streaming Video Alliance (SVA) Update (Glenn Dean)**:
+    *   SVA comprises ~100 members focused on delivering streamed video (content studios, streaming services, tech providers, CDN operators).
+    *   **Working Groups**: Live Streaming, Open Caching, Networking Transport (chaired by Glenn), VR, Players, Privacy and Protection, Measuring QoE.
+    *   **Recent Releases**:
+        *   **Open Caching API**: Now in full release, with a testbed available for interoperability validation.
+        *   **Open Caching Configuration Interface Specifications**: Includes overview architecture, an extension for IETF CDNI metadata object model, and publishing layers APIs, demonstrating strong linkage to IETF CDNI work.
+        *   **White Paper on 5G Edge Cloud**: A 110-page document balancing marketing and technology, relevant to IETF work on network slicing.
+    *   **QUIC Streaming POC**: SVA is developing a testing Proof of Concept (POC) to provide an end-to-end reference evaluation architecture. This will help media operators understand the operational impacts of adopting QUIC within their workflows, rather than being a bake-off against other protocols.
+
+*   **DASH-IF/WebRTC Integration (Julia Kenyon)**:
+    *   Julia Kenyon presented on use cases and technical considerations for integrating DASH and WebRTC.
+    *   **Use Cases**:
+        *   **Fallback**: From WebRTC to DASH when WebRTC is not supported, network conditions are poor, or for non-premium content.
+        *   **Interleaved Content**: Switching between real-time WebRTC (e.g., interactive Q&A) and pre-recorded DASH (e.g., ads, movie segments).
+        *   **Concurrent Content**: Overlaying pre-recorded DASH with supplemental live WebRTC streams (e.g., co-watching).
+    *   **Comparison**: DASH uses MPD for content description (same for all users, client selects media/bitrate), buffered rendering, CDN distribution. WebRTC uses SDP (unique per client, server adapts bitrate), immediate rendering (sub-second latency), more bespoke server implementations.
+    *   **Hybrid Delivery Workflow**: Content is transcoded/packaged for both WebRTC (scaled delivery) and DASH (CDN distribution). The client would be a DASH player with a grafted WebRTC client using defined APIs.
+    *   **Standardization Needs**:
+        *   **WebRTC**: Standard signaling protocol (e.g., WIP protocol), session management, stream switching without SDP re-negotiation, time synchronization with DASH, standardized metrics collection.
+        *   **DASH**: Define APIs between clients, represent WebRTC information in MPDs, decide on single/dual browser video elements for rendering, support hybrid operations.
+    *   **Discussion**: Trick play (pause/rewind) would involve switching from live WebRTC to recorded DASH segments. Watermarking (for content protection or measurement) presents challenges for WebRTC, with current solutions being proprietary or requiring separate streams/server-side marking.
+
+*   **Working Group Documents**:
+
+    *   **`draft-ietf-mops-xr-ops-reqs-01` (Extended Reality Operational Requirements) (Renan)**:
+        *   Renan presented updates, including proposed changes to the abstract and introduction based on mailing list feedback.
+        *   **Proposed Change**: Replace "Augmented Reality (AR)" with "Extended Reality (XR)" to encompass AR, Virtual Reality (VR), and Mixed Reality (MR), believing it more accurately reflects the document's scope.
+        *   **Proposed Scope**: Explores issues in using edge computing resources to operationalize XR media applications, focusing on challenges like low latency, limited device battery, and heat dissipation across different form factors.
+        *   **Intended Audience**: Network operators interested in providing edge computing for these applications.
+        *   **Discussion**:
+            *   Spencer Dawkins questioned if the focus on *edge computing* was too narrow, and if cloud-based XR operational requirements should also be covered. Renan argued edge computing is central to mitigating device-side constraints for XR.
+            *   Jake Holland raised concerns about the document's focus potentially overlapping with edge compute research groups (e.g., coin-RG) rather than purely media operations. The chairs and Colin clarified that the document should focus on *media delivery expectations and requirements* that arise *because* compute is offloaded to the edge, and the operational implications of compute placement on latency, power, and heat.
+            *   Suhas Nandakumar suggested looking at coin-RG's "compute-aware networking" work for relevant concepts.
+            *   **Decision**: The scope was generally affirmed, with a clear direction for the document to focus on media delivery challenges and operational considerations specific to XR workloads offloaded to the edge.
+
+    *   **`draft-ietf-mops-ops-cons` (Operational Considerations for Media Services) (Spencer Dawkins)**:
+        *   Discussion on Eric Vyncke's AD review comments.
+        *   **Latency Categorization**: Spencer Dawkins, an editor, confirmed that the existing latency categories in the draft, defined at length by the WG, are appropriate for streaming media and should not be altered to encompass different contexts like video conferencing (as discussed in the MoQ BoF).
+        *   **Living Documents**: Eric Vyncke highlighted the broader IETF challenge with "living documents," noting there's no official ISG solution yet, implying the document will be static upon publication.
+        *   **Discussion on Living Documents**: Warren commented on the difficulty of defining a general solution for living documents due to diverse use cases. Spencer proposed creating a "dead pointer" in the RFC to a "living document" maintained in a GitHub repository (e.g., MoQ GitHub) for dynamic lists. Glenn Dean emphasized considering IETF legal frameworks for citations. Sanjay Mishra suggested publishing the document as static and revisiting later if significant updates are needed. The chairs agreed that a broader IETF solution for living documents is desired but acknowledged the need for mops to find a pragmatic approach for its own documents.
+
+*   **Milestones Discussion**:
+    *   The chairs presented a cleanup and update proposal for existing milestones.
+    *   **`draft-ietf-mops-smpte-reliance-00`**: Proposed for removal due to the absence of a draft, SMPTE's shifting focus, and challenges with coordination.
+    *   **`draft-ietf-mops-sva-reliance-00`**: Proposed to move out the target date as no draft exists yet; a draft might appear by July.
+    *   **`draft-ietf-mops-ar-use-cases-00`**: Will be updated to reflect the new `draft-ietf-mops-xr-ops-reqs-01` document and its revised target.
+    *   **Discussion on SVA Reliance Document**: Colin asked about the form of this document (e.g., list of references, liaison spreadsheet). Spencer Dawkins reiterated the importance of such a document to identify gaps in IETF protocols from an operational perspective, providing input to other protocol working groups. It was acknowledged that a "last call" target for this document shortly after its first draft would be too aggressive.
+
+## Decisions and Action Items
+
+### Decisions
+
+*   **Milestone `draft-ietf-mops-smpte-reliance-00` is removed.**
+*   **Milestone `draft-ietf-mops-sva-reliance-00` is moved out** to a later date, pending the emergence of a draft.
+*   **Milestone `draft-ietf-mops-ar-use-cases-00` is updated** to reflect `draft-ietf-mops-xr-ops-reqs-01` with a revised target.
+*   The **scope of `draft-ietf-mops-xr-ops-reqs-01` is affirmed** to focus on media delivery challenges and operational requirements when XR compute is offloaded to edge resources.
+*   The **latency categorizations in `draft-ietf-mops-ops-cons` are affirmed** as appropriate for streaming media within the document's context and will not be changed based on video conferencing contexts.
+
+### Action Items
+
+*   **Working Group Members (for `draft-ietf-mops-xr-ops-reqs-01`)**: Submit GitHub issues to refine the document's scope, content, and focus on quantitative parameters (e.g., bandwidth, latency, reliability, scaling considerations).
+*   **Chairs**: Circulate the proposed updated milestones to the mailing list for a two-week review period, then formally update them.
+*   **`draft-ietf-mops-ops-cons` Editors (Spencer Dawkins, Ali Begen, Sanjay Mishra)**: Address Eric Vyncke's AD review comments, particularly concerning the "living document" aspect (e.g., exploring a "dead pointer to a living document" approach in a GitHub repository).
+
+## Next Steps
+
+*   Continue refining `draft-ietf-mops-xr-ops-reqs-01` based on GitHub issues and working group discussion.
+*   Finalize `draft-ietf-mops-ops-cons` by addressing outstanding AD review comments and clarifying the approach for referring to dynamic information.
+*   Formalize the updated working group milestones.
+*   Mops working group members are encouraged to attend the Media over QUIC (MoQ) BoF on Wednesday to provide operational input.

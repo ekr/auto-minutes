@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="6lo.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-6LO-20211108-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 14:30</p>
+<h1>6lo</h1>
+<h2>Summary</h2>
+<p>The 6lo working group session covered the status of existing documents, including one in the RFC Editor queue, two under IESG evaluation, and a recently adopted working group item. Presentations focused on new and updated drafts: extending 6lo-ND for multicast and anycast registration, enabling unicast lookups to the 6LBR, defining transmission of SCHC compressed packets over 15.4 networks, and proposals for native short addressing and hierarchical IP addressing in edge networks. Key discussions revolved around technical details, backward compatibility, and calls for reviews and working group adoption.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Document Status:</strong>
+<ul>
+<li><code>IPv6 over NFC</code>: The IESG expressed concern regarding the public availability of the NFC specification details. An update from Eric Klein indicated the specification was received, and a follow-up with Lars (IESG Chair) is pending to resolve how public access to the spec was communicated to the WG.</li>
+<li><code>IPv6 over PLC</code>: Three IESG discuss ballots remain. Authors plan to submit a revised draft in approximately two weeks after addressing comments.</li>
+<li><code>6lowpan Use Cases</code>: Passed its second Working Group Last Call; a shepherd write-up is the next step.</li>
+<li><code>IPv6 Multicast Address Listener Registration</code>: Recently adopted as a working group document.</li>
+</ul>
+</li>
+<li><strong>ND Multicast Address Listener Registration (<code>draft-ietf-6lo-multicast-registration</code>):</strong>
+<ul>
+<li>This draft extends 6lo-ND (RFC 8545) to support anycast and multicast IPv6 addresses, aiming to avoid MLD overhead in LLNs.</li>
+<li>It introduces a new flag in ERO and IDA messages for unicast, anycast, or multicast registration.</li>
+<li>The 6LBR is modified to accept multiple registrations for the same address, indexed by the ROVR field.</li>
+<li>The document also specifies RIPL-related work, extending RFC 6550 with a new DAO mode of operation (proposed as MOB 5 for non-storing multicast mode) and clarifying anycast handling.</li>
+<li>For multicast, the root performs ingress replication, delivering one copy per 6LR with a listener. For anycast, the root selects one 6LR based on unspecified policy.</li>
+<li>Backward compatibility with existing deployments (e.g., MOB 1 and MOB 3) is addressed, including a 6CO capability option flag for 6LR support of this specification.</li>
+<li>The proposed interface is designed to be agnostic to the underlying routing protocol (e.g., BGP in EVPN, Meepo).</li>
+</ul>
+</li>
+<li><strong>ND Unicast Lookup (<code>draft-ietf-6lo-nd-unicast-lookup</code>):</strong>
+<ul>
+<li>This draft proposes using the 6LBR as a registrar that can respond to unicast NS lookups for registered addresses, thus avoiding traditional multicast NS lookups (broadcast).</li>
+<li>It leverages the SLA option in IDA messages (from RFC 8929) to query address mappings, either locally or remotely.</li>
+<li>A new message code (similar to DAC but indicating &quot;address mapping&quot;) is defined for query/response.</li>
+<li>The document was previously submitted to 6man but failed to gain interest there and is now proposed to be brought back to 6lo.</li>
+</ul>
+</li>
+<li><strong>Transmission of SHIC Compressed Packets over 15.4 Networks (<code>draft-gomez-6lo-shic-15-4</code>):</strong>
+<ul>
+<li>The draft aims to enable SCHC (RFC 8724) header compression over 15.4 networks, offering greater compression efficiency (down to 2 bytes for IPv6/UDP/CoAP) compared to 6loWPAN HC (11 bytes).</li>
+<li>It defines a one-byte SCHC dispatch pattern from Page 0, making more efficient use of the 6loWPAN dispatch type space. The rule ID length is tentatively set to 8 bits.</li>
+<li>A specific modification to RFC 8724 is proposed for IPv6 addresses and UDP ports in 15.4 mesh scenarios, where the &quot;device&quot; and &quot;application&quot; concepts (and thus uplink/downlink) may not apply, suggesting the use of <code>compute_IID</code> and &quot;transmit/receive&quot; terminology.</li>
+<li>Security considerations from RFC 8724 apply, with an added safety measure to prevent reconstruction of packets larger than 1500 bytes.</li>
+</ul>
+</li>
+<li><strong>Native Short Addressing for LLN Expansion (<code>draft-iannone-6lo-native-short-address</code>):</strong>
+<ul>
+<li>The draft introduces a native short addressing scheme for LLNs with fixed geolocations, where mobility is primarily related to radio connectivity.</li>
+<li>It formalizes the NSA allocation function with a step-by-step example and clarifies the routing mechanism based on address length.</li>
+<li>Communication with external IPv6 nodes is detailed: the root maps external IPv6 addresses to artificial NSA addresses. For NSA nodes contacting external IPv6, the first packet carries the full IPv6 address, and the root responds with an ICMPv6 message providing a short address for subsequent communication.</li>
+<li>The authors are proposing the document for working group adoption. Concerns were raised about the applicability statement, particularly regarding dynamic network changes and renumbering.</li>
+</ul>
+</li>
+<li><strong>Short Hierarchical IP Addresses Attached Networks (<code>draft-song-6lo-hierarchical-addressing</code>):</strong>
+<ul>
+<li>This draft proposes a scheme where entities in edge networks only know and use their short entity ID, delegating network ID and prefix management to gateway routers.</li>
+<li>Packet headers would only contain the lengths and variable-length source/destination addresses, compressing the address part.</li>
+<li>A hierarchical network architecture with Level Gateway Routers (LGRs) and Intra-Level Routers is described, demonstrating how LGRs augment/strip prefixes as packets traverse network levels.</li>
+<li>The mechanism is stateless, orthogonal to existing context-based header compression schemes, and aims to be incrementally deployable.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>IPv6 over NFC:</strong> Eric Klein to follow up with Lars (IESG Chair) regarding the public availability/communication of the NFC specification.</li>
+<li><strong>IPv6 over PLC:</strong> Authors to submit a revised draft in approximately two weeks to address outstanding IESG comments.</li>
+<li><strong>6lo Multicast Address Listener Registration:</strong> Pascal Thubert will present this draft at the ROLL working group session.</li>
+<li><strong>6lo Multicast Address Listener Registration:</strong> Volunteers are requested for urgent reviews of the draft due to external alliance needs.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>IPv6 over BLE-Links:</strong> Await RFC publication.</li>
+<li><strong>6lowpan Use Cases:</strong> Shepherd write-up to be prepared.</li>
+<li><strong>6lo Multicast Address Listener Registration:</strong>
+<ul>
+<li>Continue reviews, focusing on a fast turnaround.</li>
+<li>Synchronize with the Routing AD and solicit feedback/contributions from the ROLL WG, given the introduction of a new RIPL mode of operation.</li>
+<li>Consider notifying the PIM working group for potential interest.</li>
+</ul>
+</li>
+<li><strong>ND Unicast Lookup:</strong> Discussion on the mailing list is encouraged to gauge working group interest in adopting this draft.</li>
+<li><strong>Transmission of SHIC Compressed Packets over 15.4 Networks:</strong> Further discussion on the mailing list regarding the fixed rule ID length and the proposed IID derivation/asymmetrical mode changes for mesh scenarios.</li>
+<li><strong>Native Short Addressing for LLN Expansion:</strong> Discussion on the mailing list about whether the recent updates address previous concerns regarding renumbering and dynamic network conditions, and to assess working group interest for adoption.</li>
+<li><strong>Short Hierarchical IP Addresses Attached Networks:</strong> Further discussion on the mailing list to compare this mechanism's benefits (especially overhead saving) against existing header compression schemes and to explore its potential adoption within the working group.</li>
+<li>All participants are encouraged to join the collaborative minute-taking process for future meetings.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

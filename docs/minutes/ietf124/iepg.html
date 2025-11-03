@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="iepg.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF124-IEPG-20251102-1500">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 02 Nov 2025 15:00</p>
+<h1>IEPG</h1>
+<h2>Summary</h2>
+<p>The IEPG session featured discussions on four key operational topics: improving DNS root server efficiency, analyzing IPv4 vs. IPv6 performance for authoritative DNS, measuring NAT64's impact on DNS, and proposing a new RPKI data distribution mechanism. A new co-chair, Jen Linkova, was welcomed. The &quot;Making Loco Root the Default&quot; discussion highlighted the growing, unfunded load on DNS root servers and advocated for widespread adoption of local root zone caching via Zone MD (RFC 8806) to enhance privacy, speed, and resilience. The IPv6 DNS performance study showed surprisingly similar performance to IPv4 in general measurements but revealed a significant IPv4 query dominance in enterprise customer data, prompting further investigation. Research into NAT64's impact on DNS indicated minimal performance overhead for throughput but increased noise and timeouts under certain MTU conditions, suggesting a preference for native queries where possible. Finally, a new RPKI data distribution protocol, ERIC Synchronization, was presented as a more efficient alternative to existing rsync and RRDP methods, introducing a &quot;relay&quot; concept to improve data propagation and resilience, with initial deployment experiments underway.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Making Loco Root the Default (Presenter: Geoff Houston)</strong></p>
+<ul>
+<li><strong>Problem Statement:</strong> DNS root servers are experiencing rapid query load growth (40% over two years, reaching 130 billion queries/day) despite being an unfunded service. Existing scaling methods like anycast are inefficient for dense networks.</li>
+<li><strong>Aggressive NSEC Caching:</strong> RFC 8198 aimed to reduce negative responses hitting the root, but adoption is low (~50% of root queries are still negative), partly due to older resolver versions (BIND 9.18 and later support it, but older versions are prevalent). There's a notable discrepancy between recursive resolver NXDOMAIN rates (~2% observed by Cloudflare) and root server reported rates (~50-60%), suggesting significant &quot;junk&quot; traffic likely from non-resolver-like devices or bad search lists.</li>
+<li><strong>Proposed Solution: Local Root Zone Caching:</strong> Distribute the entire root zone (2.2 MB, signed with Zone MD, RFC 8806) to recursive resolvers. This allows resolvers to serve root zone queries locally.</li>
+<li><strong>Benefits:</strong> Faster resolution, improved privacy (queries not broadcast), reduced attack surface on root, decreased dependencies on external infrastructure.</li>
+<li><strong>Implementation Status:</strong> Major recursive resolvers (BIND, Unbound, NSD) support fetching the root zone via Zone MD. The root zone is updated twice daily.</li>
+<li><strong>Call to Action:</strong> A draft advocating for making local root zone caching the default is under discussion.</li>
+</ul>
+</li>
+<li>
+<p><strong>IPv4 vs. IPv6 for Authoritative DNS (Presenter: Shane Kerr)</strong></p>
+<ul>
+<li><strong>Motivation:</strong> Measure the performance of NS1's IPv6 authoritative DNS edge compared to IPv4.</li>
+<li><strong>Methodology:</strong> Used RIPE Atlas probes to query A-only and AAAA-only zones, attempting to minimize caching effects to isolate recursive-to-authoritative latency.</li>
+<li><strong>RIPE Atlas Results:</strong> IPv6 queries were slightly faster than IPv4, and success rates were comparable (97% for IPv4, 96% for IPv6) across random probes, which was a surprising finding given no explicit selection for IPv6-capable clients.</li>
+<li><strong>Public Resolver Data (Cloudflare 1.1.1.1):</strong> Showed an almost 50/50 split between IPv4 and IPv6 queries, indicating well-connected resolvers effectively utilize both.</li>
+<li><strong>Enterprise Customer Data (NS1 Edge):</strong> Revealed a significant discrepancy, with approximately twice as many IPv4 queries as IPv6.</li>
+<li><strong>Conundrum &amp; Hypothesis:</strong> The RIPE Atlas probes likely represent more &quot;network-aware&quot; users, while enterprise customers may be running older, IPv4-centric infrastructure (e.g., Windows 2000 Active Directory DNS).</li>
+<li><strong>Future Work:</strong> Investigate the reasons for IPv4 dominance in enterprise traffic.</li>
+<li><strong>Discussion:</strong> Suggestion to make it a Best Current Practice (BCP) for zones to have at least one IPv6-only name server to expose and fix IPv6-related bugs in resolvers and increase IPv6 traffic.</li>
+</ul>
+</li>
+<li>
+<p><strong>NAT64 and DNS Measurements (Presenter: Tobias Fiebig)</strong></p>
+<ul>
+<li><strong>Context:</strong> Continuation of previous work measuring IPv6 readiness for DNS, now focusing on the impact of NAT64.</li>
+<li><strong>Methodology:</strong> Resolved Google's top 10 million domains using IPv4-only, IPv6-only, and dual-stack, under various MTU scenarios, with and without NAT64.</li>
+<li><strong>Benchmarking NAT64:</strong> Open-source NAT64 implementations (OpenBSD, TAYGA) showed minimal performance impact on throughput during iperf tests.</li>
+<li><strong>DNS Measurements with NAT64:</strong>
+<ul>
+<li>Offloading features tend to introduce more noise.</li>
+<li>Throughput was slightly better without offloading.</li>
+<li>More timeouts were observed with YOL compared to OpenBSD/TAYGA.</li>
+<li>Broken-pass MTU discovery for on-link and on-path scenarios performed similarly poorly with NAT64, unlike native IPv6 where on-link usually performs better.</li>
+<li>Dual-stack resolution also significantly suffered from broken-pass MTU discovery with an on-path MTU break.</li>
+</ul>
+</li>
+<li><strong>Minimally Covering NS Assets:</strong> This methodology, used to reduce measurement time (from 3.5 hours to 30 minutes), might make IPv6 look worse than it is in absolute terms, but the relative impact of factors like MTU discovery remained consistent.</li>
+<li><strong>Conclusion:</strong> If there's a choice, native queries are preferable over piping them through NAT64, particularly concerning MTU issues.</li>
+</ul>
+</li>
+<li>
+<p><strong>RPKI Data Distribution (ERIC Synchronization) (Presenter: Job Snijders)</strong></p>
+<ul>
+<li><strong>Current State:</strong> RPKI distribution relies on rsync and RRDP. The RPKI database is growing (currently ~0.5 million objects, ~900 MB raw data), with ~2 objects/second appearing.</li>
+<li><strong>Challenges with Existing Protocols:</strong>
+<ul>
+<li><strong>Rsync:</strong> Scales poorly for frequent synchronizations due to expensive difference calculation (e.g., 4MB handshake for sync check).</li>
+<li><strong>RRDP (Repository Delta Protocol):</strong> Downloads entire journal chapters, even if superseded by newer changes, leading to unnecessary data transfer. Also, a single timeout can trigger a full snapshot download (exponential &quot;fist in the face&quot;).</li>
+<li><strong>Architectural Limitations:</strong> Star topology (each CA has one publication server), no redundancy, and clients cannot choose alternative data sources, leading to slow revocation propagation, congestion, and hyper-local path issues.</li>
+</ul>
+</li>
+<li><strong>ERIC Synchronization Protocol:</strong> A new data replication system designed to address these issues.
+<ul>
+<li><strong>Concepts:</strong> Merkle trees, content-addressable naming, sequence numbers, HTTP-based.</li>
+<li><strong>ERIC Relay:</strong> Introduces an intermediate network element that aggregates data from multiple publication servers and presents it to clients in a merged, efficient format. Relays can synchronize with other relays.</li>
+<li><strong>Benefits:</strong> Clients jump to the latest state (no intermediate downloads), only download what changed, static content, HTTP features (compression), light on state, clients can rotate between relays.</li>
+<li><strong>Performance:</strong> Preliminary measurements indicate ERIC Synchronization is more efficient (less bandwidth, IOPS) than rsync and RRDP in all measured circumstances.</li>
+<li><strong>Deployment Story:</strong> Relays act as spoolers, allowing existing CAs to maintain their current setups while clients can benefit from ERIC via relays. This simplifies adoption.</li>
+<li><strong>Funding &amp; Operators:</strong> Tentative interest from Regional Registries (RRs) and cloud providers to operate globally reachable relays. A small number of committed relay operators (4-5) might be sufficient.</li>
+<li><strong>Future Considerations:</strong> How to make relays discoverable (DNS hostnames, hard-coding akin to root hints) and ensuring operational stability and trustworthiness of relay operators. Cryptographic mechanisms secure content integrity; operational stability is a separate concern. The protocol is named after Eric Buis.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Action Item:</strong> Jen Linkova was introduced and welcomed as a new co-chair.</li>
+<li><strong>Action Item (Shane Kerr):</strong> Investigate the reasons behind the observed IPv4 dominance in authoritative DNS queries from enterprise customers.</li>
+<li><strong>Action Item (Shane Kerr):</strong> Propose a fix or update to zone checker tools that incorrectly complain about IPv6-only authoritative zones.</li>
+<li><strong>Action Item (Chairs):</strong> Prepare a statement regarding the IESG's position on &quot;legend instruction&quot; slides often included by corporate presenters.</li>
+<li><strong>Action Item (Job Snijders and co-authors):</strong> Continue to refine and update the ERIC Synchronization Protocol draft based on ongoing experimentation and feedback.</li>
+<li><strong>Action Item (Attendees):</strong> Experiment with the publicly deployed ERIC relay at <code>relay.rpki-servers.org</code> and provide feedback.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continue discussion and work on the draft to make local root zone caching the default for DNS recursive resolvers.</li>
+<li>Further research into the specific drivers of IPv4 traffic for authoritative DNS in enterprise environments, aiming to understand and address any underlying issues that hinder IPv6 adoption.</li>
+<li>Advance the ERIC Synchronization Protocol through experimentation, gathering deployment experience, and iterate on the draft for potential adoption by an IETF working group. This includes exploring models for relay operator commitment and service discovery.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

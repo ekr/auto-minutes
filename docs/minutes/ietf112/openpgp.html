@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="openpgp.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-OPENPGP-20211110-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 10 Nov 2021 12:00</p>
+<h1>openpgp</h1>
+<h2>Summary</h2>
+<p>The openpgp working group session focused on the significant progress made on the &quot;Crypto Refresh&quot; draft, driven by the specialized Design Team. Key discussions revolved around proposed mandatory and recommended cryptographic algorithms, deprecations, and the development of the Stateless OpenPGP Interface (SOP) and its accompanying interoperability test suite. The Design Team's open and transparent, yet focused, approach was highlighted as crucial for overcoming past stagnation. There was an emphasis on engaging the broader working group for critical decisions, particularly on Mandatory To Implement (MTI) algorithms and deprecation proposals.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Design Team Progress and Workflow:</strong>
+<ul>
+<li>The working group had previously stalled on RFC 4880 bis due to broad discussions.</li>
+<li>A &quot;Design Team&quot; was formed, comprising chairs, implementers (3-4 different implementations), and editors.</li>
+<li>This team meets weekly, fostering focused discussions and decisions, significantly speeding up progress.</li>
+<li>The workflow is transparent, using Git, a tracker, merge requests (PRs), and an open mailing list archive.</li>
+<li>The Design Team prioritizes work, occasionally postponing items for later or determining them out of scope for the current Crypto Refresh document.</li>
+</ul>
+</li>
+<li><strong>Crypto Refresh Document Status (driven by Design Team):</strong>
+<ul>
+<li>Most content from the old <code>4880-bis</code> draft has been merged.</li>
+<li>&quot;Menial tasks&quot; like clarifications, updates, and table formatting are complete.</li>
+<li><strong>Notable Work Done:</strong>
+<ul>
+<li>AAD packet defined and updated (including protection for secret key material).</li>
+<li>Internet recipient subpacket.</li>
+<li>SKS v5 for AAD.</li>
+<li>Argon2 added.</li>
+<li>Curve25519 and Curve448 added; encoding format discussions resolved.</li>
+<li>Questionable advice about dropping keys removed.</li>
+</ul>
+</li>
+<li><strong>Notable Work In Progress / Not Yet Merged:</strong>
+<ul>
+<li>Mandatory To Implement (MTI) algorithms: Postponed for a broader working group discussion, considering NIST recommendations and post-quantum cryptography.</li>
+<li>V5 signatures: Active discussion in Issue 45.</li>
+<li>FFI keys: Nearing completion, expected to merge soon (PR 7789).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Proposed Cryptographic Algorithm Choices and Deprecations (Design Team Consensus):</strong>
+<ul>
+<li><strong>MUST Implement:</strong>
+<ul>
+<li>EDDSA (signing) and ECDH (public key encryption) using Curve25519.</li>
+<li>SHA-256, SHA-384, SHA-512 for hashing.</li>
+<li>AES-128, AES-192, AES-256 for symmetric encryption.</li>
+<li>Authenticated Encryption with Associated Data (AAD).</li>
+<li>OCB mode for AAD (though EAX is in the current draft, OCB is a CFRG recommendation and was suggested as the MUST implement mode; still under debate).</li>
+</ul>
+</li>
+<li><strong>SHOULD Implement:</strong> Curve448.</li>
+<li><strong>New Features:</strong> V5 keys use SHA-2 for fingerprints, Zlip replaces Zip for compression (with uncompressed as default), Argon2 for password-based key derivation.</li>
+<li><strong>Proposed Deprecations (potentially controversial):</strong>
+<ul>
+<li><strong>MUST NOT generate:</strong> RSA keys &lt; 2048 bits.</li>
+<li><strong>MUST NOT implement DSA or Elgamal at all</strong> (generate, encrypt, sign, verify, decrypt) due to vulnerabilities, key validation issues, and prevalence of insecure key sizes. This is a point of contention.</li>
+<li><strong>MUST NOT use:</strong> MD5, SHA-1, RIPEMD for signing or verifying new signatures.</li>
+<li><strong>MUST NOT encrypt with:</strong> IDEA, Triple DES, CAST5 (decryption still allowed).</li>
+<li><strong>MUST NOT use:</strong> simple (unsalted) string-to-key derivation.</li>
+</ul>
+</li>
+<li><strong>Remaining Algorithm Questions:</strong>
+<ul>
+<li>Inclusion of Brainpool curves (potential conflict with CFRG focus in charter).</li>
+<li>Requirement for FIPS compliance for a minimal implementation (currently decided against, pending NIST draft on Curve25519/448).</li>
+<li>Making AES256 mandatory for post-quantum preparation (counter-argument: full PQ requires more than just symmetric key strength).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Stateless OpenPGP Interface (SOP):</strong>
+<ul>
+<li>An abstract, command-line interface for OpenPGP operations, agnostic to wire format details.</li>
+<li><strong>Purpose:</strong> Facilitates interoperability testing, clarifies user concepts, encourages best practices, aids algorithm deprecation/adoption.</li>
+<li><strong>Current Focus:</strong> Data management (key generation, encryption, signing, verification).</li>
+<li><strong>Future Enhancements:</strong> Inline signatures (Issue 25), language-specific frameworks (Java, Rust, Python, C framework in discussion), certificate management functions (merging, validation, maintenance, revocation, subkeys).</li>
+<li>Implementers are encouraged to adopt SOP for better representation in testing.</li>
+</ul>
+</li>
+<li><strong>Interoperability Test Suite:</strong>
+<ul>
+<li>Developed using the SOP interface for black-box testing.</li>
+<li>Currently includes ~90 tests and ~800 test vectors, uncovering 92 bugs in 10 implementations.</li>
+<li>Results highlight spec ambiguities and improve implementation quality.</li>
+<li>Plans to use the test suite extensively for Crypto Refresh, including testing unreleased/development versions.</li>
+<li><strong>Call for Contributions:</strong> Suggesting/writing tests (Rust-based), reviewing results, and implementer participation (developing SOP implementations, providing build instructions).</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> The Crypto Refresh document will proceed towards an RFC release before addressing Post-Quantum Cryptography, to avoid further delays on overdue cryptographic updates.</li>
+<li><strong>Action Item (Chairs &amp; Design Team):</strong> A summary of the Mandatory To Implement (MTI) algorithm proposals will be sent to the working group mailing list to solicit broader discussion and feedback from the community.</li>
+<li><strong>Action Item (Jonathan):</strong> Meeting notes will be reviewed and posted after the session.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>The Design Team will continue its weekly meetings to finalize the Crypto Refresh draft.</li>
+<li>The working group will engage in discussions on the mailing list regarding MTI algorithms and proposed deprecations.</li>
+<li>Implementers are encouraged to engage with the SOP specification and contribute to the interoperability test suite by implementing SOP interfaces and suggesting new tests.</li>
+<li>Consideration for future re-chartering of the working group after Crypto Refresh includes Post-Quantum Cryptography and Perfect Forward Secrecy, potentially in coordination with a new IETF working group on PQ crypto maintenance.</li>
+<li>Anticipate Working Group Last Call for the Crypto Refresh draft in early 2022.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,80 @@
+**Session Date/Time:** 24 Jul 2025 15:00
+
+# tiptop Working Group Meeting
+
+## Summary
+
+The tiptop working group held its meeting at IETF 121, focusing on IP protocols for deep space networking. The session covered use cases and requirements, IP architecture considerations, DNS configuration, email protocols, header compression, and security considerations for space networking. The group celebrated the adoption of their first working group document on use cases and discussed several individual drafts progressing toward working group adoption.
+
+## Key Discussion Points
+
+### Use Cases and Requirements Document
+- **Marshall Eubanks** presented updates to the use cases document, now adopted as the working group's first official document
+- Key improvements since version 1 include:
+  - Enhanced introduction and limitations sections
+  - Added references to CCSDS standards and LunaNet
+  - Expanded sections on spacecraft onboard networks (4.5 and 4.7)
+  - Complete rewrite of security considerations section
+- **Predictable interruptions** due to solar conjunctions require planning for communication blackouts lasting approximately two weeks every synodic period
+- **Lunar timing considerations** include 56-microsecond daily drift requiring specialized time coordination
+
+### IP Architecture for Deep Space
+- **Wes Hardaker** presented architecture considerations for IP in deep space environments
+- Focus on QUIC transport over UDP with support for both IPv4 and IPv6
+- **Transport protocol challenges** identified in three categories:
+  1. Connection establishment and feature negotiation
+  2. Continuous probing behaviors (congestion control, retransmission)
+  3. Optional features (multi-streaming, multi-path, FEC)
+- Solutions emphasize **pre-planning and scheduling** rather than dynamic adaptation
+- **IPv4 vs IPv6 debate**: Working group noted they cannot dictate space agency choices; efficiency considerations favor smaller headers in constrained environments
+
+### DNS Configuration in Deep Space
+- **Mark Nottingham** outlined approaches for autonomous DNS resolution on celestial bodies
+- Three main approaches discussed:
+  1. Pre-walking all needed names with DNSSEC validation
+  2. Pre-fetching entire zone hierarchies
+  3. Creating special zones with only required resource records
+- **Key requirement**: Avoid DNS resolution across Earth-space links due to long delays
+- **Name hierarchy considerations**: Recommendation to use existing delegation structure rather than creating new TLDs
+
+### Email Protocol Adaptation
+- **Mark Nottingham** presented email protocol modifications for deep space
+- **SMTP limitations**: Multiple round-trip requirements make standard SMTP unsuitable for long-delay links
+- **Proposed solution**: Convert SMTP to BSMTP (batch SMTP) MIME objects for transmission over HTTP/QUIC
+- **Local processing**: Full SMTP functionality maintained within celestial body networks
+
+### Header Compression with SCHC
+- **Alexander Pelov** demonstrated Static Context Header Compression applicability
+- **Key benefits**: Stateless compression, RTT-agnostic operation, very low computational complexity
+- **Compression efficiency**: IPv6 headers compressed from 48 bytes to as few as 1-10 bytes
+- **Management considerations**: Rules can be time-synchronized and dynamically updated
+
+### Security Considerations
+- **Britta Hale and Raphael Robert** presented challenges with QUIC/TLS in space environments
+- **Primary issues**:
+  - Long round-trip times affecting handshake completion
+  - Need for extended session lifetimes conflicting with security best practices
+  - Post-quantum cryptography requirements increasing bandwidth needs
+- **Proposed solution**: Replace TLS handshake with MLS (Messaging Layer Security) for:
+  - Asynchronous key agreement
+  - Post-compromise security
+  - More efficient post-quantum key updates
+
+## Decisions and Action Items
+
+- **Use Cases Document**: Continue review and refinement process with focus on security considerations achieving working group consensus
+- **Architecture Document**: Address transport protocol considerations and advance toward working group adoption
+- **Requirements Focus**: Prioritize defining clear security and operational requirements before selecting specific protocol solutions
+- **Cross-Working Group Coordination**: 
+  - DNS considerations to be coordinated with DNSOP working group
+  - Security solutions to be discussed with relevant security working groups
+  - SCHC integration to be explored with SCHC working group
+
+## Next Steps
+
+- **Marshall Eubanks** to incorporate additional details on predictable interruptions and address security section comments
+- **Wes Hardaker** to resolve terminology issues around "store and forward" and add transport protocol clarifications
+- **Security discussion** to focus on requirements definition before protocol selection
+- Working group to consider **interim meeting** for focused technical discussions on architecture and security requirements
+- All participants encouraged to contribute to GitHub issues and mailing list discussions for active documents
+- **Montreal IETF 122**: Continue progression of architecture document toward working group adoption

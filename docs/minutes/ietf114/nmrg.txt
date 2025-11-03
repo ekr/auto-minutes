@@ -1,0 +1,141 @@
+**Session Date/Time:** 27 Jul 2022 14:00
+
+# nmrg
+
+## Summary
+The nmrg session covered a wide array of research topics pertinent to long-term internet challenges, including significant updates and new proposals in Network Digital Twin, Green Networking, the application of Artificial Intelligence in Network Management, and Intent-Based Networking use cases. Key discussions revolved around defining architectures, identifying research challenges, and exploring practical implementations for these emerging areas. The session also provided an overview of IRTF/IETF administrative matters and existing document status.
+
+## Key Discussion Points
+
+*   **Administrative and Research Group Status**
+    *   Reminder of IETF IPR rules, privacy policy, and code of conduct.
+    *   Clarification of IRTF's role in long-term research versus IETF's focus on standards.
+    *   **Document Status:** Two research group documents are currently with the RFC Editor. One active draft, "Digital Twin Network Concept and Reference Architecture," received an update. "Network Measurement Intent one of IBN Use Cases" is undergoing revisions after its first call for adoption, with a second call planned.
+    *   **Future Meetings:** Interim meetings are planned for topics like Distributed AI and IBN use cases. A Network Digital Twin side meeting was scheduled for the evening. The next plenary meeting is IETF 115 in London.
+
+*   **Guest Presentation: Autonomic Network Management in SDN (Felipe Lopez)**
+    *   Presented a paper using RFC 7575 and `models@runtime` for enabling autonomic networking in SDN, awarded at a pre-IETF workshop.
+    *   The autonomic loop concept from the 4K architecture (2006) was discussed in the context of SDN, requiring translation of business goals to network rules and context representation via the control plane.
+    *   RFC 7575 guidelines for autonomic management define four self-star properties (self-configuration, self-healing, self-protection, self-optimizing) and eleven design goals.
+    *   The `models@runtime` concept (from software engineering) proposes that systems have goals, behavior, and structure, and should be organized into objective, configuration, and base layers using metamodels.
+    *   **Proposal:** Three-layer architecture combining RFC 7575, `models@runtime`, and SDN. It includes a network model layer (configuration, capabilities, objectives), an adaptability layer (using Deep Reinforcement Learning, DRL), and an SDN infrastructure layer. DRL code is generated from high-level models.
+    *   **Discussion:** Questions arose regarding the complexity and learning curve for network operators to define metamodels and use the high-level concrete syntax for different protocols (OpenFlow, P4). The presenter clarified that operators use the concrete syntax, not necessarily define metamodels, which abstract protocol specifics.
+
+*   **Network Digital Twin Concept and Reference Architecture (Shangsu)**
+    *   Update on the draft adopted in March.
+    *   **Major Change:** Added sections on enabling technologies:
+        *   **Data Collection & Management:** Diversified tools (SNMP, Netconf, IPFIX, telemetry, INT, sketch-based measurement) and management considerations (data warehouse, fast search, unified interface).
+        *   **Network Modeling:** Compared simulation/emulation (NS2, Mininet, etc.), virtualized technologies (CrossNet, Cloud Vision Portal), and mathematical abstraction (formal validation, AI/ML). Noted pros/cons for each (resource consumption, scalability, accuracy, interpretability). Concluded that multiple methods in combination are needed.
+        *   **Network Visualization:** Techniques for topology, model, and interaction.
+        *   **Interfaces:** Proposed open and standardized interfaces: Northbound (RESTful), Internal (XMPP, HTTP/3), Southbound (SNMP, Netconf).
+    *   **Next Steps:** Deep dive into enabling technologies, build a trial system, validate against use cases, enhance document.
+
+*   **Data Collection Requirements and Technology for Digital Twin Network (Shangsu)**
+    *   New draft outlining data collection for DTN.
+    *   **Scope:** Describe requirements and methods for DTN data collection and defining data repositories.
+    *   **Objective:** Identify DTM data collection requirements/principles, provide efficient methods, and achieve consensus.
+    *   **Evolution:** Expanded scope from specific methods to general requirements and methods.
+    *   **Six Data Collection Requirements:** Target-driven/on-demand, diverse tools for various data, lightweight/efficient, open/standard interfaces, naming for caching, efficient market destination delivery.
+    *   **Proposed Solution:** An efficient, lightweight data collection method using aggregation/correlation. Physical network sends data on demand, completes knowledge representation, streams telemetry, aggregates, and correlates before sending to the digital twin.
+    *   **Next Steps:** Investigate/categorize data collection methods, verify on a demo system, call for more efficient methods.
+
+*   **Digital Twin for Network Performance (Jordi)**
+    *   Presented a draft on a digital twin focused solely on network performance (delay, jitter, losses).
+    *   **Inputs:** Complete network description (topology, routing, configuration, scheduling policies, traffic matrix/models).
+    *   **Requirements:**
+        *   **Fast:** For optimization scenarios (algorithms exploring many configurations).
+        *   **Accurate:** Performance within predefined error range.
+        *   **Scalable:** For large production networks.
+        *   **Wide Range of Configurations:** Support diverse routing, scheduling, traffic intensities.
+        *   **Accessible:** Communicate with existing systems (SDN controller), produce commonly used metrics.
+    *   **Architectural Interface:** Follows the reference architecture, connecting to management/control plane. Configuration and measurement interfaces could leverage Netconf, NetFlow. Administrator/intent-based interface can range from CLI to GUI.
+    *   **Digital Twin Interface:** Request-response with topology, configuration, traffic demands as input; delay, jitter, loss matrices as output.
+    *   **Discussion Points for Research Group:** Multi-vendor compatibility, connection to control plane (IBN/SDN), publish-subscribe model, SLA validation within DT.
+    *   **Implementation Notes:**
+        *   **Simulation:** Accurate, comprehensive, but very slow (e.g., 10Gbps links 11 hours).
+        *   **Queuing Theory:** Super fast, reasonable accuracy, but suffers with realistic traffic models (TCP).
+        *   **Machine Learning (GNNs):** Outstanding accuracy for graph inputs, but continuous development, complex, needs large training data (legal limitations, customer data), cannot predict unseen scenarios.
+        *   Open-sourced prototype `raw-neterlen` (based on GNNs) was highlighted to explore limitations.
+
+*   **Digital Twin Network Flow Simulation & One-Way Delay Measurement (Nanyang)**
+    *   **Digital Twin Network Flow Simulation:** Focus on high-fidelity simulation of real flows.
+        *   **Goal:** Ensure "three consistencies": forwarding paths, network performance (delay, loss, jitter), and data characteristics.
+        *   **Key Technologies:** Unique identifiers for physical/twin elements, deterministic network for data transmission, collecting only key flow information (no payload).
+    *   **One-Way Delay (OWD) Measurement:**
+        *   **Problem:** Traditional methods (active, passive, hybrid) have disadvantages (special test packets, time sync, protocol limitations, service packet format changes).
+        *   **Proposed Method:** Build a digital twin layer with time-synchronized twin elements. Use a deterministic network for data transmission from physical to twin layer. Calculate OWD based on arrival times in the twin network elements.
+        *   **Advantages:** No need for special packets, no physical network changes, no time sync on physical elements. Accuracy depends on time sync of twin elements and deterministic network (nanosecond level with PTP).
+    *   **Discussion:** Questions from Alex and Albert on the motivation for measuring in the digital twin vs. the physical network. Clarified that the physical network is not affected. Questions about resource duplication and the digital twin's role in predicting future scenarios vs. reflecting the present.
+
+*   **Network Digital Twin Activity Wrap-up**
+    *   Growing interest in DTN observed, with multiple proposals in NMRG and other communities.
+    *   Invitation to side meeting to discuss future direction, potential landing spots (IRTF/IETF), and coordination with other groups/research.
+
+*   **Green Networking: Challenges and Opportunities (Alex)**
+    *   **Motivation:** Networks consume significant energy; net-zero mandates necessitate focusing on reducing carbon footprint.
+    *   **IETF/IRTF Scope:** Focus on network and management specific factors, rather than hardware advances or lower-layer optimizations.
+    *   **Management Implications:** Energy usage as another optimization parameter; management control loops apply to energy efficiency; need for visibility into energy usage; non-linear energy consumption (high cost for first bit, potential gains from idling resources).
+    *   **Challenges & Opportunities (structured in the draft):**
+        *   **Device/Equipment Level:** Energy saving policies for network equipment, visibility into energy usage (instrumentation, metrics).
+        *   **Protocol Level:** Protocol support for energy saving (e.g., rapid resource idling/re-activation, fast discovery/re-convergence), smaller state maintenance (addressing, partitioning), traffic adaptation (bursty vs. smooth transmission).
+        *   **Network Level:** Energy-related control protocol extensions for SDN/distributed control, energy-aware routing/path configuration, resource weaning schemes, green abstractions.
+    *   **Companion Draft:** "Green Networking Metrics" focuses on defining metrics for equipment, flows, paths, and the network at large.
+    *   **Discussion:** Dan Bogdanovic highlighted optical components as major energy consumers (outside IETF scope, material science problem) and the need for new routing semantics incorporating energy distribution knowledge. Alex argued against giving up on what's controllable. Albert questioned the energy cost of building networks vs. operating them. Benoit referenced past EMAN WG, noting challenges with use cases, operator reluctance to accept SLAs for port/line card power-downs, and the scale of energy savings. Thomas mentioned POE management as a successful EMAN use case.
+    *   **IAB Workshop:** An upcoming IAB workshop on environmental impacts of the internet was announced, broader in scope, aiming for big-picture analysis.
+
+*   **An Overview of IETF's Past Work on Energy Efficiency (Thomas)**
+    *   **Goal:** Provide an overview of IETF's contributions to energy efficiency (both intentional and incidental), understand application, identify gaps, and promote IETF's work.
+    *   **Scope:** Covers intended energy-related work and incidental contributions (e.g., digitization replacing physical processes, scale of the internet reducing energy per bit, network convergence).
+    *   **Contributions:** Datagrams, multiplexing, end-to-end transport, LLNs (6LoWPAN, RPL), constrained nodes/networks (CoAP), sleepy nodes, IP multicast, smart grid networks, EMAN WG, power awareness in forwarding/routing protocols.
+    *   **Call to Action:** Encouraged reading, commenting, and contributing to the draft. Suggested reviving the old "RECIPE" mailing list. Highlighted energy management as a new "vertical" for management.
+
+*   **Research Challenges of Coupling AI and Network Management (Young)**
+    *   **Motivation:** Despite AI interest, finding standardization items is challenging. Focus is shifting from AI training to inference/prediction deployment, requiring consideration of cost vs. performance on various hardware (high-performance servers to microcontrollers).
+    *   **Objectives:** Accuracy, latency, throughput, resource utilization.
+    *   **System Configurations:**
+        *   **AI Model:** Heavy (high accuracy, high latency) vs. Lightweight (lower accuracy, low latency).
+        *   **Serving Framework:** Web frameworks vs. targeted (TensorFlow Serving, PyTorch Server).
+        *   **Communication Method:** REST vs. gRPC (latter for low-peak traffic).
+        *   **Device Capacity:** CPU, RAM, network interfaces.
+        *   **Inference Data:** Real-time, throughput, secure/non-secure.
+    *   **AI Services Procedure:** Data collection/storage, analysis/pre-processing, AI model training, deployment/inference, monitoring/maintenance. Focus on deployment/inference and monitoring for network involvement.
+    *   **Deployment Scenarios:** Local machine, cloud server (high-performance), edge device (small, low-latency), or hybrid task offloading.
+    *   **Example:** Object detection services, showing latency trade-offs between cloud, edge, and local devices.
+    *   **Next Steps:** Share enhanced results, promote activity in nmrg.
+
+*   **Update on Research Challenges of Coupling AI and Network Management (Laurent)**
+    *   Update on the draft, now a zero-version.
+    *   **Major Edits:** New constraints on identifying "difficult" network management problems, extended to "cost-effective" solutions (including energy). Extended description of scenarios and metrics. Added content on human-in-the-loop challenges.
+    *   **Three Main Categories of Challenges:**
+        1.  AI techniques for network management.
+        2.  Network data as input for ML algorithms.
+        3.  Acceptability of AI.
+    *   **Next Steps:** Requesting feedback on the document's value, presentation of challenges, identified gaps, and granularity (avoiding too much technical detail or use-case specificity). Specific changes identified include distributed/lightweight AI integration, discussing labeled/unlabeled data, and legal/regulatory aspects.
+    *   **Comment:** Thomas Clark suggested referencing RFC 9232 (Network Telemetry Framework) for data modeling and the data mesh architecture for anomaly detection, particularly source-aligned data and real-time processing challenges.
+
+*   **Network Measurement Intent: An IBN Use Case (Kihan)**
+    *   Update on the draft after its first call for adoption, which received 8 agreements and valuable suggestions.
+    *   **Addressed Feedback:**
+        *   **Sampling Rate:** Clarified it can be constant or changeable based on requirements/algorithms.
+        *   **Resource Assurance:** Handled via closed-loop verification, where an assessment module gives feedback to the policy module.
+        *   **Static vs. Dynamic NMI:** Static means measurement independent of network state (e.g., continuous delay sampling). Dynamic means responsive to network state (e.g., adaptive sampling during bidding times).
+        *   **Policy Changeability:** Policy execution is on a closed loop, assessed and modified by the policy module.
+    *   **Other Updates:** Added relative references, modified figures, and corrected writing.
+    *   **Next Steps:** Continue soliciting comments/suggestions. Open to merging with other IBN use case drafts.
+
+## Decisions and Action Items
+
+*   **Presenters:** Encouraged to stick to allocated time slots.
+*   **Discussion:** Offline discussions and mailing list engagement are highly encouraged due to a dense agenda and time constraints.
+*   **Network Digital Twin:** A side meeting was planned to discuss future directions and landing spots for DTN activities within IRTF/IETF.
+*   **Document Adoption:** A second call for adoption for the "Network Measurement Intent one of IBN Use Cases" draft is planned after revisions addressing comments.
+*   **Green Networking:** The IAB is planning a workshop on the environmental impacts of the internet, which will be a broader venue for discussion.
+*   **AI/Network Management Challenges:** Laurent will incorporate feedback from Thomas Clark regarding RFC 9232 and data mesh architecture.
+*   **All Drafts:** Feedback and contributions from the community are welcomed for all presented drafts, especially new proposals.
+
+## Next Steps
+
+*   Organize interim meetings for discussions on distributed AI and IBN use cases.
+*   Continue work on existing research group documents, including addressing feedback for drafts under adoption calls.
+*   The next plenary meeting for nmrg is targeted for IETF 115 in London (November).
+*   Encourage continued community engagement through mailing lists and direct contact with participants to foster research and development in these areas.

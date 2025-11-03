@@ -1,0 +1,90 @@
+**Session Date/Time:** 10 Nov 2021 16:00
+
+# rtgwg
+
+## Summary
+
+The rtgwg session at IETF 112 covered a range of routing topics, from updates on SRv6 path protection and Preferred Path Routing (PPR) to new work proposals in satellite communications, cloud-optical network integration, and high-precision congestion control for data centers. Discussions highlighted challenges in dynamic network environments, the need for cost-effective traffic engineering, and the integration of networking with cloud services. Chairs guided discussions on document progression and alignment with other working groups where appropriate.
+
+## Key Discussion Points
+
+*   **SRv6 Egress Path Protection**:
+    *   Updates included descriptions of mirror SIDs' behavior and an IANA-assigned value (74) for mirror SIDs.
+    *   Mirror SIDs function similarly to independent SIDs for calculation and IPv6 forwarding table lookup, decapitalizing packets and forwarding payloads using the associated table.
+    *   **Discussion**: Concern was raised about the document's relation to compressed SRv6 SIDs. Authors were asked to consider this relationship, but the consensus was not to delay this work, rather to point out the relationship during the Working Group Last Call (WGLC).
+    *   **Decision**: Authors to coordinate with SRv6 compression efforts and update the document. The document is being considered for WGLC.
+
+*   **Advertising Cloud via Optical Network**:
+    *   **Motivation**: Growing cloud-based applications require low latency, high reliability, and large bandwidth, driving migration to optical networks for cloud access (OTN with VPN).
+    *   **Use Cases**: Multi-cloud access (DCI), high-quality private lines (moving services to cloud), and cloud virtual reality (low latency, high bandwidth from user to cloud).
+    *   **Requirements**: Multiple-to-multiple cloud access, high performance/reliability, small granularity (2M to 1G flexibility), low latency/jitter.
+    *   **Discussion**: The work was strongly suggested to belong in C-CAMP (for VPNs and Layer 1) and ITU-T SG15 (for OTN granularity requirements).
+    *   **Next Steps**: Authors to evaluate commonalities with existing "cloud-to-network" drafts and potentially merge. Chairs will discuss with C-CAMP chairs for appropriate placement.
+
+*   **Satellite Network Routing (Problem Statement & Semantic Address)**:
+    *   **Problem**: Large-scale satellite constellations (LEO/MEO) present highly dynamic topologies (satellites move at 7km/s, links change frequently, interruptions). Traditional IGP/BGP/MPLS models struggle with frequent topology changes, convergence issues, and control data flooding. Centralized SDN models face controller placement and synchronization challenges.
+    *   **Proposed Solution**: Use semantic IP addresses embedding orbit and other information (owner, share, orbit plane, satellite, interface index) to simplify link identification and enable symmetrical routing/switching.
+    *   **Encapsulation**: Embedding into IPv6 interface identifier, shorter IPv6 fields, or variable-length IP addresses for bandwidth efficiency.
+    *   **Discussion**: Previous simulations (Mark Handley) suggested traditional routing could work. The need for new technology vs. existing approaches (e.g., Manet WG for dynamic topologies) was debated.
+    *   **Next Steps**: Authors encouraged to review and address previous simulation work and consider collaborating with the Manet WG.
+
+*   **Cloud and Network Integration (Considerations)**:
+    *   **Motivation**: Convergence of cloud and network, 5G, edge cloud deployments leveraging existing metro networks (e.g., IUT MTN).
+    *   **Scenarios**: Multi-domain with common border nodes (independent IGPs, different/superior controllers) and multi-domain without common border nodes (E-BGP, hierarchical controllers).
+    *   **Technologies**: Segment splicing for non-SRv6 metro networks, SRv6 interworking (for common border nodes), and further discussion for non-common border nodes or other metro technologies (MSTP, SR-MPLS LDP, SRP).
+    *   **Next Steps**: Authors to collaborate with existing similar drafts (e.g., "IPv6 based cloud oriented networking") to find common requirements and potential merges.
+
+*   **Preferred Path Routing (PPR)**:
+    *   **Overview**: A method to inject engineered paths into link-state IGPs. Packets are mapped to paths via a single PPR ID (IPv6/IPv4 address, MPLS label, SRv6 SID, MAC address). Supports point-to-point, multi-point-to-point, and graphs. Injectable by nodes or SDN controllers.
+    *   **Key Advantage**: Enables engineered paths in cost-sensitive network applications (cheap hardware, small overhead, simple operational model).
+    *   **Use Cases**: Mobile backhaul/crosshaul (slicing, strict paths, traffic-engineered FRR on cheap hardware), edge leaf-spine fabrics (small data centers, IPv4 data plane, traffic prioritization, redundancy), fast reroute (traffic-engineered backups without end-to-end recovery or controller intervention).
+    *   **Complement to Segment Routing**: Can create binding SIDs with injected properties (FRR strategy, queues, bandwidth). Offers TI-LFA in IPv4/Ethernet/MPLS/SRv6 where overhead is critical. No algorithm metric needed, no 128-path limitation of Flex-Algo. Suitable for underlays and energy-efficient networks.
+    *   **Discussion**: Questions on scalability (overhead in IGPs for many paths) and comparison with RSVP-TE (PPR works with any data plane, aligns with philosophy of moving away from RSVP).
+    *   **Interest**: Significant interest expressed for collaboration, especially for lower-cost technologies and use case understanding.
+
+*   **Application-aware Packet Networking (APN) Framework, Encapsulation & Control Plane**:
+    *   **Motivation**: Provides fine-grained QoS and application control, going beyond traditional QoS or existing flow/slicing IDs.
+    *   **Framework Updates**: Clarified use cases for access control (endpoint control similar to ACLs but at network layer) and traffic steering (user groups to application groups, then to specific SR paths). Enables OAM and telemetry for specific application flows without deep packet inspection.
+    *   **Gaps**: Existing solutions (Flow ID, Network Slicing, SFC, IPv6 flow label, QoS) cannot achieve the same fine-grained, application-aware control because they serve predefined functions or have limitations (e.g., IPv6 flow label breaks ECMP if used for signaling). APN proposes a new structured ID to fill this gap.
+    *   **Encapsulation**: Defines an APN header with mandatory APN ID (short 32-bit or long 128-bit) and optional fields for requirements (e.g., bandwidth, delay, loss ratio) and parameters (indicated by a bitmap type field). APN ID is structured into App Group ID and User Group ID. IPv6 encapsulation uses a Hop-by-Hop or Destination Option header, or an SRH TRV.
+    *   **Control Plane/Management Plane**:
+        *   **Flowspec**: New Flowspec component for APN ID (using mask for matching).
+        *   **Traffic Filtering Actions**: Mark (entire/partial APN ID), Inherit (copy/encapsulate APN ID in outer tunnel), Stitch (integrate parts of APN ID).
+        *   **Ordering**: Flowspec rules ordering is critical due to coexisting rules and structured APN ID. Introduces group/subgroup IDs for evaluation logic.
+        *   **YANG Model**: Focuses on IPv6 data plane, defines global action (inherit), APN ID templates, marking based on templates, and mapping policies (e.g., using color to differentiate SR policies or redirect to next hop).
+    *   **Discussion**: Clarification sought on whether APN ID is per-flow or per-group-of-flows (can be either). Positive feedback received, acknowledging the need for such a solution.
+
+*   **High Precision Congestion Control (HPCC++)**:
+    *   **Motivation**: New hardware and resource disaggregation in data centers (high-performance storage, deep learning, memory access over network) demand ultra-low latency and higher network load, causing severe congestion. Traditional flow control (PFC) causes stalls/deadlocks due to slow convergence. Qualitative QoS queues are insufficient.
+    *   **Opportunity**: In-band telemetry (INT) in new switching silicon allows switches to add telemetry information (queue length, transmitted bytes, timestamp, link capacity) to packets.
+    *   **HPCC++ Approach**: Uses INT data for precise congestion control. Receivers generate notifications back to senders to adjust sending rates. Defines an algorithm to calculate precise sending rates.
+    *   **Benefits**: Faster convergence, near-zero queuing (high throughput, low latency), few parameters (avoids heuristics).
+    *   **Routing Implications**: HPCC++ provides precise network condition views (router capacity), enabling fast reroute to avoid temporary failures or partial failures. Jointly with routing, it can determine traffic allocation and reroute quickly.
+    *   **Evaluation**: Production deployment showed latency reduction up to 95% and 99th percentile buffer usage of 23KB (7 microseconds delay).
+    *   **Discussion**: Clarification sought on HPCC++'s purpose (framework/algorithm vs. protocol extension, relation to IPPM/TE WGs). HPCC++ defines the algorithm beyond IPPM's format, and works with routing areas to align condition knowledge with path selection.
+    *   **Chair's Comment**: This work provides critical knowledge about network conditions and has relevance for routing, especially with AI deployments in large data centers where current IGPs/BGP are insufficient.
+
+*   **Other Working Group Updates**:
+    *   RFC 1967 published (fundamental for BGP and routing models).
+    *   QS Model: Under Document Shepherd review.
+    *   NORM: Retired.
+    *   REBOOT: Ready for WGLC.
+    *   NGBGP: Pending.
+    *   TKLA: Under review, comments to be addressed.
+    *   IKN BGP: Requested for WGLC, reviews to start next week.
+    *   TWiki adoption for progress tracking and metadata.
+
+## Decisions and Action Items
+
+*   **SRv6 Egress Path Protection**: Authors to coordinate with SRv6 compression efforts and update the document. The document is being considered for WGLC.
+*   **Advertising Cloud via Optical Network**: Authors to evaluate commonalities with existing "cloud-to-network" drafts. Chairs will consult with C-CAMP chairs regarding the appropriate working group for this work.
+*   **Satellite Network Routing**: Authors encouraged to review Mark Handley's previous simulation work and consider collaborating with the Manet WG.
+*   **Cloud and Network Integration**: Authors encouraged to collaborate with authors of existing related drafts (e.g., "IPv6 based cloud oriented networking") to find common requirements and potential merges.
+
+## Next Steps
+
+*   The rtgwg will transition to using TWiki for tracking progress and metadata; URL will be provided.
+*   The chairs noted that despite having a single 2-hour session, it was insufficient, and they plan to request two sessions for the next IETF.
+*   The BFD presentation was unfortunately cut due to time constraints.
+*   The chairs will work with HPCC++ authors to align the work with routing area focus, emphasizing its relevance to understanding network conditions for AI/large data center deployments.
+*   Authors of related drafts are encouraged to collaborate and consider merging efforts where appropriate (e.g., Cloud-Optical, Cloud-Network Integration).

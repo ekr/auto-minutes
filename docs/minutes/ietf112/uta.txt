@@ -1,0 +1,74 @@
+**Session Date/Time:** 12 Nov 2021 16:00
+
+# uta
+
+## Summary
+
+The uta (Using TLS in Applications) working group met to discuss the status of its three active working documents: `RFC 7525bis` (Best Current Practice for Transport Layer Security), `RFC 6125bis` (DNS-Based Authentication of Named Entities (DANE) for TLS), and `DTLS 1.3 Best Practices`. Key discussions revolved around the stability and open issues for each draft, particularly concerning TLS 1.2 requirements, certificate naming conventions, and specific DTLS 1.3 challenges related to cipher suite recommendations and long-lived connections in constrained environments. Coordination with the TLS working group on deprecation efforts was highlighted as an important action.
+
+## Key Discussion Points
+
+*   **RFC 7525bis - Best Current Practice for TLS (Jaron Shifter)**
+    *   The draft is stabilizing, with most open issues closed since the last in-person meeting.
+    *   Recent updates include ALPN support, MD5/SHA-1 deprecation text, new work on integrity/confidentiality limits for TLS 1.2 (building on RFC 8446 for 1.3), and requirements for the extended master secret extension.
+    *   **Remaining Open Issues (mainly TLS 1.2):**
+        *   **Supported Versions Extension:** Feedback is requested on the benefit of requiring this for TLS 1.2 servers, given RFC 8446 allows but doesn't require it.
+        *   **Version Downgrade Protection:** Discussion on requiring protection mechanisms (e.g., server hello rand magic values) for ephemeral cipher suites in TLS 1.2.
+        *   **RSA PSS:** Whether to require RSA-PSS support for certificates, considering its limited real-world adoption on the open web.
+        *   **Obsoleting Key Exchanges Draft:** The draft is awaiting maturity and adoption in the TLS working group, and 7525bis aims to be in sync with its recommendations.
+    *   **Consumer Document Review:** An extensive review of 101 RFCs citing RFC 7525 indicates mostly generic citations. While 7525bis adds requirements, these are not seen as "formally breaking" for existing compliant implementations, but rather as updates to BCP. Further feedback from the working group is encouraged.
+    *   **Coordination with SAG/TLS Working Group:** A discussion in SAG regarding crypto suite deprecation prompted a question on synchronization with uta's BCP efforts. IETF ADs will coordinate with chairs of relevant groups to clarify responsibilities and ensure alignment, acknowledging the risk of conflicting recommendations.
+    *   The document is considered very near Working Group Last Call (WGLC).
+
+*   **RFC 6125bis - DNS-Based Authentication of Named Entities (DANE) for TLS (Rich Salz)**
+    *   Planned changes from the previous meeting are complete, including removal of X.500 directory text and simplifying related appendices.
+    *   **Consensus Items:**
+        *   **Wildcard Simplification:** Wildcard usage is restricted to `*.example.com` (no `web.*.example.com` or `*web.example.com`).
+        *   **Pinning Removal:** Detailed sections on pinning were removed, and Victor's text was merged for clarity.
+        *   The document remains a Proposed Standard, not a BCP.
+        *   Increased use of `MUST`/`MAY`/`SHOULD` language.
+    *   **Other Changes:** Numerous editorial changes, reduced technical jargon, expanded text on deprecating "common name" usage, and simplification of assumptions due to widespread TLS SNI (Server Name Indication) availability.
+    *   **Discussion Points:**
+        *   **Multiple Identifiers:** Brian's submitted text on client uncertainty and security implications of multiple identifiers in certificates needs working group review.
+        *   **Title Revision:** A new, more concise title is desired (e.g., "Naming in verifying service names in TLS") to replace the current long title.
+        *   **Citation Review:** Similar to 7525bis, a review of 73 RFCs citing RFC 6125 is recommended before WGLC to ensure no unintended breakage.
+
+*   **DTLS 1.3 Best Practices (Hannes Tschofenig)**
+    *   Four open issues were presented:
+    *   **CCM8 Security:**
+        *   The integrity limits of CCM8, particularly with its reduced tag size, are a concern, making it difficult to recommend widely despite being the only mandatory-to-implement cipher suite in CoAP.
+        *   Discussion with cryptographers and analysis of CFRG documents highlight challenges in providing clear guidance for developers to assess risk.
+        *   **Discussion:** John Betts argued that the current analysis for TLS/DTLS/Quick might be wrong for CCM8, emphasizing that frequent re-keying doesn't improve security and a 64-bit tag is generally sufficient for IoT, with no practical attacks on 64-bit or even 32-bit MACs. He believes the conclusion on frequent re-keying in the CFRG draft is incorrect. Tero emphasized CCM8's use case for very slow links (e.g., <1Mbps) where bandwidth/battery savings are crucial, suggesting a recommendation based on bandwidth limits. Hannes will consider these points and John will provide formal comments to CFRG and uta.
+    *   **Initial Timer Values:**
+        *   DTLS 1.2 recommended a high initial retransmission timer (9 seconds) due to flight-based retransmissions, high latency, and device constraints (e.g., SMS, poor cell coverage).
+        *   DTLS 1.3's record-based retransmission and `message_in_flight` state allows for more flexibility.
+        *   **Proposal:** Relax the initial timer value to something lower, such as 3 seconds (as per RFC 2988) or even less, for better performance, given network and device capabilities have evolved. No objections raised, will be posted to the mailing list.
+    *   **Long-Lived DTLS Connections:**
+        *   Triggered by industrial IoT deployments (e.g., Siemens' Industry 4.0) using very long-lived DTLS connections, raising challenges related to certificate expiry and re-authentication.
+        *   While no protocol changes are needed, the document aims to provide guidance for developers on DTLS 1.3 vs. 1.2 for these scenarios, especially with the use of Connection IDs (CIDs). Input from similar deployments is sought.
+        *   **Discussion:** John Betts noted that DTLS 1.3 with long-lived connections provides forward secrecy in one direction only, whereas DTLS 1.2 with frequent renegotiation protects both directions. This security aspect will be captured.
+    *   **End-Entity Certificate Identifiers:**
+        *   The requirement for EUI-64 in client certificates was relaxed due to the diversity of identifiers used by devices.
+        *   **Proposal:** Provide concrete examples of other suitable identifiers (e.g., from GSMA for cellular deployments, Lightweight M2M), distinguishing between manufacturing and operational certificates. This includes identifiers with structure used for specific purposes like routing (e.g., Anima Brisket).
+        *   **Discussion:** The Chair noted a connection to RFC 6125bis. Hannes clarified that this work focuses on the client-side, while 6125bis is primarily server-side, with different authorization models. Referencing 6125bis is a good idea.
+
+## Decisions and Action Items
+
+*   **ADs (Ben/Roman):** Coordinate with chairs of relevant working groups (e.g., TLS, SAG) to clarify the scope and coordination of work related to crypto suite deprecation and BCPs.
+*   **Jaron Shifter / Thomas (7525bis authors):** Finalize the review of RFCs citing 7525.
+*   **John Betts:** Send detailed comments on CCM8 security analysis to the CFRG mailing list, CC'ing the uta working group.
+*   **Hannes Tschofenig (DTLS 1.3 Best Practices author):**
+    *   Post the issues on CCM8, initial timer values, long-lived connections, and certificate identifiers to the uta mailing list for broader working group feedback.
+    *   Incorporate feedback on bandwidth-limited recommendations for CCM8.
+    *   Capture the security implications of long-lived connections (forward secrecy directionality) in the document.
+    *   Add examples of client-side certificate identifiers and consider referencing RFC 6125bis.
+*   **Rich Salz / Peter (6125bis authors):**
+    *   Work on a more concise title for the 6125bis document.
+    *   Review RFCs citing 6125 (estimated 73 documents) to ensure no unexpected impacts, with Peter assisting after his RFC Editor program work stabilizes.
+    *   Post Brian's text on multiple identifiers to the list for working group review.
+
+## Next Steps
+
+*   Working Group Last Call (WGLC) for RFC 7525bis is anticipated soon, pending resolution of open issues and the consumer document review.
+*   RFC 6125bis targets WGLC in January, contingent on resolving discussion points and completing the citation review.
+*   Ongoing discussion on the uta mailing list for the DTLS 1.3 Best Practices draft, specifically around the open issues raised during the presentation.

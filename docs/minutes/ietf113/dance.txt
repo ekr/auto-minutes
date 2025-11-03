@@ -1,0 +1,62 @@
+**Session Date/Time:** 25 Mar 2022 09:00
+
+# DANCE Meeting Minutes
+
+## Summary
+
+The DANCE Working Group held its second meeting. Key updates included a presentation on a hackathon implementation of the DANE client authentication and TLS client ID extension drafts, which have now been formally adopted as Working Group documents. Significant discussion revolved around the architecture document, leading to a decision to issue a Call for Adoption for it to facilitate collaborative work.
+
+## Key Discussion Points
+
+### Hackathon Implementation Results (Presented by Gay Bartomina, Ethnik)
+
+*   **Implemented Drafts**: `draft-ietf-dance-dane-client-auth` (DANE Authentication) and `draft-ietf-dance-tls-client-id` (TLS Extension for Client ID).
+*   **Implementation Details**:
+    *   Based on an existing DANE library (by Schuman).
+    *   Developed a testing environment for mutual TLS authentication.
+    *   TLS extension implemented for both TLS 1.2 and 1.3, requiring a fork of the GoLang TLS library due to limited extension APIs.
+    *   Fall-back to Subject Alternative Name (SAN) if client ID not in extension, but extension presence is still required.
+    *   Support for authorization rules based on client ID.
+*   **TLS Extension Flow Discussion**:
+    *   Confusion regarding client ID extension flow between TLS 1.2 (ClientHello/ServerHello) and TLS 1.3 (CertificateRequest/Certificate message).
+    *   **Schuman's Clarification**: TLS 1.2 lacks privacy for the extension (sent in ClientHello). TLS 1.3 can encrypt it as part of the Certificate message, which comes after the server's CertificateRequest. This difference is due to privacy concerns and TLS 1.2 limitations.
+    *   **Hannes' Suggestion**: Consider sending an empty extension in TLS 1.3 ClientHello to signal support to the server early, even if the actual data is sent later in the Certificate message. Schuman noted this was an original rationale for an SMTP use case to handle broken TLS stacks.
+*   **LoRaWAN IoT Use Case**:
+    *   Focus on mutual authentication in the IP space (Network Server <-> Join Server/Application Server).
+    *   Acknowledged challenges for end-to-end security on highly constrained IoT devices (e.g., LoRaWAN packet size limit of 52 bytes vs. 146 bytes for a compressed certificate) making asymmetric keys or certificates impractical at the radio frequency layer currently.
+    *   Leverages a private PKI for mutual authentication between servers.
+    *   DANE is used by anchoring trust via TLSA records in existing DNS zones that already contain per-device/network server records for service discovery, minimizing additional friction.
+*   **Go TLS Library**: The implementation required forking the GoLang TLS library due to a lack of APIs for implementing new extensions. It was suggested to engage with Go developers to discuss adding such APIs or contributing the extension directly.
+
+### Protocol Documents Status (Presented by Schuman Oon, Editor)
+
+*   **Adoption**: `draft-ietf-dance-dane-client-auth` and `draft-ietf-dance-tls-client-id` were formally adopted as Working Group documents. The dash-00 versions were published.
+*   **Key Change in `draft-ietf-dance-tls-client-id`**:
+    *   Clarified that in TLS 1.3, the server *must* send the client ID extension in its CertificateRequest message if the client is to send it in its Certificate message. It is not optional for the server to send this request if it expects the client to provide the extension. This aligns with RFC 8446, Section 4.2.4.
+*   **Introduction of `dane-client-auth`**: Michael Richardson's feedback about the introduction being "weak" was noted. The architecture document is expected to provide more context and use cases, which should address this.
+*   **Next Steps for Protocol Documents**: Seek feedback on anything missing, needs clarification, or expansion. The open question regarding sending an empty extension in TLS 1.3 ClientHello for signaling remains.
+
+### Architecture Document Status (Presented by Olle E. Johansson, Author)
+
+*   **Current State**: The document is an individual draft, described as a "collection of thoughts, ideas, and a lot of empty pointers."
+*   **Scope Discussion**:
+    *   Previous discussions (November) suggested slimming down the architecture document to a more "classical" architectural overview.
+    *   It should include "dancing rules" – guidance and requirements for implementers wishing to write documents for specific areas (e.g., SIP, WebRTC, IoT).
+    *   Detailed IoT usage descriptions currently in the architecture document might be better suited for a separate implementation document.
+*   **Editor Availability**: Ashis has limited capability to continue editing, and additional editors would be beneficial, especially given the document's size.
+*   **Call for Adoption**: Hannes requested clarity on whether the WG intends to adopt the architecture document to facilitate progress. Barry Leiba emphasized that documents don't need to be "substantially ready" for adoption; the WG can work on it once adopted.
+
+## Decisions and Action Items
+
+*   **Decision**: `draft-ietf-dance-dane-client-auth` and `draft-ietf-dance-tls-client-id` are formally adopted as DANCE Working Group documents.
+*   **Decision**: The Working Group will issue a Call for Adoption for the architecture document (`draft-ietf-dance-architecture`) next week.
+*   **Action Item**: Chairs (Wes and Joey) to issue a Call for Adoption for `draft-ietf-dance-architecture` to the mailing list.
+*   **Action Item**: Working Group members to review the updated protocol documents, particularly the TLS 1.3 extension flow, and discuss the possibility of signaling support via an empty extension in ClientHello.
+*   **Action Item**: Working Group members interested in contributing as editors for the architecture document should contact the chairs.
+*   **Action Item**: Encourage more active discussion and early review/feedback on all adopted drafts on the mailing list.
+
+## Next Steps
+
+*   Formally adopt the architecture document as a Working Group item.
+*   Begin collaborative work on refining the architecture document's scope and content.
+*   The chairs will likely schedule future DANCE meetings for a one-hour slot unless substantial content or discussion warrants a longer session.

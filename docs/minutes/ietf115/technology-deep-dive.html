@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="technology-deep-dive.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-TDD-20221107-0800">Recording 1</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-TDD-20221108-0730">Recording 2</a></p>
+<p><strong>Session Date/Time:</strong> 07 Nov 2022 08:00</p>
+<h1>Technology Deep Dive</h1>
+<h2>Summary</h2>
+<p>This session provided a technical overview of QUIC, covering its fundamental principles, immediate value proposition, and the technologies it enables. The session included presentations on QUIC's architecture and handshake process, with a focus on security and denial-of-service mitigation. It also explored how QUIC facilitates new advancements such as Mask and media delivery over QUIC.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>QUIC as a Transport Protocol:</strong> QUIC is positioned as a new transport protocol parallel to TCP and TLS, deliberately compressing multiple layers for improved acceleration and deployment.</li>
+<li><strong>Multi-Streaming:</strong> QUIC offers multi-streaming capabilities within a single connection, providing multiple ordered byte streams suitable for web applications with numerous independent objects.</li>
+<li><strong>UDP Foundation:</strong> QUIC is built on UDP to navigate existing internet infrastructure with middleboxes and firewalls, enabling user-space deployment while recreating and improving TCP functionalities.</li>
+<li><strong>Baked-in Encryption:</strong> Encryption is integral to QUIC, protecting both data and headers using TLS 1.3 for key negotiation, preventing ossification by middleboxes and allowing for protocol evolution.</li>
+<li><strong>Zero RTT:</strong> QUIC enables zero round trip time connection setup with transport and crypto handshake, providing low-latency connections.</li>
+<li><strong>Connection Migration:</strong> QUIC supports connection migration for improved resilience.</li>
+<li><strong>Troubleshooting and Debugging:</strong> QUIC allows for the logging of transport and network-level traces alongside application-level traces due to its user-space implementation, simplifying debugging processes.</li>
+<li><strong>Address Validation and Amplification Mitigation:</strong> QUIC includes denial-of-service mitigations, employing address validation techniques, such as retry mechanisms and implicit tokens, to prevent handshake amplification attacks.</li>
+<li><strong>Layering Architecture:</strong> QUIC's architecture is viewed more as a software architecture than strict layering, where components provide capabilities and interact with each other, with TLS providing cryptographic assurances.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li>Hold questions until the panel discussion tomorrow (Tuesday) at 8:30 AM.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Attend the second Technology Deep Dive session tomorrow to delve deeper into QUIC deployments at scale, debugging techniques, and participate in the panel discussion.</li>
+</ul>
+<hr>
+<p><strong>Session Date/Time:</strong> 08 Nov 2022 07:30</p>
+<pre><code class="language-markdown"># Technology Deep Dive
+
+## Summary
+
+This session provided an in-depth look at various aspects of deploying, observing, and debugging QUIC.  Discussions covered practical experiences at Google with QUIC load balancing, mitigating blackholing, and handling zero-RTT issues, along with practical guidance on using Wireshark and qlog for troubleshooting.
+
+## Key Discussion Points
+
+*   **QUIC Load Balancing:**
+    *   Discussed challenges of using Anycast with QUIC, particularly related to connection migration and flapping BGP routes.
+    *   Highlighted the use of encrypted connection IDs within QUIC to improve linkability and routing.
+    *   Quick LB draft has a single connection ID format. Rotation of keys is possible using configuration IDs.
+    *   Goal is deploying by Q2 or Q1 of next year.
+*   **Blackholing Mitigation:**
+    *   Explained that five-tuples can be blackholed, causing connection timeouts and poor user experience.
+    *   Described a strategy to close connections after five consecutive probe timeouts.
+    *   Port migration (changing the client-side port) was presented as an effective solution to overcome blackholing.
+*   **Zero-RTT Challenges:**
+    *   Highlighted the complexity of implementing zero-RTT in QUIC due to multiple packet number spaces and key management.
+    *   Shared experiences of a Google outage caused by a &quot;contagion&quot; bug related to resumption information sent by Google front ends. Key point was that rollbacks didn't work because the state was in clients.
+    *   Emphasized the importance of thorough testing and robust tooling to ensure zero-RTT actually improves performance.
+*   **Observing and Debugging QUIC:**
+    *   Stressed that QUIC is not TCP, TLS, or HTTP; it's a new transport protocol with its own considerations.
+    *   Emphasized the importance of understanding TLS for debugging QUIC handshakes.
+    *   Discussed the use of Wireshark (version 3.4+) with SSL key log files for dissecting and decrypting QUIC packets.
+    *   Highlighted the benefits of using qlog and cuviz for richer insights into QUIC connection behavior.
+    *   Qviz is an excellent tool for visualizing QLOG output.
+    *   Explained the importance of initial and handshake packet types.
+*   **QUIC Applicability and Manageability:**
+    *   Mentioned RFC 9308 - QUIC Applicability, which discusses transport protocol features and adapting an application to work on QUIC
+    *   Mentioned RFC - Manageability Draft which discusses how to analyze quick.
+*   **BGP over QUIC:**
+     * There were multiple bgp over quick drafts.
+     * The quick working group is available for early reviews.
+     * Key distribution seems like a potential challenge.
+
+## Decisions and Action Items
+
+*   **Action Item:** Re-export the slides with the timeline for the Google Outage (Ian).
+*   **Action Item:** George Michaelson asked if someone could write a library that allows single packet transactional work reliably across address Mobility.
+
+## Next Steps
+
+*   Continue deployment of QUIC load balancing.
+*   Further explore and refine blackholing mitigation techniques.
+*   Improve testing and tooling for zero-RTT implementations.
+*   Address version ossification to ensure future-proof accessibility.
+</code></pre>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

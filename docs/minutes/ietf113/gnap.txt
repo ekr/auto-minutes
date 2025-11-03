@@ -1,0 +1,64 @@
+**Session Date/Time:** 25 Mar 2022 09:00
+
+# gnap
+
+## Summary
+
+The gnap session provided a comprehensive update on the core protocol draft, shared insights and results from a recent hackathon, and outlined future work. Key updates to the core draft included editorial consistency, enhanced security considerations, a split in user code interaction modes, and formalized error codes. The hackathon demonstrated the protocol's implementation, highlighting complexities with HTTP message signatures but also the relative ease of GNAP itself once signing was handled. Future work will focus on explicitly defining the grant life cycle, clarifying key rotation, establishing profiles for "mandatory to implement" (MTI) guidelines, and providing clearer guidance for extensions. The session also included a discussion on the concept of embedding GNAP within other protocols, which the group decided to defer until after GNAP v1.
+
+## Key Discussion Points
+
+*   **Protocol Update (Core Draft v8 to v9)**
+    *   **Focus:** Primary effort concentrated on the core draft, deferring active work on the Resource Server (RS) draft due to ongoing structural changes in the core.
+    *   **Editorial Changes:** Significant cleanup for text consistency (e.g., "end user" vs. "end-user", "URI" vs. "URL") and uniform parameter list formatting.
+    *   **Functional Changes:**
+        *   **Security Considerations:** Expanded with new sections on replay bound tokens, Server-Side Request Forgery (SSRF), and mix-up attacks, with normative forward links from requirements.
+        *   **Subject Identifiers:** Aligned format with the latest Sec Event draft (RFC 9231). Requests for subject identifiers and assertions now use `sub_id_formats` and `assertion_formats`, with responses using a similar structure.
+        *   **User Code Interaction Modes:** The previously ambiguous `user_code` mode was split into two distinct modes:
+            *   `user_code`: For clients that can only display a code; the URI for entry is assumed static and known out-of-band.
+            *   `user_code_uri`: For clients that can display a dynamic, short URI along with the user code for user entry.
+            *   Discussion was raised about collapsing the `user_code` object to a simple string return if no other parameters are expected.
+        *   **Error Codes:** A new comprehensive section for error codes was introduced, to be returned via the backchannel only (not frontchannel), closing a class of vulnerabilities.
+        *   **Token Management:** Clarified semantics for token rotation (replacement for existing tokens) versus requesting a new token for a continuing grant. Identified a need for a more explicit grant life cycle discussion.
+        *   **Renaming "Redirect" Mode:** A "bike shed" discussion was initiated on renaming the "redirect" interaction mode, as it encompasses broader concepts like displaying QR codes or launching system browsers, not just HTTP redirects. Potential name: "arbitrary uri".
+
+*   **Hackathon Results (IETF 113)**
+    *   **Focus:** Implementing HTTP message signatures, making valid access token requests, and user interaction flows.
+    *   **Implementations:** New PHP CLI and web clients (Aaron Parecki), a JavaScript Single Page Application (SPA) (Justin Richer), and significant updates to existing Java-based authorization server and client.
+    *   **Learnings:**
+        *   **HTTP Message Signatures:** Complex to implement from scratch; requires robust libraries for structured fields and cryptographic primitives. Order of parameters in structured fields was a particular challenge, emphasizing the need for transparent HTTP library integration.
+        *   **GNAP Protocol:** Once HTTP signatures were functional, the GNAP protocol itself (JSON-based with defined semantics) was straightforward to implement.
+        *   **Proof Parameters:** A need was identified to communicate proof parameters (e.g., signing algorithm, digest algorithm) alongside the key to prevent algorithm confusion attacks (similar to JOSE vulnerabilities).
+        *   **Grant Life Cycle:** Implementation efforts highlighted the current ambiguity in the grant life cycle and the semantics of certain requests (e.g., POST with no message body).
+        *   **References:** Need to externalize references like the interaction hash.
+        *   **Semantic Cleanup:** Some existing names/concepts could benefit from further semantic refinement.
+        *   **HTTP Structured Values:** While brilliant, the spec can be jarring for those not thinking in HTTP-specific structures; more starter guides would be beneficial.
+    *   **Demos:** Live demonstrations of both the PHP-based web/CLI clients and the JS SPA successfully acquired access tokens using redirect and user code flows, including rich authorization requests and subject identifier requests. Verbose output showed the HTTP signing process.
+    *   **Oracle Attack Concern:** Discussion was raised about including a unique string (e.g., "gnap") in signatures to prevent a malicious party from tricking a client into signing arbitrary data for another service (an "oracle" or "confusion" attack).
+
+*   **Future Work**
+    *   **Issue Triage:** Continued systematic review and closure of GitHub issues.
+    *   **Grant Life Cycle:** Explicitly define the stateful life cycle of grant requests. This will involve precisely defining what actions and parameters are allowed at each stage (e.g., sending new client keys or interaction blocks during a continuation request). A strawman diagram was presented for discussion on the mailing list.
+    *   **Key Rotation:** Clarify the model for key association and implement key rotation mechanisms specific to each proofing method (e.g., HTTP signatures, MTLS, JOSE), rather than a single unified approach. The question of changing proofing mechanisms during a grant will also be addressed.
+    *   **Mandatory to Implement (MTI):** Propose an approach similar to OpenID Connect's "implementation consideration" profiles, offering base recipes for different application types, rather than a single, rigid MTI set for such a flexible protocol.
+    *   **Extensions:** Develop clearer guidance on how to add new features and extensions to GNAP, including how core spec implementers should handle unknown extensions (especially those with security implications).
+    *   **JOSE Key Proofing Mechanisms:** The ongoing question of whether to keep JOSE-based key proofing mechanisms in the core draft (it's the only JOSE dependency) or move them to a separate extension remains.
+    *   **Resource Server Draft:** Future focus will be on defining its security, privacy, and trust considerations, and specifically on presenting a token model (data structure) that maps to formats like JWTs or introspection responses.
+    *   **Embedding GNAP in Other Protocols (Individual Contribution):** A discussion was held on use cases where GNAP's interaction/continuation capabilities could be embedded *within* another protocol (e.g., an API call returning a GNAP block for user interaction before the native API response). This represents a "slice" of GNAP being used. The group acknowledged the potential but decided to defer this complex integration until after GNAP v1 is complete.
+
+## Decisions and Action Items
+
+*   **Decision:** Christopher Nuncio volunteered as note-taker.
+*   **Action Item:** Editors to continue triaging and resolving outstanding GitHub issues for the GNAP core draft.
+*   **Action Item:** Justin Richer (and co-editors) to lead the effort to explicitly define the **Grant Life Cycle** within the GNAP specification, including precise definitions of allowed operations at each stage. The presented strawman diagram will be circulated to the mailing list for feedback.
+*   **Action Item:** Editors to develop clear guidance and specification text for **key rotation**, tailored to individual proofing mechanisms.
+*   **Action Item:** Editors to propose a strategy for **Mandatory to Implement (MTI)** requirements, likely through profiles similar to OpenID Connect, to address GNAP's flexibility.
+*   **Action Item:** Editors to create a dedicated section providing **guidance for extensions** in GNAP, outlining how to add new features and how core implementations should interact with them.
+*   **Action Item:** The Resource Server draft will prioritize defining its **security, privacy, and trust considerations**, and developing a **token model**.
+*   **Decision:** The discussion on **embedding GNAP within other protocols** (using parts of GNAP for in-protocol user interaction) will be deferred until after GNAP v1 is finalized, due to its complexity and the current focus on the core protocol's state machine.
+
+## Next Steps
+
+*   The editors will continue focused work on the core draft, addressing the defined action items.
+*   Discussions regarding interim meetings will be held on the mailing list.
+*   Attendees are encouraged to participate in IETF 114 in Philadelphia.

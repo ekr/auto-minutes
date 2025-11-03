@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="jmap.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-JMAP-20220321-1330">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2022 13:30</p>
+<h1>jmap</h1>
+<h2>Summary</h2>
+<p>The jmap and extra session covered updates and discussions on several drafts. Key discussions included clarifications and proposed changes for JMAP Blob (renaming <code>blobSet</code> to <code>blobUpload</code>, removing <code>concatenate</code>, and discussing <code>blob/query</code> and metadata retrieval), JMAP Calendars (concept of &quot;server as source,&quot; default calendar behavior, default alerts, and per-user properties), and JMAP Tasks (new properties, progress state extensions, and grouping properties into capabilities). S/MIME signing and encryption for JMAP, Sieve Action Registry, Sieve Snooze, Sieve IMAP Process, and IMAP Partial/Message Limit were also reviewed, with several approaching Working Group Last Call or publication.</p>
+<h2>Key Discussion Points</h2>
+<h3>JMAP S/MIME</h3>
+<ul>
+<li><strong>Status:</strong> All feedback addressed, minor formatting (XML v3 emphasis) pending.</li>
+<li><strong>Outlook:</strong> Expected to be published soon.</li>
+</ul>
+<h3>JMAP Blob</h3>
+<ul>
+<li><strong><code>blobSet</code> to <code>blobUpload</code>:</strong> Renamed as it only supports creation, not updates or destruction. Creation IDs are still used for back-referencing.</li>
+<li><strong><code>concatenate</code> removal:</strong> The concept was removed; uploads are now always a list of byte/octet sources, simplifying the model.</li>
+<li><strong>Capabilities:</strong> Simplified maximum upload size specification.</li>
+<li><strong>Metadata Retrieval:</strong> Discussion on explicitly noting that <code>blob/get</code> can retrieve only the size property, allowing clients to get metadata without server reading the full file.</li>
+<li><strong><code>blob/query</code>:</strong> Proposal for a <code>blob/query</code> to list all blobs (e.g., for replication/migration). Concerns raised regarding its fit with JMAP principles (no state string for change tracking, large data implications, pagination challenges). It was suggested that references from actual JMAP objects (<code>Email</code>, <code>CalendarEvent</code>, etc.) remain the encouraged way to find blobs.</li>
+<li><strong>JMAP for Files:</strong> Confirmed as a separate, future document that would likely leverage JMAP Blob for upload.</li>
+</ul>
+<h3>JMAP Quotas</h3>
+<ul>
+<li><strong>Simplifications:</strong> Removed Quota IDs (fetchable via <code>quota/get</code>), simplified scope and resource type extensions, and renamed <code>size</code> to <code>octets</code> and <code>limit</code> to a more generic definition.</li>
+<li><strong>Review:</strong> Alexey Melnikov to review for consistency with the upcoming JMAP Core Quota RFC.</li>
+</ul>
+<h3>JMAP Sharing</h3>
+<ul>
+<li><strong>Status:</strong> Near completion, requiring some wordsmithing.</li>
+<li><strong>Outlook:</strong> Expected to progress to Working Group Last Call soon.</li>
+</ul>
+<h3>JMAP Calendars</h3>
+<ul>
+<li><strong>&quot;Server is Source&quot; Concept:</strong>
+<ul>
+<li>Proposed adding a new property (<code>isController</code> or similar) to <code>CalendarEvent</code> to indicate if the server creating/storing the event is its primary &quot;controller&quot; (e.g., responsible for sending invitations). This helps clients determine appropriate UI behavior.</li>
+<li>Naming: <code>isSource</code> was deemed potentially confusing due to <code>source</code> in JMAP Tasks. <code>isController</code> was suggested.</li>
+</ul>
+</li>
+<li><strong>Default Calendars:</strong>
+<ul>
+<li>CalDAV mandates a default calendar; it was largely agreed JMAP Calendars should align.</li>
+<li>If a default calendar is deleted, the server should automatically promote another read-write calendar as the new default. This behavior should be explicit in the spec.</li>
+<li>The <code>defaultCalendarId</code> in user preferences <em>could</em> be null if no scheduling is intended for the account.</li>
+</ul>
+</li>
+<li><strong>Default Alerts:</strong>
+<ul>
+<li>Server may have vendor-specific behavior for copying default alerts when a new calendar is created (e.g., from the user's current default calendar), provided the server returns the set defaults to the client.</li>
+<li>Clarification needed on whether default alerts can be set on a calendar if the user does not have <code>mayUpdatePrivateACL</code>.</li>
+</ul>
+</li>
+<li><strong>Calendar Preferences Object:</strong> Discussion on adding <code>firstDayOfWeek</code> and preferred date/time format to the <code>CalendarPreferences</code> object.</li>
+<li><strong>Per-User Properties:</strong> Proposal to modify the <code>js-calendar</code> spec registry to explicitly mark properties that are treated as per-user (e.g., alerts in a shared calendar) to clarify server behavior in team mode.</li>
+</ul>
+<h3>JMAP Tasks</h3>
+<ul>
+<li><strong>New Properties:</strong>
+<ul>
+<li><code>source</code>: String indicating origin (e.g., &quot;email&quot;, &quot;mobile app&quot;).</li>
+<li><code>estimatedWork</code>: Abstract estimation of work (distinct from <code>estimatedDuration</code>).</li>
+<li><code>impact</code>: String for issue tracking (e.g., &quot;major&quot;, &quot;block&quot;).</li>
+<li><code>relatedTo</code>: Extension of <code>relation</code> object to include values like <code>blockedBy</code>.</li>
+</ul>
+</li>
+<li><strong>Extended <code>progress</code> Property:</strong> Added new values (e.g., <code>done</code>, <code>notDone</code>, <code>deferred</code>, <code>waiting</code>, <code>resolved</code>, <code>feedback</code>) to better map diverse task system states. Clarification requested on the distinction between <code>resolved</code> and <code>completed</code>.</li>
+<li><strong>Grouping Properties into Capabilities:</strong>
+<ul>
+<li>Acknowledging the heterogeneity of task systems (e.g., some don't need recurrence), a capability-based approach was proposed.</li>
+<li>Properties would be grouped into feature sets (e.g., &quot;common,&quot; &quot;time estimation,&quot; &quot;advanced scheduling&quot;).</li>
+<li>Servers would advertise supported capabilities (e.g., <code>supportsTimeEstimation: true/false</code>), allowing clients to adapt.</li>
+<li>Proposed a new <code>notSupported</code> set error for properties a server knows about but chooses not to implement, distinct from <code>invalidProperties</code> for unknown properties.</li>
+</ul>
+</li>
+<li><strong>Blob Created Timestamp:</strong> For attachments linked to tasks, the &quot;created&quot; timestamp should be a property on the <code>Link</code> object itself, representing the time the link was created within the JMAP system, rather than the blob's intrinsic creation time.</li>
+<li><strong>Keywords/Categories with Colors:</strong> Explored adding keyword/category properties for task lists with associated colors, potentially aligning with calendar categories.</li>
+<li><strong>Feedback on new properties:</strong> Discussion points raised on the interoperability and value of free-text fields for <code>source</code>, the distinction between <code>estimatedWork</code> and <code>estimatedDuration</code>, and the necessity of <code>impact</code> when <code>priority</code> exists.</li>
+</ul>
+<h3>JMAP S/MIME Signing &amp; Encryption</h3>
+<ul>
+<li><strong>Functionality:</strong> Extension to allow signing and/or encrypting messages on send via JMAP.</li>
+<li><strong>Open Issues:</strong>
+<ul>
+<li>Control over S/MIME message generation (<code>multipart/signed</code> vs. <code>application/pkcs7-mime</code>).</li>
+<li>Header protection: Default value (true vs. false) for protecting headers. Recommendation from Lamps WG to default to <code>true</code> was discussed.</li>
+<li>Decryption: Complementary feature that would require a different approach (e.g., via decrypted blobs).</li>
+</ul>
+</li>
+<li><strong>Trust Model:</strong> Delegating secret keys to the JMAP server implies a trust model where the client and server are considered part of the user's trusted &quot;end.&quot;</li>
+</ul>
+<h3>EXTRA Quota</h3>
+<ul>
+<li><strong>Status:</strong> Ready for publication, pending an IANA website text update.</li>
+</ul>
+<h3>Sieve Action Registry</h3>
+<ul>
+<li><strong>Status:</strong> Template and initial registrations are complete.</li>
+<li><strong>Pending:</strong> Adding comments about <code>reject</code> conflicts.</li>
+</ul>
+<h3>Sieve Snooze</h3>
+<ul>
+<li><strong>Status:</strong> No updates, implemented in Cyrus IMAP and deployed at Fastmail. Works as intended.</li>
+</ul>
+<h3>Sieve IMAP Process</h3>
+<ul>
+<li><strong>Functionality:</strong> A mechanism for users to control how the IMAP server processes iTIP (calendar) messages (e.g., accepting invites, processing updates, removing on cancel), leveraging Sieve.</li>
+<li><strong>Options:</strong> Includes specifying external addresses for processing, a default calendar for new invites, options to only process updates (not new invites from untrusted sources), and variables to store the outcome or error messages.</li>
+<li><strong>Feedback:</strong> Suggestions to split <code>update</code> and <code>cancel</code> as distinct outcome values. The architectural implications for varying IMAP server implementations were noted, but the approach standardizes user control.</li>
+</ul>
+<h3>IMAP Partial / Message Limit</h3>
+<ul>
+<li><strong>Partial:</strong> An IMAP extension to request a subset (page/range) of messages in search and UID FETCH responses, especially useful for large mailboxes. Supports negative numbers for &quot;from end of mailbox.&quot;</li>
+<li><strong>Message Limit:</strong> Server-imposed limit on the number of messages an operation can apply to (e.g., 10,000 messages). This helps servers avoid resource-intensive operations on extremely large mailboxes.</li>
+<li><strong>Interaction with COPY/UID COPY:</strong>
+<ul>
+<li><strong>Problem:</strong> If a client requests copying more messages than the <code>MESSAGE-LIMIT</code>, how should the server respond?</li>
+<li><strong>Decision:</strong> The server should reject (<code>NO</code>) the operation outright rather than performing a partial copy and returning <code>OK</code>. This avoids misleading clients and ensures clients that understand <code>MESSAGE-LIMIT</code> can perform batch copies. Naive clients would fail safely.</li>
+</ul>
+</li>
+<li><strong>Interaction with RENAME INBOX:</strong> It was suggested that <code>RENAME INBOX</code> (which often involves copying) should be an exception and proceed regardless of <code>MESSAGE-LIMIT</code>.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<h3>Decisions</h3>
+<ul>
+<li><strong>JMAP S/MIME:</strong> Ready for publication.</li>
+<li><strong>JMAP Blob:</strong>
+<ul>
+<li><code>blobSet</code> renamed to <code>blobUpload</code>.</li>
+<li><code>concatenate</code> removed.</li>
+<li>Spec to explicitly mention <code>blob/get</code> can retrieve only size metadata.</li>
+</ul>
+</li>
+<li><strong>JMAP Calendars:</strong>
+<ul>
+<li>A new property (<code>isController</code> or similar) will be added to <code>CalendarEvent</code> to indicate server control.</li>
+<li>Servers should ensure at least one read-write calendar for scheduling. If the default is deleted, the server may auto-promote another.</li>
+<li>Vendor-specific behavior for copying default alerts on calendar creation is allowed, provided the server returns what it set.</li>
+<li>The <code>js-calendar</code> registry will be modified to mark per-user properties.</li>
+</ul>
+</li>
+<li><strong>JMAP Tasks:</strong>
+<ul>
+<li>Extend existing progress value registry for <code>progress</code> property.</li>
+<li>Adopt a capability-based approach with feature sets for JMAP Tasks.</li>
+<li><code>created</code> timestamp for blobs (attachments) should be a property on the <code>Link</code> object.</li>
+</ul>
+</li>
+<li><strong>EXTRA Quota:</strong> Ready for publication.</li>
+<li><strong>Sieve Snooze:</strong> Ready for Working Group Last Call.</li>
+<li><strong>IMAP Partial / Message Limit:</strong> Server should reject COPY/UID COPY requests that exceed <code>MESSAGE-LIMIT</code> (not partially succeed).</li>
+</ul>
+<h3>Action Items</h3>
+<ul>
+<li><strong>Bron:</strong> Post responses to JMAP Blob mailing list, update draft with <code>blob/get</code> advice, then request WGLC for JMAP Blob.</li>
+<li><strong>Alexey Melnikov:</strong> Review JMAP Quota document for consistency with JMAP Core Quota RFC; implement and test <code>partial</code> in client; request WGLC for JMAP S/MIME Signing/Encryption; request WGLC for Sieve Action Registry.</li>
+<li><strong>Rene:</strong> Request WGLC for JMAP Quotas after Alexey's review.</li>
+<li><strong>Neil Jenkins:</strong> Update JMAP Sharing document, then request WGLC. Make changes to JMAP Calendars based on discussion, add examples, aim for WGLC.</li>
+<li><strong>Joris Baum:</strong> Clarify <code>resolved</code> vs <code>completed</code> for JMAP Tasks <code>progress</code> property; refine grouping of JMAP Tasks properties into capabilities; consider feedback on <code>estimatedWork</code>, <code>impact</code>, and <code>source</code> properties.</li>
+<li><strong>Robert M\u00fcller:</strong> Draft a <code>notSupported</code> set error for JMAP; explore a general property change tracking spec across JMAP object types.</li>
+<li><strong>Ken Murchison:</strong> Post call for adoption of Sieve IMAP Process on mailing list; update Sieve IMAP Process draft (e.g., split outcome values, add to <code>sieve-action</code> document).</li>
+<li><strong>Working Group:</strong> Provide feedback on JMAP Blob, JMAP Quotas, Sieve Action Registry, and Sieve IMAP Process. Discuss default value for JMAP S/MIME header protection.</li>
+<li><strong>Alexey Melnikov:</strong> Add an explicit statement to IMAP Message Limit spec regarding <code>RENAME INBOX</code> as an exception to message limits.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>JMAP Blob:</strong> After updates and WGLC, submit to IESG (target Q3 2023).</li>
+<li><strong>JMAP S/MIME:</strong> Publication pending.</li>
+<li><strong>JMAP Quotas:</strong> WGLC pending review.</li>
+<li><strong>JMAP Sharing:</strong> WGLC pending update.</li>
+<li><strong>JMAP Calendars:</strong> WGLC pending updates and examples (target Q3 2023).</li>
+<li><strong>JMAP Tasks:</strong> Continue refinement based on feedback, focusing on capability grouping and property clarifications.</li>
+<li><strong>Sieve Action Registry:</strong> WGLC pending update.</li>
+<li><strong>Sieve Snooze:</strong> WGLC to be requested.</li>
+<li><strong>Sieve IMAP Process:</strong> Seek working group adoption.</li>
+<li><strong>IMAP Partial / Message Limit:</strong> <code>partial</code> ready for WGLC after client testing; <code>message-limit</code> may require further work and discussion on mailing list.</li>
+<li><strong>JMAP Address Book:</strong> Updates in progress (target Q3 2023).</li>
+<li><strong>EXTRA Charter:</strong> The milestone to update the EXTRA charter will be deleted, as discussions on email core charter are happening in the Dispatch WG.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,80 @@
+**Session Date/Time:** 10 Nov 2022 09:30
+
+# TLS Working Group Meeting - IETF 115
+
+## Summary
+
+The TLS working group discussed the progress of several drafts, with a focus on updates to RFC 8446 and 8447, the deprecation of various key exchange methods, a new architectural approach for the well-known ECH config list, and the potential adoption of a draft standardizing the TLS keylog file format. Key decisions were made regarding the direction of 8447bis, the plan for deprecating Finite Field Diffie-Hellman Ephemeral (FFDHE), and the adoption of the TLS keylog file draft.
+
+## Key Discussion Points
+
+### Working Group Status Update
+*   **Published RFCs:** RFC 9257 (external pre-shared Keys) and RFC 9258 (importing external PSKs for TLS 1.3) were published.
+*   **Delegated Credentials:** Moving forward with Richard Barnes shepherding the draft.
+*   **RFC for TLS 1.3 and 1.2:** Through multiple Working Group Last Calls (WGLC), pending chair write-up and addition of security considerations.
+*   **Compact TLS:** The draft expired, but remains a live item with ongoing PRs.
+*   **Encrypted Client Hello (ECH) and Hybrid KEM in TLS 1.3:** Paused, awaiting implementation experience.
+*   **SNIP:** Expected to move forward around March.
+*   **Expired Drafts:** Batch signatures and semi-static were briefly discussed at the end of the session.
+
+### RFC 8446bis: TLS Protocol Version 1.3
+*   **Purpose:** To clarify existing text and fix terminology in RFC 8446.
+*   **Unsolicited Extensions (PR 1275):** Clarification to state that extensions not offered by the peer cannot be sent. Proposed to merge.
+*   **Key Update Limits:** Incorporating limits from DTLS (RFC 9147) into TLS 1.3. Text needs refinement.
+*   **Bogus Tickets:** Proposed to use the existing `unknown_psk_identity` alert for invalid tickets, closing a redundant PR for a new alert.
+*   **PSKs with Certificates (RFC 8773 updates):** Text clarification needed regarding the use of PSKs with certificates.
+*   **HRR Clarification Issues:** Long-standing issues regarding HelloRetryRequest (HRR) behavior, raised by David Benjamin, remain unresolved. Consensus could not be reached on improving the text. It was proposed to defer these issues, prioritizing completion over substantive changes.
+*   **Future of TLS 1.3:** A long-term plan was proposed to move TLS 1.3 to Internet Standard status within six months, contingent on an interoperability report.
+
+### RFC 8447bis: IANA Considerations for TLS 1.3
+*   **Document Type (Obsolete vs. Update):** The current draft obsoletes RFC 8447, making review difficult. It was proposed to change it to an "update" document for clarity and ease of IANA application, which garnered support.
+*   **"D" (Discouraged) Meaning:** The definition of "D" in the recommended column ("discouraged and should not or must not be used") was discussed. It was suggested to remove the normative "should not or must not" from the registry description itself, instead relying on linked documents for normative guidance.
+*   **Registration Policy for State Transitions:** Clarification was sought regarding ISG approval for all state transitions (Yes/No/Discouraged). It was clarified that ISG approval is needed for all transitions, and "Standards Action" is specifically for moving to a "Y" (Recommended) state.
+*   **Explorer Labels Registry Policy:** The policy is currently "specification required". David Schenazi proposed changing it to "expert review" to accommodate internal uses without requiring a full public specification. Discussion ensued on whether an Internet Draft (even if never published as an RFC) qualifies as a "specification" and the balance between encouraging documentation and allowing flexible code point allocation. The AD noted they would consult the IESG on this.
+
+### Deprecating Select Key Exchange Methods
+*   **Draft Goals:** Deprecate RSA key exchange, static Finite Field Diffie-Hellman (FFDHE), and static Elliptic Curve Diffie-Hellman (ECDH), and limit FFDHE to sufficiently large groups.
+*   **FFDHE Group Structure:** The primary open issue is the requirement around FFDHE group structure. The authors proposed imposing no requirement, arguing web clients have already disabled it and email clients using opportunistic TLS would likely ignore strict deprecation rather than fall back to cleartext.
+*   **Opportunistic TLS Carve-out:** A significant discussion revolved around whether to include a carve-out for opportunistic TLS clients (e.g., SMTP) who might fall back to cleartext if FFDHE is fully deprecated. Concerns were raised about setting a precedent for such carve-outs and the potential for slowing ecosystem evolution. Referencing RFC 7435, which allows more liberal settings for opportunistic protocols, it was suggested that such clients could simply ignore the new RFC without an explicit carve-out.
+*   **Poll on Full Deprecation:** A poll was conducted on supporting the full deprecation of FFDHE. Out of 39 participants, 34 supported deprecation, and 5 did not.
+
+### Well-known ECH Config List
+*   **New Approach (draft-ietf-tls-wkechcl-01):** This version, co-authored by Ben Schwartz and Rich Sauls, proposes a new architecture. Instead of an authoritative DNS zone talking to an ECH frontend, a "Zone Factory" (component of an authoritative DNS server) directly queries the origin server for ECH keys and configuration via a `/.well-known/tls-ech-config` JSON blob.
+*   **Motivation:** This change aims to support a broader range of deployments, especially those using CNAMEs and multi-CDNs, and make it easier to adopt good practices.
+*   **HTTP Freshness:** The draft proposes using HTTP freshness headers (ETags, Last-Modified) for caching key rotation, rather than explicit TTLs in the JSON.
+*   **Client Behavior:** It was re-emphasized that this mechanism is *not* for browsers or TLS clients to directly query, but for the Zone Factory populating DNS records.
+*   **Feedback:** The new direction was generally well-received as a more generic and sensible approach for broader deployments.
+
+### TLS Keylog File
+*   **Purpose:** To standardize the format of the `SSLKEYLOGFILE` environment variable, widely used for debugging TLS implementations (e.g., with Wireshark).
+*   **Current Documentation:** The current authoritative documentation resides in the NSS source tree, lacking a stable home.
+*   **Proposal:** Document the format in an IETF RFC to provide a stable, standard reference with IETF change control.
+*   **Security and Privacy:** The draft includes substantial warnings and guardrails regarding the significant security and privacy risks associated with enabling and using the keylog file. It was noted that this is not a protected format like PKCS#8.
+*   **Poll on Adoption:** A poll was conducted on interest in adopting `draft-thompson-tls-keylog-file` in the TLS working group. Out of 33 participants, 28 supported adoption, and 5 did not. No objections were voiced at the microphone.
+
+### Expired Drafts
+*   **Batch Signatures:** David Benjamin indicated he no longer has time to drive this and no one else has stepped up. The working group will let it expire and potentially mark it as abandoned.
+*   **Semi-static:** Ecker indicated he still cares about this draft but is currently focused on 8446bis, requesting it be revisited later.
+
+## Decisions and Action Items
+
+*   **RFC 8446bis:** Ecker to finalize the outstanding points, produce a new draft, and initiate a Working Group Last Call.
+*   **RFC 8447bis:**
+    *   The chair will revise the draft to change its relationship from "obsolete" to "update" RFC 8447.
+    *   The chair and Ecker will revise the definition of "D" (Discouraged) to remove normative "should not or must not" language, relying instead on linked documents for such guidance.
+    *   David Schenazi will submit a PR to change the "Explorer Labels Registry" policy from "specification required" to "expert review," with possible instructions for experts.
+*   **Deprecating Key Exchange Methods:** The chairs will formulate a phrasing for a mailing list consensus call on fully deprecating FFDHE. Nimrod to assist with phraseology.
+*   **Well-known ECH Config List:** Ben Schwartz and Stephen Farrell will continue refining `draft-ietf-tls-wkechcl-01` in its new architectural direction.
+*   **TLS Keylog File:** The TLS working group will adopt `draft-thompson-tls-keylog-file`.
+*   **Batch Signatures Draft:** The draft will be allowed to expire and be marked as abandoned by the chairs.
+
+## Next Steps
+
+*   Ecker to complete 8446bis work and initiate WGLC.
+*   Chair to revise 8447bis and consult IESG on "draft as specification" policy.
+*   David Schenazi to submit PR for Explorer Labels registry.
+*   Chairs to launch a mailing list discussion for consensus on FFDHE deprecation.
+*   Ben Schwartz and Stephen Farrell to continue work on the ECH config list draft.
+*   The TLS working group to formally adopt and begin work on `draft-thompson-tls-keylog-file`.
+*   Ecker to revisit the semi-static draft after 8446bis is complete.
+*   Progress on moving TLS 1.3 to Internet Standard will be pursued in the coming months.

@@ -1,0 +1,111 @@
+**Session Date/Time:** 27 Jul 2022 19:00
+
+# netmod
+
+## Summary
+
+The netmod session covered updates on several drafts, including the YANG versioning suite, `ietf-yang-node-tags`, and `ietf-syslog`. Key discussions revolved around progressing YANG versioning documents, refining the `node-tags` proposal based on WGLC feedback, and clarifying the `syslog` model's security-related groupings. Informal discussions were also held on the future of YANG (YANG Next) and a proposed experimental change to the IETF's YANG model publication process.
+
+## Key Discussion Points
+
+*   **Administrative:** Lou Berger (co-chair) welcomed participants and reviewed IETF Notewell, Code of Conduct, MeetEcho queue management, and mask requirements. Remote participation and joint note-taking were highlighted. A liaison from O-RAN was received, requesting publication timelines for specific YANG versioning drafts, which aligned with the working group's revised plan.
+
+*   **YANG Versioning Solution Update:**
+    *   The complete solution involves five drafts. The working group's plan has changed: the first two drafts (`ietf-yang-module-versioning` and `ietf-yang-semver-revision-label`) will proceed to re-last call and publication independently, without waiting for the remaining three (schema comparison, packages, and selection) due to convergence time.
+    *   Weekly author calls are actively processing Last Call feedback, leading to draft updates.
+    *   **Module-level vs. Node-level Change Marking (Balázs Kovács):**
+        *   Original plan: Marking compatibility changes at the module level in revision information.
+        *   Proposal for node-level marking was discussed, indicating changes on individual schema nodes.
+        *   **Consensus:** Both module-level and node-level markings are valuable for different purposes. Tooling should handle most versioning, but authors can explicitly mark non-backward compatible (NBC) changes for complex cases (e.g., regex changes) where tools might fail. The placement of per-node extensions (e.g., in module-versioning or schema-comparison draft) is still open.
+        *   The implication of missing NBC annotations (i.e., automatically implying backward compatibility) was deemed problematic.
+        *   The ability for authors to override tooling-derived compatibility conclusions (e.g., fixing a mistake in a type definition) was acknowledged as necessary in certain scenarios.
+    *   **`import-by-derived-revision` (Balázs Kovács):**
+        *   This extension aims to address the common problem of needing new functionality in an imported module without forcing strict revision linkage, which is difficult to coordinate.
+        *   It enhances the compiler by providing hints about suitable revisions, rather than a strict mandate.
+        *   Tool Behavior: Expected to follow RFC 7950 (ignore unknown extensions) for compatibility with older tools.
+        *   Rob Wilson (Cisco) suggested an alternative interpretation where `revision-or-derived` is a *suggestive* hint rather than a strict limit, allowing compilers more flexibility and better alignment with ignoring unknown extensions.
+    *   **Revision Label Scheme:** An extension (`revision-label-scheme`) specifies the scheme used for revision labels. It is recommended for vendor modules and should be mandatory for standard models when a revision label is present.
+    *   **File Naming:** Allowing both date (`@`) and revision label (`#`) in YANG module filenames was discussed for convenience.
+    *   **YANG Next Integration:** Consensus reiterated from prior meetings that versioning work should eventually be a mandatory part of YANG 2.0 (or YANG Next) but should proceed as 1.1 extensions for urgent deployment.
+    *   **Semantic YANG SemVer (Joe Clark):**
+        *   Current status: Rev 07 addressed minor comments, clarified distinction between "SemVer" (the spec) and "YANG SemVer" (our application).
+        *   **Outstanding Issues:**
+            *   Non-linear history: YANG SemVer revision labels are designed as human-readable anchors, not necessarily to infer linear derivation due to branching (e.g., 2.0.0 might derive from 1.0.0, not 1.1.0). The labeling does not break this knowledge; branching does.
+            *   YANG SemVer is a superset of SemVer 2.0, with optional `_compatible` and `_non_compatible` additions. IETF is expected to use the pure SemVer 2.0 rules.
+            *   Release train vs. module changes: YANG SemVer reflects changes *in the module* at a high level, not necessarily the underlying software release train.
+            *   Bumping work-in-progress drafts: Only bump the YANG SemVer label if the YANG module *itself* has changed (new revision date). Do not gratuitously bump for only contextual text changes.
+        *   **Next Steps:** Update draft to clarify unique YANG SemVer additives and expectation for bumping. Joe Clark suggested an interim meeting to resolve outstanding issues effectively.
+
+*   **Syslog YANG Model (`ietf-syslog`) (Joe Clark):**
+    *   Status: Draft updated to rev 26 XML, boilerplate, and ID-nits fixed.
+    *   **Key Change:** Replaced old `key-store` grouping with `crypto-types:asymmetric-key-pair-with-cert` (or `certs` plural).
+    *   Kent Watson (co-chair, contributor) agreed the change was correct but will verify the singular vs. plural form of "certs" for the grouping.
+    *   **Next Steps:** Call for Working Group Last Call.
+
+*   **Node Tags (`ietf-yang-node-tags`) (Xing Li):**
+    *   Status: Version 08, incorporated feedback from YANG Doctor and WGLC.
+    *   **Key Updates:** Title changed to reflect applicability to single node tags (schema and instance level). Consolidated extensions into one general YANG extension. Clarified how application can re-synchronize updates and use XPath queries for schema-level tags.
+    *   **Revisited Questions:** Confirmed support for both schema-level and instance-level tags. Clarified tag changes (system tags static, instance tags dynamic but not frequent). Tags retrieved via `ietf-node-tags` module or `get-schema` operation.
+    *   **Discussion on Tag Retrieval Scalability:** Rob Wilson questioned using XPath for filtering tagged data, suggesting an augmentation to filter operations as potentially more efficient.
+    *   **Discussion on `mask-tags`:** Benoît Fourestié raised concerns about `mask-tags` allowing users to override model designer's intent for mandatory tags, potentially making schema tags unreliable.
+    *   **Differentiation from Metadata/Extensions:** Explained differences from metadata annotations and simple YANG extension statements.
+    *   **Next Steps:** Authors to ping Jorgen for feedback on the latest version and address new comments from the room on the mailing list. Chairs noted a potential interim if issues are not resolved by end of August.
+
+*   **System-Defined Configuration (`ietf-system-config`) (Shifeng Li):**
+    *   Status: Incorporated prior meeting feedback.
+    *   **Agreements:**
+        1.  `config true` read-only system data store.
+        2.  Any reference system configuration *must* be present in running (ensures running's offline validation).
+        3.  `resolve-system` parameter allows server to automatically copy referenced system config to running.
+        4.  Server *should not* modify running if not explicitly asked by client (weakened from "must not").
+    *   **Discussion on "should not modify running":** Balázs Kovács objected, citing 3GPP and O&M automation, arguing this "should not" could conflict with existing practices. Rob Wilson and Kent Watson supported "should not" as a best practice, noting exceptions (e.g., crypt-hash) are described in existing RFCs.
+    *   **Integration:** Defined RESTCONF capability URI and augmented `copy-config` RPC to support `resolve-system`.
+    *   **Next Steps:** Working group showed continued interest. Authors to provide an updated draft and continue discussion on the mailing list.
+
+*   **YANG Extension and Metadata Annotation for Immutable Flag (`ietf-immutable`) (Shifeng Li):**
+    *   **Use Cases:** Documenting existing server behavior where certain configurations (e.g., interface types, predefined applications) are immutable, either at schema-level or instance-level.
+    *   **Solution:** An `immutable` YANG extension with optional `exceptions` (e.g., `create` allowed, but not `modify`/`delete`). A metadata annotation for instance-level immutability.
+    *   **Discussion:** Anne proposed clarifying "exceptions" given "immutable" means no changes. Balázs Kovács suggested "fixed" as an alternative term. Rob Wilson expressed conflict between client control and documenting server behavior, but recognized its value if servers reject changes anyway. Joe Clark noted the server *would* reject these changes regardless of the extension, and the draft serves as documentation.
+    *   **Next Steps:** Working group showed continued interest. Authors to provide an updated draft and continue discussion on the mailing list, focusing on clarifying the "immutable" concept with exceptions.
+
+*   **YANG Next Informal Discussion (Kent Watson):**
+    *   Recap of history: Discussions on YANG Next began years ago, but market readiness and intrusiveness remain concerns.
+    *   **Proposed Plan:** As a first step, the `netmod` working group should produce an `RFC 7950 bis` document. This document would refactor RFC 7950 to separate the YANG language specification from its Netconf and XML-specific bindings, making YANG 1.1 protocol-independent. This would lay the groundwork for eventual non-compatible changes in a future "YANG Next" version.
+    *   **Call for Action:** Chairs sought volunteers to work on this `7950 bis` effort. No objections were raised to the plan.
+
+*   **IETF YANG Model Publication Process Informal Discussion (Rob Wilton):**
+    *   **Problem:** IETF's current RFC publication model for YANG models is too slow, hindering agility compared to other bodies (e.g., OpenConfig). This leads to a fragmented market and makes fixing errors difficult (e.g., 50 RFCs using an incorrect `ip-address` type).
+    *   **Proposal:** Fundamentally change how YANG models are managed. Stop publishing them in RFCs. Instead, publish and version YANG models as standard *code assets* in GitHub, treating RFCs as supplementary descriptive documentation.
+    *   **Experiment:** Rob Wilton proposed drafting an *experimental process RFC* to test this new approach, including stable branches, review processes for minor changes (WGLC style), and full IETF review for major version changes.
+    *   **Call for Action:** Rob sought volunteers to help write this experimental draft. Benoît Fourestié volunteered. A poll showed strong interest in proceeding with this work.
+
+## Decisions and Action Items
+
+*   **YANG Versioning:**
+    *   **DECISION:** The working group will proceed with re-issuing Working Group Last Call for `ietf-yang-module-versioning` and `ietf-yang-semver-revision-label` drafts, aiming for publication, without waiting for the full suite of five versioning drafts.
+    *   **ACTION:** Authors (Balázs Kovács, Joe Clark) to update `ietf-yang-module-versioning` and `ietf-yang-semver-revision-label` drafts to incorporate WGLC feedback and discussions (e.g., per-node annotations, `import-by-derived-revision` interpretation, clarity on `semver` additions and bumping rules).
+    *   **ACTION:** Chairs to re-issue WGLC for the updated YANG versioning drafts.
+
+*   **Syslog YANG Model (`ietf-syslog`):**
+    *   **ACTION:** Kent Watson (Shepherd) to verify the correct use of `crypto-types:asymmetric-key-pair-with-cert` (singular/plural) and prepare the draft for Working Group Last Call.
+
+*   **Node Tags (`ietf-yang-node-tags`):**
+    *   **ACTION:** Authors (Xing Li) to follow up with Jorgen and address the new comments raised in the meeting (e.g., XPath filtering, `mask-tags`) on the mailing list.
+    *   **ACTION:** Chairs to consider scheduling an interim meeting if issues are not resolved by the end of August.
+
+*   **System-Defined Configuration (`ietf-system-config`) & Immutable Flag (`ietf-immutable`):**
+    *   **DECISION:** Working group interest for both drafts was affirmed.
+    *   **ACTION:** Authors (Shifeng Li) to provide updated drafts incorporating discussion points and continue engagement on the mailing list.
+
+*   **YANG Next:**
+    *   **DECISION:** The `netmod` working group will proceed with an `RFC 7950 bis` effort to refactor RFC 7950, making YANG 1.1 protocol-independent.
+    *   **ACTION:** Chairs to seek volunteers to draft the `RFC 7950 bis` document.
+
+*   **IETF YANG Model Publication Process Experiment:**
+    *   **ACTION:** Rob Wilton and Benoît Fourestié to collaborate on drafting an experimental process RFC for publishing and versioning YANG models as code assets in GitHub.
+
+## Next Steps
+
+*   Working group members are encouraged to monitor the mailing list for new draft revisions and participate in upcoming Working Group Last Calls.
+*   Volunteers for the `RFC 7950 bis` work are requested to contact the chairs.
+*   Interested parties are encouraged to engage with Rob Wilton and Benoît Fourestié on the proposed experimental YANG model publication process.

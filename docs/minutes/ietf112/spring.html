@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="spring.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-SPRING-20211108-1200">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 08 Nov 2021 12:00</p>
+<h1>spring</h1>
+<h2>Summary</h2>
+<p>The Spring working group session covered updates on working group documents, last calls, and ISG submissions. A key decision was the rough consensus to adopt the compression draft, with an issue tracker to be established and a dependency on a 6man draft regarding CECIDs and RFC 4291. Several new drafts were presented, focusing on enhancing SR performance measurement, end-to-end network slicing, SRv6 inter-domain mapping, alternate marking in SRH, and applying SR concepts to service control planes (ELAN). Discussions highlighted concerns around one-way measurement, BCP 38 implications, terminology, and the necessity of new SIDs. A conceptual discussion on variable-length addresses for a unified SR forwarding plane was also held, with a note from the chair about its alignment with the Spring charter.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Chairs' Presentation and WG Updates</strong></p>
+<ul>
+<li><strong>Notewell Reminder</strong>: Attendees reminded of BCP 54 for respectful and courteous discussion.</li>
+<li><strong>Agenda Review</strong>: No adjustments requested for the scheduled agenda.</li>
+<li><strong>Meeting Minutes</strong>: Available via <code>notes.ietf.org</code> (formerly <code>etherpad.ietf.org</code>).</li>
+<li><strong>Adoption Call for Compression Draft</strong>:
+<ul>
+<li><strong>Decision</strong>: Rough consensus was found to adopt the document.</li>
+<li>The working group version will include a specified open issue section.</li>
+<li>A GitHub-based issue tracker will be established for all issues, with discussions remaining on the mailing list.</li>
+<li><strong>Action Item</strong>: Posting of the Spring WG version of the draft is delayed until 6man has a draft addressing the relationship between CECIDs and RFC 4291. Suresh Krishnan has been appointed as lead author for the 6man draft.</li>
+</ul>
+</li>
+<li><strong>New Working Group Documents</strong>:
+<ul>
+<li><code>draft-ietf-spring-compressed-sid-list-requirements</code></li>
+<li><code>draft-ietf-spring-compressed-sid-list-analysis</code></li>
+<li><code>draft-ietf-spring-sr-redundancy</code></li>
+</ul>
+</li>
+<li><strong>Working Group Last Calls (WGLCs)</strong>:
+<ul>
+<li><code>draft-ietf-spring-mpls-path-segment-len</code> (MPLS Path Segments): Final editorial nits in progress, shepherd write-up underway. All comments must be addressed.</li>
+<li><code>draft-ietf-spring-sr-lsh-protocol</code> (LSH document): Last call ongoing.</li>
+</ul>
+</li>
+<li><strong>ISG Submission</strong>: <code>draft-ietf-spring-segment-routing-policy-rad</code> was submitted to the ISG.</li>
+</ul>
+</li>
+<li>
+<p><strong>Enhanced SRPM Draft (<code>draft-gandhi-spring-enhanced-srpm-srv6-srmpls</code>)</strong></p>
+<ul>
+<li><strong>Objective</strong>: Performance measurement (one-way delay, round-trip delay, loss) in SR networks (SR-MPLS, SRv6) without session reflector protocol awareness, aiming for higher session scale and faster detection.</li>
+<li><strong>Mechanism</strong>: Builds on RFC 8762 (STAMP) and SRPM extensions. The session reflector uses a network programming function to add a received timestamp (T2) at a defined offset in the STAMP packet and forwards it like data traffic.</li>
+<li><strong>Discussion/Concerns</strong>:
+<ul>
+<li><strong>One-way Measurement without Reflector State</strong>: Greg questioned how one-way measurement is achieved without reflector state, suggesting a contradiction and that it might be an inaccurate round-trip measurement.</li>
+<li><strong>BCP 38/Anti-spoofing</strong>: Andrew raised concerns about using IP source/destination address swapping for the reverse path and its impact on anti-spoofing mechanisms (BCP 38). Authors noted an SR-MPLS reverse path option is also defined.</li>
+<li><strong>ECMP Safety</strong>: Stuart highlighted the need to explicitly state the requirement for an entropy label to ensure ECMP-safe measurements.</li>
+</ul>
+</li>
+<li><strong>Action Items</strong>: Authors will clarify the one-way measurement mechanism, address BCP 38 implications, explicitly state entropy label requirements for ECMP safety in the next draft version, and take further discussion to the mailing list.</li>
+<li><strong>Request</strong>: Working group adoption for the draft.</li>
+</ul>
+</li>
+<li>
+<p><strong>SR for End-to-End IETF Network Slices (<code>draft-tmtu-spring-sr-e2e-ietf-network-slicing</code>)</strong></p>
+<ul>
+<li><strong>Objective</strong>: Define SR extensions for end-to-end IETF network slices spanning multiple domains, building on existing frameworks (<code>ietf-network-slices</code>, <code>teas-enhanced-vpn</code>).</li>
+<li><strong>Mechanism</strong>: Introduces &quot;VTN Binding Segments&quot; (VTNBC) for SR-MPLS and SRv6, used by domain edge nodes to steer traffic into a local VTN (Virtual Transport Network). Defines four functions, e.g., <code>n.b6.incaps</code>, <code>n.vtn.incaps</code>.</li>
+<li><strong>Discussion/Concerns</strong>:
+<ul>
+<li><strong>Framework Duplication</strong>: Vishnu questioned the need for a separate &quot;end-to-end slicing framework&quot; document if the focus is solely on stitching VTNs.</li>
+<li><strong>&quot;End-to-End&quot; Terminology</strong>: Adrian cautioned against using &quot;end-to-end&quot; as it has a broader meaning in 3GPP and can be ambiguous in IETF contexts.</li>
+</ul>
+</li>
+<li><strong>Action Items</strong>: Authors committed to refining the draft and welcoming further comments.</li>
+</ul>
+</li>
+<li>
+<p><strong>SRv6 Inter-domain Mapping SIDs (<code>draft-saleh-spring-srv6-inter-domain-mapping-sids</code>)</strong></p>
+<ul>
+<li><strong>Objective</strong>: Introduces three new SRv6 N.SIDs to build SRv6 paths across multiple, potentially heterogeneous, SRv6 domains, providing service continuity.</li>
+<li><strong>New SIDs</strong>:
+<ul>
+<li><code>n.replace</code>: Replaces the destination address with a new SID; no segment list change (similar to MPLS swap). Used when BGP next-hop is one hop away.</li>
+<li><code>n.replace.b6</code>: Replaces destination address with new SID and adds an additional SRv6 header (similar to MPLS swap and push). Used when BGP next-hop is multi-hop.</li>
+<li><code>n.db6</code>: Decapsulates a received SRv6 header and encapsulates a new SRv6 header (for service interworking, option B style).</li>
+</ul>
+</li>
+<li><strong>Discussion/Concerns</strong>:
+<ul>
+<li><strong>Need for <code>n.replace</code></strong>: Xiao Hu questioned the necessity of <code>n.replace</code> given SRv6's native IPv6 forwarding advantages. Authors clarified it's for specific multi-domain scenarios like option C stitching where BGP handles path segments automatically.</li>
+<li><strong><code>n.db6</code> Scope</strong>: Katan asked for clarification on whether <code>n.db6</code> is per-prefix or per-VRF. Authors confirmed it is per-prefix for service prefix advertisement in an Option B style.</li>
+<li><strong>Distinction between <code>n.b6</code> and <code>n.replace.b6</code></strong>: Chang Li asked for clarification when only a single SID is in the list.</li>
+<li><strong>Selection Criteria</strong>: Darren asked for an illustration of how an SR source selects one of these behaviors.</li>
+<li><strong><code>n.replace.b6</code> Necessity</strong>: Xiao Fu again questioned the need for <code>n.replace.b6</code> versus <code>n.replace</code>.</li>
+</ul>
+</li>
+<li><strong>Action Items</strong>: Authors will update the next version of the draft with more examples, use cases, and clarification on selection criteria and the specific differences between the SIDs.</li>
+<li><strong>Request</strong>: Working group review, comments, and feedback.</li>
+</ul>
+</li>
+<li>
+<p><strong>SRH Encapsulation for Alternate Marking (<code>draft-gandhi-spring-srv6-alt-mark</code>)</strong></p>
+<ul>
+<li><strong>Objective</strong>: Proposes carrying Alternate Marking information within an SRH TLV for SRv6 to enable passive performance measurement.</li>
+<li><strong>Motivation</strong>: While IPv6 Destination Options (before SRH) can carry Alternate Marking, this requires two extension headers. Encoding it in SRH TLV avoids this, potentially simplifying operations for SRv6. The TLV format is identical to existing IPv6 Alternate Marking options.</li>
+<li><strong>Discussion/Concerns</strong>:
+<ul>
+<li><strong>Redundancy with Existing Solution</strong>: Ron questioned the need for a new mechanism when Destination Option + SRH already provides similar functionality. Authors argued this is an optimized, dedicated solution for SRv6 to avoid the operational implications of using two extension headers.</li>
+</ul>
+</li>
+<li><strong>Action Items</strong>: Further discussion on the mailing list regarding the necessity of this dedicated solution versus existing IPv6 mechanisms.</li>
+</ul>
+</li>
+<li>
+<p><strong>Segment Routing Concepts Applied to Service Control Plane (ELAN) (<code>draft-wuthrich-spring-sr-elan</code>)</strong></p>
+<ul>
+<li><strong>Objective</strong>: Apply SR concepts to simplify the service control plane for ELAN services, improving scale and supporting active-active redundancy.</li>
+<li><strong>Mechanism</strong>:
+<ul>
+<li><strong>Service SRGB</strong>: Assigns a global unique SID index (from an SRGB) to each service in a domain.</li>
+<li><strong>Scale Improvement</strong>: Splits pseudowire-like context (service ID, endpoint ID) into two SIDs in a segment list, drastically reducing state per node compared to traditional pseudowires.</li>
+<li><strong>Control Plane</strong>: Nodes advertise their configured services using a bitmask, significantly reducing signaling messages (one message per node for all services).</li>
+<li><strong>Active-Active Redundancy</strong>: Leverages Anycast SIDs for multi-homed devices, allowing data plane MAC learning against the Anycast SID and enabling ECMP/multipathing. Service convergence becomes an underlay convergence problem.</li>
+<li><strong>ARP Suppression</strong>: Proposes flooding ARP replies to allow nodes to learn IP-MAC bindings for ARP suppression.</li>
+</ul>
+</li>
+<li><strong>Discussion/Concerns</strong>:
+<ul>
+<li><strong>IPv6 NDP Support</strong>: Eric asked if IPv6 NDP would also be supported. Authors confirmed it would be added.</li>
+<li><strong>Relationship to BESS Draft</strong>: Matthew and Patrice asked about the relationship to a similar draft in the BESS WG. Authors clarified this draft focuses on the architectural concepts, and the BESS draft will be updated to address the signaling aspects (e.g., BGP signaling).</li>
+</ul>
+</li>
+<li><strong>Action Items</strong>: Authors will update the draft to include IPv6 NDP support and will clarify the scope differentiation with the BESS draft.</li>
+<li><strong>Chairs' Note</strong>: Spring chairs will coordinate with BESS chairs to ensure appropriate working group alignment.</li>
+</ul>
+</li>
+<li>
+<p><strong>Intent-Based Routing (<code>draft-peng-spring-intent-based-routing</code>)</strong></p>
+<ul>
+<li><strong>Objective</strong>: Introduce an intent-based routing mechanism to reduce the scalability challenge of end-to-end intent-based paths across multiple domains.</li>
+<li><strong>Mechanism</strong>:
+<ul>
+<li><strong>Intent</strong>: Information carried in the data plane representing a specific service requirement (e.g., low latency, high bandwidth).</li>
+<li><strong>Mapping</strong>: Intents are mapped to &quot;Colors&quot; (defined in SR policy, associated with an SR policy).</li>
+<li><strong>Traffic Steering</strong>: Network edge nodes abstract intent from packets, map it to a color, and steer traffic into the corresponding SR policy or underlying network slice.</li>
+</ul>
+</li>
+<li><strong>Benefits</strong>:
+<ul>
+<li><strong>Scalability</strong>: Intent-to-SR policy mapping is local, reducing need for advertising label bindings across domains.</li>
+<li><strong>Flexibility</strong>: Allows different domains to use SR policies or network slices to satisfy the same intent.</li>
+<li><strong>Extensibility</strong>: Can enforce policies for network environment and security.</li>
+</ul>
+</li>
+<li><strong>Discussion/Concerns</strong>: Linda asked for clarification on whether intent functions similarly to QoS. Authors clarified intent is a more abstract service requirement (e.g., low latency) beyond just DSCP code points.</li>
+</ul>
+</li>
+<li>
+<p><strong>Source Segment for MVPN in SRv6 (<code>draft-song-spring-mvpn-src-sid</code>)</strong></p>
+<ul>
+<li><strong>Objective</strong>: Introduce the concept of a &quot;Source Segment&quot; (an SRv6 SID used in the IPv6 source address) for MVPN services in SRv6 networks.</li>
+<li><strong>Mechanism</strong>: MVPN routing and associated information can be encapsulated within the source segment. This segment is distributed by the root node and processed by leaf nodes. Defines a set of behaviors for the source segment similar to <code>n.dt</code> functions.</li>
+<li><strong>Benefits</strong>: Source segment is unchanged along the P2MP path (unlike destination address), enhances networking capability by allowing functions in the source space, and reuses IPv6 address allocation/management.</li>
+<li><strong>Discussion/Concerns</strong>:
+<ul>
+<li><strong>ICMP Handling</strong>: Ron asked about how ICMP messages would be handled if a packet with a SID as its source address cannot be forwarded. Authors stated it would go to the locator part of the source address.</li>
+<li><strong>Prior Discussions</strong>: Zhaohui noted similar concepts were discussed in the BEER working group regarding issues with using SIDs in source addresses. Authors stated this is not specific to BEER but generally applicable to IPv6-based multicast for MVPN.</li>
+</ul>
+</li>
+<li><strong>Action Items</strong>: Authors believe this document clarifies a valid use case for source segments and will welcome further clarification and review.</li>
+</ul>
+</li>
+<li>
+<p><strong>Variable Length Addresses for SR (<code>draft-ali-spring-variable-length-addresses-for-sr</code>)</strong></p>
+<ul>
+<li><strong>Objective</strong>: A conceptual proposal to unify MPLS and SRv6 forwarding planes into a single, flexible addressing approach, addressing limitations and avoiding duplication.</li>
+<li><strong>Core Idea</strong>: Nodes have variable-length addresses, where no address is a prefix of another. Addresses are constructed as sequences of node prefixes followed by commands (e.g., &quot;receive&quot;, &quot;steer&quot;).</li>
+<li><strong>Source Steering</strong>: Involves stripping prefixes (MPLS-like) or using an offset (SRH-like) for address interpretation.</li>
+<li><strong>Challenges/Solutions</strong>: Variable length introduces potential for routing/decoding inconsistencies, addressed by introducing a &quot;prefix length&quot; argument and standardizing address space.</li>
+<li><strong>Common Header</strong>: Suggests a compact, flexible header by stripping down the IPv6 header.</li>
+<li><strong>Next Steps</strong>: Discussion on other forwarding differences (e.g., MTU discovery) and backward compatibility.</li>
+<li><strong>Chair Comment</strong>: The chair noted that it is &quot;very questionable whether discussing this fits at all within the charter of spring,&quot; but acknowledged it could be an IETF-wide discussion.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: Rough consensus reached to adopt <code>draft-ietf-spring-compressed-sid-list-encoding</code> as a working group document.</li>
+<li><strong>Action Item (Chairs)</strong>: Establish a GitHub-based issue tracker for the compressed SID list encoding draft.</li>
+<li><strong>Action Item (Chairs)</strong>: Delay posting of the working group version of <code>draft-ietf-spring-compressed-sid-list-encoding</code> until a 6man draft addressing the relationship of CECIDs and RFC 4291 is available.</li>
+<li><strong>Action Item (Enhanced SRPM Authors)</strong>: Address concerns regarding one-way measurement without reflector state, BCP 38/anti-spoofing implications, and explicitly state entropy label requirements for ECMP safety in the next draft version.</li>
+<li><strong>Action Item (SR Inter-domain Mapping SIDs Authors)</strong>: Update the draft with more examples, use cases, and clarifications on SID selection criteria and the differences between <code>n.b6</code> and <code>n.replace.b6</code>.</li>
+<li><strong>Action Item (SR ELAN Authors)</strong>: Update the draft to include IPv6 NDP support and clarify the scope distinction with the BESS draft.</li>
+<li><strong>Action Item (Spring and BESS Chairs)</strong>: Coordinate to ensure material related to SR ELAN services is discussed in the appropriate working group.</li>
+<li><strong>Action Item (SRH Alternate Marking Authors)</strong>: Further discussion on the mailing list regarding the necessity of a dedicated SRH TLV solution.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li>Continued development and refinement of the <code>draft-gandhi-spring-enhanced-srpm-srv6-srmpls</code> (Enhanced SRPM) with a request for working group adoption.</li>
+<li>Further refinement and feedback collection for <code>draft-tmtu-spring-sr-e2e-ietf-network-slicing</code> (SR for E2E IETF Network Slices) and <code>draft-saleh-spring-srv6-inter-domain-mapping-sids</code> (SRv6 Inter-domain Mapping SIDs).</li>
+<li>Continued discussion on <code>draft-gandhi-spring-srv6-alt-mark</code> (SRH Alternate Marking) regarding its necessity.</li>
+<li>Further development of <code>draft-wuthrich-spring-sr-elan</code> (SR for Service Control Plane).</li>
+<li>Refinement of <code>draft-peng-spring-intent-based-routing</code> (Intent-Based Routing).</li>
+<li>Further work and clarification on <code>draft-song-spring-mvpn-src-sid</code> (Source Segment for MVPN).</li>
+<li>Mailing list discussions on <code>draft-ali-spring-variable-length-addresses-for-sr</code> (Variable Length Addresses), with potential for broader IETF discussion.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

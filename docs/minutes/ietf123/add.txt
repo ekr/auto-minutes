@@ -1,0 +1,64 @@
+**Session Date/Time:** 23 Jul 2025 14:00
+
+# ADD Working Group Meeting - IETF 123
+
+## Summary
+
+The ADD Working Group met at IETF 123 to discuss the ongoing work on handling encrypted DNS server redirection draft and the future direction of the working group. The primary technical discussion focused on loop detection in DNS redirection chains. The meeting also addressed the working group's potential closure or dormancy, with new developments including recently submitted drafts that may extend the group's activity.
+
+## Key Discussion Points
+
+### DNS Server Redirection Draft (Tommy Jensen)
+- **Loop Detection Issue**: When implementing redirection chain following, the authors identified a need to handle loops where a server redirects to a previously visited server in the chain
+- **Proposed Solution**: Maintain a set of IP addresses from the redirection chain; if any IP address repeats, stop at the beginning of the loop
+- **Example**: Chain A → B → C → B would result in staying at B (beginning of loop)
+
+### Technical Feedback on Loop Handling
+- **Ben Schwartz**: 
+  - Loops represent misconfigurations and should be prohibited with "MUST NOT" language
+  - Client requirements should specify using one of the encountered servers (A, B, or C) without over-specifying behavior
+  - Loop detection should be by name, not just IP address, to handle geolocation scenarios
+
+- **Jim Reid**:
+  - Skeptical about "MUST NOT" requirements for server configurations
+  - Emphasized client-side loop detection with predetermined limits
+  - Suggested avoiding hard-coded numbers for maximum redirections
+
+- **Florian Obser**:
+  - Recommended adding security considerations about clients not performing infinite work
+  - Applies to both loops and excessively long chains
+
+- **Lars Eggert**:
+  - Requested implementation flexibility for clients to abort chains when needed
+  - Preferred client choice in loop scenarios rather than mandated behavior
+
+### Working Group Future
+- **Original Plan**: Close or go dormant after redirection draft completion
+- **New Development**: Two new drafts submitted from Chinese university regarding DoH/DoT server discovery via DHCP and PPP
+- **Current Status**: Working group will remain active pending review of new drafts
+- **Timeline**: Next meeting planned for IETF 124 in Montreal
+
+## Decisions and Action Items
+
+### Technical Decisions
+- **Loop Detection Approach**: Consensus to implement client-side loop detection with flexibility in server selection
+- **Security Considerations**: Add language about preventing infinite client work in security considerations section
+- **Server Requirements**: Consider strengthening language against loop configurations while recognizing client-side protection is primary
+
+### Action Items
+- Authors to update draft with loop detection guidance and security considerations
+- Authors to implement full chain following before next draft update
+- Working group to review two newly submitted drafts on encrypted DNS discovery
+- Chairs to contact authors of new drafts for discussion
+
+## Next Steps
+
+- **Draft Updates**: Authors will provide updated implementation and draft for next IETF meeting
+- **New Draft Review**: Working group members should review newly submitted drafts and provide feedback on the mailing list
+- **Working Group Status**: Decision on working group continuation will depend on adoption interest in new drafts
+- **IETF 124**: Next meeting scheduled for Montreal, pending working group activity level
+
+### Related Work
+- CPE/gateway certificate provisioning work remains on hold pending resolution of certificate deployment solutions
+- DNSOP rechartering discussions may affect future DNS-related work organization
+- Coordination with DNS Directorate for ongoing technical guidance on SVCB parameters

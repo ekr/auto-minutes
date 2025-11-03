@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="raw.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF113-RAW-20220321-0900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2022 09:00</p>
+<h1>raw</h1>
+<h2>Summary</h2>
+<p>The raw working group session covered updates on several critical drafts: the LDX draft is ready for IETF Last Call, and the Use Cases draft is awaiting AD review. A significant portion of the session was dedicated to the architecture and framework documents, discussing the split, refining terminology (especially &quot;path&quot; and &quot;track&quot; in the context of raw's unique requirements), and clarifying the OODA loop components (PCE/PSC). The OAM support draft presented updates on specific metrics and the concept of piggybacking. Finally, a new draft on multi-domain extensions was introduced to gauge interest and foster discussion on expanding raw's applicability beyond single administrative domains. The chairs encouraged participants to engage in reviews and announced plans for a formal interim meeting to delve deeper into the architecture.</p>
+<h2>Key Discussion Points</h2>
+<h3>LDX Draft Status (Nils)</h3>
+<ul>
+<li><strong>Version 09 to 10 Changes:</strong>
+<ul>
+<li><strong>Motivation/Use Cases:</strong> Clarified that current aeronautical communications (VHF Data Link Mode 2) lack cyber security, relying on phraseology, contrasting with LDX's proposed security measures. Emphasized strict separation between safety-critical (high reliability/availability, ~10kbps) and in-flight entertainment (throughput-focused) communications.</li>
+<li><strong>Requirements:</strong> Highlighted the shift from voice/ACARS (1970s) to IP-based Aeronautical Telecommunications Network (ATN) traffic (2010s vision), advocating for an IPv6-based ATN network distinct from the customer internet.</li>
+<li><strong>Rollout:</strong> Noted a delay in the ATN rollout from 2024 to 2025-26.</li>
+<li><strong>References:</strong> Most normative references were moved to informative, making the document self-contained for core understanding, with external references providing deeper context. Appendix updated regarding aeronautical referential documents.</li>
+</ul>
+</li>
+<li><strong>Readiness:</strong> John (AD) confirmed that all his comments were addressed, and the draft is ready for IETF Last Call.</li>
+</ul>
+<h3>Raw Use Cases Draft (Carlos)</h3>
+<ul>
+<li><strong>Overview:</strong> The draft describes various use cases, including aeronautical communications, amusement parks, industrial wireless, video, gaming, UAVs, platooning, edge robotics, and emergencies, detailing motivation, wireless needs, and raw requirements for each.</li>
+<li><strong>Updates:</strong> A subsection on &quot;non-latency critical considerations&quot; (e.g., resiliency) was added based on feedback. All review comments from Pascal and Karina were addressed.</li>
+<li><strong>Status:</strong> The draft has been submitted for publication and is awaiting comments at the AD stage.</li>
+</ul>
+<h3>Architecture and Framework Documents (Pascal)</h3>
+<ul>
+<li><strong>Document Split:</strong>
+<ul>
+<li><strong>Architecture:</strong> Focuses on broad building blocks, terminology, and goals, intended for early publication.</li>
+<li><strong>Framework:</strong> A &quot;journal&quot; of progress, detailing specific technologies and implementation choices, intended for publication at the end of the working group's charter.</li>
+</ul>
+</li>
+<li><strong>Terminology:</strong>
+<ul>
+<li><strong>&quot;Path&quot; vs. &quot;Complex Path&quot; vs. &quot;Track&quot;:</strong>
+<ul>
+<li>IETF &quot;path&quot; typically implies a serial, integrity-preserving sequence.</li>
+<li>Raw's &quot;complex path&quot; describes the actual &quot;experience&quot; where packets might be duplicated, fragmented, or network-coded.</li>
+<li>&quot;Track&quot; is introduced as the <em>potential</em> graph, a layer-3 abstraction of the network available for propagating information from ingress to egress.</li>
+</ul>
+</li>
+<li><strong>Discussion on &quot;Track&quot;:</strong> Lou raised concerns about potential overlap with existing TE terminology like &quot;T-path&quot; or &quot;protection path,&quot; emphasizing the need for alignment with existing IETF terms. Rick (Chair) stressed reusing existing terminology where possible.</li>
+<li><strong>&quot;Piping&quot; vs. &quot;Flows&quot;:</strong> Proposed separating network layer constructs (pipes/tracks) from application layer flows, allowing multiple flows within a single pipe.</li>
+</ul>
+</li>
+<li><strong>OODA Loop Focus:</strong> The architecture centers on the Observe, Orient, Decide, Act (OODA) loop for reliable and available wireless.
+<ul>
+<li><strong>Observe:</strong> OAM, PC, metadata.</li>
+<li><strong>Orient:</strong> Intelligence/recommendations from a PCE (Path Computation Element).</li>
+<li><strong>Decide:</strong> PSC (Path Segment Controller) making decisions based on observations and orientation.</li>
+<li><strong>Act:</strong> Signaling (e.g., packet duplication, multi-path routing).</li>
+<li>Raw considers scenarios where not all path segments are deterministic, distinguishing from DetNet/TSN's strict bounded latency requirements.</li>
+</ul>
+</li>
+<li><strong>Control Plane (PCE-PSC):</strong>
+<ul>
+<li>Carlos inquired about control plane extensions for AI-based decisions and PCE/PSC interactions.</li>
+<li>Pascal suggested intelligence/learning (time series, statistics) would reside in a central PCE, which would then feed digested experience to distributed PSCs for real-time decisions. Signaling between PCE and PSC would be necessary.</li>
+<li>Rick (Chair) noted the logical separation is good and needs clarification on southbound communication (e.g., using DLAPP). Lou suggested leveraging existing TE concepts for separating track availability determination from per-packet selection.</li>
+<li>Rick commented that while the nature of the information exchanged between PCE/PSC is in scope, defining the specific protocols (e.g., YANG models over Netconf) might stretch the WG's current scope.</li>
+</ul>
+</li>
+<li><strong>IPv6 Scope:</strong> Pascal is open to removing the current architectural limitation to IPv6 if contributions explain how to generalize it.</li>
+<li><strong>Framework Status:</strong> It remains a living document to record implementation decisions and protocol choices as the WG progresses.</li>
+<li><strong>Interim Meeting:</strong> It was agreed that a formal interim meeting would be beneficial for deeper discussion on the architecture and framework documents.</li>
+</ul>
+<h3>OAM Support Draft (Fabrice)</h3>
+<ul>
+<li><strong>Focus:</strong> This draft specifically addresses raw-specific OAM aspects, separated from generic DetNet OAM.</li>
+<li><strong>Updates:</strong>
+<ul>
+<li><strong>Recommendations:</strong> Introduced specific metrics to be supported by OAM nodes, including packet error rate, one-way delay, latency, and maximum consecutive failures. Emphasized methods for aggregating statistics and hybrid path tracing.</li>
+<li><strong>Piggybacking:</strong> Clarified that piggybacking (inserting OAM info into existing packets) reduces medium access cost in scheduled wireless by utilizing unused time slot space, though energy consumption might still be significant. It's classified as orthogonal to active, passive, or hybrid OAM techniques.</li>
+</ul>
+</li>
+<li><strong>Status:</strong> The draft is stable, and the author welcomes further comments and suggestions.</li>
+</ul>
+<h3>Multi-Domain Extensions (Carlos)</h3>
+<ul>
+<li><strong>Problem Statement:</strong> The current raw scope implicitly focuses on single administrative domains. There is a need to address scenarios requiring raw guarantees across multiple domains (e.g., hosts in different domains needing reliable communication within large factories).</li>
+<li><strong>Goal:</strong> To explore potential architectural and technological gaps, including multi-domain OAM, and propose initial solutions to stimulate discussion within the working group.</li>
+<li><strong>Proposed Solution (High-Level Example):</strong> Illustrated a flow where an ingress PSE in one domain coordinates with its PCE, which then inter-works with PCEs in other domains to compute tracks, exchange link metrics, and split SLA responsibilities across domains, enabling domain-specific OAM.</li>
+<li><strong>Discussion:</strong>
+<ul>
+<li>Rick (Chair) pointed to an existing generic multi-domain problem statement from the TE working group as a reference.</li>
+<li>The question was raised whether multi-domain raw should be integrated into the existing architecture or treated as an addendum.</li>
+<li>Eve and Lou noted that the DetNet charter already alludes to &quot;coordinated domains,&quot; suggesting alignment.</li>
+<li>Carlos confirmed he is not seeking immediate working group adoption but rather feedback and discussion on the mailing list to gauge interest.</li>
+</ul>
+</li>
+</ul>
+<h3>Open Discussion</h3>
+<ul>
+<li>Rick mentioned ongoing DLAPP extensions in the MANET working group that address radio-link specific properties (e.g., channel assignment, frequency bandwidth) relevant to raw's link awareness needs.</li>
+<li>The chairs encouraged participants to provide thorough reviews of the documents.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> IETF Last Call for the LDX draft will begin this week.</li>
+<li><strong>Action Item:</strong> Nils to upload version 10 of the LDX draft to the datatracker.</li>
+<li><strong>Action Item:</strong> Chairs to schedule a formal virtual interim meeting to provide a deeper dive into the Architecture and Framework documents, and potentially multi-domain aspects, with proper advance publicity on the mailing list.</li>
+<li><strong>Action Item:</strong> Lou to provide references for existing IETF terminology that might overlap with &quot;Track&quot; and related concepts for the Architecture draft authors to review.</li>
+<li><strong>Decision:</strong> The meeting concluded early to allow attendees time for document review.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>LDX Draft:</strong> Proceed with IETF Last Call.</li>
+<li><strong>Raw Use Cases Draft:</strong> Await comments during the AD review stage.</li>
+<li><strong>Architecture and Framework Drafts:</strong> Continue discussions, focusing on terminology alignment with existing IETF concepts (e.g., TE paths), scope (e.g., IPv6 limitations), and clarification of PCE/PSC interactions. A formal interim meeting will be organized.</li>
+<li><strong>OAM Support Draft:</strong> Authors to address any further comments received.</li>
+<li><strong>Multi-Domain Extensions Draft:</strong> Continue discussion on the mailing list to assess working group interest and potential scope expansion.</li>
+<li><strong>General:</strong> All participants are encouraged to review the drafts and provide feedback on the mailing list.</li>
+<li><strong>Future Meetings:</strong> Chairs intend to meet in person at IETF 114.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

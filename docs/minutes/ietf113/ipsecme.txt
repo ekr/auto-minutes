@@ -1,0 +1,114 @@
+**Session Date/Time:** 25 Mar 2022 11:30
+
+# ipsecme
+
+## Summary
+
+The ipsecme working group session focused on the status of existing drafts, particularly Group Key Management for IKEv2 (GKM-IKEv2) and Optional SA and TS Payloads in CHILD\_SA Exchange. A significant portion of the meeting was dedicated to a detailed discussion of unresolved issues in the GKM-IKEv2 draft, leading to several provisional decisions on authentication methods, port usage, and SA modes. The group also discussed the readiness of the Optional SA and TS Payloads draft for working group adoption. Calls for review were made for several drafts, including the multi-SA document and the "Beyond 64K" draft for large IKE payloads.
+
+## Key Discussion Points
+
+### Working Group Status Update
+*   **Draft Progression**:
+    *   IKEv2 Intermediate: Approved, in RFC Editor Queue.
+    *   IPTFS base, YANG document: In IESG `AD_QUEUE`.
+    *   RFC8229bis: Publication requested.
+    *   IKEv1 algorithms to Historic, Labeled IPsec: Nearing completion.
+    *   Multiple Key Exchange: Write-up in progress.
+*   **AD Transition**: The responsible AD has shifted from Benjamin Kaduk to Roman Danyliw. Christian briefly inquired about the impact on draft processing queues, with chairs noting Roman might prioritize long-standing drafts.
+*   **GKM-IKEv2 (draft-ietf-ipsecme-gkm-ikev2)**:
+    *   **Current Status**: Version 05 published. Review by the AD (Tara) led to significant changes. The document was held in working group last call (WGLC) due to low review engagement.
+    *   **Resolved Issues (in v05)**:
+        *   Added a terminology section.
+        *   Clarified that GSA-AUTH exchanges inherit IKEv2 extensions applicable to IKE-AUTH.
+        *   Renamed keys (e.g., from SK_w to GSK_w) for clarity.
+        *   Prohibited changing authentication methods or keys for the lifetime of a Group SA (GSA).
+        *   Clarified use of Sender IDs and detailed group disbandment/rejoin scenarios.
+        *   Improved overall document consistency.
+    *   **Unresolved Issues / Discussion Points (Valeriy Smyslov, Presenter)**:
+        *   **Changing Authentication Key for KSA**: Currently prohibited. No immediate opinion from attendees to change this.
+        *   **Using Ports 848 vs. 4500**: IKEv2 GKM allows port 848 (from GDOI compatibility). Brian had suggested using standard IKEv2 ports (500/4500).
+            *   *Discussion*: The chair noted the need to move to port 4500 for NATT (Non-IKE Non-ESP prefix). Valeriy suggested that if NATT is detected, unicast IKE SAs should switch from 848 to 4500 for consistency.
+            *   *Consensus*: To move to port 4500 for consistency, especially if NATT is detected.
+        *   **Group Member Deregistration**: Question of allowing explicit group member deregistration.
+            *   *Discussion*: Could be useful for resource management (e.g., for LKH) but is unreliable as members can just leave.
+            *   *Consensus*: No strong opinion, keep as is (optional, no explicit mechanism defined).
+        *   **Error Notifications**: Clarifying `AUTHORIZATION_FAILED` vs. `REGISTRATION_FAILED`.
+            *   *Interpretation (in draft)*: `AUTHORIZATION_FAILED` for member-specific issues, `REGISTRATION_FAILED` for group-specific issues (e.g., capacity exceeded).
+            *   *Consensus*: This interpretation was accepted without objection.
+        *   **Implicit vs. Explicit Shared Key Authentication**: GKM-IKEv2 defines two shared key authentication modes. Tara suggested removing explicit shared key authentication.
+            *   *Discussion*: Explicit has a dedicated symmetric key; implicit uses keys derived from current operations. Chair argued for simplicity, stating no significant benefit from explicit and potential complication.
+            *   *Consensus*: To eliminate explicit shared key authentication in the next version, keeping only implicit.
+        *   **Extended Sequence Numbers (ESN) in Multicast SAs**:
+            *   *Challenge*: High-order 32 bits are not transmitted. Late-joining members lack ESN context. RFC3302/303 algorithms for guessing are resource-consuming.
+            *   *Discussion*:
+                *   Chair suggested including ESN high-order bits in key material updates. Valeriy noted the Key Controller might not be a sender and thus doesn't know.
+                *   Christian cautioned against "must not," suggesting applications might rely on it; suggested clarifying the resource-consuming nature.
+                *   Scott suggested "must not" or a defined mechanism, as guessing leads to interoperability issues. Highlighted that unicast SAs assume synchronization, while group SAs allow mid-stream joins.
+                *   Chair suggested group members could notify the Key Manager of ESN high-order bit increments (e.g., every 4 billion packets) to aid new joiners.
+                *   Valeriy pointed out ESN is less useful with multiple senders, as each would increment independently, hindering replay protection.
+            *   *Decision*: To be brought to the mailing list for further discussion. Potential to recommend against ESN for multi-sender scenarios, or define a mechanism for single-sender scenarios.
+        *   **PPK Integration**:
+            *   *Issue*: While multicast keys are encrypted with PPK-dependent keys, authentication is at the IKE message level, which may not be quantum-safe during initial IKE SA. An attacker could manipulate keys without knowing them.
+            *   *Discussion*: Chair suggested that if PPK protection is critical for the application, re-keying the IKE SA immediately after creation could protect against this, as mentioned in PPK RFCs. This would add complexity to the registration procedure (more message exchanges).
+            *   *Consensus*: The existing re-key mechanism is sufficient; clarify that applications concerned about this threat should re-key the IKE SA.
+        *   **Tunnel Mode with Address Preservation**: RFC 5374 defines tunnel mode with address preservation (inner/outer IP addresses are same).
+            *   *Question*: Is this mode needed? It adds complexity without clear benefits, especially as GKC doesn't provide tunnel addresses. How does GKC know if gateways require it?
+            *   *Discussion*: Chair suggested simplifying to transport mode only initially. Louie suggested that if a mode from a base RFC (5374) is not supported, a "bis" document might be needed. He offered to review.
+            *   *Consensus*: Keep support for both transport mode and tunnel mode with address preservation, as defined in RFC 5374, given the base RFC status.
+        *   **UDP Encapsulation for Multicast Data SAs**:
+            *   *Question*: Needed for NAT traversal? Or for networks filtering Protocol 50? How to signal (transform type vs. port 4500)?
+            *   *Discussion*: Chair doubted NAT relevance for multicast but acknowledged filtering of Protocol 50. Noted that multicast data SAs require a consistent encapsulation mode for all members.
+            *   *Consensus*: To defer adding UDP encapsulation for multicast data SAs for now. If a strong need arises, it can be added via an extension document.
+        *   **Transport Mode Signaling**: How to signal which SAs are in transport mode when some are transport and some are tunnel?
+            *   *Current Draft*: Changes semantics of `USE_TRANSPORT_MODE` notify, using SPI/protocol fields to identify specific SAs, allowing multiple instances. Tara questioned this semantic change.
+            *   *Options*: New notification, new transform type, or prohibit mixing modes within a single GSA.
+            *   *Discussion*: Chair argued for simplicity: prohibit mixing transport and tunnel modes within a single GSA. If mixing is needed, use separate GSAs (different groups). This prioritizes getting the draft out.
+            *   *Consensus*: Prohibit mixing transport and tunnel modes within a single GSA to simplify the document. If an application needs this, it can use separate GSAs or an extension can be made later.
+    *   **Next Steps for GKM-IKEv2**: Valeriy will issue a new version incorporating these changes. **Dan York** volunteered to review the updated document. More reviews are strongly requested.
+
+### Optional SA and TS Payloads in CHILD\_SA Exchange (draft-ietf-ipsecme-optional-sa-ts-payloads)
+*   **Presenter**: Weipan
+*   **Solution Recap**:
+    *   Initiator and Responder negotiate support for optimization.
+    *   During IKE SA rekey, an "optimized rekey notification" is sent with new SPI.
+    *   During CHILD SA rekey, an "optimized rekey notification" is sent with current SPI in the notification payload.
+*   **Updates (v07 to v08)**: Mostly editorial changes, updated diagrams and text for clarity on how new/old SPIs are included.
+*   **Discussion**:
+    *   Valeriy asked about the format of the new SPI in the notify payload (in SPI/protocol fields or data field?). Chair clarified it should be in the data field as it refers to *another* SA, not the IKE SA carrying the notification.
+    *   Chair noted this is a minor extension fitting the charter.
+*   **Working Group Adoption**: Weipan believes the draft is clear and mature, and requested working group adoption.
+*   *Consensus*: No objections to starting a working group adoption call.
+
+### Any Other Business / Open Discussion
+*   **Multi-SA Document (draft-ietf-ipsecme-multi-sa-ike)**: Paul Wouters reminded the group about this document, noting a Linux implementation exists but is blocked from mainline merge until the draft progresses. He requested reviews, especially since QoS items were removed to simplify it.
+*   **Beyond 64K Draft (draft-ietf-ipsecme-beyond-64k)**: Valeriy Smyslov inquired about interest in this draft, which describes transferring large IKE payloads (e.g., for key exchange, AUTH payloads) and mixed transport mode (IKE over TCP, ESP over UDP/IP). He noted a new draft on hybrid authentication (combining post-quantum algorithms) might make IKE payloads very large, increasing the relevance of "Beyond 64K". He asked if a discussion for adoption should be initiated.
+    *   *Action*: Chair encouraged Valeriy to initiate a discussion on the mailing list to gauge interest and assess charter alignment, especially regarding post-quantum issues.
+
+## Decisions and Action Items
+
+*   **GKM-IKEv2 (draft-ietf-ipsecme-gkm-ikev2)**:
+    *   **Decision**: Transition to port 4500 (if NATT detected) for unicast IKE SAs when using port 848.
+    *   **Decision**: Accept the distinction between `AUTHORIZATION_FAILED` and `REGISTRATION_FAILED` error notifications as defined in the draft.
+    *   **Decision**: Eliminate explicit shared key authentication, retaining only implicit, to simplify the document.
+    *   **Decision**: For PPK integration, clarify that applications concerned about key manipulation should re-key the IKE SA immediately.
+    *   **Decision**: Prohibit mixing transport mode and tunnel mode within a single Group SA. Applications needing both should use separate GSAs.
+    *   **Decision**: Defer adding UDP encapsulation for multicast data SAs; can be added as an extension later if needed.
+    *   **Action**: Valeriy Smyslov to publish a new version of the GKM-IKEv2 draft incorporating these decisions.
+    *   **Action**: **Dan York** to review the updated GKM-IKEv2 draft.
+    *   **Action**: The working group chairs will keep the GKM-IKEv2 draft in WGLC until a new revision is published and further reviews are received.
+    *   **Action**: **Valeriy Smyslov** to initiate mailing list discussion on Extended Sequence Numbers (ESN) in multicast SAs.
+*   **Optional SA and TS Payloads in CHILD\_SA Exchange (draft-ietf-ipsecme-optional-sa-ts-payloads)**:
+    *   **Decision**: Working group to move towards adoption.
+    *   **Action**: Chairs to initiate a working group adoption call for this draft.
+*   **Multi-SA Document (draft-ietf-ipsecme-multi-sa-ike)**:
+    *   **Action**: **Paul Wouters** to send a reminder to the mailing list requesting reviews.
+*   **Beyond 64K Draft (draft-ietf-ipsecme-beyond-64k)**:
+    *   **Action**: **Valeriy Smyslov** to initiate a discussion on the mailing list to gauge interest and charter alignment.
+
+## Next Steps
+
+*   **GKM-IKEv2**: A new version of the draft will be published. Further reviews are requested, especially from **Dan York**. A mailing list discussion on ESN will be initiated.
+*   **Optional SA and TS Payloads in CHILD\_SA Exchange**: A working group adoption call will be initiated by the chairs.
+*   **Multi-SA Document**: Community review is encouraged to move this draft forward.
+*   **Beyond 64K Draft**: Discussion to assess interest and fit within the working group's charter.

@@ -1,0 +1,160 @@
+**Session Date/Time:** 21 Jul 2025 10:00
+
+# dnsop
+
+## Summary
+
+This was the first dnsop working group session on Monday, featuring introductions of new leadership and discussion of four main technical drafts. The session included welcome remarks for new working group chair Andre and technical advisor Jim, along with farewell acknowledgments to outgoing chairs Suzanne and Tim. The main technical discussions focused on DNS structured errors, public resolver errors, IPv6 transport guidelines, and domain verification techniques.
+
+## Key Discussion Points
+
+### Leadership Changes and Administrative Updates
+- **New Leadership**: Andre introduced as new working group chair alongside existing chair Benno
+- **Support Team**: Shuman and Peter confirmed as secretariat support, Jim as technical advisor
+- **Document Status**: Multiple RFCs in editor queue expected to be published before next meeting
+- **Hackathon Results**: DNS table work included residual case synchronization, private OIDs/algorithms for post-quantum crypto testing, and MTL mode implementation in BIND
+
+### DNS Structured Errors Draft Discussion
+- **Current State**: Draft returned to working group after IESG last call due to feedback
+- **Key Issues**:
+  - Use of EDE option in queries vs responses (violates RFC 8914)
+  - Two proposed solutions: new option code or server-side only responses
+  - Sub-error code categories - currently limited to security-related codes
+  - Trust model for displaying information (trusted vs untrusted resolvers)
+- **Implementation Feedback**: Apple and Mozilla representatives confirmed interest and existing implementations
+
+### Public Resolver Errors Draft
+- **Use Case**: Making web censorship more transparent, specifically for web browsers
+- **Required Information**: Identity of blocking party, blocking authority, reason for blocking, URI for more information
+- **Security Challenge**: Information is unauthenticated and could be misused for attacks
+- **Browser Vendor Input**: Chrome and Firefox representatives confirmed interest and described trust mechanisms for determining when to display information
+
+### IPv6 Transport Guidelines (RFC 3901bis)
+- **Problem**: RFC 3901 from 2004 treats IPv6 as optional, leading to lower IPv6 adoption in DNS
+- **Research Results**: 
+  - IPv4 and IPv6 resolution performance within 3% difference
+  - Fragmentation has minimal impact on DNS resolution
+  - Misconfigured IPv6 has greater impact than fragment dropping
+- **Proposed Changes**: Make IPv4 and IPv6 equal requirements for authoritative servers
+
+### Domain Verification Techniques
+- **Recent Changes**: Version 0.09 introduces distinction between one-off vs persistent validation
+- **Open Issues**:
+  - Token definition (random vs unique tokens)
+  - DNSSEC validation requirement (should vs must)
+  - Process concerns raised about extensive changes without working group discussion
+
+## Decisions and Action Items
+
+### DNS Structured Errors
+- **Decision Needed**: Choose between new option code (Option A) or server-side only responses (Option B)
+- **Implementation Input**: Strong preference from implementers for client signaling capability
+- **Security Model**: Discussion needed on trusted vs untrusted resolver behavior
+
+### Public Resolver Errors
+- **Convergence Needed**: Determine if information should be limited in protocol specification or handled via security considerations
+- **Browser Vendor Approach**: Preference for receiving all data and making trust decisions in client
+
+### Process Decisions
+- **Interim Meeting**: Likely needed for structured DNS errors discussion due to time constraints
+- **Working Group Consideration**: Suggestion to charter focused working group for censorship-related work
+- **Technical Advisor Input**: Recommendation to combine drafts through interim meetings rather than new working group
+
+## Next Steps
+
+### Immediate Actions
+- **CDS Consistency Draft**: Last call to be closed this week
+- **Domain Verification**: Authors to address process concerns about changes made without working group discussion
+- **IPv6 Transport**: Document appears ready for working group last call pending final review
+
+### Upcoming Sessions
+- **Friday Session**: Next dnsop meeting scheduled
+- **Interim Meetings**: Planned for DNS structured errors discussion
+- **Mailing List Discussion**: Continued technical discussion required for all drafts
+
+### Document Progression
+- **DNS Automation**: Needs revision before last call
+- **Domain Verification**: Ready for last call, scheduled for agenda
+- **DNS Revalidation**: Needs new revision and last call scheduling
+- **IPv6 Transport**: Nearing last call readiness
+
+The session concluded with emphasis on continuing discussions on the mailing list rather than only during meetings, and reminder of the Friday session in a different room.
+
+---
+
+**Session Date/Time:** 25 Jul 2025 09:30
+
+# dnsop
+
+## Summary
+
+The second DNS Operations (dnsop) session on Friday covered nine draft presentations and multiple adoption considerations. Key topics included persistent DNS references, DS automation recommendations, service binding mappings, DNSSEC algorithm rules, debugging techniques, zone delegation methods, cache synchronization, scanner notifications, and transport signaling. The working group received numerous requests for draft adoptions, with chairs noting they could only accommodate two-thirds of agenda requests and will deliberate on adoptions via the mailing list.
+
+## Key Discussion Points
+
+### Best Practices for Persistent References in DNS
+- **Presenter**: Andrew Kayser
+- Discussion on using DNSSEC for cryptographically verifiable associations between DNS domain names and persistent references (CAA records, wallet addresses, social media handles)
+- Convergence potential with the DCV BCP draft currently in RFC Editor queue
+- Agreement on using DNSSEC validation when zones are signed, rather than requiring DNSSEC everywhere
+
+### Operational Recommendations for DS Automation
+- **Presenter**: Peter (representing draft for GTLD registries)
+- Five main recommendation areas: validity checks, TTL management, error reporting, EPP locks handling, and multiple submission sources
+- ICANN currently blocks GTLD registries from DS automation due to unclear operational practices
+- Key contentious points: email notifications scaling, registry lock interpretation, and periodic validation requirements
+
+### Service Binding Mapping for Background Requests
+- **Presenter**: Gauta Makiawate
+- Proposal for new SVCB parameter "background priority" to distinguish latency-sensitive vs background traffic
+- Allows clients to dynamically discover endpoints optimized for background requests
+- Several concerns raised about filtering mechanisms and naming conventions
+
+### Multiple Algorithm Rules in DNSSEC
+- **Presenter**: Shumon
+- Proposal to selectively relax DNSSEC signing requirements for "universal algorithms" (8, 13)
+- Strong opposition from Mark Andrews and Jim Reid citing security concerns and complexity
+- Support from Philip with modifications to validator requirements
+
+### DNS Debugging with probe.resolver.arpa
+- **Presenter**: Paul Hoffman
+- Proposes standardized domain for DNS debugging instead of example.com
+- Testing shows comparable performance and reliability
+- Addresses privacy concerns of client identification in debug queries
+
+### Zone Cut to Nowhere
+- **Presenter**: Joe Abley
+- Mechanism for handling namespace conflicts between public and private DNS
+- Uses empty delegation target (dot) to avoid cryptographic proof of non-existence
+- Mark Andrews expressed safety concerns about resolver behavior
+
+### Synchronizing Caches Between DNS Resolvers
+- **Presenter**: Not specified in transcript
+- Proposal for cache sharing between cooperating resolvers in trusted networks
+- Concerns raised about ECS complications, DNSSEC validation status, and practical benefits
+
+### Generalized Notifications Extensions
+- **Presenter**: Johan
+- Two small extensions for scanner frequency signaling and negative signaling
+- Uses port numbers to indicate scanner frequency when no notification receiver exists
+- Discussion on timer units (seconds vs minutes) and registrar vs registry scanner roles
+
+### Opportunistic DNS Transport Signaling
+- **Presenter**: Johan
+- Pre-DELEG solution for signaling DOT/DOQ support via SVCB records in additional section
+- Addresses operational concerns with blind probing approach from RFC 9539
+- Ben Schwartz noted this is already possible within existing RFC 9461 framework
+
+## Decisions and Action Items
+
+- **Working Group Adoption**: Chairs will deliberate on multiple adoption requests and communicate decisions via mailing list due to high volume of requests
+- **Draft Convergence**: Authors of persistent references and DCV BCP drafts to continue discussions on potential merger
+- **Mailing List Follow-up**: Several presentations explicitly directed further discussion to the mailing list due to time constraints
+
+## Next Steps
+
+- Continue detailed discussions on all presented drafts via the dnsop mailing list
+- Authors to incorporate feedback received during presentations
+- Working group chairs to announce adoption decisions for pending drafts
+- Further collaboration between related draft authors (particularly persistent references and DCV BCP)
+- Additional technical analysis needed for several proposals, particularly cache synchronization measurements and zone cut delegation safety

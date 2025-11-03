@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="dkim.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF122-DKIM-20250321-0230">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 21 Mar 2025 02:30</p>
+<h1>DKIM Working Group Session</h1>
+<h2>Summary</h2>
+<p>The DKIM working group held its first in-person session to discuss DKIM2, a proposed new protocol to address limitations in the current DKIM implementation. The session covered working group procedures, charter goals, and detailed technical presentations on three proposed documents addressing DKIM replay attacks, backscatter mitigation, and message forwarding challenges. Key discussion points included the requirement for one recipient per message, signature validation across message modifications, and interoperability between DKIM1 and DKIM2 systems.</p>
+<h2>Key Discussion Points</h2>
+<h3>Working Group Operations and Charter</h3>
+<ul>
+<li><strong>Code of Conduct</strong>: Working group will be stricter on code of conduct enforcement given potential contentious discussions in email authentication space</li>
+<li><strong>Compatibility Requirements</strong>: Solutions must not break existing deployed email infrastructure; incremental upgrades preferred over disruptive changes</li>
+<li><strong>Charter Goals</strong>: Four main problems to solve:
+<ul>
+<li>Maintain validation of signatures across forwarding modifications (with abuse-resistant methods)</li>
+<li>Solve DKIM replay problem</li>
+<li>Address backscatter concerns</li>
+<li>Provide better visibility into resulting errors</li>
+</ul>
+</li>
+<li><strong>Scope Limitations</strong>: Email core protocols (SMTP) are out of bounds; focus strictly on charter-defined problems</li>
+</ul>
+<h3>Technical Architecture Decisions</h3>
+<ul>
+<li><strong>One Recipient Per Message</strong>: Extensive debate on requiring single recipient per message to prevent BCC address leakage and enable proper replay detection
+<ul>
+<li>Data from Yahoo/Gmail shows &gt;99% of messages already go to single recipients</li>
+<li>Corporate email with attachments to multiple recipients identified as edge case</li>
+<li>Privacy preservation for forwarding requires this restriction</li>
+</ul>
+</li>
+<li><strong>DKIM2 vs DKIM1 Headers</strong>: Decision to use separate header field rather than extending existing DKIM-Signature header to avoid breaking existing validation systems</li>
+<li><strong>Signature Per Hop</strong>: Each forwarding hop must add its own signature to create ordered chain of modifications</li>
+</ul>
+<h3>Message Modification Handling</h3>
+<ul>
+<li><strong>Modification Algebra</strong>: Proposal for powerful but receiver-friendly algorithm to describe message changes
+<ul>
+<li>Copy instructions to recreate earlier message versions</li>
+<li>Supports complex modifications while remaining simple for validators</li>
+<li>Discussion on whether to support simple common cases vs. full flexibility</li>
+</ul>
+</li>
+<li><strong>Canonicalization</strong>: Strong preference for strict body canonicalization (not relaxed) since bodies will be processed in memory for modification algebra</li>
+<li><strong>Header Signing</strong>: Proposal for mandatory header list based on best practices rather than sender choice</li>
+</ul>
+<h3>Interoperability and Deployment</h3>
+<ul>
+<li><strong>DKIM1 to DKIM2 Upgrade Path</strong>: Discussion of mechanisms to detect DKIM2 support and handle transitions
+<ul>
+<li>DNS lookup or SMTP extension detection proposed</li>
+<li>Challenges with caching capability information</li>
+<li>Potential for double-signing during transition period</li>
+</ul>
+</li>
+<li><strong>Backscatter Prevention</strong>: Bounce messages must be cryptographically verifiable and follow same path as original delivery</li>
+<li><strong>Fragmentation Concerns</strong>: Acknowledgment that deployment may create email ecosystem fragmentation but consensus this is acceptable trade-off</li>
+</ul>
+<h3>Implementation and Testing</h3>
+<ul>
+<li><strong>Experimental Header Names</strong>: Recommendation against experimental header names due to historical problems with migration</li>
+<li><strong>Early Implementation</strong>: Multiple parties expressed interest in implementation and testing once specifications stabilize</li>
+<li><strong>Crypto Agility</strong>: Post-quantum cryptography mentioned as future consideration but not core requirement</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<h3>Immediate Actions</h3>
+<ul>
+<li><strong>Document Adoption</strong>: Consensus to proceed with adoption call for three proposed documents:
+<ul>
+<li>Problem statement and overview document (informational)</li>
+<li>Technical specification documents (standards track)</li>
+<li>Applicability statement (standards track)</li>
+</ul>
+</li>
+<li><strong>Header Requirements</strong>: Richard Clayton to provide list of mandatory headers for signing based on best practices</li>
+<li><strong>Bounce Handling</strong>: Alan (remote participant) to contribute bounce message format specifications</li>
+</ul>
+<h3>Technical Decisions</h3>
+<ul>
+<li><strong>Single Recipient Requirement</strong>: Working group consensus to proceed with one recipient per message requirement</li>
+<li><strong>Separate Header Field</strong>: Use new header field name rather than extending DKIM-Signature</li>
+<li><strong>Strict Body Canonicalization</strong>: Preference established for strict rather than relaxed body canonicalization</li>
+</ul>
+<h2>Next Steps</h2>
+<h3>Short Term (Before Madrid IETF)</h3>
+<ul>
+<li><strong>Interim Meetings</strong>: Plan for 2-3 interim meetings, with first meeting targeted for second half of April 2024</li>
+<li><strong>Specification Lockdown</strong>: Finalize header requirements, modification algebra format, and mandatory signing requirements to enable interoperability testing</li>
+<li><strong>Implementation Phase</strong>: Begin interoperability testing once core specifications are stable</li>
+</ul>
+<h3>Design Space Exploration</h3>
+<ul>
+<li><strong>Testing Priorities</strong>: Focus initial testing on core functionality (replay prevention, modification handling) before advanced features (feedback mechanisms, crypto agility)</li>
+<li><strong>Capability Detection</strong>: Develop mechanisms for detecting DKIM2 support in receiving systems</li>
+<li><strong>Transition Strategy</strong>: Define approach for coexistence and migration from DKIM1 to DKIM2</li>
+</ul>
+<h3>Documentation Requirements</h3>
+<ul>
+<li><strong>Decision Rationale</strong>: Document reasoning behind design decisions for future reference</li>
+<li><strong>Security Considerations</strong>: Address potential abuse scenarios including mailing list impersonation</li>
+<li><strong>Deployment Guidance</strong>: Provide clear guidance for staged deployment and interoperability</li>
+</ul>
+<p>The session concluded with strong momentum for moving forward with the DKIM2 proposal, pending resolution of remaining technical details and successful interoperability testing.</p>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="cbor.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF112-CBOR-20211111-1430">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 11 Nov 2021 14:30</p>
+<h1>cbor</h1>
+<h2>Summary</h2>
+<p>The CBOR Working Group meeting at IETF 112 covered updates on existing documents, discussed a proposed extension to the CBOR File Magic specification to accommodate non-CBOR content, reviewed the architectural approach for CBOR Pact, gauge interest in adopting a new Extended Diagnostic Notation (EDN) document, and outlined an ambitious vision and plan for CBOR CDDL 2.0, focusing on composition and annotation features.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Working Group Document Status:</strong>
+<ul>
+<li><code>cddl-control</code> and <code>network-addresses</code> are in the RFC editor's queue. <code>network-addresses</code> now supports zone identifiers.</li>
+<li><code>time-tag</code> is awaiting input from the <code>date-time</code> Working Group, which is actively discussing relevant topics.</li>
+</ul>
+</li>
+<li><strong>CBOR File Magic (draft-bormann-cbor-file-magic):</strong>
+<ul>
+<li>Existing mechanisms (<code>55799</code> for single items, <code>55800</code> for sequences) work for CBOR-shaped data. Pre-allocated tags for 2^16 content formats are defined arithmetically.</li>
+<li><strong>Problem:</strong> Examples in the document for non-CBOR content caused issues, as they would require byte string wrapping, breaking the constant prefix and ease of parsing. This stalled the document's progress towards Working Group Last Call.</li>
+<li><strong>Proposed Solution:</strong> Introduce a new tag <code>55801</code> that functions similarly to <code>55800</code> but for <em>non-CBOR</em> data. This requires CBOR decoders capable of parsing a single item and providing the rest of the input in undecoded form (e.g., <code>decode_with_rest</code> API).</li>
+<li>This extension would allow defining file magic for all content formats.</li>
+<li>Discussion acknowledged this as a potential &quot;scope creep&quot; but found a meaningful use case in <code>application/vnd.oma.lwm2m+dlv</code>.</li>
+</ul>
+</li>
+<li><strong>CBOR Pact (draft-bormann-cbor-pact):</strong>
+<ul>
+<li>Pact is defined by a processing model (in-place reference chasing), registration of reference tags/simple items, and a table building mechanism.</li>
+<li><strong>Table Building:</strong> A &quot;push model&quot; is proposed for nested tables, where new entries take lower numbers and existing entries are pushed to higher numbers.</li>
+<li><strong>Base Document Scope:</strong>
+<ul>
+<li>Define <code>share</code>, <code>prefix</code>, and <code>suffix</code> referrers.</li>
+<li>Describe the push model for tables, making it extensible for future referrers (e.g., record/template proposals).</li>
+<li>Include a basic table setup tag.</li>
+<li>Provide a framework for more specific setup tags, including:
+<ul>
+<li><strong>Implicit References:</strong> Application protocols define dictionaries, with a tag allocating the table (for short setup tags and standardized dictionaries).</li>
+<li><strong>Hashed References:</strong> Setup tags include a hash value (with COSE algorithm identifier) of a deterministic encoding of a basic table setup.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Discussion:</strong> The SUIT manifest specification was highlighted as an excellent potential real-world use case for CBOR Pact, with interest in exploring its benefits in future hackathons. The distinction between generic auto-packers (potentially useful, possibly better than manual packing) and application-specific static packing (preferred for constrained environments) was discussed.</li>
+</ul>
+</li>
+<li><strong>Extended Diagnostic Notation (EDN):</strong>
+<ul>
+<li>The document received positive feedback during interims.</li>
+<li>A preliminary show of hands indicated significant interest (7 out of 20 participants raised hands, none opposed) in adopting EDN as a working group item.</li>
+</ul>
+</li>
+<li><strong>CBOR CDDL 2.0 Vision:</strong>
+<ul>
+<li>Aims to extend the CDDL language beyond its current extension points.</li>
+<li><strong>Composition:</strong>
+<ul>
+<li>Goal: Enable building and importing libraries of CDDL rules.</li>
+<li>Features: Export/import interfaces, library naming, versioning (semantic versioning mentioned), control over rule names (to manage conflicts and allow renaming).</li>
+<li>Linkage: Can be external (CLI) or internal (URI hints).</li>
+<li>Namespacing: Adopt a namespacing mechanism (e.g., <code>rfc1990.oid</code>).</li>
+<li>Alternatives: First-class support for defining CDDL for different formats (e.g., CBOR and JSON) within a single spec.</li>
+<li>Automation: Facilitate automatic generation of CDDL libraries from RFCs, Internet-Drafts, IANA registries, and non-IETF sources.</li>
+<li>Syntax: Transition from CDDL 1.0 to 2.0 should be gradual, allowing 1.0 processors to still extract useful information from 2.0 files.</li>
+</ul>
+</li>
+<li><strong>Annotation:</strong>
+<ul>
+<li>Goal: Allow spec writers to embed richer semantic information into CDDL that goes beyond simple validation.</li>
+<li>Inspiration: Post Schema Validation Instance (PSVI) concept from other validation languages.</li>
+<li>Features: Attributes on rule names (to select active annotations), associating rule names with real-world concepts (e.g., URIs), special description attributes, spec-writer-defined attributes (e.g., units), and generating tags not explicitly on the wire (implied by schema, e.g., <code>~time</code> implies tag 1).</li>
+</ul>
+</li>
+<li><strong>Timeline:</strong> Ambitious goal of a prototype and written spec for composition (and initial annotation elements) by the end of 2021, aiming for a complete spec at IETF 113.</li>
+<li><strong>Discussion:</strong> Strong support for composition was expressed, particularly for addressing issues with code points in maps. The need for design team meetings was identified given the ambitious timeline. Potential contributors (Hank, Brenton) were mentioned, and interest in annotation features, particularly for verifying unambiguous annotation, was noted.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>CBOR File Magic:</strong> The chair suggested exploring the <code>55801</code> proposal in a new draft version (<code>-07</code>), including clarifying examples that distinguish between CBOR and non-CBOR content formats. This will likely necessitate another Working Group Last Call.</li>
+<li><strong>Extended Diagnostic Notation (EDN):</strong> The chair will initiate a formal adoption call for the EDN document on the mailing list, based on the expressed interest.</li>
+<li><strong>CBOR CDDL 2.0:</strong> Carsten Bormann will begin drafting a seed document. The group aims for a prototype and initial spec draft for composition (and some annotation) by year-end, with a complete spec by IETF 113. Design team meetings will be crucial to achieve this timeline.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>CBOR File Magic:</strong> Carsten Bormann to prepare draft <code>-07</code> incorporating the <code>55801</code> tag and updated examples.</li>
+<li><strong>CBOR Pact:</strong> Continue development. The group plans to collect non-trivial data items to test and evaluate different packer implementations.</li>
+<li><strong>Extended Diagnostic Notation (EDN):</strong> The chair will issue an adoption call on the mailing list.</li>
+<li><strong>CBOR CDDL 2.0:</strong> Carsten Bormann to prepare initial text. Authors (including Hank and Brenton) and interested parties are encouraged to contribute. Design team meetings will be scheduled to advance discussions.</li>
+<li><strong>General:</strong> Working Group interims are planned to resume around December 15th, with announcements to follow.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="gnap.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF115-GNAP-20221110-0930">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 10 Nov 2022 09:30</p>
+<h1>gnap</h1>
+<h2>Summary</h2>
+<p>The gnap working group met to review significant updates to the core protocol document, discuss human rights considerations, and plan next steps for both the core and resource server (RS) protocol drafts. Editors presented extensive changes to the core document, positioning it for Working Group Last Call (WGLC). A dedicated discussion on human rights, specifically regarding resource owner choice of authorization server (AS) and power asymmetry, led to a nuanced debate about normative requirements versus implementation guidance. The working group decided to proceed with WGLC for the core document following a final editorial pass, and to seek increased engagement for the RS draft.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li>
+<p><strong>Core Document Updates (Editor's Report)</strong></p>
+<ul>
+<li><strong>Major Progress</strong>: 23 pull requests merged and 55 issues closed on the core document since the last meeting, with a focus on clearing long-standing issues.</li>
+<li><strong>Functional Changes</strong>:
+<ul>
+<li><strong>Key Rotation</strong>: A new mechanism was introduced to allow for the rotation of keys bound to access tokens, with specific proofing methods defined for HTTP Signatures and Jose. Dynamic rotation for mTLS was deemed out of scope for the core document.</li>
+<li><strong>Cross-User Asynchronous Authorization</strong>: Clarified and expanded text, including new signaling to differentiate the identity of the end user at the client from the resource owner (e.g., call center scenario). This capability was recognized as a potential &quot;foot gun&quot; for phishing if not properly secured, requiring robust security considerations.</li>
+<li><strong>Normative Syntax Consistency</strong>: Simplified and harmonized object structures (e.g., proofing methods, access rights, error responses) across the protocol for greater consistency.</li>
+<li><strong>IANA Section</strong>: Added extensive guidance on defining extensions to the core protocol.</li>
+<li><strong>Absolute URIs</strong>: Clarified that all URIs are intended to be absolute.</li>
+<li><strong>Error Messages</strong>: Expanded syntax and messaging around errors.</li>
+</ul>
+</li>
+<li><strong>Editorial Changes</strong>:
+<ul>
+<li><strong>Security Considerations</strong>: Significantly expanded throughout the document.</li>
+<li><strong>Class ID</strong>: Clarified the role and meaning of the client instance class identifier as a hint to the AS.</li>
+<li><strong>Interoperability Profiles</strong>: Introduced two initial profiles (Web and Secondary Device) to define mandatory-to-implement (MTI) considerations for different use cases, covering key proofing, hash/signature algorithms, subject identifiers (opaque), and assertion formats (ID tokens/SAML V2). HTTP Sig was proposed as the preferred key proofing method for its simplicity and reliance on the HTTP stack.</li>
+<li><strong>JSON Schema</strong>: Decided to host JSON Schema definitions on the GitHub Wiki rather than in the core document due to their length and dynamic nature. This sparked a discussion on IETF archival practices for long-term availability, with a suggestion to consider an RFC appendix or core schema in-document with external vocabulary for registries. Expert review for the JSON Schema was also suggested.</li>
+<li><strong>Implementations List</strong>: Updated list of public implementations, with a call for more contributions.</li>
+</ul>
+</li>
+<li><strong>Open Issues (Core Document)</strong>:
+<ul>
+<li>Missing errors and discovery for key rotation (mechanical fix).</li>
+<li>Clarity needed that subject identifiers returned by an AS are scoped to that AS, even for global identifiers like email addresses, to prevent confusion and misuse. Reference to NIST 800-63c was suggested.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Human Rights Considerations (Adrian Gropper's Presentation)</strong></p>
+<ul>
+<li><strong>Proposal</strong>: A separate human rights consideration section is needed, with some normative aspects, to address the asymmetry of power between individuals (resource owners) and institutions (AS/RS/clients).</li>
+<li><strong>Key Issue</strong>: &quot;Forced association&quot; in OAuth2 AS creates regulatory and human rights problems. Resource owners should be allowed to state their preferred AS.</li>
+<li><strong>Discussion</strong>:
+<ul>
+<li><strong>Normative vs. Guidance</strong>: Debate on whether the spec should include &quot;MUST&quot; or &quot;SHOULD&quot; requirements or provide guidance on trade-offs (security vs. human rights) for implementers and regulators.</li>
+<li><strong>Placement</strong>: Editors believe such text is better suited for the RS draft, as it pertains to the association between AS and RS, and where mitigation actions might occur.</li>
+<li><strong>Multiple Solutions</strong>: It was argued that gnap's flexibility (&quot;token factory&quot; model) allows for various technical solutions to address human rights concerns (e.g., externalizing resource owner policies via verifiable credentials), not just dissociation of AS/RS (&quot;bring your own AS&quot;). The goal is to enable technical capabilities so that technology providers cannot hide behind a lack of technical means.</li>
+<li><strong>Regulatory Role</strong>: The importance of providing regulators with maximum opportunity to govern technology deployments and mandate specific human rights considerations was emphasized.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Hash Algorithms</strong>: Discussion on <code>sha3</code> vs <code>sha256</code> for interaction hashes. Editors are open to standardizing on <code>sha256</code> for both for implementer ease, given the short lifetime of the interaction hash.</p>
+</li>
+<li>
+<p><strong>Resource Server (RS) Draft Status</strong>:</p>
+<ul>
+<li>The RS draft, which defines the association between AS and RS (e.g., token models, introspection), has received less attention. It is considered critical for addressing certain human rights concerns, as it governs how AS and RS interact.</li>
+<li>An open call was made for working group members to review and contribute energy to the RS draft.</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision</strong>: The core gnap document will proceed to Working Group Last Call (WGLC) following one final editorial revision.
+<ul>
+<li><strong>Action Item</strong>: Editors (Justin Richer, Fabian Hirschmann) to perform a final review, incorporate fixes for the remaining open issues (key rotation errors/discovery, subject identifier scoping), and publish Draft 12 of the core document within approximately one week.</li>
+<li><strong>Action Item</strong>: Chairs to initiate the WGLC process for the core document (Draft 12) once published.</li>
+<li><strong>Action Item</strong>: All working group members are strongly encouraged to review the core document during WGLC.</li>
+</ul>
+</li>
+<li><strong>Decision</strong>: The human rights considerations discussion will continue at the HRPC meeting (scheduled for the following day) and subsequently return to the gnap working group editors for further integration. The initial text has been moved to the RS draft.</li>
+<li><strong>Decision</strong>: To foster progress on the Resource Server (RS) draft, the working group will hold an interim meeting.
+<ul>
+<li><strong>Action Item</strong>: Chairs to schedule an interim meeting in early January (between now and IETF 116 Yokohama) to assess the status of the core draft and plan the future of the RS draft.</li>
+</ul>
+</li>
+<li><strong>Action Item</strong>: Working group members Daryl Miller and Brent Zundel (Gen Digital) volunteered to review the current RS draft and provide feedback.</li>
+<li><strong>Action Item</strong>: Editors to consider <code>sha256</code> for both hash algorithms in the core document for consistency and implementer ease.</li>
+<li><strong>Action Item</strong>: Editors to include Norton/Gen Digital's Verified.me implementation in the public implementation list.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>Core Document</strong>: Final editorial review and publication of Draft 12, followed by Working Group Last Call.</li>
+<li><strong>Resource Server (RS) Draft</strong>: Working group members are encouraged to review the current RS draft. The goal is to bring the RS draft to a state comparable to the core document by IETF 116 (Yokohama).</li>
+<li><strong>Human Rights Considerations</strong>: Further discussion at HRPC and continued collaboration with gnap editors to refine the text and determine the appropriate level of normative language or guidance within the RS draft.</li>
+<li><strong>Interim Meeting</strong>: Scheduled for early January to re-evaluate the core draft's WGLC progress and strategize on the RS draft.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

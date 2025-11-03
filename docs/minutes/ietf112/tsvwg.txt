@@ -1,0 +1,199 @@
+**Session Date/Time:** 08 Nov 2021 14:30
+
+# tsvwg
+
+## Summary
+
+The tsvwg session covered updates on working group documents, milestone discussions, and a critical deep-dive into the L4S Working Group Last Call (WGLC) status and draft revisions. A significant portion of the meeting was dedicated to the L4S documents, addressing concerns raised during the WGLC, particularly regarding the experimental vs. standards track approach, alignment with RFC 4774, and risk assessment. An important reminder about the IETF Code of Conduct was also provided, emphasizing constructive communication and clarity, especially concerning the historically contentious L4S discussions.
+
+## Key Discussion Points
+
+*   **Logistics and Housekeeping:**
+    *   Magnus volunteered as note taker.
+    *   Reminder about the IETF Note Well and IPR disclosure.
+    *   Guidance for submitting drafts (add `tsvwg` to ID title) and using MeetEcho.
+    *   Call for document reviews, specifically for UDP options and DSCP-related drafts.
+*   **Document Status Updates:**
+    *   No RFCs published since the last meeting.
+    *   SCTP 4960bis sent to the Area Director (AD).
+    *   SCTP NAT document being revised based on AD comments.
+    *   ECN Encapsulation and ECN for Tunnels drafts are very close to AD submission but require final text adjustments from Bob and David, having been delayed by L4S work.
+    *   Three L4S-related documents (Architecture, Dual Queue Coupled, L4S ID) underwent a Working Group Last Call (WGLC).
+    *   Other in-progress drafts include: Operational Guidance on L4S, NQB DiffServ PHB, UDP Options, Datagram PLPMTUD for UDP Options, DTLS with SCTP updates (with ongoing IPR disclosure discussions), DiffServ Default DSCP Selection, and adopted Multipath DCCP work.
+*   **Milestones:**
+    *   NQB PHB target submission: April.
+    *   UDP Options and Datagram PLPMTUD for UDP Options target submission: May.
+    *   New milestones are needed for Multipath DCCP, DTLS SCTP, and Considerations for Signing New DSCPs. Chairs will work with authors offline.
+*   **Liaisons:**
+    *   WBA liaison response sent, no further updates.
+    *   tsvwg will likely take over maintenance of TRAM working group activities (behave and NAT) upon its closure.
+*   **Code of Conduct Reminder:**
+    *   The IAB and IESG are recommitting to improving the tone of IETF conversations.
+    *   Emphasis on limiting slang, especially when speaking to a diverse audience, and fostering an environment conducive to newcomers and differing opinions.
+    *   Attendees were encouraged to reflect on their own conduct rather than past grievances.
+    *   Bob noted that contentious discussions (e.g., L4S) often move off-list, indicating an environment not conducive to open discourse.
+*   **L4S Working Group Last Call (WGLC) Status:**
+    *   WGLC for Architecture, Dual Queue Coupled, and L4S ID drafts ran from late July to late August. The Operational Guidance draft was excluded.
+    *   The WGLC generated a high volume of responses, indicating strong overall support, but also well-explained concerns.
+    *   **Top Concerns Identified by Chairs:**
+        1.  **Experimental vs. Standards Track:** Consensus lacking for L4S to go standards track *now*. Working group needs to sketch out long-term plans for IESG if the experimental path is successful, to clarify future intent.
+        2.  **RFC 4774 Alignment:** Unclear how L4S aligns with RFC 4774 recommendations. Bob posted updates, but Jonathan argued the description of L4S conforming to option 3 is inaccurate, stating the divergence is more serious. David acknowledged L4S does not fully comply and that the extent of divergence needs sorting on the list.
+        3.  **Risk Analysis Disagreement:** Varying perceptions of implementation risks and potential problems. The working group needs to confirm acceptance of the risks associated with L4S experimentation.
+    *   Lesser criticality concerns, such as specific dual queue construction details, are considered optional and not blocking the overall architecture.
+*   **L4S Draft Updates (Bob):**
+    *   L4S aims for high-fidelity congestion control, enabling low delay and high utilization simultaneously.
+    *   **Ongoing testing:** Pete Heist's testing with Jonathan's "red team" characterization, focusing on bursts.
+    *   **Linux fq_codel patch:** Tokay and Eric Dumazet implemented a patch allowing fq_codel to set a shallow ECN threshold specifically for ECT(1) packets, with ECT(0) packets processed by deeper codel machinery.
+    *   **Apple's ECN experiments:** Stewart's emails on Apple's ECN experiments were highlighted as important reading.
+    *   **WGLC Comment Resolution:** Bob reported attempting to address all review points, including correcting a mischaracterization of Linux Cubic response which led to a significantly longer Appendix C in the Dual Queue draft.
+    *   **Process clarification:** David requested Bob to send a list of reviewers whose comments did not lead to direct draft changes but still require acknowledgment and discussion.
+    *   **L4S Architecture Draft:** No normative changes; considerable editorial rewriting for clarity, including interactions with rate policing.
+    *   **L4S Coupled Dual Queue and L4S ID Drafts (Normative Changes):**
+        *   **RFC 4774 Compliance/Classic ECN AQM Detection (Sec 4.3):** Ongoing discussion with Jake regarding text conditioning on "problems" vs. sender actions. A new subsection justifies L4S compliance/non-compliance with RFCs.
+        *   **ECN Field Handling:** Text modified for in-flight nodes to treat CE as ECT(0) *only if all previous packets* were ECT(0), raising concerns about transient flow state.
+        *   **Operator Control:** Clarified normative statements to refer to "the process of including additional traffic" rather than network-wide operator actions.
+        *   **Excluding L4S Users:** Discussion needed on whether operators "must not" treat ECT(1) as ECT(0) for excluded L4S users for commercial/security reasons.
+*   **Open L4S Discussion:**
+    *   **Stewart (Apple):** Emphasized the critical importance of fixing latency under load, arguing current internet might be superseded if this isn't addressed. He is less concerned about backward compatibility with classic ECN (RFC 3168), which he characterized as having "failed" due to lack of deployment.
+    *   **Jonathan:** Disputed the "failed" characterization, stating many ECN-compatible nodes exist, but endpoints don't use it, and network operators rarely mark packets. He suggested Stewart's ECN heuristics might be misleading.
+    *   **Jake:** Agreed there are tens of millions of deployed devices that cause issues due to backward incompatibility in signaling, even if marking is infrequent.
+*   **L4S Operational Guidance Draft (Greg):**
+    *   Presented a quick overview of recent edits, including a title change for Section 6.2 (from "Less preferred options" to "Non-preferred options").
+    *   The draft is not yet ready for WGLC. Greg requested reviews and suggestions to the mailing list.
+
+## Decisions and Action Items
+
+*   **Decision:** Magnus to serve as note taker for the session.
+*   **Action Item:** Working Group Chairs to work with authors offline to set appropriate milestones for Multipath DCCP, DTLS SCTP, and the DSCP considerations draft.
+*   **Action Item:** David and Bob to finalize updates for the ECN Encapsulation and ECN for Tunnels drafts for submission to the Area Director.
+*   **Action Item:** Bob to send a summary to the mailing list listing reviewers whose L4S WGLC comments did not result in direct draft changes but still need to be addressed at a higher process level.
+*   **Action Item:** Chairs and editors to continue working through the top L4S WGLC concerns: clarifying long-term plans for L4S (experimental vs. standards track), achieving consensus on RFC 4774 alignment, and confirming working group acceptance of L4S experimentation risks.
+*   **Action Item:** Discussion on L4S alignment with RFC 4774 and the precise handling of the ECN field by in-flight nodes to continue on the mailing list.
+*   **Action Item:** Reviewers to provide feedback and suggestions for further enhancements to the L4S Operational Guidance draft on the mailing list.
+
+## Next Steps
+
+*   Continue detailed discussions and revisions for the L4S WGLC drafts on the mailing list, focusing on the identified top concerns.
+*   Finalize and submit the ECN Encapsulation and ECN for Tunnels drafts.
+*   Set milestones for recently adopted and new work items.
+*   Prepare other non-L4S drafts for discussion at upcoming meetings or via the mailing list.
+*   Greg hopes to present on the NQB drafts at the beginning of the next session if discussion time is needed, otherwise, the mailing list is the primary channel.
+
+---
+
+**Session Date/Time:** 12 Nov 2021 16:00
+
+# tsvwg
+
+## Summary
+
+This tsvwg session covered updates on several transport-related drafts, including RFC 4960bis (SCTP), SCTP NAT support, DTLS over SCTP, UDP Options, DPLPMTUD for UDP Options, MPDCCP, and NQB DSCP. Key discussions revolved around resolving long-standing issues, addressing security concerns, and aligning specifications with real-world deployment needs, particularly from 3GPP. Several drafts are nearing working group last call, while others require further design convergence or security analysis.
+
+## Key Discussion Points
+
+*   **RFC 4960bis (SCTP)**
+    *   Version 15 passed working group last call and received external review, leading to substantial late comments about potential use cases.
+    *   Currently, it's back with the working group for a new revision before resubmission to the IESG for publication.
+    *   **Incorporated Changes**:
+        *   Clarified handling of advertised receiver window < 1500.
+        *   Security discussion on cookies: content is implementation-dependent, not required to be encrypted, signing key should be changed frequently (e.g., hourly).
+        *   "should not" for outstanding TSNs and SSNs changed to "must not".
+        *   Slow start condition increased only if `com_ack_point` moved forward, now aligned with congestion avoidance.
+        *   IANA section updated, including policy for PPIDs.
+    *   The document is expected on the IESG telechat in mid-December.
+
+*   **SCTP NAT Support**
+    *   Version 23 was submitted to keep the draft alive, with no recent changes.
+    *   Received reviews from ADs (Magnus and Martin) and an alternative suggestion from Claudio.
+    *   **Major Issues Identified**:
+        *   Handling IP fragmentation at the NAT.
+        *   Controlling NAT-friendly endpoint behavior (e.g., detecting if behind NAT).
+        *   Improving multi-homing support for internal hosts and multiple external addresses.
+        *   Remote addresses removed from NAT binding table; request to put back if restarts are not disabled.
+        *   Complexity of packet processing at the middlebox (understanding chunks).
+        *   Document changes the definition of an association by considering the verification tag, but endpoints may not support this.
+    *   **Potential Ways Forward Discussed**:
+        1.  Improve the current method (addresses issues 2-5), but increases complexity.
+        2.  Use a fallback algorithm (never disable restarts, don't use verification tags, treat like UDP/TCP), reducing complexity but increasing collision chances.
+        3.  Switch to Claudio's draft (subset of current work, not a revolution).
+        4.  Drop the work entirely.
+    *   **Security Concern**: Christian raised concerns about man-on-the-side attacks and stat explosion issues by forged IP addresses affecting NAT rebinding, requesting an email with attack scenarios.
+
+*   **DTLS over SCTP**
+    *   Goal: Enable DTLS to protect SCTP messages larger than 16384 bytes, specifically for 3GPP use cases requiring long-lived associations and periodic re-authentication/re-keying (including SCTP-AUTH).
+    *   **New Proposal**: Use parallel DTLS connections.
+        *   When re-keying or re-authenticating, initiate a full DTLS handshake.
+        *   Use 1-byte DTLS connection IDs in all DTLS records for multiplexing.
+        *   Switch when all old-key protected records are sent and acknowledged; sender is responsible for closing.
+        *   Benefits: No dependency on DTLS for re-keying features, no functional changes between DTLS 1.2/1.3, multiple re-keyings, mutual re-authentication, forward secrecy.
+    *   **IPR Discussion**: Ericsson has made two IPR disclosures related to this draft. Concerns were raised about the impact on open-source implementations and potentially obsoleting RFC 683, which currently has no IPR claims.
+
+*   **UDP Options**
+    *   Update from September interim.
+    *   **Key Changes**:
+        *   Fixed position for the OCS (Option Checksum) option, making it easier to parse and offload.
+        *   "Unsafe" option changed to exist only behind fragment options.
+        *   Fragment (Frag) option rewritten and re-scoped: fixed position after OCS; per-fragment options placed before data; per-reassembled datagram options at the end.
+    *   **MRSS (Maximum Reassembly Segment Size)**:
+        *   Default expectation for receivers to reassemble a datagram with a 3000-byte payload.
+        *   Requirement for all receivers to support reassembly of two fragments for simplicity and reduced attack surface (e.g., traversing tunnels or sending >1500 bytes).
+        *   MRSS option allows negotiation of larger sizes and more fragments.
+    *   **Open Issues**:
+        *   Lack of specification for sending padding packets for DPLPMTUD.
+        *   Per-fragment options add significant, unnecessary complexity.
+
+*   **UDP Options DPLPMTUD (Datagram Packetization Layer Path MTU Discovery)**
+    *   Document was adopted by the working group.
+    *   Adds necessary features for DPLPMTUD to UDP Options (confirmation of connectivity, sending probes, path validation, PTP handling).
+    *   **Next Steps**:
+        *   Add text on generating padding (by adding zero bytes, replacing `knox`).
+        *   Editorial pass for typos and consistency.
+        *   Add text explaining how DPLPMTUD works with fragments (now that frag option design is settling).
+        *   Expects to complete alongside UDP Options, tracking its changes.
+
+*   **MPDCCP (Multipath DCCP)**
+    *   Received working group adoption in August.
+    *   Focusing on maturity for working group last call, aligning with 3GPP Release 18 study item approval (decision by end of year).
+    *   Engaging with vendors for testbed and implementation activities. Next open-source version planned for end of year.
+    *   **Draft Updates (v01)**: Reliable exchange of multi-path options, consistent description of multi-path reordering, fallback strategies for failed multi-path establishment, RFC editor style guide compliance.
+    *   **Draft Updates (v02)**: Enhanced handshaking procedure with authentication for subsequent flows, improved multi-path priority option (fine-granular steering, backup, disable), improved operational section.
+    *   **Handshaking Procedure Discussion**:
+        *   **Initial (3-way)**: MP_JOIN can arrive too early, leading to DCCP reset if the initial multi-path connection is not yet established.
+        *   **Improved (4-way)**: Adds an extra acknowledgement, ensuring multi-path connection is initiated before MP_JOIN, but adds delay.
+        *   **Optimized (3-way)**: Checks for multi-path connection establishment later in the join process, reducing dependency but still sensitive to latency differences.
+        *   **Optimal (Reliable 2-way)**: Proposes creating necessary multi-path structures after the first DCCP Request at host B. Key material exchanged in 2 messages, making subsequent MP_JOIN independent of the initial flow's final ACK.
+    *   **Security Concern**: Early creation of multi-path structures might increase attack surface for Denial of Service.
+    *   **3GPP Multi-path**: Clarified that MPDCCP supports an *unlimited* number of flows, not just two, addressing 3GPP SA2 discussions.
+
+*   **NQB (Non-Queue Building) DSCP**
+    *   **Sender Requirements & Guidance on Rates**:
+        *   NQB flow described informatively as "at most a few well-spaced packets per RTT" (e.g., one large packet every 10ms, ~1 Mbit/s).
+        *   NQB marking does not remove the need for congestion control or circuit breaker functionalities.
+        *   **Recommendation**: Do not mark traffic as NQB if it exceeds "a few packets per RTT" or ~1 Mbit/s instantaneously.
+    *   **Scaling Recommendation**: Discussion on scaling the rate limit based on "10% of the global average access link capacity at the time," with current examples (6.3 Mbit/s for servers, 1.3 Mbit/s for clients). Concern raised about using non-uniform average statistics.
+    *   **IANA Registry**: Question on whether NQB DSCPs should be labeled separately or both as non-queue building.
+    *   Need for "teeth" in the spec to allow networks to evict non-compliant NQB traffic.
+
+## Decisions and Action Items
+
+*   **SCTP NAT Support**:
+    *   **ACTION**: Marcus, Claudio, and ADs (Magnus, Martin) to discuss the various options for moving forward and report back within a few weeks.
+    *   **ACTION**: Christian to send an email to the mailing list detailing a specific attack scenario related to NAT rebinding and security.
+*   **DTLS over SCTP**:
+    *   **ACTION**: Magnus to continue working on the draft and incorporate feedback.
+    *   **ACTION**: The working group will revisit the IPR status, the question of obsoleting RFC 683, and discuss implementation experience at a future meeting (likely next).
+*   **UDP Options**:
+    *   **ACTION**: Joe (via chairs) to take the issues regarding padding packets and the complexity of per-fragment options to the mailing list for further discussion.
+*   **UDP Options DPLPMTUD**:
+    *   **ACTION**: Tom to produce a new draft revision within the next month, including padding text and clearer interaction with fragment options.
+*   **MPDCCP**:
+    *   **ACTION**: Marcus to continue discussions on the proposed handshaking procedures, particularly the optimal 2-way handshake and associated security concerns, on the mailing list.
+*   **NQB DSCP**:
+    *   **ACTION**: Greg to add text to the draft allowing networks to evict or drop non-compliant NQB traffic.
+    *   **ACTION**: The working group to discuss the scaling recommendation for sender rates (e.g., 10% of global average) and IANA labeling on the mailing list.
+
+## Next Steps
+
+*   The chairs intend to arrange an interim meeting in the upcoming IETF period.
+*   Attendees are encouraged to look out for announcements regarding the interim and propose any topics they believe should be included on its agenda.
+*   Working group last call for NQB DSCP is expected to be initiated shortly after the new year.

@@ -1,0 +1,71 @@
+**Session Date/Time:** 09 Nov 2021 12:00
+
+# intarea
+
+## Summary
+
+The intarea working group meeting at IETF 112 covered a range of topics concerning IP addressing, its current challenges, and potential future directions. Discussions included proposals for reclaiming historically reserved IPv4 address space, a problem statement and gap analysis on internet addressing, new approaches for hierarchical IP addressing in edge networks, source address validation mechanisms, and an update on IEEE's local MAC address assignment for multicast. A recurring theme was the balance between evolving existing protocols to meet new demands and considering the IETF's role in supporting such changes, particularly in light of IPv6 adoption. Several proposals were suggested for review in other working groups like 6Lo and opsec.
+
+## Key Discussion Points
+
+*   **IPv4 Unicast Extensions (Seth Schoen):**
+    *   Proposed reclassifying historically reserved IPv4 address spaces (unicast lowest address, 240/4, 0/8, 127/8 loopback) for ordinary unicast use.
+    *   Motivation: Unused addresses despite scarcity, potential for hundreds of millions of new addresses with minimal code changes (often one line per OS kernel).
+    *   Noted that some of these changes are already default behavior in widely used operating systems (Linux, FreeBSD, Android, Apple OSs).
+    *   Proposed a gradual standardization process to allow implementers to adopt these changes, providing future options for assessment without immediate allocation.
+    *   **Discussion:** Questions were raised regarding the "why" for IETF endorsement, the lack of compelling use cases beyond existing private use, potential policy conflicts (public vs. private allocation of 240/4), and whether prolonging IPv4 life aligns with the IETF's mission to promote IPv6. Concerns were also voiced about operational complexities in mixed-vendor networks.
+
+*   **Internet Addressing Problem Statement and Gap Analysis (Dirk Kutscher):**
+    *   Presented updates on drafts outlining challenges in internet addressing for scenarios like constrained devices, dynamic topologies, and traffic steering.
+    *   Identified issues with fixed address length, ambiguous semantics, and limited semantic support, and how current extensions patch these but introduce new complexities.
+    *   Reported feedback from a side meeting, which generated significant discussion and confirmed high community interest.
+    *   **Key Insight:** The topic suggests a larger architectural discussion beyond just addressing, with interest in revisiting past concepts like the OSI model and variable length addressing.
+    *   The goal is to *evolve* IP, not replace it, and funnel discussion to the mailing list, potentially adding contributors to revised drafts.
+
+*   **Short Hierarchical IP Addressing (SHIP) at Edge Networks (Haoyu Song):**
+    *   Proposed SHIP to address high overhead and energy consumption of IPv6 in IoT edge networks, where devices often share prefixes and communicate locally.
+    *   Mechanism: Delegates prefix management to gateway routers, allowing end-nodes to use shorter, variable-length entity IDs. Introduces Source/Destination Address Length fields.
+    *   Supports hierarchical routing within edge networks and seamless interoperability with the IPv6 internet via protocol translation or NAT.
+    *   Benefits: Significant header overhead savings (60-70%), simplified control/data planes, incremental deployment.
+    *   **Discussion:** The proposal drew comparisons to 6LoWPAN header compression schemes, and it was strongly recommended that this work be presented and reviewed in the **6Lo working group**. The authors were also advised to investigate overlap with protocols like Thread.
+
+*   **Source Address Validation (SAV) Use Cases and Gap Analysis (Dan Li):**
+    *   Highlighted the ongoing problem of source address spoofing and the need for robust SAV.
+    *   Analyzed existing SAV mechanisms (SAvI, strict uRPF, eBGP uRPF, loose uRPF) for Intra-AS and Inter-AS environments.
+    *   Identified critical flaws: strict uRPF causes false positives in asymmetric routing; eBGP uRPF and loose uRPF suffer from false negatives, allowing spoofing.
+    *   Proposed a "path probing method" where SAV rules are generated based on real data forwarding paths, addressing root causes of inaccuracy.
+    *   **Discussion:** The **opsec working group** was identified as the most suitable venue for this discussion, given its focus on operational security.
+
+*   **Minimalist Multicast with Recursive Bit String Addressing for BIER (Thorsten Lohmar):**
+    *   Presented a new approach using Recursive Bit String (RBS) Addressing for BIER (Bit Indexed Explicit Replication) to simplify multicast forwarding, especially with traffic engineering.
+    *   Addressed limitations of BIER with Traffic Engineering (BRTE), such as fixed-size bit strings and operational complexities.
+    *   Mechanism: RBS addresses represent the desired delivery tree; addresses become shorter as packets traverse the tree.
+    *   Benefits: Eliminates need for loop prevention mechanisms, scales better for sparse distributions, naturally variable length addresses.
+    *   **Discussion:** Questions were raised about the primary use case (router-constructed addresses for encapsulation) and the challenges of managing unexpected loss of assigned blocks due to network partitioning, requiring careful consideration of application-level implications and validation tools.
+
+*   **IEEE 802.1CQ on Address Assignment (Roger Marks):**
+    *   Provided an update on an IEEE 802.1 working group project for local MAC address assignment, particularly for multicast in time-sensitive networking (TSN).
+    *   Motivation: Promote local address space, provide locally unique addresses, address potential global 802 address exhaustion.
+    *   Introduced the Block Address Registration and Claiming (BARC) protocol, which assigns MAC addresses in blocks (unicast and multicast) with dynamic claiming and registration.
+    *   Benefits: Can eliminate reliance on global addresses, maintains LAN uniqueness, backward compatible, offers address privacy, and allows for semantic structuring and flow identification.
+    *   **Next Steps:** The next draft of the standard is expected to be circulated to the intarea working group for review within one to two months, fostering IETF/IEEE collaboration.
+    *   **Discussion:** Appreciation for the IEEE/IETF collaboration was expressed. Concerns were raised about handling duplicate allocation of address blocks in cases of network partitioning and merging, and the implications for applications.
+
+## Decisions and Action Items
+
+*   **Generic UDP Encapsulation (GUE):** The draft was declared dead in October.
+*   **IPv4 Unicast Extensions (Seth Schoen):** Discussion to be continued on the intarea mailing list.
+*   **Internet Addressing Problem Statement and Gap Analysis (Dirk Kutscher):**
+    *   Authors will funnel discussion points from the side meeting to the mailing list.
+    *   Contributors are welcome to join the effort and potentially be added as co-authors.
+    *   Statements from the community discussion will be incorporated into revised drafts.
+*   **Short Hierarchical IP Addressing (Haoyu Song):** Authors are encouraged to present this work to the **6Lo working group** for review.
+*   **Source Address Validation (Dan Li):** Authors are encouraged to present this work to the **opsec working group**.
+
+## Next Steps
+
+*   **IPv4 Unicast Extensions:** Continued discussion on the intarea mailing list regarding the IETF's role in IPv4 maintenance and the policy implications of these proposals.
+*   **Internet Addressing Problem Statement and Gap Analysis:** Ongoing refinement of drafts, with community input channeled through the mailing list and potential new contributors. Exploration of larger architectural discussions.
+*   **Short Hierarchical IP Addressing:** Engagement with the 6Lo working group.
+*   **Source Address Validation:** Engagement with the opsec working group.
+*   **IEEE 802.1CQ:** The next draft of the standard will be circulated to the intarea working group for review within the next couple of months.

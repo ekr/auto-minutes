@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="6lo.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-6LO-20220725-1730">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 25 Jul 2022 17:30</p>
+<h1>6lo</h1>
+<h2>Summary</h2>
+<p>The 6lo working group session addressed the status of several existing drafts, including IPv6 over NFC, IPv6 over PLC, 6lo Use Cases, and Multicast Address Listener Registration. Presentations provided updates on the 6lo Use Cases draft, the Multicast Address Listener Registration draft (including a new RA option for router uptime), the transmission of CHIC compressed packets over 802.15.4 networks, and a pair of documents on the Native Short Addressing (NSA) scheme (base document and a new reliability considerations draft). Key discussions focused on addressing security comments, clarifying roles in header compression, and handling router reboots and network reliability. A call for working group adoption for the NSA base document will be issued.</p>
+<h2>Key Discussion Points</h2>
+<h3>Working Group Document Status</h3>
+<ul>
+<li><strong>IPv6 over NFC draft:</strong> Has been stuck for two years. AD Eric Klein acknowledged the delay, stating he would work to demonstrate specification access to reviewers and add clarifying security text before bringing it back to the ISG. Access for reviewers is sufficient, without broad distribution to respect NFC SDO policies.</li>
+<li><strong>IPv6 over PLC draft:</strong> Discuss ballots cleared, authors updated. AD Eric Klein noted ISG membership changes require new ballots; he needs two more &quot;no objection&quot; or &quot;yes&quot; ballots before sending to the RFC editor.</li>
+<li><strong>6lo Use Cases draft:</strong> Passed last call, updated after Security AD and General Area reviews. AD Eric Klein plans to issue the ballot and bring it to telechat by the end of August.</li>
+<li><strong>Multicast Address Listener Registration draft:</strong> Updated multiple times following reviews and IANA input.</li>
+</ul>
+<h3>6lo Use Cases Draft (Presented by Hong)</h3>
+<ul>
+<li><strong>Security Considerations (Section 7):</strong> Robert Sparks (Security AD) commented that the original text stating security considerations were &quot;not directly applicable&quot; was insufficient. The presenter added text addressing privacy implications for L2 address-derived IPv6 addresses, requiring L2 security, and the desirability of application-level security. However, Robert Sparks was still not satisfied, indicating further refinement is needed. Eric Klein suggested pointing to existing RFC 8200 security considerations and related IPv6 ND security documents.</li>
+<li><strong>Table 2 (Security Requirements):</strong> Content was deemed unclear, leading to the removal of specific &quot;roles&quot; from the table.</li>
+<li><strong>Appendix A (Design Space Dimension):</strong> This appendix, originally a section in the main body, was moved to shorten the document. Robert Sparks noted it was not introduced or referenced. The presenter suggested removing it. However, the chair (Carlos Gomez) and another attendee suggested keeping it if it contains useful information, adding a forward reference from the main body, as it relates to a comparison table in the document.</li>
+<li><strong>Misuse of Marketing Words:</strong> Robert Sparks suggested replacing terms like &quot;superior range&quot; with more technical phrasing such as &quot;better than&quot; or &quot;goes further.&quot; The presenter agreed to make these changes.</li>
+</ul>
+<h3>Multicast Address Listener Registration Draft (Presented by Pascal Thubert)</h3>
+<ul>
+<li><strong>Motivation:</strong> Developed from smart grid use cases (White Sand alliance) requiring an mld-equivalent &quot;pull from device&quot; mechanism for low-power nodes.</li>
+<li><strong>Scope:</strong> The draft addresses both 6lo and non-storing mode RPL multicast.</li>
+<li><strong>Key Updates:</strong>
+<ul>
+<li>Clarified that the mechanism is a &quot;push from device&quot; when it wakes, suitable for low-power devices, unlike mld's &quot;pull from router.&quot;</li>
+<li>The TID (sequence number) in RA options and RPL is not used for freshness assertions, as sources may not be synchronized. State cleanup relies on lifetime timeouts.</li>
+<li><strong>Router Reboot Detection:</strong> Two mechanisms were introduced:
+<ul>
+<li><strong>Multicast RA Status:</strong> Routers can send asynchronous Neighbor Advertisements (N_A) to signal lost state due to reboot, prompting device re-registration. This is a &quot;pull by router&quot; and might be missed by low-power devices without specific periodic multicast windows.</li>
+<li><strong>New RA Option - Node Uptime Option:</strong> A new RA option conveying router uptime was proposed. Devices could use this to determine if a router rebooted since their last registration and re-register accordingly. This is considered a 6MAN working group concern.</li>
+</ul>
+</li>
+<li>IANA section wording was revised based on Amanda Barber's comments.</li>
+</ul>
+</li>
+<li><strong>Discussion on Node Uptime Option:</strong>
+<ul>
+<li>Eric Klein (AD) expressed concerns about its intended use case and the requirement for RA information to be consumable by all multicast recipients. He suggested it might have broader applicability (e.g., slack renumbering).</li>
+<li>A discussion ensued on whether this option should be a separate draft, as it's a recent addition and the core document could progress without it. Pascal indicated willingness to separate it if preferred, acknowledging it was initially packaged to consolidate related work.</li>
+<li>Tim Winters suggested consulting 6MAN, and potentially Pin/Mbone WGs due to multicast aspects, though Pascal clarified that for non-storing RPL, multicast is often handled by ingress replication at the root rather than in-network multicast routing.</li>
+</ul>
+</li>
+</ul>
+<h3>Transmission of CHIC Compressed Packets over 802.15.4 Networks (Presented by Carlos Gomez)</h3>
+<ul>
+<li><strong>Motivation:</strong> CHIC (Compressed Header over IPv6 over CoAP) offers potentially greater compression ratios than 6LoWPAN, especially for application protocols like CoAP.</li>
+<li><strong>Key Updates (Revision 03):</strong>
+<ul>
+<li><strong>CHIC <code>dev</code> and <code>up</code> roles:</strong> CHIC compression relies on roles (<code>dev</code> for constrained device, <code>up</code> for network infrastructure), not source/destination. This allows single compression rules for both directions.</li>
+<li><strong>Problem in Mesh Topologies:</strong> In peer-to-peer mesh scenarios, determining who is <code>dev</code> or <code>up</code> for address/port compression can be ambiguous.</li>
+<li><strong>Resolution:</strong> The <code>dev</code> and <code>up</code> roles for each rule must be known and provisioned <em>in advance</em> before communication.</li>
+<li>The draft now references the LPWAN architecture draft, which aims to address <code>dev/up</code> definition in scenarios beyond the original LPWAN architecture.</li>
+<li><strong>Multi-hop Communication:</strong>
+<ul>
+<li><strong>Route-over (IP layer routing):</strong> A straightforward approach would require all nodes to store all rules (scalability issue). An alternative leveraging RPL in non-storing mode (RFC 9038) allows endpoints to store only their own rules, with the root handling decompression/recompression.</li>
+<li><strong>Mesh-under:</strong> No particular challenges; endpoints only need their own rules.</li>
+<li><strong>Optimization Idea:</strong> Rule ID reuse across disjoint pairs was suggested but noted as increasing complexity.</li>
+</ul>
+</li>
+<li><strong>Recommendation:</strong> Use a router virtual reassembly buffer.</li>
+</ul>
+</li>
+</ul>
+<h3>Native Short Addressing (NSA) Base Document (Presented by Luigi Iannone)</h3>
+<ul>
+<li><strong>Status:</strong> Revision 03 (June 2022).</li>
+<li><strong>Key Updates:</strong>
+<ul>
+<li>Fixed typos and minor changes.</li>
+<li><strong>Reliability:</strong> Considerations for reliability were moved to a <em>separate companion document</em> (presented next).</li>
+<li>Clarified checksum calculation for the transport layer.</li>
+<li>The document is considered stable.</li>
+</ul>
+</li>
+<li><strong>Working Group Adoption:</strong> An initial show of hands indicated 9 participants had read at least one version of the draft. The chairs will issue a call for working group adoption on the mailing list.</li>
+</ul>
+<h3>Native Short Addressing (NSA) Reliability Considerations (Presented by Luigi Iannone)</h3>
+<ul>
+<li><strong>New Draft:</strong> Companion document to the NSA base draft.</li>
+<li><strong>Core Idea:</strong> Reliability requires redundant links and can be achieved through different solution classes.</li>
+<li><strong>Solution Class 1: Multiple Addresses:</strong>
+<ul>
+<li>Nodes are assigned secondary addresses, building orthogonal (secondary) tree topologies.</li>
+<li>If a node detects a failure in the primary path, it can use the secondary topology to inform the root via ICMP, allowing the root to redirect traffic.</li>
+<li>Pascal Thubert raised concerns that this approach, particularly detecting failures and updating state at the root, begins to resemble a routing protocol, potentially undermining NSA's stateless forwarding goal. Luigi acknowledged trade-offs, where for few failures, it works with low state, but for more dynamic environments, it moves closer to routing.</li>
+</ul>
+</li>
+<li><strong>Solution Class 2: Single Address:</strong>
+<ul>
+<li>Nodes retain a single address but store alternate neighbors (e.g., an alternate parent).</li>
+<li>The root maintains a more complete topology knowledge (higher state at the root).</li>
+<li>Nodes have low state (neighborhood info).</li>
+<li>This approach offers higher robustness due to centralized coordination at the root.</li>
+</ul>
+</li>
+<li><strong>Trade-offs:</strong> Multiple addresses offer low root state and low node state but potentially less guaranteed path feasibility with more failures. Single address offers higher root state but higher robustness and more effective failure handling. The presenter concluded that for unstable networks, using a full routing protocol might be necessary.</li>
+<li>Discussion was cut short due to time constraints.</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ul>
+<li><strong>Decision:</strong> The 6lo working group will issue a call for working group adoption for the Native Short Addressing (NSA) base document on the mailing list.</li>
+<li><strong>Action Item (Eric Klein):</strong> Initiate an email thread with the 6MAN chairs to discuss the proposed Node Uptime Option (currently in the Multicast Address Listener Registration draft). This discussion will determine if it should be a separate, short draft or remain in the current document.</li>
+<li><strong>Action Item (6lo Chairs, RPL Chairs):</strong> Coordinate a Working Group Last Call (WGLC) for the Multicast Address Listener Registration document in both the 6lo and RPL working groups. The WGLC will be held until a resolution on the Node Uptime Option is reached with 6MAN.</li>
+<li><strong>Action Item (Hong):</strong> Further enhance the security considerations section of the 6lo Use Cases draft to fully address Robert Sparks' comments, possibly by referencing existing security RFCs.</li>
+<li><strong>Action Item (Carlos Gomez):</strong> Elaborate on the details of using RPL (specifically non-storing mode) for CHIC compressed packet transmission over 802.15.4 networks in subsequent versions of the draft.</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+<li><strong>6lo Use Cases Draft:</strong> Eric Klein to issue the ballot and bring it to telechat by the end of August. Further discussion on Appendix A and security text might occur on the mailing list.</li>
+<li><strong>IPv6 over NFC Draft:</strong> Eric Klein to prioritize, clarify security considerations, and bring it back to the ISG for further progression.</li>
+<li><strong>IPv6 over PLC Draft:</strong> Eric Klein to secure two more ISG &quot;no objection&quot; or &quot;yes&quot; ballots for the current ISG members, then send the document to the RFC editor.</li>
+<li><strong>Multicast Address Listener Registration Draft:</strong> Proceed with a coordinated WGLC in 6lo and RPL WGs once the disposition of the Node Uptime Option is resolved with 6MAN.</li>
+<li><strong>Transmission of CHIC Compressed Packets over 15.4 Networks Draft:</strong> Continue discussions and elaborations on the mailing list.</li>
+<li><strong>Native Short Addressing (NSA) Base Document:</strong> A call for working group adoption will be issued on the mailing list.</li>
+<li><strong>Native Short Addressing (NSA) Reliability Considerations Draft:</strong> Continue technical discussions on the mailing list.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

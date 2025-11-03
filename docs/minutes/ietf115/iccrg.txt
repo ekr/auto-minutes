@@ -1,0 +1,68 @@
+**Session Date/Time:** 08 Nov 2022 13:00
+
+# iccrg
+
+## Summary
+
+The ICCRG session covered several technical presentations, including the potential for energy savings through optimized congestion control, a fundamental problem of starvation in delay-convergent congestion control algorithms, the challenges and benefits of applying formal specifications to congestion control, and an analysis of L4S implementation in 5G Radio Access Networks. A key discussion point highlighted the re-chartering effort for the research group and a call for community engagement.
+
+## Key Discussion Points
+
+*   **Chairs Transition and Re-Chartering**: Colin Perkins (IRTF Chair) announced the new ICCRG chairs, Simone Ferlin and Michael Shapiro, thanking outgoing chair Jana Iyengar. He also noted the ongoing re-chartering process for the group, encouraging community input to define future research directions, especially in light of new IETF work like the Congestion Control Working Group.
+*   **Energy Saving through Congestion Control (Michael Welzl)**:
+    *   **Premise**: Improving network performance, specifically reducing Flow Completion Time (FCT), can lead to significant energy savings, particularly for short transfers.
+    *   **Mechanism**: Shorter FCT allows devices (e.g., Wi-Fi NICs) to enter sleep states for longer periods.
+    *   **Findings**: Simple experiments showed up to 1/3 energy savings for short transfers by optimizing initial window and reducing FCT.
+    *   **Discussion**:
+        *   Considered the trade-off between speed and retransmissions.
+        *   Raised the "rebound effect" – faster network might lead to more usage, potentially negating energy savings.
+        *   Explored the potential for in-network intelligence (e.g., explicit feedback like CoINERGENE) to further optimize FCT and energy.
+*   **The Problem with Delay-Convergent Congestion Control Algorithms (Venkat Arun)**:
+    *   **Observation**: All known end-to-end delay-based congestion control algorithms (e.g., Vegas, FAST, Copa, BBR) exhibit "delay convergence," meaning their measured delay variations become small after an initial phase.
+    *   **Core Problem**: End-to-end measurements struggle to distinguish between congestive queuing delay and non-congestive delays (e.g., propagation, Wi-Fi frame aggregation, OS scheduling jitter).
+    *   **Consequence**: This ambiguity leads to different flows estimating the congestive component of delay differently, potentially resulting in one flow arbitrarily starving another, especially in cases where flows have different propagation delays.
+    *   **BBR Example**: BBR's `bw_` cap behavior, combined with network jitter, can lead to significant unfairness and starvation.
+    *   **Proposed Solutions**: Designing CCAs that deliberately oscillate delay, target finite link rates, or utilize explicit in-network support (like ECN).
+    *   **Discussion**:
+        *   Acknowledged the known "late comer problem" but noted this starvation is more severe.
+        *   Difficulty in quantifying real-world occurrence due to complex network dynamics and operator-deployed isolation mechanisms.
+        *   Suggested exploring delay gradient or "chirping" techniques to better distinguish delay components.
+*   **Formal Specifications for Congestion Control (Lenore D. Levine)**:
+    *   **Advocacy**: Presented the benefits of creating unambiguous, formal specifications for congestion control algorithms.
+    *   **Benefits**: Clarify protocol intent, enable formal proofs of high-level properties, and facilitate automatic generation of stress tests for implementations.
+    *   **QUIC Experience**: Formal methods applied to QUIC found numerous conformance issues, bugs, and even security vulnerabilities in mature implementations, highlighting the value beyond traditional interop testing.
+    *   **Challenges for CC**: Unlike functional protocols, congestion control requires a *quantitative model of the network* and *quantitative properties* to be effective.
+    *   **Call to Action**: Requested the ICCRG community to help define reasonable network models and quantitative properties for common congestion control algorithms (e.g., NewReno).
+    *   **Discussion**:
+        *   Concerns raised about the difficulty of modeling real-world networks, especially proprietary components that adapt their behavior.
+        *   Suggested focusing on identifying "sensitivities" and design considerations rather than absolute predictive models.
+        *   An upcoming IRTF side meeting on "usable formal methods" was advertised for interested parties.
+*   **L4S in Radio Access Network (Ingemar Johansson)**:
+    *   **Implementation**: Described how L4S (ECT(1) marking) is implemented in a 5G Radio Access Network (RAN) base station, performing congestion marking at the PCP layer due to encryption, and allocating L4S traffic to a dedicated bearer.
+    *   **RAN Dynamics**: Highlighted the complexities of 5G RAN, including fast/slow fading, new user arrivals, and Mac layer losses, leading to highly variable throughput that requires rapid CC response.
+    *   **Trade-offs**: Discussed the dilemma of L4S in a highly variable environment – prioritizing low queue delay (L4S) might mean operating at the lower bound of available bandwidth, potentially reducing overall link utilization. Buffering, while increasing delay, could allow higher throughput and better radio efficiency.
+    *   **Conclusion**: L4S is ideal for latency-sensitive interactive traffic, but classic congestion control might be more suitable for applications with client buffers (e.g., video streaming) to maximize radio efficiency.
+    *   **Discussion**: Limited due to time, encouraged further discussion offline and on the mailing list.
+*   **Leadbat++ and BBR Interactions (Marcelo Bagnulo)**:
+    *   **Experiment**: Investigated interactions between Leadbat++ (targeting 60ms queue delay) and BBRv1/v2 (aiming for near-zero queue delay) under various RTTs and capacities.
+    *   **BBRv1 Anomaly**: Unexpectedly, for RTTs < 60ms, BBRv1 did *not* yield to Leadbat++ as expected for a best-effort-lower-priority flow. BBRv1's 1 BDP flight size cap for small RTTs limited its aggression, allowing Leadbat++ to use the remaining capacity.
+    *   **BBRv2 Behavior**: In contrast, BBRv2 *did* completely yield to Leadbat++ for small RTTs, aligning with its more aggressive queue-avoidance.
+    *   **Slowdown Mismatch**: Identified that Leadbat++ and BBR use different periodic slowdown mechanisms for base RTT measurement (fixed period vs. ramp-up dependent), leading to desynchronization, RTT misestimation, and aggressive sending.
+    *   **Proposed Solutions**:
+        *   Modify Leadbat++ to target `min(current_target, base_rtt)` to ensure it yields.
+        *   Standardize the slowdown mechanism across different congestion control algorithms to ensure accurate base RTT measurement and reduce undesirable interactions.
+    *   **Proposal**: Called for defining congestion control "invariants" – common properties or mechanisms that all CCAs should implement similarly to avoid fighting each other.
+
+## Decisions and Action Items
+
+*   **Re-chartering Engagement**: The community is urged to engage with the chairs and on the mailing list regarding the ICCRG re-charter.
+*   **Formal Methods Discussion**: Individuals interested in formal specifications for network protocols are encouraged to attend the "usable formal methods" side meeting on Thursday lunchtime (specific room details on side meeting list).
+*   **Future Meeting Room**: The chairs acknowledged the need for a larger room for future ICCRG meetings and encouraged attendees to scan QR codes for attendance tracking to support this.
+*   **Continue Discussions Offline/Mailing List**: Several technical discussions were curtailed due to time, with participants encouraged to continue engagement on the ICCRG mailing list.
+
+## Next Steps
+
+*   **Community Input on Charter**: Provide feedback and input on the ICCRG re-charter to shape the group's future work.
+*   **Defining Network Models**: Collaborate with researchers like Lenore Levine to define quantitative network models and properties relevant to congestion control for formal specification efforts.
+*   **Congestion Control Invariants**: Explore the proposal for defining common invariants or standardized mechanisms (e.g., RTT measurement slowdowns) across different congestion control algorithms to improve interoperability and fairness.
+*   **Further Research**: Investigate the identified issues of starvation in delay-convergent algorithms and the interactions between different congestion control protocols (Leadbat++, BBR) to find robust solutions.

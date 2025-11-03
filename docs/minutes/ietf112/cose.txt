@@ -1,0 +1,66 @@
+**Session Date/Time:** 10 Nov 2021 14:30
+
+# cose
+
+## Summary
+
+The cose working group session covered the status of existing documents, including COSE Hash Algorithms and RFC 8152bis (algs and struct), COSE X.509, and COSE Countersign. A significant discussion point arose regarding a proposed change to allow integer `key_id` values in the RFC 8152bis-struct document, with differing views on whether this constituted a "breaking change" and its implications for the IETF standards track process. Two new drafts were presented for potential working group adoption: C509 for a COSE X.509 certificate profile, and COSE HPKE for Hybrid Public Key Encryption. Finally, a draft proposing faster verification of ECDSA signatures was introduced, focusing on optimizing JWS signatures.
+
+## Key Discussion Points
+
+*   **COSE Hash Algorithms:** The document is awaiting answers to RFC Editor questions. The chairs will compile responses in 1-2 weeks after working group review of proposed answers.
+*   **RFC 8152bis-algs and -struct:** Both documents are in AUTH48.
+    *   **`kid` (key_id) as Integer vs. Byte String in `struct` draft:** A PR proposes allowing `kid` to be an integer type in addition to a byte string.
+        *   **Arguments against:** Mike Jones (chair) strongly opposed, considering it a "breaking change" not suitable for transition from Proposed Standard to Internet Standard. He argued it would break existing implementations, necessitate pulling the document from the RFC Editor queue, and that numeric byte string representation is sufficient.
+        *   **Arguments for:** Karsten claimed the process allows for small fixes based on experience, and that CBOR encoding would prevent misinterpretation, thus not being a breaking change in practice. John agreed, comparing it to adding new algorithms.
+        *   **IETF AD (DKG) perspective:** Acknowledged valid concerns from both sides. Stated that such a change would likely require a specific Working Group Last Call and an IETF Last Call. Suggested a separate document to update the Internet Standard as an alternative.
+        *   **Versioning:** Bob suggested that if changes are made, versioning is typically used to ensure compatibility. Karsten argued explicit versioning is not needed as CBOR's major type already distinguishes data types.
+*   **COSE X.509 Certificate Profile:** The document is in IESG evaluation.
+    *   Several GitHub issues are resolved or marked as fixed, but participants were asked to review if their concerns were fully addressed.
+    *   The media type issue needs further discussion between the chairs and Karsten to formulate appropriate text.
+    *   Clarification and strong recommendations for protecting `x5t` and `x5chain` parameters are needed.
+*   **COSE Countersign:** The document is ready to be sent to the IESG, as the shepherding write-up by Michael Richardson has been completed.
+*   **New Draft: C509 (COSE X.509 Certificate Profile):**
+    *   The base specification is considered stable and mature, with existing Rust code. Reviews are encouraged.
+    *   **Revocation (CRLs, OCSP):** A proposal was made to move CRLs (and potentially OCSP) into a separate draft to expedite the core C509 specification.
+        *   Discussion centered on the implications: separating could speed up the core C509 but might create a gap if no mandatory revocation mechanism is specified. A normative reference could link the two, but risks delaying core C509 publication.
+        *   Concerns were raised about the historical issues with OCSP (e.g., must-staple, privacy implications) in the X.509 world, suggesting these lessons be applied.
+        *   Mozilla's "CRL light" was mentioned as a potential alternative to explore.
+*   **New Draft: COSE HPKE (Hybrid Public Key Encryption):**
+    *   This work originated in the SUIT working group for firmware encryption but is proposed for broader adoption in COSE.
+    *   It defines a three-layer structure for encryption and supports detached payloads.
+    *   Implementation experience exists (ARM, based on Happy Key).
+    *   **Discussion:** Questions included the use of unauthenticated HPKE modes (relying on COSE signature for authentication) and the specific use case for AES Key Wrap as a deterministic authenticated encryption mode for key distribution. A broader question was raised about HPKE's role as the future of key exchange in COSE, especially concerning post-quantum KEMs.
+*   **New Draft: Fast Verification of ECDSA Signatures:**
+    *   Rene introduced a method to accelerate ECDSA signature verification without changing the signature format.
+    *   The "trick" relies on the malleability property of ECDSA, where two valid signatures exist (one with an odd y-coordinate for the ephemeral signing key, one with an even). By adopting a convention (e.g., always picking the even y-coordinate option), the ephemeral signing key can be recovered from the signature itself, enabling faster algebraic verification.
+    *   This could offer significant speed-ups for single (30%) and batch (6x) verifications, particularly relevant for JWS signatures in applications like e-health QR codes.
+
+## Decisions and Action Items
+
+*   **COSE Hash Algorithms:**
+    *   **ACTION:** Working Group members to review the proposed answers to RFC Editor questions in the GitHub repository.
+    *   **ACTION:** Chairs to provide answers to the RFC Editor within 1-2 weeks.
+*   **RFC 8152bis-struct `kid` change:**
+    *   **DECISION:** No immediate change will be made to the document in AUTH48. Further discussion will take place on the mailing list or in future sessions regarding this change and its impact on the standards process.
+*   **COSE X.509 Certificate Profile:**
+    *   **ACTION:** Participants involved in X.509 discussions to review the GitHub issues and confirm resolutions.
+    *   **ACTION:** Chairs and Karsten to discuss and propose text for the media type issue.
+    *   **ACTION:** Chairs to create a GitHub issue and work on phrasing to strongly recommend protection of `x5t` and `x5chain` parameters.
+*   **COSE Countersign:**
+    *   **ACTION:** The document will be sent to the IESG immediately.
+*   **C509 (COSE X.509 Certificate Profile):**
+    *   **DECISION:** The revocation parts (CRLs, OCSP) will be separated into a new, distinct draft to allow the core C509 specification to progress more quickly.
+    *   **ACTION:** Working Group members are encouraged to provide reviews for the C509 draft.
+    *   **ACTION:** John to share information on Mozilla's "CRL light" for future discussion.
+*   **COSE HPKE:**
+    *   **ACTION:** Chairs to issue a Call for Adoption on the mailing list for the COSE HPKE draft.
+*   **Fast Verification of ECDSA Signatures:**
+    *   **ACTION:** Interested parties are encouraged to reach out to Rene to discuss the draft further.
+
+## Next Steps
+
+*   Continue discussions on the `kid` integer/byte string change for RFC 8152bis-struct, considering process implications and alternatives.
+*   Progress the core C509 draft, while simultaneously working on the separate draft for revocation mechanisms (CRLs, OCSP, and potentially "CRL light").
+*   Evaluate the COSE HPKE draft for working group adoption based on the upcoming Call for Adoption.
+*   Further explore the technical merits and potential adoption path for fast ECDSA signature verification within the working group.

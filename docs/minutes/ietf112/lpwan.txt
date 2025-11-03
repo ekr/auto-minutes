@@ -1,0 +1,97 @@
+**Session Date/Time:** 09 Nov 2021 14:30
+
+# Session: lpwan
+
+## Summary
+
+The lpwan working group session covered the status and next steps for several key drafts, including the LPWAN Architecture, SCHC YANG Data Model, SCHC over Sigfox, SCHC Compound ACK, SCHC over NB-IoT, and SCHC over PPP. A significant report on the adoption of SCHC by the LoRa Alliance for DLMS over LoRaWAN was also presented. Key decisions were made regarding the progression of the SCHC YANG Data Model and SCHC Compound ACK drafts towards publication, and a path forward was defined for the SCHC over PPP draft via IESG sponsorship.
+
+## Key Discussion Points
+
+*   **Administrative Remarks**: Reminders on IPR, Code of Conduct, meeting recording, and the new Mitico chat functionality (replacing Jabber). Minute-taking assistance was requested and provided by Dominique.
+*   **LPWAN Architecture Draft**:
+    *   No interim meetings since IETF 111, but two interims are planned for December to accelerate progress.
+    *   The draft aims to provide a reference architecture for SCHC, covering traditional IoT settings (device-to-gateway) and peer-to-peer (PPP) scenarios.
+    *   It addresses terminology consistency across technologies and integration with the YANG data model.
+    *   Authors requested community input to prioritize specific issues/questions for treatment.
+    *   Next steps include detailing the full SCHC lifecycle.
+*   **SCHC YANG Data Model (RFC 8724)**:
+    *   Presented version published in August, incorporating several changes.
+    *   **Cosmetic Changes**: Added dashes to names for clarity (e.g., `field-id-type` to `fl`).
+    *   **Target Values**: Removed `string` option, keeping only `binary` for simpler management and type inference from `field-id`.
+    *   **Container `chic`**: Removed version number (not in RFC 8724), added `no-compression` rule type.
+    *   **L2 Word**: Added `L2-word` which was missing but present in the RFC.
+    *   **Compound ACK**: Initially added definition for `compound-ack` behavior but discussion clarified this should be handled as an *extension* in a separate draft to demonstrate the extension mechanism for the YANG model, rather than integrated into the base RFC 8724 model.
+    *   **Maximum Window Size**: A field for reducing the maximum window size from the default `2^fcn_size - 2` needs to be updated.
+    *   **Relations between Leaves**: Introduced `must` statements to enforce logical dependencies (e.g., `target-value` required unless `matching-operator` is `ignore`, `argument` for `lsb` or `msb`).
+    *   **Error Handling**: `must` statements enforce `tile-size` and related fields only when `ack-on-error` is active.
+    *   **Maturity**: Document is stable and has been tested during the hackathon (JSON to YANG conversion, `yongsan` validation).
+    *   **WGLC Readiness**: Considered mature enough for WGLC, with minor changes related to the Compound ACK extension.
+    *   **YANG Doctor Review**: Previously reviewed, but a new review will be needed after latest fixes.
+*   **SCHC over Sigfox Draft**:
+    *   Since IETF 111, revised to add `compound-ack`, then split `compound-ack` into a separate, generic document.
+    *   Revision 7 to 8 added normative references to `compound-ack`, signaling examples, and abort definitions.
+    *   **Hackathon Results**: Successfully implemented and tested with a mini weather station sending temperature and humidity via JSON over Sigfox. Used two threads (sensing, SCHC communication), demonstrated fragmentation/retransmission.
+    *   **Future Work**: Verifying latest details, testing asset tracking use case.
+    *   **Dependencies**: Strong dependency on SCHC Compound ACK and the YANG model drafts.
+    *   **WGLC Readiness**: Authors believe it's very close, pending stability of its dependencies.
+*   **SCHC Compound ACK Draft**:
+    *   Started as part of SCHC over Sigfox, then split into a generic document.
+    *   Implemented and tested over Sigfox. Draft posted in July, minor revision in October 2021.
+    *   **WGLC Feedback**: A WGLC was held late Oct/early Nov 2021. Feedback received from Dominique and Pascal.
+        *   **YANG Data Model**: Confirmation that `compound-ack`'s YANG model description should demonstrate *extension* of the base YANG model, not a modification.
+        *   **Compressed Bitmaps**: Clarification needed regarding compressed bitmaps not being supported for intermediate windows (only the last bitmap).
+        *   **`NXT` Section**: Need a clearer `NXT` section detailing profile requirements for each technology using compound ACK.
+    *   **WGLC Status**: WGLC just ended. Authors will address comments on the mailing list.
+*   **SCHC over NB-IoT Draft**:
+    *   Version 6 addresses comments from Ivo and Laurent.
+    *   **Terminology**: Updated to IETF terminology (e.g., `device` instead of `user equipment`, `radio gateway` instead of `node-B`).
+    *   **Architecture**: Flattened architecture concept; separate `MME` and `CSGW` into different devices due to different connection types (small bandwidth vs. normal radio data).
+    *   **Future Work**: Plan to add management for profiles to support Delay Tolerant Transfer Objects (DTTOs).
+    *   **Motivation**: This new feature is proposed as a "carrot" to motivate 3GPP adoption of SCHC, addressing a current problem in cellular IoT like firmware updates over the air.
+    *   **WGLC Readiness**: Current version (v6) is considered ready for WGLC. Adding DTTOs would likely require a new version or separate document.
+*   **SCHC Adoption in LoRa Alliance**:
+    *   Dominique reported on the successful adoption of SCHC (RFC 8724, RFC 9011) by the LoRa Alliance.
+    *   **Driving Use Case**: DLMS over LoRaWAN for energy metering (electricity and gas meters).
+    *   **Standardization Approach**: Using SCHC to compress UDP/IPv6, leveraging existing DLMS over UDP/IPv6 stack.
+    *   **Additional Specifications**: LoRa Alliance specification recommends shorter inactivity/retransmission timers than default 9011 and selecting the compression rule that minimizes residue.
+    *   **Status**: Technical specification is being written, going for adoption at the LoRa Alliance Technical Committee meeting next week. Certification document to follow.
+    *   **Future Work**: Investigation into using LoRaWAN with Matter (CSA Alliance) for connected smart homes, which would also use SCHC for IPv6 transport.
+    *   **Contributors**: Acknowledged contributions from Archos, Semtech, and many companies and institutions.
+*   **SCHC over PPP Draft**:
+    *   **Background**: Explores SCHC over PPP, extending its use beyond LPWAN technologies to serial links, point-to-point Ethernet, and Wi-Fi.
+    *   **Charter Issue**: PPP is not part of the LPWAN WG charter.
+    *   **Attempt at INT Area**: Document spent a year in the INT area, but received no feedback or interest, likely due to low interest in PPP itself.
+    *   **Path Forward**: Discussed with the AD. The expertise for SCHC is in the LPWAN WG.
+    *   **Technical Comment**: Dominique noted a technical detail on padding between Rule ID and compression residue that needs discussion.
+
+## Decisions and Action Items
+
+*   **LPWAN Architecture Draft**:
+    *   **Decision**: Schedule interim meetings starting December to accelerate work.
+    *   **Action**: Authors to solicit community input on priorities for the draft.
+*   **SCHC YANG Data Model**:
+    *   **Action**: Laurent to make minor fixes (specifically related to Compound ACK being an extension) in the coming days.
+    *   **Action**: After fixes, Laurent to request a YANG doctor review (estimated 2 weeks).
+    *   **Decision**: Aim for Working Group Last Call (WGLC) by the end of the year, potentially concurrent with YANG doctor review if confidence is high.
+*   **SCHC Compound ACK Draft**:
+    *   **Action**: Authors to address all review comments (Dominique's on compressed bitmaps, `NXT` section, and the YANG model integration) on the mailing list.
+    *   **Decision**: No need for a second WGLC as changes are not protocol-altering.
+    *   **Action**: After addressing comments, request IESG publication.
+*   **SCHC over NB-IoT Draft**:
+    *   **Decision**: Current Version 6 is ready for WGLC.
+    *   **Action**: Authors to decide whether to incorporate Delay Tolerant Transfer Objects into this draft (potentially a new version) or pursue as a separate document.
+*   **SCHC over PPP Draft**:
+    *   **Action**: Pascal to republish an updated draft (v04) on the mailing list, as it is currently expired.
+    *   **Action**: LPWAN WG members are requested to review the draft, even if outside the charter.
+    *   **Decision**: Once reviews are complete and the WG is satisfied, the draft will seek IESG sponsorship for publication in the IETF Stream.
+
+## Next Steps
+
+*   **LPWAN Architecture**: Continue development, focusing on the SCHC lifecycle and incorporating community feedback.
+*   **YANG Data Model**: Finalize fixes, undergo YANG doctor review, and proceed to WGLC.
+*   **SCHC over Sigfox**: Ensure stability of dependent drafts, make final adjustments, and prepare for WGLC.
+*   **SCHC Compound ACK**: Resolve all WGLC comments and proceed with publication request.
+*   **SCHC over NB-IoT**: Initiate WGLC for version 6, and strategize the integration or separate development of Delay Tolerant Transfer Objects.
+*   **SCHC over PPP**: Initiate internal reviews within the LPWAN WG to prepare for IESG sponsorship.
+*   **LoRa Alliance Adoption**: Monitor the adoption process within the LoRa Alliance, including technical committee approval and certification document creation.

@@ -1,0 +1,90 @@
+**Session Date/Time:** 24 Mar 2022 13:30
+
+# lsr
+
+## Summary
+
+The lsr working group session covered a range of topics, including a status update, a proposal for inclusive language in OSPF, a new node liveness protocol, IGP extensions for scalable SR-based enhanced VPNs, proxy forwarding, deterministic routing, dedicated metrics for Flex Algo, ASLA extensions, OSPF monitor nodes, and anycast affiliation advertisements. Key themes included the need for alignment with foundational documents, clarification of use cases and existing mechanisms, and the complexity versus efficiency of proposed IGP extensions. Several proposals were noted as premature for adoption, pending resolution in other working groups or further justification.
+
+## Key Discussion Points
+
+*   **Working Group Status Report:**
+    *   No new RFCs were published.
+    *   A new draft on IS-IS Reverse Metric (rfc-4842) is in AD review.
+    *   Flex Algorithm received one comment on sub-TLV overflow, also in AD review.
+    *   Publication was requested for IS-IS Flood Reflection and BFD Strict Mode (OSPF).
+    *   YANG models are awaiting publication of base YANG models; Flex Algorithm and Reverse Metric YANGs are expected to have a working group call soon.
+    *   Several adopted drafts have not been republished by their authors.
+    *   Multiple contentious adoption requests were not adopted by the working group.
+
+*   **OSPF Inclusive Language (AC Lindem):**
+    *   A proposal was presented to replace "master/slave" terminology with "leader/follower" and the "MS bit" with an "L bit" in OSPF database exchanges to promote inclusive language.
+    *   This change requires an IANA action for the Database Description Flags registry.
+    *   Multiple RFCs (2328, v3, 4222, informational/experimental drafts) would be impacted.
+    *   The MIB and YANG models for OSPF do not contain "master/slave" references, so no deprecation or functional code changes are needed.
+    *   Discussion ensued about whether to create a separate update document or undertake a `bis` (revision) of RFC 2328, an Internet Standard document, to directly incorporate the changes and errata. While a `bis` would be ideal for canonical updates, concerns were raised about opening a "can of worms" with errata.
+
+*   **Node Liveness Protocol (Tony Lee):**
+    *   A new protocol was proposed to address the problem of IGP's carrying live reachability but not node liveness, especially in hierarchical networks where LSP presence in LSDB is insufficient.
+    *   It's designed as a separate publish/subscribe service, potentially running on ABRs or non-router hardware, to carry liveness information.
+    *   Scalability was discussed, with calculations suggesting it's sustainable (e.g., 3000 sessions for N nodes/area, A areas, 2 ABRs/area).
+    *   The proposal defines registration and notification messages using TLVs.
+    *   Discussion points included: the necessity of a new pub/sub mechanism (Tony is open to reusing existing IETF mechanisms if applicable), the appropriateness of inventing such a protocol within the IGP working group (Tony stated the problem originated here, but is flexible on WG placement), the potential pressure on ABRs (deemed manageable or offloadable), the scope of registration (for entire prefixes covering all loopbacks), and comparisons to BFD (Tony clarified it's not competing, but BFD was not favored as a solution). Operator feedback on deployment willingness was sought, with concerns raised about adding new operational burdens.
+
+*   **IGP Extensions for Scalable SR-based Enhanced VPN (Jie Dong):**
+    *   This draft proposes IGP extensions for IS-IS and OSPF to distribute status and information for Network Resource Partitions (NRPs), defined in the TEAS working group.
+    *   The document focuses on scalability optimizations, including mapping multiple overlay services to the same NRP (referred to as VTM in the draft), decoupling topology and resource attributes, and using a network-wide NRP ID.
+    *   Extensions include new VTM definition sub-TLVs (for ID, MTID, algorithm ID), mechanisms for advertising VTM resource attributes (via IGP autobundle extensions or provisioned link T-attributes), and VTM-specific data identifiers (SRCs/SRv6 locators).
+    *   Discussion highlighted that the draft's reliance on TEAS informational drafts makes it premature for standard-track adoption. Terminology alignment (VTM vs. NRP) with TEAS working group guidance is required.
+
+*   **LSR for SR Proxy Forwarding (Wemo):**
+    *   This draft, derived from a Spring WG document, proposes IGP extensions for advertising binding segments and proxy forwarding capabilities for SR-TP path protection.
+    *   Extensions include new TLVs for binding segments (binding SID, segment list) in OSPF and IS-IS, and a flag for proxy forwarding capability in router function capability TLV (OSPF) or SR capability sub-TLV (IS-IS).
+    *   A key point of contention raised by the Spring WG co-chair was that the core Spring document has not been adopted, and there was significant disagreement in Spring regarding the proposed IGP extensions, particularly as the functionality might be achievable with existing IS-IS mirror SIDs. The LSR WG agreed that this draft's adoption depends on architectural and functional resolution in the Spring WG.
+
+*   **IGP Deterministic Routing (Yi Long):**
+    *   A distributed deterministic routing mechanism using Flex Algo extensions was proposed to meet DetNet architecture goals (bonded latency, loss, jitter).
+    *   The approach considers node delay (queueing, transmission) in addition to link delay.
+    *   Proposed extensions include advertising deterministic link attributes (transmission delay, inter-node forwarding delay, scheduling delay) and using a "deterministic delay metric type" for Flex Algo path computation. It also suggests calculating redundant deterministic delay paths.
+    *   Discussion raised concerns about the granularity of measurements (per topology/adjacency vs. per traffic class) and the impact of path changes on latency/jitter in a distributed computation model. Input from the DetNet WG was deemed essential, and the draft needs to address operational aspects like the frequency of parameter changes and advertisements.
+
+*   **Dedicated Metric for Flex Algo (Meng Xiaodong):**
+    *   The draft proposes extensions for IS-IS and OSPF to advertise algorithm-specific link metrics for different Flex Algorithms.
+    *   The problem identified is that if multiple Flex Algos use the same metric type, they share the same metric value, which can prevent desired path steering for slices with different resource requirements.
+    *   A new sub-TLV carried in ASLA is proposed to override default metrics with algorithm-specific ones.
+    *   Discussion questioned whether existing generic metric mechanisms (user-defined metric types) already provide this functionality, making the proposal redundant. Concerns about introducing complexity, potential for routing loops, and alignment with multi-topology approaches were also raised.
+
+*   **Application Specific Link Attribute (Shrada):**
+    *   This draft proposes an extension to ASLA (RFC 8919) by adding an "A bit" (any application) to provide more granular control and efficient encoding for attributes applicable to all current and future applications.
+    *   The proposal aims to avoid repeating many attributes when a new application requires a specific value for only one attribute, arguing for better encoding efficiency and intuitive implementation.
+    *   Les raised strong concerns, stating there are no significant advantages, and the proposal adds considerable implementation and deployment complexity without clear benefits.
+    *   The discussion explored whether there is a real, pressing need (e.g., TLV space exhaustion) or if it's primarily a future-proofing measure.
+
+*   **OSPF Monitor Node (Alvaro Retana & Jeff Tantsura):**
+    *   A draft was presented to define an "active monitor" node, particularly for mobile network connections over point-to-point radio links. The goal is to ensure the monitor node is authenticated, non-transit, and cannot influence the network (e.g., no LSA propagation, no link advertisement, not eligible for DR/BDR).
+    *   Two options were proposed: locally configured "monitoring interface" parameters (giving the receiving router control) or the monitor node advertising a "Monitor" bit in LLS (relying on the monitor node to indicate its role).
+    *   Existing solutions (MaxH, O/N bits, RFC 6860) were compared, showing they do not fully meet all the stated goals.
+    *   AC suggested placing more of the burden for non-influencing behavior on the *monitoring node* itself (e.g., DR priority of zero, not advertising a router LSA) to enhance backward compatibility and reduce changes on the network-side router.
+
+*   **Anycast Affiliation Advertisement (Jeffrey Zhang):**
+    *   This draft proposes advertising affiliated addresses for anycast addresses, primarily to enable load balancing even without ECMP.
+    *   The argument was made that the existing N-flag in IS-IS/OSPF is insufficient as it only indicates an address belongs to the router, lacking specific affiliation semantics.
+    *   Reasons for explicit advertisement include non-exchangeability, potential for one-way affiliation, multiple anycast addresses, and controlled withdrawal of affiliation.
+    *   A new "Anycast Affiliation sub-TLV" (containing a list of affiliated addresses) is proposed for attachment to existing IS-IS/OSPF prefix TLVs.
+    *   Linda suggested using Flex Algo to identify the relevant topology, while Les asked for clarification on the specific need for this mapping beyond existing IGP capabilities and the new A-flag.
+
+## Decisions and Action Items
+
+*   **Working Group Status:** AC Lindem will follow up with authors of adopted drafts that have not yet been republished.
+*   **OSPF Inclusive Language:** Authors/chairs will consider initiating `bis` work on relevant OSPF RFCs (e.g., RFC 2328) to directly incorporate the language changes and errata, potentially after the current update draft is published.
+*   **IGP Extensions for Scalable SR-based Enhanced VPN:** The authors will align terminology (VTM to NRP) with TEAS working group guidance. Adoption of this document is currently considered premature until foundational TEAS drafts are further stabilized.
+*   **LSR for SR Proxy Forwarding:** The working group will await the outcome of discussions and potential adoption in the Spring working group, as there were significant architectural and functional concerns regarding these IGP extensions. The draft also needs to clarify advertisement details.
+*   **IGP Deterministic Routing:** The authors are requested to seek input from the DetNet working group and to address the operational aspects of advertisement frequency and parameter changes in the draft.
+*   **OSPF Monitor Node:** Authors will consider re-evaluating the approach to place more of the burden for non-influencing behavior on the monitoring node for better backward compatibility.
+*   **Anycast Affiliation Advertisement:** Authors need to clarify the specific use cases and technical justifications for this new mapping mechanism beyond what existing IGP capabilities (including the new A-flag) might offer.
+
+## Next Steps
+
+*   All authors are encouraged to review the comments received during the session and on the mailing list, and to revise their drafts accordingly.
+*   Continued discussion on the mailing list is expected for most drafts, particularly for ASLA Extensions, Node Liveness Protocol, and Dedicated Metric for Flex Algo.
+*   Authors should coordinate with relevant working groups (e.g., TEAS, Spring, DetNet) to ensure alignment and foundational work is in place before pursuing adoption in LSR.

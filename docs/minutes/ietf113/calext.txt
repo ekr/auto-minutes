@@ -1,0 +1,81 @@
+**Session Date/Time:** 22 Mar 2022 09:00
+
+# calext
+
+## Summary
+
+The calext working group discussed the implications of its new charter as a maintenance group. Key technical discussions centered on advancing several drafts: `ical-relations`, `subscription-upgrade`, `jscontact`, `vtasks`, and the crucial `js-calendar-icalendar-mapping`. Significant progress was noted for `ical-relations` and `subscription-upgrade` towards Working Group Last Call. For `jscontact`, decisions were made regarding the `context` and `label` properties and an interop testing phase was planned. The `vtasks` draft proposes significant structural simplifications with new components. A major portion of the session focused on the `js-calendar-icalendar-mapping` document, including errata for RFC 8984, proposals for new iCalendar properties (`GEO`, `JMAP-ID`, `CONTENT-ID`, `LINK-REL`, `UID` for sub-components), and a broad strategy for handling generic property mappings between iCalendar and JS Calendar. The group decided on a multi-document strategy for future specifications, including separate RFCs for iCalendar updates and a JS Calendar refresh, alongside the core mapping document.
+
+## Key Discussion Points
+
+*   **New Working Group Charter:** calext is now a maintenance working group. All new work on iCalendar or JS Calendar, and similarly for vCard and JSContact, must update mapping documents and consider both formats for backward compatibility.
+*   **`ical-relations` Draft:**
+    *   Currently at ISG review.
+    *   Discussed requiring explicit RFCs for using existing link relations in new ways.
+    *   Decided against including JS Calendar examples in this draft, to be handled by the main mapping document as `ical-relations` is nearing completion.
+    *   ISG Liaison (Francesca) confirmed the document is "green" and efforts will be made to preserve existing ballots.
+*   **`subscription-upgrade` Draft:**
+    *   Identified minor issues: incorrect spec reference for link relations and a malformed privacy section header.
+    *   A new copy with fixes is expected before Working Group Last Call (WGLC).
+*   **`jscontact` and `jscontact-vcard-mapping` Drafts:**
+    *   Both adopted by the working group.
+    *   `speakTo` property (for grammatical gender and pronouns) was adopted, deferring broader gender identity definitions to future work by experts.
+    *   **`context` property:** Absence of a context value in JSContact will map to `other` in other applications. No explicit `other` enum value will be added. Mapping document will clarify this.
+    *   **`label` property:** Confirmed that `label` (user-facing free text) should **not** be used for machine-readable mapping information (e.g., `calURI`). A generic scheme for mapping provenance will be needed, applicable to both vCard and iCalendar mappings.
+    *   Interop testing is a key next step.
+*   **`vtasks` Draft:**
+    *   Proposed simplification by introducing a `VSTATUS` component (encapsulating status, comment, dtstamp) and using the `PARTICIPANT` component (from `eventpub`) for attendee metadata. This removes the need for custom grouping parameters.
+    *   A new `REASON` property (free text) is proposed for status changes.
+    *   Discussion on where the JS Calendar mapping for `vtasks` components should reside (in this draft or the main mapping document).
+*   **`js-calendar-icalendar-mapping` Draft:**
+    *   **Errata for RFC 8984 (JS Calendar):** Two errata concerning recurrence properties for private events and `recurrenceIdTimeZone` for floating time events have been verified and will be incorporated.
+    *   **`GEO` property:** Proposed extending iCalendar's `GEO` property to allow `geo-URI` (RFC 5870) for richer geolocation information, despite breaking backward compatibility, as the current `GEO` is rarely used and less expressive.
+    *   **`JMAP-ID` parameter:** Proposed a `JMAP-ID` parameter to be attached to iCalendar properties like `UID` to preserve JMAP-specific identifiers which have different scope and character sets.
+    *   **`CONTENT-ID` parameter:** Proposed for `ATTACH` and `IMAGE` properties to enable referencing attachments within HTML descriptions using the `cid` scheme.
+    *   **`LINK-REL` parameter:** Addressed potential overlap with `ical-relations` draft. It was clarified that `ical-relations` definition aligns with RFC 8288 for link relations, including registration of new values and use of URIs for unregistered relations. A single `LINK-REL` parameter approach will be used.
+    *   **`RELATED-TO` for locations:** Instead of extending `RELATED-TO` for `start`/`end` temporal relations in `VLOCATION`, it was suggested to introduce a new, dedicated property within `VLOCATION`.
+    *   **`UID` for sub-components:** Discussed the need for `UID` properties on JS Calendar `Location`, `Participant`, and `Alert` objects to allow round-tripping of iCalendar `UID`s from components like `VLOCATION`, `PARTICIPANT`, and `VALARM`.
+    *   **Generic Property Mapping:** Debated how to handle iCalendar properties that don't have a direct, explicit mapping in JS Calendar. Options included:
+        1.  Explicitly defining every possible property.
+        2.  A generic mapping (e.g., `DTSTAMP` in any component maps to `updated`).
+        3.  Using a generic "vendor extension" or `JCAL-FOREIGN` mechanism for unknown properties.
+        *   Consensus leaned towards direct mapping for well-known properties and a generic mechanism (like `JCAL-FOREIGN`) for unrecognized properties, for robustness and interoperability.
+
+## Decisions and Action Items
+
+*   **`ical-relations` Draft:**
+    *   **DECISION:** No JS Calendar examples will be included in this document; the `js-calendar-icalendar-mapping` document will cover them.
+    *   **ACTION:** Mike Douglass to add text regarding the requirement to write an RFC for using existing link relations, aiming for completion this week.
+    *   **ACTION:** Francesca Palombini (ISG Liaison) to change the document's status to "Approved-Announcement to be sent, revised if needed" to preserve ISG ballots.
+*   **`subscription-upgrade` Draft:**
+    *   **ACTION:** Mike Douglass to update the draft with correct references and fix the privacy section header within 2-3 days.
+    *   **ACTION:** Chairs to initiate a Working Group Last Call (WGLC) once the updated draft is published.
+*   **`jscontact` and `jscontact-vcard-mapping` Drafts:**
+    *   **DECISION:** The absence of a `context` property in JSContact will map to `other` in existing applications. No explicit `other` enum value will be added to JSContact.
+    *   **DECISION:** The `label` property (user-facing) will not be used for machine-readable mapping information. A generic scheme for mapping provenance will be needed for both vCard and iCalendar mappings.
+*   **`vtasks` Draft:**
+    *   **ACTION:** Mike Douglass to make proposed changes: drop `GROUP` and `MODIFIED` parameters, introduce a `REASON` property, and rework the spec to use `VSTATUS` and `PARTICIPANT` components.
+    *   **ACTION:** Mike Douglass to add a JS Calendar example to the document.
+*   **`js-calendar-icalendar-mapping` Draft:**
+    *   **DECISION:** iCalendar's `GEO` property value types will be extended to allow `geo-URI` (RFC 5870).
+    *   **DECISION:** A new property will be introduced within `VLOCATION` (rather than extending `RELATED-TO`) to define temporal relations (e.g., `start`, `end`) for locations.
+    *   **DECISION:** Optional `UID` properties will be introduced on JS Calendar `Location` and `Participant` objects to preserve iCalendar `UID`s for sub-components, with a consistent mechanism to be used for `VALARM`s as well.
+    *   **ACTION:** Robert Bürger and Mike Douglass to write up a proposal for handling generic property mapping (direct conversion for known properties vs. a `JCAL-FOREIGN`-like mechanism for unknown ones) for mailing list discussion and the interim meeting.
+*   **Overall Document Strategy:**
+    *   **DECISION:** The `js-calendar-icalendar-mapping` document will be standards track.
+    *   **DECISION:** A multi-document strategy for related specifications will be adopted, including separate RFCs for:
+        1.  Sub-second time precision in iCalendar.
+        2.  iCalendar 5545 updates (e.g., `GEO` property extension).
+        3.  A refresh of the JS Calendar specification.
+        4.  The `js-calendar-icalendar-mapping` document.
+    *   **DECISION:** The `vtasks` draft will proceed independently as another iCalendar update, with its JS Calendar alignment to be handled by the main mapping documents.
+    *   **ACTION:** Ken Murchison volunteered to edit the JS Calendar refresh and/or the iCalendar `GEO` update if split.
+    *   **ACTION:** Chairs to add new milestones for the JS Calendar refresh, GEO update, and sub-second time documents once calls for adoption are issued.
+
+## Next Steps
+
+*   Mike Douglass will publish updated versions of the `ical-relations` and `subscription-upgrade` drafts this week.
+*   Robert Bürger will continue interop testing for the `jscontact` and `jscontact-vcard-mapping` drafts, targeting WGLC before the next IETF (July).
+*   Robert Bürger and Mike Douglass will prepare a proposal on generic property mapping for the `js-calendar-icalendar-mapping` draft, for discussion on the mailing list and at the upcoming interim meeting.
+*   The working group will hold an interim meeting in early May.
+*   The next IETF meeting (IETF 114) is scheduled for July in Philadelphia.

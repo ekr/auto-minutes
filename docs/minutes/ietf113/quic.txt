@@ -1,0 +1,95 @@
+**Session Date/Time:** 22 Mar 2022 09:00
+
+# quic
+
+## Summary
+
+The QUIC working group meeting covered administrative updates, status reports, and key discussions on several adopted and proposed drafts. Significant attention was given to editorial refinements for the Version Negotiation and QUIC v2 drafts, along with critical design issues in QUIC Load Balancing and Multipath. Qlog's transition to CDDL for schema definition was highlighted as a major improvement for tooling and extensibility. The session concluded with a call for interest in formalizing work on Zero-RTT Bandwidth-Delay Product (BDP) extensions.
+
+## Key Discussion Points
+
+*   **Chair Updates and Administrivia**
+    *   **Adopted Documents**: Multipath draft was adopted. HTTP/3 and QPACK drafts are in RFC-Editor Queue (RFC-48), Datagram draft entered RFC-48. Ops drafts completed IETF Last Call. GREASE BIT document shepherd write-up is pending.
+    *   **Milestones**: Discussion initiated on moving from dated to non-dated milestones for working group documents, citing that over 80% of dated milestones across IETF are late (median 2.5 years). Spencer Dawkins suggested communicating this change to other SDOs to avoid misinterpretation of IETF's progress.
+    *   **Temporary IANA Table**: The temporary IANA table on the `base-drafts` wiki will be archived. Values need to be migrated to official IANA registries following established procedures. Chairs will assist with this process.
+
+*   **QUIC Version Negotiation (VN)** (Draft: `draft-ietf-quic-version-negotiation`)
+    *   **Definition of "Compatible Version Negotiation"**: Discussion on whether using the same version as offered by the client constitutes "compatible version negotiation."
+        *   **Consensus**: Agreed with Ecker's view that even negotiating the initial offered version is a form of compatible version negotiation, simplifying terminology.
+    *   **Status**: Primarily editorial work remaining. Some implementation experience exists, but limited deployment with compatible VN.
+    *   **Next Steps**: Aim for Working Group Last Call (WGLC) after current editorial work is completed, not necessarily blocking on QUIC v2. MT to provide further editorial review.
+
+*   **QUIC v2** (Draft: `draft-ietf-quic-v2`)
+    *   **Purpose**: To grease the version field (exercise VN), and serve as a template for future QUIC versions. It adds no new features to QUIC v1.
+    *   **ALPN Usage**: Decision to reuse existing ALPNs (e.g., `h3` for HTTP/3) with QUIC v2, to avoid registry explosion and reduce implementation/deployment complexity.
+    *   **`Alt-Service` Parameter**: Proposed draft to add an `alt-service` parameter for signaling QUIC version, addressing the current mess where ALPN alone is insufficient to convey the full transport stack.
+    *   **Relationship with VN Draft**: Editorial issues are being coordinated between the v2 and VN drafts.
+    *   **Status**: Good interop experience. The draft is considered ready for WGLC, with the `alt-service` issue potentially deferred.
+
+*   **QUIC Load Balancing (LB)** (Draft: `draft-ietf-quic-load-balancers`)
+    *   **Design Simplification**: Reduced from multiple config options/algorithms to a single, cleaner connection ID structure (encrypted or not, with a magic length for single-block encryption).
+    *   **Crypto Review**: Latest review had concerns regarding inventing custom FFX-like mechanisms. Martin Duke and Christian Huitema are working through this; preference for validated crypto or explicit acknowledgment of the problem space if a simple standard solution is not found.
+    *   **Draft Split**: Strong support on the mailing list to split the draft into two: one for load balancing connection IDs and another for offloading retry packets to a separate service/hardware. A PR for this is imminent.
+    *   **Next Steps**: Requires further crypto review resolution, interop testing, and deployment experience.
+
+*   **QUIC Multipath** (Draft: `draft-ietf-quic-multipath`)
+    *   **Status**: Adopted earlier this year. Editorial clarifications and minor technical adjustments have been made.
+    *   **Open Issues (Key Design Issues)**:
+        *   **Path Status/Prioritization**: Strong desire to add explicit signaling (e.g., "standby" status for cost-sensitive paths like cellular) similar to MPTCP, as implicit methods are complicated.
+        *   **Server-initiated Paths**: Discussion on removing the QUIC v1 restriction that only clients can initiate path migration. Concerns raised about NAT traversal, path validation, and the potential for a cascading effect on complexity (e.g., who validates paths). Suggestion to keep the restriction in the base multipath draft and address server-initiated paths in a separate extension document.
+        *   **Zero-RTT Behavior for New Paths**: Proposal to allow some form of zero-RTT for newly established paths (currently requires a full RTT for path validation). Requires careful consideration of security, complexity, and specific use cases.
+        *   **Different Idle Timeouts per Path**: Discussion on whether to allow separate idle timeouts for different paths, given their diverse characteristics.
+        *   **ECN with Single Packet Number Space**: Problem: ambiguous ECN feedback if ACKs cover packets from different paths. Proposed solutions: sender recommendation to separate ACKs if ECN is marked, receiver assumption of conservative congestion on all paths, or disabling ECN. Gary agreed to review the PR, disliking the "break ECN" option.
+        *   **Single vs. Multiple Packet Number Spaces**: Long-standing debate.
+            *   **Pros/Cons**: Efficiency (multiple PN spaces slightly more efficient), code complexity (trade-offs), ACK handling (multiple PN spaces are clearer for ECN), Connection ID (multiple PN spaces require at least one CID).
+            *   **"Unified Proposal"**: Christian Huitema and others proposed a unified approach to make complexity optional. Implementations supporting zero-length CIDs would use a single PN space (with associated complexity for ACK handling), while those with long CIDs could leverage multiple PN spaces (simpler ACK logic). This approach aims to reduce risk for interop and offer flexible complexity.
+
+*   **Qlog** (Drafts: `draft-ietf-quic-qlog-main-schema`, `draft-ietf-quic-qlog-quic-events`, `draft-ietf-quic-qlog-h3-events`)
+    *   **Transition to CDDL**: Qlog schema definitions migrated from a Typescript-like dialect to CDDL (Concise Data Definition Language), an IETF standard.
+    *   **Benefits of CDDL**: Improved clarity, explicit extension points (`sockets`/`plugs`), better handling of optional fields, and enabling automated tooling (validation, dummy JSON generation, code generation, real-time log validation).
+    *   **Future Work**: More editorial updates (e.g., aligning with HTTP/3 field name changes), adding new events (e.g., CPU/thread info, more high-level QPACK events), and addressing open issues.
+    *   **Open Issues**:
+        *   Further splitting the main schema (e.g., removing operational concerns like environment variables).
+        *   Versioning and extensibility models for schemas and protocol events.
+        *   **Security and Privacy**: Major concern, currently an "unsolved problem" in a standardized context. Seeking best practice documents or guidance on what minimum should be specified in Qlog (e.g., per-field indicators for sensitivity) to avoid delaying RFC publication. Brian Trammell and Eric Rescorla volunteered to assist.
+
+*   **Zero-RTT BDP (Bandwidth-Delay Product)** (Drafts: `draft-kuehlewind-quic-bdp-extension`, `draft-kuehlewind-quic-careful-resume`)
+    *   **Premise**: Explicitly remembering transport parameters from previous connections to initialize new connections, similar to TCP but with more precise control for QUIC.
+    *   **Motivation**: Improve initial performance on paths with large BDP (e.g., satcom links) by avoiding slow start.
+    *   **Safety Considerations**: Need to prevent overestimation or starvation if network conditions change. Solutions explored: conservative initial jump, rapid congestion reaction. Malicious client concerns were assessed as low.
+    *   **Drafts**: Two drafts propose mechanisms: one for BDP extension, another for "careful resume" with safety guidelines.
+    *   **Call for Interest**: The authors seek feedback from the working group on whether this topic should be adopted as a working group item and if members are willing to contribute to progress these drafts to RFC.
+
+## Decisions and Action Items
+
+**Decisions:**
+*   **QUIC Version Negotiation**: The working group agrees that using the same version as initially offered by the client is considered "compatible version negotiation."
+*   **QUIC v2**: QUIC v2 will reuse existing HTTP/3 ALPNs (e.g., `h3`).
+*   **QUIC Load Balancing**: The draft will be split into two separate documents: one for load balancing and one for retry offload.
+
+**Action Items:**
+*   **General**: Chairs will archive the temporary IANA table and assist in migrating entries to official IANA registries.
+*   **QUIC Version Negotiation**:
+    *   David Scanazzi and Ecker to complete editorial work on the draft.
+    *   Martin Thompson to review the latest draft and provide specific editorial feedback before WGLC.
+*   **QUIC v2**: Martin Duke and David Scanazzi to coordinate on editorial issues and further discussion on ALPN signaling, potentially incorporating ALPN compatibility discussions into the VN draft.
+*   **QUIC Load Balancing**:
+    *   Martin Duke and Christian Huitema to address crypto review comments, specifically on custom FFX-like mechanisms.
+*   **QUIC Multipath**:
+    *   Mireia to propose a solution for explicit path status/prioritization, potentially incorporating a multi-bit priority.
+    *   Eric Rescorla to provide historical context on the removal of server-initiated path migration in QUIC v1 to inform current discussions.
+    *   Yanmei to add more information to the GitHub issue regarding specific use cases for Zero-RTT behavior on new paths.
+    *   Gary to review the PR regarding ECN with single packet number spaces and provide comments.
+    *   The working group is encouraged to provide feedback on the "unified proposal" for single vs. multiple packet number spaces.
+*   **Qlog**:
+    *   Robin to coordinate with Brian Trammell and Eric Rescorla offline to develop guidance on security and privacy in Qlog, considering per-field indicators.
+    *   Anyone with expertise in QPACK to contribute to Issue 199 to improve QPACK event definitions.
+*   **Zero-RTT BDP**: The working group is requested to provide feedback on the mailing list regarding interest in adopting the Zero-RTT BDP extension and Careful Resume drafts as working group items.
+
+## Next Steps
+
+*   Continue editorial work on QUIC Version Negotiation and QUIC v2, aiming for Working Group Last Call for both.
+*   Address critical crypto review comments and proceed with splitting the QUIC Load Balancing draft.
+*   Resolve key design issues in QUIC Multipath, particularly concerning path prioritization, server-initiated paths, ECN handling, and the single/multiple packet number space debate, with a focus on gathering more specific use cases and implementation feedback.
+*   Further develop Qlog by continuing editorial updates, adding new events, and addressing the complex security and privacy considerations through community engagement.
+*   Gather explicit feedback from the working group on the adoption of the Zero-RTT BDP and Careful Resume proposals.

@@ -1,0 +1,74 @@
+**Session Date/Time:** 11 Nov 2021 14:30
+
+# acme
+
+## Summary
+
+The ACME session at IETF 112 covered updates on several existing drafts and presentations for `dtn-node-id`, Automated Certificate Management Environment Renewal Info (ARI), `integrations`, and `subdomains`. Key discussions revolved around technical clarifications, proposed protocol extensions, terminology choices, and the progress of various documents towards working group last call or ISG submission. A new potential use case for client certificates/code signing was also discussed.
+
+## Key Discussion Points
+
+*   **Administrative**
+    *   Russ Housley volunteered as note taker.
+    *   The Jabber room was monitored for questions/comments.
+*   **Document Updates**
+    *   **RFC 8991bis-15 (Star Delegation)**: Published as RFC 8991bis-15. Authors acknowledged.
+    *   **draft-ietf-acme-authority-token-07**: Published, includes additional text and IANA considerations, broken into sections. Currently in IETF Last Call until next Monday.
+    *   **draft-ietf-acme-authority-token-tnoth-list**: No modifications since last IETF. Both `authority-token` drafts will be batched and submitted to the ISG after `draft-ietf-acme-authority-token` exits IETF Last Call.
+    *   **draft-ietf-acme-end-user-client-code-signing**: Two new revisions, limited discussion on the mailing list.
+    *   **draft-ietf-acme-dtn-node-id**: Two updates since last IETF, ongoing discussions. Presented during this session.
+    *   **draft-ietf-acme-ari**: One new version. Presented during this session.
+    *   **draft-ietf-acme-subdomains**: Adopted as a working group draft (`draft-ietf-acme-subdomains-00`), resubmitted. Presented during this session.
+*   **Presentation: dtn-node-id (draft-ietf-acme-dtn-node-id-04)**
+    *   Updates focused on supporting the DTN certificate profile.
+    *   Switched from `uri-san` to a specific `bundle-eid-san` in the certificate profile, reflected in the ACME draft.
+    *   Clarified multi-perspective validation, making it a first-class use case.
+    *   Clarified `node-id` definition for server logic and client inputs.
+    *   Updates related to the DTN working group's RFC have been moved to a separate document, making the ACME draft purely ACME and experimental.
+    *   Remaining minor issues: typo in `must not` vs `must`, `uri-name` in IANA registrations, encoding form in example bundles.
+    *   **Open Question**: Terminology for "dtn node id" vs. "node id". `dtn-node-id` clarifies the context for ACME implementers.
+    *   **Discussion on Timeline**: Roman (via chat) suggested the `authority-token` draft could go to telechat by Dec 16th. `dtn-node-id` would follow (at least 2-week delay), pending adoption of its dependent DTN WG document, potentially leading to editor's queue clustering.
+*   **Presentation: ARI (Automated Certificate Management Environment Renewal Info) (draft-ietf-acme-ari-01)**
+    *   New draft since IETF 111, presented at an interim.
+    *   Initial server implementation deployed in Let's Encrypt staging; client implementation (Certbot) in progress.
+    *   **Key Change**: Renewal Info URL is now directly constructible from the subscriber certificate. It uses the `renewalInfo` base URL from the ACME directory, concatenated with case-insensitive hex-encoded SHA-1 hashes of the issuer key, issuer name, and certificate serial number (mimicking OCSP). This avoids caching issues and allows external monitoring.
+    *   `GET` is the only supported protocol for this endpoint, as it is item potent and does not require authentication, simplifying caching.
+    *   Clarified client behavior for malformed responses or non-ideal polling frequencies.
+    *   **Open Questions**:
+        *   **Polling Semantics**: The `Retry-After` header only specifies a minimum delay. Need to define semantics for a *suggested* maximum delay or preferred polling window to encourage frequent checks for updates (e.g., within 6 hours).
+        *   **Callback Endpoint**: Consideration of adding a mechanism for clients to notify the CA that a certificate has been replaced/renewed (e.g., in a pre-revocation scenario, allowing the CA to safely revoke the old cert).
+    *   **Call for Adoption**: One expression of support on the mailing list.
+*   **Presentation: Integrations (draft-ietf-acme-integrations-05)**
+    *   Main change: Addressed a major issue regarding `CSR` attributes. It now points to a draft being presented at LAMPS (which updates RFC 7030 to specify how CSR attributes can be used by an RA).
+    *   Terminology updated to align with RFC 8499 (DNS terminology) rather than CA/Browser Forum terminology, to broaden applicability beyond web PKI.
+    *   Review needed, but full review is dependent on the progress of the LAMPS CSR attributes draft.
+*   **Presentation: Subdomains (draft-ietf-acme-subdomains-00)**
+    *   Newly adopted WG draft, previously an individual draft.
+    *   Terminology additions: Referenced RFC 8499.
+    *   Editorial nits fixed.
+    *   **Key Discussion**: Terminology for field names in JSON objects – `domain-namespace` vs. `subdomains`. The author is leaning towards aligning with RFC 8499 definitions. Consensus sought on the mailing list.
+    *   The document is considered close to completion, with terminology being the primary remaining issue.
+*   **Any Other Business (AOB)**
+    *   **Client Certificates / Code Signing**: Kathleen outlined potential new use cases for the `end-user-client-code-signing` draft. Text contributions are expected from a Linux Consortium effort that currently uses its own protocol, seeking to switch to ACME. This effort involves very short-lived certificates (seconds). `GENAPP` also has related use cases. Significant implementation interest is anticipated.
+*   **Milestones Review**
+    *   Existing milestones were out of date.
+    *   Discussion on updating milestones: `dtn-node-id` (target December), `integrations` (target March, dependent on LAMPS draft), `subdomains` (target Spring), `client-code-signing` (target WG last call by next meeting, July 2022; Chairs suggested ISG submission milestone). ARI is too early for a milestone.
+
+## Decisions and Action Items
+
+*   **Decision**: Russ Housley will serve as note taker for the session.
+*   **Decision**: After `draft-ietf-acme-authority-token` completes IETF Last Call, both `authority-token` drafts will be batched and submitted to the ISG.
+*   **Decision**: The `dtn-node-id` draft will retain the "dtn node id" terminology for clarity to the ACME audience.
+*   **Action Item (Chairs)**: Initiate mailing list discussion for open questions in the `ari` draft (polling semantics, callback endpoint), followed by a formal call for adoption.
+*   **Action Item (Chairs)**: Send a message to the mailing list requesting reviews for the `integrations` draft.
+*   **Action Item (Authors/WG)**: Continue discussion on the mailing list regarding terminology choice (`domain-namespace` vs. `subdomains`) for the `subdomains` draft.
+*   **Action Item (Chairs)**: Update the working group milestones based on the discussion, including new targets for `dtn-node-id`, `integrations`, `subdomains`, and `client-code-signing`.
+
+## Next Steps
+
+*   Authors to update drafts based on feedback and ongoing discussions.
+*   `draft-ietf-acme-ari` will undergo further discussion on its open questions on the mailing list, followed by an adoption call.
+*   `draft-ietf-acme-integrations` requires reviews, with full review possibly awaiting progress on the LAMPS CSR attributes draft.
+*   `draft-ietf-acme-subdomains` needs consensus on terminology via mailing list discussion.
+*   Contributions are expected for `draft-ietf-acme-end-user-client-code-signing` to expand its use cases, with a goal for WG last call by the next IETF meeting.
+*   An interim meeting will only be scheduled if there is specific, significant content to discuss, such as new `client-code-signing` content or major `ARI` developments after an adoption call.

@@ -1,0 +1,81 @@
+**Session Date/Time:** 28 Jul 2022 14:00
+
+# rtgwg Session Minutes - IETF 114
+
+## Summary
+
+The rtgwg session at IETF 114 featured updates on several working group documents, including VRRPv3 Bis and the QoS YANG Model, as well as presentations on emerging topics such as Network to Cloud routing challenges, Destination Source Routing, a framework for evaluating routing protocols, SRv6 multi-home egress and midpoint protection, SRv6 for computing resource interconnect, and requirements for satellite constellations in the Internet. Key discussions revolved around adopting inclusive language in VRRP, simplifying YANG models, the re-adoption of destination source routing, and various protection and optimization mechanisms for SRv6 in cloud and edge scenarios. A research presentation on a routing protocol evaluation framework generated significant interest. Due to time constraints, one presentation was deferred to an upcoming interim meeting.
+
+## Key Discussion Points
+
+*   **VRRPv3 Bis (Alain Lindem):**
+    *   **Motivation:** Update RFC 5798 to incorporate NIST inclusive language standards, replacing terms like "master" with "active" and "black hole" with "advertising reachability yet dropping packets."
+    *   **Changes:** Migration to XML RFCv3, fixing errata in finite state machines, extensive editorial changes for readability and consistency.
+    *   **Technical Updates:** Recommended "active" and "standby" devices accept unsolicited neighbor advertisements for IPv6 (RFC 9131 alignment), validation on maximum interval for received VRRP packets (log mismatch, no discard for backward compatibility), removal of obsolete FDDIToken Ring/ATM-LAN dependencies, beefed-up security and IANA sections.
+    *   **Discussion:** Appreciation for comprehensive review; clarification that moving to Internet Standard does not strictly require an implementation report but a pervasive implementation must be documented, and technical changes should be minimal.
+
+*   **Network to Cloud (Yunjin Chi):**
+    *   **Problem Statement:** Addressing routing-related challenges in connecting enterprise networks to cloud environments, especially with increasing multi-party peering and hybrid cloud deployments.
+    *   **New Problems/Gaps:** BGP configuration mismatches in multi-peer cloud gateways, efficient notification for ingress routers during large-scale site degradation/failure, challenges with instances in multiple close proximity locations (5G edge), source IP address variations from UE mobility, varying NAT functions across different cloud providers, dynamic discovery of optimal instance locations, and DNS interactions across cloud boundaries (client-side caching, on-prem DNS redirection).
+    *   **Request:** Further review for the problem statement and gap analysis drafts, with an aim for Working Group Last Call.
+    *   **Discussion:** Suggestion to maintain these documents as *working documents* to allow ongoing updates as solutions evolve.
+
+*   **QoS YANG Model (Asim Chaudhry):**
+    *   **Updates:** Reduced feature statements from 19 to 5, simplified model structure by combining QoS policy, classifier, and target into a single `traffic-policy` module.
+    *   **New Feature:** Inclusion of an *operational model* with QoS interface statistics (per-direction, tagged/untagged counters) augmented to `ietf-interface`.
+    *   **Design:** The `traffic-policy` module serves as a base, allowing for easy creation of new policy modules (e.g., DiffServ, Queue).
+    *   **Next Steps:** Continue addressing YANG doctor comments.
+
+*   **Destination Source Routing (Jen Linkova):**
+    *   **Objective:** Revive a previous draft to define a behavior for IPv6 routers to consider source addresses in routing decisions, in addition to destination addresses.
+    *   **Use Cases:** Improved IPv6 multi-homing for enterprises (avoiding NAT), traffic engineering, and network segmentation (e.g., "walled gardens").
+    *   **Proposed Behavior:** Routers first select routes based on the most specific destination, then from that subset, select based on the most specific source. A 0/0 source prefix would behave like no source consideration.
+    *   **Request:** Working Group re-adoption call.
+    *   **Discussion:** Supported for re-adoption, with a note to consider "semantic routing" implications, routing overhead, and convergence. Hardware vendor feedback indicated "doable" depending on the specific hardware. Clarification that destination takes precedence over source in the lookup process.
+
+*   **UCB: Framework for Evaluating Performance of Routing Protocols (Tommaso Cucinotta):**
+    *   **Problem:** Lack of standard testing procedures for heterogeneous routing protocol implementations in complex data center networks (fat-tree topologies).
+    *   **Methodology:** Black-box approach, evaluating behavior (not hardware-dependent performance) across failure and recovery scenarios. Introduces novel metrics: **Locality** (blast radius of an event based on packet propagation distance) and **Rounds** (number of state changes for convergence, derived from a "Node State Graph" showing node synchronization).
+    *   **Framework (Sibila):** Container-based network emulator (Katakana) for automated, repeatable tests.
+    *   **Findings (FRR BGP):** Stable messaging load and rounds for convergence, effective blast radius limitation.
+    *   **Use Cases:** Protocol analysis, prototype development (e.g., RIFT negative disaggregation), flooding reduction algorithm comparison.
+    *   **Discussion:** Highly praised by industry experts for its potential to formally observe distributed systems and contribute to proofs of correctness for routing protocols.
+
+*   **SRv6 Multi-home Egress Protection (Ben Ying):**
+    *   **Problem:** Fast failure protection for multi-home egress scenarios in SRv6 networks.
+    *   **Solution:** Extends SRv6 Segment Routing Header (SRH) with a 'B' flag and carries a backup egress SID in the SRH last entry. The penultimate endpoint, upon detecting egress node unreachability, switches the packet's destination address to the backup SID if the 'B' flag is set.
+    *   **Performance:** Prototype testing with vendors indicated protection switching performance below 50ms.
+
+*   **SRv6 Midpoint Protection (Shuai Zhao):**
+    *   **Problem:** SRv6 Topology Independent Fast Reroute (TFA) does not cover SRv6 policy endpoint failures.
+    *   **Solution:** A "progressive forwarding node" (midpoint) replaces a failing SRv6 endpoint by performing the endpoint function and forwarding to the next segment.
+    *   **Refinement:** Modified to restrict midpoint protection *only* to SRv6 endpoint nodes to avoid modifying the SRH by intermediate "chance nodes", which is against RFC 8754.
+
+*   **SRv6 as Computing Resources Interconnecting Protocol (Fangning Li):**
+    *   **Vision:** Unify IP network protocols using SRv6 to interconnect central, edge, and private clouds, providing differentiated and deterministic services for various workloads.
+    *   **Use Cases/Challenges:** Differentiated service provisioning (path calculation), bandwidth isolation (network/hard slices), cross-domain scheduling (exposing PSIDs to applications), integrating connection and computing services (SRv6-enabled firewalls in SID list), application awareness, OAM for user experience, and addressing SRv6 header overheads (compression needed for many hops/small packets).
+    *   **Discussion:** Queries about connection to "compute-aware networking" initiatives, and clarification on the problem statement beyond best-effort services (i.e., assured service quality needs beyond basic provisioning).
+
+*   **Problem and Requirements of Satellite Constellation for Internet (Kenji Ota):**
+    *   **Background:** 3GPP is exploring 5G using satellites for backhaul and access networks.
+    *   **Challenge:** Extreme dynamics of Low Earth Orbit (LEO) satellites, posing significant challenges for Layer 3 routing protocols (IGP/BGP mutual advertisement, link quality/cost changes). Timing constraints for wireless access are also significant.
+    *   **Need:** Standardized work in IETF to integrate cellular networks with satellite networks.
+    *   **Discussion:** Clarified the conceptual nature of routing diagrams; interworking between *different* satellite networks is not currently expected, but each satellite network must interwork with the internet.
+
+## Decisions and Action Items
+
+*   **Network to Cloud Problem Statement:** Authors will solicit more reviews for the two drafts. WG is encouraged to review.
+*   **VRRPv3 Bis:** Alain Lindem will seek additional reviews and then push for a working group last call. Alain will review the document line-by-line with Aditya Dogra.
+*   **QoS YANG Model:** Asim Chaudhry will continue to address remaining YANG doctor comments.
+*   **Destination Source Routing:** Jen Linkova requested a working group re-adoption call. This will likely be pursued on the mailing list.
+*   **UCB Framework:** Tommaso Cucinotta will be encouraged to continue this work and provide updates. Adrian Farrel requested sharing links to the paper/resources on the mailing list.
+*   **SRv6 Multi-home Egress Protection:** No explicit action item, but continued review is implied.
+*   **SRv6 Midpoint Protection:** The authors request to move this document forward, indicating they believe all comments are resolved.
+*   **SRv6 as Computing Resources Interconnecting Protocol:** Authors will solicit comments and refine the draft.
+*   **Satellite Constellation Requirements:** Authors welcome comments and contributions.
+
+## Next Steps
+
+*   **Interim Meetings:** Co-chairs plan to schedule at least one, possibly more, interim meetings in September to cover pending topics and presentations that ran out of time (specifically, the last presentation on "Computing-Aware Service Function Chaining Use Cases" and possibly further discussion on the SRv6 midpoint protection question).
+*   **Mailing List Discussions:** Continued technical discussions are encouraged on the mailing list for several drafts, particularly for Destination Source Routing (re-adoption), Network to Cloud (problem statements), and the research work on routing protocol evaluation.
+*   **Document Reviews:** Working group members are encouraged to review the updated and revived drafts, especially VRRPv3 Bis and Destination Source Routing.

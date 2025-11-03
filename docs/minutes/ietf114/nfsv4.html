@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IETF Meeting Minutes</title>
+    <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-content">
+        <a href="/">
+          <img src="/img/logo.jpg" alt="Logo" width="150" height="150">
+        </a>
+        <div class="header-text">
+          <h1>Automatic IETF Minutes</h1>
+          <p class="subtitle">Automatically generated minutes for IETF meetings</p>
+        </div>
+        <nav class="header-nav">
+          <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+          <ul class="menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="https://github.com/ekr/auto-minutes">Source</a></li>
+            <li><a href="/license">License</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main class="main-content">
+      <p><a href="nfsv4.txt">Markdown Version</a> | <a href="https://meetecho-player.ietf.org/playout/?session=IETF114-NFSV4-20220726-1900">Session Recording</a></p>
+<p><strong>Session Date/Time:</strong> 26 Jul 2022 19:00</p>
+<h1>nfsv4</h1>
+<h2>Summary</h2>
+<p>The nfsv4 working group meeting covered updates on several drafts, resulting in decisions to adopt some, let others expire, and defer significant discussions on the <code>bis</code> document and errata management. A key theme was the need to prioritize smaller, deployable documents while addressing the substantial maintenance work of the core NFSv4 protocol specifications. The working group expressed a desire to &quot;finish what was started&quot; and improve communication and clarity regarding its current work items.</p>
+<h2>Key Discussion Points</h2>
+<ul>
+<li><strong>Agenda Bashing</strong>
+<ul>
+<li>Initial discussion about re-allocating time for the &quot;roadmap of the working group&quot; discussion, with presenters offering to shorten their slots.</li>
+<li>No formal changes to the agenda were made.</li>
+</ul>
+</li>
+<li><strong>NVMe Mapping for SCSI Layout (draft-ietf-nfsv4-nvme-scsi-layout)</strong>
+<ul>
+<li><strong>Background</strong>: Draft updates RFC 8154 (block layout) to support NVMe, mapping NVMe concepts to SCSI. The latest version removes a problematic reference to a sloppily written NVMe-STLR document, replacing it with normative language.</li>
+<li><strong>Open Issues</strong>:
+<ul>
+<li>Whether to introduce new XDR code points for NVMe device designators (on-wire protocol change) or continue reusing existing SCSI types.</li>
+<li>Adding a new UUID designator type (RFC 4122) for device identification, applicable to both NVMe and SCSI.</li>
+</ul>
+</li>
+<li><strong>Discussion</strong>: Importance of NVMe for shared storage, existing Linux client/server implementation (20 lines on server, 2 versions on client for protocol changes or not). Chuck Lever proposed moving to WG document status as standards track. David Black and Richard Schaffranek agreed.</li>
+<li><strong>Decision</strong>: The working group agreed to adopt <code>draft-ietf-nfsv4-nvme-scsi-layout</code> as a <strong>standards track working group document</strong>, with <strong>no changes to the wire protocol</strong>. The addition of a UUID designator will be deferred to a separate draft if deemed necessary later.</li>
+</ul>
+</li>
+<li><strong>RPC with TLS (draft-ietf-nfsv4-rpc-tls)</strong>
+<ul>
+<li><strong>Status</strong>: The document is in <code>REF</code> (waiting on normative references). <code>RFC 9266</code> (KITTEN TLS13 channel bindings) was published during the session, removing a significant blocker.</li>
+<li><strong>Open Matters</strong>:
+<ul>
+<li>How <code>EXCHANGE_ID</code> and related operations could use TLS peer authentication (similar to Kerberos). No progress here.</li>
+<li>Mechanisms for servers to tell clients to use TLS for <code>OFS_</code> (Operations For Session) operations. The <code>rpc-tls-flavors</code> proposal received negative feedback.</li>
+</ul>
+</li>
+<li><strong>Implementations</strong>: FreeBSD (client/server), Daisy (user space), Hammerspace (client/server, not NFS), Linux client prototype, Nginx module (open source, front-end for standard NFS server).</li>
+<li><strong>Community Testing</strong>: Interoperability testing has been successful.</li>
+<li><strong>Linux Client Prototype</strong>: Uses an upcall mechanism for TLS handshake, adds a new mount option (<code>tls</code> or not).</li>
+<li><strong>Decision</strong>: The working group agreed to <strong>let <code>draft-lever-nfsv4-rpc-tls-flavors</code> expire</strong>. Further discussion on how NFS servers can communicate security policy requirements via existing protocol elements will continue on the mailing list.</li>
+</ul>
+</li>
+<li><strong>RPC over RDMA v2 (draft-lever-nfsv4-rpc-rdma-v2)</strong>
+<ul>
+<li><strong>Flow Control</strong>: Addressed in section 4.2.1 of the draft.</li>
+<li><strong>Security</strong>: IESG concern about lack of security in RPC over RDMA. Discussion focused on building on existing sophisticated protocols like TLSv1.3 rather than custom mechanisms, and layering concerns (iWARP on Quick/TLS). David Black and Tom Talpey highlighted the complexity and hardware path considerations. Richard Schaffranek emphasized using industry-standard security protocols.</li>
+<li><strong>Read+ Challenges</strong>: Difficulty fitting <code>READ_PLUS</code> into the RDMA paradigm for direct data placement due to unpredictable reply structures (content data vs. holes). Important for large sparse files. Christoph Hellwig suggested short reads could mitigate this.</li>
+<li><strong>Urgency &amp; Resources</strong>: Performance goals for v2 have largely been met by other work (PNFS layout, private data extension RFC 8797). Only one v2 prototype exists, limiting interoperability testing. The author noted limited resources available for this substantial work.</li>
+<li><strong>Decision</strong>: The working group agreed to <strong>let <code>draft-lever-nfsv4-rpc-rdma-v2</code> expire for now</strong>, acknowledging that work could be reactivated later if resources and needs change. The related milestone will be removed.</li>
+</ul>
+</li>
+<li><strong>Delegation of State IDs / Open and Delegation Operations (draft-ietf-nfsv4-del-state-id)</strong>
+<ul>
+<li><strong>Status</strong>: Draft published April 2018. Implementations exist (Hammerspace server, open-source client), but Linux kernel maintainers require IETF standards track for upstreaming.</li>
+<li><strong>Discussion</strong>: Tom Talpey questioned the breadth of interest, given the document's idle state. No other implementers expressed interest during the meeting.</li>
+<li><strong>Decision</strong>: The working group had <strong>no objection to moving <code>draft-ietf-nfsv4-del-state-id</code> forward to Working Group Last Call</strong>.</li>
+</ul>
+</li>
+<li><strong>Layouts Impeding File Recovery (draft-haynes-nfsv4-layout-recovery)</strong>
+<ul>
+<li><strong>Problem Statement</strong>: During server reboot grace periods, clients reclaim open files. If a client encountered errors with a layout <em>before</em> the reboot, it currently lacks a mechanism to report these errors to the server because old state IDs are invalid. This is especially problematic for loosely coupled systems and client-side mirroring.</li>
+<li><strong>Proposed Solution</strong>: Introduce new semantics for <code>LAYOUTRETURN</code> with a special state ID during the grace period, allowing clients to report pre-reboot errors. The server could then interpret this information if capable.</li>
+<li><strong>Discussion</strong>: Tom Talpey and Chuck Lever suggested making this a <em>convention</em> rather than a normative protocol change, potentially a &quot;simple note&quot; or a non-protocol implementation detail.</li>
+<li><strong>Decision</strong>: Tom Haynes will refine the proposal, focusing on a non-normative convention, and bring it to the mailing list for further discussion within two weeks.</li>
+</ul>
+</li>
+<li><strong>Working Group Roadmap and Future Work</strong>
+<ul>
+<li><strong>Overall State</strong>: The working group has been &quot;negligent in meeting deliverables&quot; and has a backlog of &quot;documentation work.&quot; There's concern about declining energy and slow progress on core documents.</li>
+<li><strong><code>bis</code> Documents (e.g., <code>nfsv4-minor-versions</code>)</strong>: Identified as the &quot;biggest overhang.&quot; Dave Novak (who primarily owns this) was not present.
+<ul>
+<li><strong>Definition</strong>: A <code>bis</code> document replaces an older RFC, incorporating errata and clarifications, but doesn't necessarily imply major technical changes or a new protocol version.</li>
+<li><strong>Historical Context</strong>: <code>bis</code> documents are often extensive, unloved, and require significant effort for minor gain. The previous NFSv4.0 <code>bis</code> took six years.</li>
+<li><strong><code>nfsv4-minor-versions</code> specific context</strong>: This document reportedly attempts to bring over internationalization changes from the NFSv4.0 <code>bis</code> and address errata. A previous proposal suggested splitting it into four sub-documents (e.g., security) to facilitate review by focused experts.</li>
+</ul>
+</li>
+<li><strong>Errata Handling</strong>: There are &quot;huge amounts of unverified errata.&quot; Need to determine which are critical for current implementations versus obsolete.</li>
+<li><strong>Priorities</strong>: Discussion centered on whether to focus on smaller, deployable documents (like NVMe layout) or the large <code>bis</code> documents.</li>
+<li><strong>New Work</strong>: Sauron advocated for new work on data reduction (relevant to cloud deployments) to keep the WG current with industry trends. Brian Pulaski expressed reluctance for substantial new work, emphasizing &quot;finish what we started.&quot;</li>
+<li><strong>Working Group Future</strong>: The chairs clarified that there is no proposal to close the working group. The goal is to focus on priorities and resource allocation.</li>
+<li><strong>Charter Review</strong>: Tom Talpey suggested reviewing the current WG charter to ensure it aligns with current priorities and future direction, especially if work is split into &quot;large and small documents.&quot;</li>
+</ul>
+</li>
+</ul>
+<h2>Decisions and Action Items</h2>
+<ol>
+<li><strong>Adopt <code>draft-ietf-nfsv4-nvme-scsi-layout</code></strong>: Move to Standards Track WG document, no wire protocol changes.</li>
+<li><strong>Expire <code>draft-lever-nfsv4-rpc-tls-flavors</code></strong>: Let the document expire.</li>
+<li><strong>Expire <code>draft-lever-nfsv4-rpc-rdma-v2</code></strong>: Let the document expire.</li>
+<li><strong>Move <code>draft-ietf-nfsv4-del-state-id</code> to WG Last Call</strong>.</li>
+<li><strong>Refine Layout Recovery Proposal</strong>: Tom Haynes to refine <code>draft-haynes-nfsv4-layout-recovery</code> focusing on a non-normative convention and bring it to the mailing list within two weeks.</li>
+<li><strong>WG Chairs to Communicate</strong>: Write an email to the mailing list summarizing today's discussions, decisions, and action items.</li>
+<li><strong><code>bis</code> Document Discussion Deferred</strong>: Detailed discussion on <code>nfsv4-minor-versions</code> (the <code>bis</code> document) to be deferred until Dave Novak is present, including its purpose, WG adoption status, and the split strategy.</li>
+<li><strong>Scrub Errata List</strong>: Christoph Hellwig (volunteered) to scrub the errata list, identify obsolete errata, and mark those already addressed in the <code>bis</code> document.</li>
+<li><strong>Charter Review</strong>: Tom Talpey to review the current working group charter.</li>
+</ol>
+<h2>Next Steps</h2>
+<ul>
+<li>The WG chairs will update the datatracker for <code>nfsv4-nvme-scsi-layout</code> and <code>nfsv4-del-state-id</code> (moving to WG document and WG Last Call respectively).</li>
+<li>The WG chairs will communicate the outcomes of the RPC over RDMA v2 and RPC TLS Flavors document expirations.</li>
+<li>Tom Haynes will prepare a revised proposal for layout recovery for mailing list discussion.</li>
+<li>Christoph Hellwig will begin scrubbing the errata list.</li>
+<li>Tom Talpey will review the working group charter.</li>
+<li>A dedicated discussion on the <code>bis</code> document and its future (adoption as WG document, split strategy) will be scheduled when Dave Novak can attend.</li>
+<li>The mailing list will be used for ongoing discussions on server security policy communication and layout recovery.</li>
+</ul>
+
+      
+    </main>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.menu-toggle');
+        const menu = document.querySelector('.menu');
+
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          menu.classList.toggle('show');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function() {
+          menu.classList.remove('show');
+        });
+
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    </script>
+  </body>
+</html>

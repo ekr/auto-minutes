@@ -1,0 +1,57 @@
+**Session Date/Time:** 21 Mar 2022 12:00
+
+# cose
+
+## Summary
+
+The cose working group session covered the status of several existing drafts, including BIST documents, Hash HAWKS, X.509, Countersign, and CBOR Encoded Certificates. New individual drafts were presented for COSE HPKE, BLS Curves for JOSE/COSE, Disclosed CWT Claims in COSE Headers, Post-Quantum Signatures, and COSE Key ID for Integer Identifiers. Key technical discussions centered on algorithm registration processes, point compression strategies for constrained environments, and the implications of introducing breaking changes to existing COSE specifications.
+
+## Key Discussion Points
+
+*   **Current Draft Status Updates:**
+    *   **BIST Documents (`1952bis`, `1953bis`):** Ongoing discussions with the RFC editor. A key question remains regarding whether to require private keys in key operation values (Table 5, Section 7.1), noting inconsistency with RFC 7517 and W3C WebCrypto. Other points include clarifying deterministic encoding and addressing minor consistency issues between `1952bis` and `1953bis`. A suggestion was made to refer to CDDL as "standard definition language" or "symbolic data structure" instead of "grammar."
+    *   **Hash HAWKS:** Editors' questions have been answered; awaiting a final review by an Area Director before publication.
+    *   **X.509:** A new version of the draft is planned. Further discussion is needed on Issue 31 and a recently raised new issue.
+    *   **Countersign:** Currently in "publication requested" status, awaiting AD review.
+    *   **CBOR Encoded Certificates:** Requires more reviews and pending small to-do items.
+
+*   **COSE HPKE (`draft-ietf-cose-hpke`):**
+    *   A `01` version was published with a new two-layer structure for encapsulating HPKE content, including ephemeral public keys and encrypted KEKs.
+    *   **Algorithm Registry:** Discussed efficient reuse of HPKE-defined algorithms for COSE. Since the HPKE document is now an RFC, direct changes are impossible. Options include:
+        1.  Establishing an IANA rule to automatically populate the COSE registry based on HPKE (requires discussion with IANA to ensure a deterministic algorithm).
+        2.  Implementing a Designated Expert policy for COSE registry registrations. Ben Kaduk (AD) suggested pursuing the IANA rule if deterministic, or leveraging the Designated Expert.
+    *   **Point Compression:** Proposed as an optional feature to reduce byte size, particularly for constrained devices. Implementers noted that making it required is problematic due to the need for square root functions, though RFC 6090 offers a modular alternative. Discussion also included how to signal point formats (e.g., new IANA code points, or defining new curves for compressed representation).
+    *   **Redundant HPKE Additional Data:** Proposed to remove the COSE-specific structure for additional data in HPKE operations, as HPKE already provides its own mechanism for passing information into key derivation.
+
+*   **BLS Curves for JOSE/COSE (`draft-jones-cose-bls-curves`):**
+    *   This draft registers JOSE and COSE algorithm identifiers for BLS (pairing-friendly) curves, without defining new cryptographic operations. It aims to support applications like BLS signatures and zero-knowledge proofs.
+    *   Ben Kaduk (AD) confirmed that this work is within the COSE charter, given ongoing related work in CFRG.
+
+*   **Disclosed CWT Claims in COSE Headers (`draft-jones-cose-cwt-claims-in-headers`):**
+    *   Addresses the need to make non-privacy-sensitive CWT claims publicly visible in the COSE header, similar to the `iss` parameter in JWE headers for routing or key retrieval.
+    *   Proposed solution is a new COSE header parameter whose value is a set of CWT claims.
+
+*   **Post-Quantum Signatures (`draft-prorock-cose-post-quantum-signatures`):**
+    *   Aims to provide interoperable post-quantum signature methods for JOSE/COSE (hash-based and lattice-based schemes) to enable crypto agility and allow for early testing.
+    *   Emphasized the need for explicit parameter registration for each algorithm to prevent misidentification or misuse.
+    *   Discussion covered charter alignment, requiring algorithms to be evaluated by CFRG or via a completed public review process (e.g., NIST). LMS and XMSS were noted as NIST-approved.
+    *   A suggestion was made to ensure the draft focuses on identifier registration and avoids normative descriptions of cryptographic operations. Considerations for constrained devices and potentially separating JOSE/COSE use cases due to signature size were also raised.
+
+*   **COSE Key ID for Integer Identifiers (`draft-salander-cose-int-kid`):**
+    *   Proposes extending the `kid` parameter to allow CBOR integers, enabling more compact, 1-byte identifiers for environments with tight message size constraints.
+    *   **Crucial point:** This is a **breaking change** for existing RFC 8152 COSE implementations, which are currently required to reject non-byte string `kid` values. Implementations would detect a type mismatch rather than misparsing.
+
+## Decisions and Action Items
+
+*   **BIST Documents:** Co-chairs to discuss with ADs the implications of requiring private keys in key operation values and charter alignment.
+*   **COSE HPKE:** Hannes Tschofenig to engage with IANA regarding a potential rule for automatic population of the COSE registry from the HPKE RFC. The discussion on removing redundant HPKE additional data infrastructure will continue on the mailing list.
+*   **COSE Key ID for Integer Identifiers:** Joran Salander to update the draft to explicitly state that extending `kid` to integers is a breaking change for existing RFC 8152 implementations and to include deployment considerations.
+*   **General:** Authors are encouraged to read and comment on all presented drafts via the mailing list.
+
+## Next Steps
+
+*   Continue active discussion on all presented drafts on the COSE mailing list.
+*   Authors of `draft-jones-cose-bls-curves`, `draft-jones-cose-cwt-claims-in-headers`, and `draft-prorock-cose-post-quantum-signatures` may request working group adoption after sufficient mailing list discussion and address any charter-related concerns.
+*   Chairs will follow up on charter questions with relevant Area Directors as needed.
+
+*The chairs and working group members extend their thanks to Ben Kaduk for his dedicated service as Security Area Director.*

@@ -1,0 +1,81 @@
+**Session Date/Time:** 11 Nov 2021 16:00
+
+# ccamp
+
+## Summary
+
+The ccamp session included updates on two recently published RFCs for optical network YANG models and provided detailed progress reports on several working group drafts, including Optical Impairment Topology, Layer 0 Type Extensions, Flexi-Grid, and Microwave Topology YANG models. The session also featured presentations on five individual drafts covering OTN Slicing NBI, Path Computation for Optical Networks, Optical Network Inventory, Advertising Cloud via Optical Network, and Semi-Active WDM NBI. Key technical discussions revolved around detailed YANG modeling for regenerators and impairments, managing dependencies between optical YANG models, and the scope and modularity of new inventory and path computation models. A significant decision was made to recommend the OTN Slicing NBI draft for working group adoption.
+
+## Key Discussion Points
+
+*   **Working Group Updates (Chairs):**
+    *   **New RFCs:** RFC 9093 (Layer 0 Types) and RFC 9094 (YANG for WSON Networks) were published, marking the first YANG models for optical networks.
+    *   **Layer 1 Types:** Ready for Working Group Last Call, pending Layer 1 Types dependency.
+    *   **Tunnel Model:** Dependency on TEAS T-tunnel draft is resolved; ready to move forward after updates and a YANG doctor review request.
+    *   **NBI Applicability Statement:** On hold to reduce document size ("diet"), updates in progress.
+
+*   **Optical Impairment Topology YANG Model:**
+    *   **3R Regenerator Modeling:** A solution was presented to model 3R regenerators based on physical constraints. This involves defining "regenerator groups" at the transponder level, indicating electrical connectivity, with an attribute for path computation preference. The YANG model includes a `regenerator-group` list with an identifier, preference, and pointers to associated transponders.
+    *   **Local Link Connectivity List Flexibility:** Resolved issue 7-2 by introducing a list of `transceiver` within the `local-link-connectivity` entry. This allows for specifying different optical impairments for multiple transceivers connected to the same add/drop Local Termination Point (LTP) in a ROADM, addressing cases where unique impairments are needed per transceiver.
+    *   **Other Enhancements:** Added geolocation of amplifiers, ability to identify OTSi in reverse direction, and association of unidirectional links in parallel Optical Multiplex Section (OMS) links.
+
+*   **Layer 0 Type Extension:**
+    *   **Issue 42 Resolution:** Modifications driven by "minimum channel spacing" issue from the Optical Impairment Topology model. `otsi-carrier-bandwidth` and `nyquist-spacing-factor` were removed, `minimum-carrier-spacing` was added, and related parameters were clarified for alignment.
+    *   **RFC Relationship:** Discussion centered on whether this draft, intended to incorporate updates from RFC 9093, should formally "update" or "obsolete" RFC 9093. The consensus leaned towards "obsoleting" as it would replace the previous version.
+    *   **Model Sharing:** The need for designing common YANG structures (groupings) for sharing across different Layer 0 models (e.g., tunnel, path computation) was highlighted.
+
+*   **Flexi-Grid YANG Models:**
+    *   **Name Harmonization:** The `YANG Data Model for Flexi-Grid Media Channels` was renamed to `YANG Data Model for Flexi-Grid Tunnels` for consistency, replacing the previous document.
+    *   **Flexi-Grid Optical Topology:** Version 11 is now stable, terminology updated, and ready for **Working Group Last Call** after an early YANG doctor review.
+    *   **Flexi-Grid Tunnel Document:** Path computation RPC function was removed and spun off into a new, separate document.
+    *   **Scope Clarification:** The model's applicability is narrowed to next-generation optical technology, not legacy equipment.
+    *   **Operational Aspects:** Raised the need to consider operational aspects like monitoring and troubleshooting Flexi-Grid connections post-setup, suggesting alignment with other ccamp performance monitoring documents. This discussion should aim for generalization where possible, rather than being Flexi-Grid specific.
+
+*   **Microwave Topology YANG Data Model:**
+    *   **Modularity:** Radio links and carriers are now modeled as separate link entities. The draft introduced separate augmentation modules for `bandwidth-availability` and `interface-reference` to allow flexible adoption.
+    *   **`ietf-te-topology` Augmentation:** The model now augments `ietf-te-topology` (RFC 8795), utilizing its flexible and agnostic structure for topology, traffic engineering, and GIS extensions.
+    *   **Validation:** An XML example is used with `yanglint` to validate the model's correctness and use cases.
+
+*   **OTN Slicing NBI:**
+    *   **Common Model Approach:** Proposed a common, technology-agnostic YANG model for transport network slicing that supports both connectivity-based and resource-based slices. This model allows for expressing intended connectivity via connectivity matrices or detailed resource reservations via network topology.
+    *   **Model Reusability:** Designed to reuse concepts and model fragments from existing TEAS and TE drafts, aiming for broad applicability across OTN, WDM, and MPLS-TP.
+    *   **Open Issues:** Discussion on the use of schema mount for design-time inclusion of model fragments and whether to model connectivity matrices as single-node topologies or a list of connections.
+
+*   **Path Computation for Optical Networks:**
+    *   **Augmenting Generic TEAS Model:** This new draft proposes to augment the generic, technology-agnostic path computation RPC model from TEAS (`draft-ietf-teas-t-tunnel`) with optical technology-specific attributes (e.g., WSON, Flexi-Grid, OTN labels, bandwidth).
+    *   **Open Issues:** Need to jointly validate `layer0-tunnel-attributes` and `layer0-path-constraints` groupings with other drafts using them. Also, a decision is needed on whether to maintain one document for all optical technologies or split into multiple (e.g., separate for Layer 0 and Layer 1).
+
+*   **Optical Network Inventory YANG Model:**
+    *   **Motivation:** Addresses the need for a network-level inventory YANG model for Northbound Interfaces (NBI), as existing RFC 8348 is element-level. Designed to be technology-agnostic.
+    *   **Independent Root:** Proposes an independent root for the inventory model, rather than augmenting existing network topology models, to simplify data retrieval.
+    *   **Object Relationships:** Models complex relationships between inventory objects (e.g., equipment room, rack, network element, shelf, slot, board, port) where parent-child relationships may not strictly apply.
+    *   **Scope:** The draft focuses on optical inventory but aims for broader applicability. Discussions will continue with NETMOD and OPSAWG.
+
+*   **Advertising Cloud via Optical Network:**
+    *   **Use Cases:** Explored using optical networks for cloud access due to benefits like low latency and high bandwidth. Use cases include multi-cloud access, high-quality private lines, and cloud virtual reality.
+    *   **Requirements:** Identified requirements such as VPN for multi-to-multi cloud, packet processing functions on OTN, high performance/reliability, smaller granularity, and specific high-bandwidth/low-latency needs.
+    *   **Status:** Complementary to RTGWG work, but optical-specific. Will continue as a ccamp effort.
+
+*   **Semi-Active WDM NBI:**
+    *   **System Description:** Introduced semi-active WDM systems, comprising passive (A-end) and active (D-end) parts, with remote optical modules managed via an OAM channel over the service signal.
+    *   **Management Needs:** Highlights the need to manage local WDM equipment, remote optical modules, and system-wide topology/connections via a transport controller.
+    *   **Next Steps:** Evaluate existing models and define necessary extensions for semi-active WDM, inviting broader collaboration. The work should separate data plane from control plane aspects, with ccamp focusing on the latter.
+
+## Decisions and Action Items
+
+*   **Decision:** The `OTN Slicing NBI` draft is recommended for Working Group adoption. A formal WG adoption call will be sent to the mailing list.
+*   **Action Item:** Authors of the `Optical Impairment Topology YANG Model` will fix open issues before requesting a YANG doctor review.
+*   **Action Item:** Authors of `Layer 0 Type Extension` will investigate whether the draft should formally "update" or "obsolete" RFC 9093 (Layer 0 Types).
+*   **Decision:** The `Flexi-Grid Optical Topology` document is ready for **Working Group Last Call**.
+*   **Action Item:** Authors of the `Flexi-Grid YANG Models` will generalize discussions on operational aspects (e.g., performance monitoring) where possible, rather than keeping them Flexi-Grid specific.
+*   **Action Item:** Authors of `Path Computation for Optical Networks` will finalize the document structure (e.g., one or multiple documents for WSON, Flexi-Grid, OTN) before requesting Working Group adoption.
+*   **Action Item:** Authors of `Optical Network Inventory YANG Model` will consider renaming the draft to a more generic "Network Inventory" to better reflect its potential broad applicability.
+
+## Next Steps
+
+*   Continue weekly meetings for in-depth discussions on specific drafts (Optical Impairment Topology, Flexi-Grid, Microwave Topology, OTN Slicing).
+*   Address remaining open issues and editorial comments on existing working group drafts.
+*   Authors of new individual drafts (`Advertising Cloud via Optical Network`, `Semi-Active WDM NBI`) will continue research and refine their problem statements and proposed solutions, engaging with relevant working groups and experts.
+*   Ensure alignment and common YANG structure sharing across different Layer 0 and Layer 1 YANG models to promote reusability.
+*   Engage with YANG experts for generic modeling questions, such as schema mount applicability.
+*   For new work, formalize the working group status or adoption process after addressing initial feedback and refining scope.

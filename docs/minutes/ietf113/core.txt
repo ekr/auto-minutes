@@ -1,0 +1,84 @@
+**Session Date/Time:** 25 Mar 2022 09:00
+
+# core
+
+## Summary
+The core working group meeting at IETF 113 featured updates on several working group documents, including `href`, `conditional-attributes`, `group-combis`, `group-oscore`, and `kudos`. The chairs also announced recent RFC publications and documents in the RFC queue or IESG processing. Three non-working group documents, `transport-indication`, `non-traditional-responses`, and `dns-over-coap`, were presented, with the former two receiving strong support for working group adoption. Discussions focused on naming registries, key update mechanisms, and optimizing DNS communication for constrained environments.
+
+## Key Discussion Points
+
+*   **Document Status Update**:
+    *   **Published RFCs**: RFC 9175 (Echo Request Tag) and RFC 9177 (New Block).
+    *   **RFC Queue (AUTH48/final touches)**: `senml-data-ct` and `resource-directory`.
+    *   **IESG Processing**: `yang-cibor` (one comment remaining) and `sid` (final discuss ballot, text addition needed).
+    *   **Post WGLC**: `core-oscore-cbor` documents awaiting related publications, `group-oscore` passed its second WGLC.
+
+*   **href (`draft-ietf-core-href`)**:
+    *   **Updates**: Added percent-encoded text, moved complex details to an appendix, and incorporated `userinfo` structure support. Defined separate CDDL rules for CRIs and CI-References.
+    *   **Status**: Four implementations are in progress, expanding test vectors. Focus on exercising CRIs in CoAP and CBOR-packed contexts.
+    *   **Open Issues**: Five GitHub issues, one PR on text, two PRs on test vectors remain.
+    *   **Next Steps**: Expect one or two more revisions after implementation testing, potentially followed by an interim meeting.
+
+*   **Conditional Attributes (`draft-ietf-core-conditional-attributes`)**:
+    *   **Updates**: Resolved all GitHub issues since the last interim. Clarified definitions of "conditional attributes" in the introduction, emphasizing their use with CoAP Observe and query parameters. Included proxy considerations and completed security considerations.
+    *   **Registry Discussion**: A significant discussion point was the need for a registry for conditional attribute names. A potential clash was identified (e.g., "lt" for "less than" in this draft vs. "lifetime" in Resource Directory).
+        *   **Arguments for Registry**: Uniquely map names, avoid collision, provide a coordination point for extensions.
+        *   **Arguments Against Registry/Caveats**: Overlap could occur if resources (e.g., in RD) are observable. A generic registry might complicate matters or restrict usage. Using a namespace (e.g., `ca.`) was suggested to prevent future conflicts. Query options are critical and generally not ignored by applications.
+
+*   **Group Communication for CoAP (`draft-ietf-core-groupcomm-coap`)**:
+    *   **Updates**: Added examples for encoding application group names and for discovering CoAP/application groups on CoAP services without a Resource Directory. A new appendix illustrates typical group communication flows (basic, observe, block-wise transfer). The `uri-host` option for encoding group names was removed due to complexity and confusion regarding parsing. All open issues are closed.
+    *   **Readiness**: The document is considered ready for Working Group Last Call.
+
+*   **Group OSCORE (`draft-ietf-core-group-oscore`)**:
+    *   **Status**: Passed its second Working Group Last Call, with version 14 submitted incorporating feedback from reviews.
+    *   **Key Changes**: Enhanced distinction between authentication credentials and public keys; clarified trade-offs for storing authentication credentials; made group manager's group ID recycling feature optional; refined mandatory-to-implement support; re-ordered references; and moved the `yak` option for sequence number synchronization into the document body.
+    *   **Readiness**: The document is deemed complete for the working group and ready to proceed to the shepherd write-up.
+
+*   **Key Update for OSCORE (`draft-ietf-core-oscore-key-update`)**:
+    *   **Content**: Defines AAD key usage limits for OSCORE and a procedure for key updates using nonces exchanged in an `id-detail` field within the OSCORE option.
+    *   **New Additions**:
+        *   **Stateless Key Update (No Forward Secrecy)**: Introduced a `p` bit (0 for forward secrecy, 1 for no forward secrecy) to support constrained devices that cannot persist key material after reboot. This mode uses pre-provisioned "bootstrap master secrets." A mechanism for downgrading to the least capable device's mode was proposed. Discussion points included the security implications of reusing bootstrap secrets and moving this feature to the main body of the draft.
+        *   **Keeping Observations Across Key Updates**: Addressed the issue of sequence number reuse after key updates causing potential cryptographic mismatches for existing observations. Proposed "long jumping" in the partial IV space and using an "epoch counter" to eventually delete stale observations. This aspect received some critical feedback about being "over-engineered."
+        *   **Renew Sender/Recipient IDs**: A procedure to update OSCORE sender/recipient IDs for a pair, usable standalone or within a key update, was added as an appendix. The compelling use case was questioned.
+        *   **Signaling Bit Placement**: Proposed placing the `p` (no forward secrecy) and `b` (observations) bits within the `x` field (length of `id-detail`) of the OSCORE option, and using the `x` value in key derivation for integrity protection.
+
+*   **Transport Indication (`draft-ietf-core-transport-indication`)**:
+    *   **Problem**: CoAP resources accessed over different transports (e.g., `coap://` vs. `coap+tcp://`) are distinct URIs. A mechanism is needed to indicate when a resource is available over multiple transports on the same device.
+    *   **Proposal**: Leverage CoAP's `Proxy-Scheme` option, allowing a device to act as a proxy to itself for a resource available over another transport. This avoids breaking URI aliasing rules. Advertising is done once per server via Web Links (`/.well-known/core`).
+    *   **Security**: Minimal downgrade risks when on the same device, especially with OSCORE/TLS. Traffic misdirection for off-device proxies requires application-level security (DNSSEC, routing).
+    *   **Optimization**: A specialization of the option for hosts not doing virtual hosting can allow clients to omit `Proxy-Scheme`.
+    *   **WG Interest**: A poll indicated strong interest in this work.
+
+*   **Non-Traditional Responses (`draft-ietf-core-non-traditional-responses`)**:
+    *   **Problem**: CoAP responses can arrive in various non-standard ways (multicast, observe, SMS, changing endpoint IDs, block-wise transfers). A common terminology and framework are needed to unify these concepts.
+    *   **Definition**: A "non-traditional response" is one not from the single request/response on the same transport. A "matching response" works for the original request and has compatible options.
+    *   **Document's Role**: Provide standard terminology, guide implementations (e.g., stack hooks for handling multiple responses), define options for clients to request multiple responses, and describe pre-configured response scenarios.
+    *   **Security**: The impact on security models and potential DoS vectors must be addressed in security considerations.
+    *   **WG Interest**: A poll indicated strong interest in this work.
+
+*   **DNS over CoAP (`draft-ietf-core-dns-over-coap`)**:
+    *   **Motivation**: Secure DNS for IoT, avoiding issues of existing DoH/DoT/DoQ/DoDTLS solutions in constrained environments.
+    *   **Proposal**: DNS over CoAP (DoC) using DTLS/OSCORE for security, block-wise transfer for MTU issues, and sharing CoAP resources.
+    *   **Evaluation**: Empirical data on IoT DNS traffic showed fragmentation is the dominant performance bottleneck, not transport or CoAP methods. Even small DNS responses often require fragmentation.
+    *   **Discussion Points**:
+        *   **New Content Format**: Needed to reduce message size and avoid fragmentation. Ideas included omitting DNS sections, making fields optional, using self-eliminating numeric values, or a CBOR-based format.
+        *   **Caching Options**: How to reconcile CoAP's `Max-Age` with DNS TTLs (relative values). Two proposals: DOH-compatible (client calculates TTLs) or server-adapting TTLs (server adjusts TTLs, client re-adapts).
+        *   **Observe/Server Push**: Explore using CoAP Observe for DNS push scenarios (e.g., DNS-SD for service updates).
+        *   **Abstraction Level**: Discussed if the draft should specify a REST API for DNS retrieval or be more concrete on protocol details.
+
+## Decisions and Action Items
+
+*   **`draft-ietf-core-groupcomm-coap`**: The chairs concluded the document appears ready for a new Working Group Last Call.
+*   **`draft-ietf-core-group-oscore`**: The document is considered complete for the working group and is ready to proceed with the shepherd write-up. Christian Amsüss has volunteered as shepherd.
+*   **`draft-ietf-core-transport-indication`**: Based on the strong show of hands, the working group expressed interest in adopting this draft. The chairs will confirm adoption on the mailing list.
+*   **`draft-ietf-core-non-traditional-responses`**: Based on the strong show of hands, the working group expressed interest in adopting this draft. The chairs will confirm adoption on the mailing list.
+
+## Next Steps
+
+*   **`draft-ietf-core-href`**: Continue implementation testing for approximately six more weeks. The authors plan one or two more revisions, potentially followed by an interim discussion.
+*   **`draft-ietf-core-conditional-attributes`**: The author will prepare version 03 by April 7th, incorporating discussion points (especially on the registry/naming issue), and continue the discussion on the mailing list, possibly at the next interim.
+*   **`draft-ietf-core-oscore-key-update`**: Authors will address open GitHub issues, consider moving currently appendix-bound content into the main document body, and plan an implementation in the Java Californium library.
+*   **`draft-ietf-core-transport-indication`**: Authors will incorporate feedback, particularly regarding further details on advertising proxy statements and security model guidance.
+*   **`draft-ietf-core-non-traditional-responses`**: Authors will incorporate feedback, including DoS considerations, and continue development. Joran and Esko offered to review.
+*   **`draft-ietf-core-dns-over-coap`**: Authors will further explore the proposed new content format, caching options, potential use of CoAP Observe for DNS push, and the appropriate abstraction level for the draft. Mailing list discussions on these tracks are encouraged. Thomas Ferschl and Joran van Wieringen expressed interest in reviewing.
+*   **General**: The working group will resume interim meetings on April 27th, bi-weekly.

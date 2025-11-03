@@ -1,0 +1,63 @@
+**Session Date/Time:** 24 Mar 2022 09:00
+
+# lsvr
+
+## Summary
+
+The `lsvr` working group session covered the status of its core specification and proposals for new work. The main `BGP-SPF` specification (version 16) has secured IANA code points and is ready for submission to the IESG. Discussions are set to begin on re-chartering the working group to formally include Layer 2 L3DL (Layer 3 Discovery for L2) work. Two drafts were presented: an update on `BGP-SPF` flood reduction, which was simplified, and a new proposal for Layer 3 Neighbor Discovery, a "cousin" of L3DL tailored for data center BGP discovery. Technical discussions revolved around the specifics of these proposals, with calls for more mailing list engagement and clarification on the scope of future work within `lsvr`.
+
+## Key Discussion Points
+
+*   **Administrivia**:
+    *   Noteworthy, anti-harassment policy, and code of conduct reminders were given.
+    *   Meeting tools (Meetecho, Jabber) and minute taker (Victor) were confirmed.
+
+*   **Working Group Status**:
+    *   The primary `BGP-SPF` specification draft (version 16) has successfully secured IANA code points. The draft has undergone review and edits and is considered ready for submission to the IESG.
+    *   The chairs announced plans to begin discussions next week on re-chartering the `lsvr` working group. The main goal of this re-chartering is to formally include the Layer 2 L3DL work as a core part of the working group's charter.
+
+*   **BGP-SPF Flood Reduction (Jaimo)**:
+    *   The draft was simplified by removing the "group option" from the Route Reflector (RR) model.
+    *   **Revised Flooding Procedure (RR Model)**: BGP-SPF speakers send link-state information to one or two RRs (even if multiple exist). The RR then forwards this information to other BGP speakers, reducing overall flooding. Details on RR selection (e.g., minimum ID) are in the draft.
+    *   **Revised Flooding Procedure (Node Connection Model)**: This remains unchanged, similar to IGP flooding reduction. Each node uses a defined flooding topology and only sends link-state updates to peers within that topology.
+    *   **Discussion**:
+        *   Alvaro inquired about the selection mechanism for RRs and the flooding topology, confirming these details are covered in the draft.
+        *   Chair (Gunter) suggested more discussion on the mailing list to gauge interest and gather feedback before considering adoption of the draft.
+        *   AC Lindem (Cisco Systems) commented that the work is consistent with the `lsvr` base specification, which had implicitly allowed for such flood reduction.
+
+*   **L3 Neighbor Discovery (Randy Bush)**:
+    *   This draft is presented as a "cousin" of L3DL, specifically designed for IDR (BGP) discovery in data center environments, leveraging Layer 3 technology. It has not yet been customized for `lsvr`.
+    *   **Philosophy**: Designed to be "boring," lockstep, non-probabilistic, and session-oriented, utilizing reliable protocols like TCP/TLS.
+    *   **Mechanism**: Uses a single UDP multicast hello for initial discovery to identify candidates for establishing real TCP/TLS sessions.
+    *   **Features**: Resumable sessions, no retransmission needed (TCP handles it), minimal state maintained, and only changes are transmitted.
+    *   **Goal**: Discover neighbors, learn Layer 3 addressing, and bootstrap BGP. It is not a routing protocol itself.
+    *   **Implementation Note**: The draft does not specify how BGPLS communicates parameters to BGP, as implementers typically handle this internally.
+    *   **Hello PDU**: Includes version, flags (TCP/TLS, self-signed/CA-based certs), and a port. The peer with the lowest IP address initiates the TLS session.
+    *   **Security (TLS)**: Supports "Trust on First Use" (for self-signed certificates) or CA-based keying (expected for production deployments), providing integrity.
+    *   **Session Management**: Within the TCP/TLS session, an L3 neighbor discovery session uses a nonce (session ID) and serial numbers for checkpointing and resumption. Miscellaneous attributes are operator-defined. All PDUs are acknowledged.
+    *   **Address PDUs**: Conveys IPv4, IPv6, MPLSv4/v6 addresses, including flags for announcement/withdrawal, primary/secondary, overlay, and loopback addresses.
+    *   **Upper Layer Protocol (ULP) Configuration PDU**: Currently defined only for BGP, carrying minimal configuration parameters (ASN, peering address, authentication data, GTSM TTL check) needed to bootstrap BGP without duplicating `BGP OPEN` messages.
+    *   **Open Questions (from IDR)**: How are parameters passed to BGP? How is BGP started/restarted/stopped, and when is discovery finished? Is restartability truly needed?
+    *   **Discussion**:
+        *   AC Lindem (Cisco Systems) clarified that the protocol should only provide hints, not install routes, and that clients of the discovery protocol (e.g., BGP) should manage session state (stop/restart).
+        *   Gunter suggested including BFD (Bidirectional Forwarding Detection) negotiation and auto-discovery alongside BGP negotiation.
+        *   Karthik agreed that the solution could benefit from auto-discovering and auto-negotiating BFD.
+        *   **Working Group Scope for L3DL**: Alvaro clarified that the WG's plan, agreed with IDR chairs, is to charter for the **Layer 2 L3DL** work. The **Layer 3 version** (Randy's draft) requires more conversation and re-syncing with IDR chairs before potentially being included in this WG's scope.
+        *   **Multicast Containment**: AC Lindem inquired how the multicast hello is contained. Randy explained it's for point-to-point links and uses GTSM TTL. Karthik added that using link-scoped "all routers" multicast addresses (IPv4/v6) would ensure containment to a single link.
+
+## Decisions and Action Items
+
+*   **Decision**: The main `BGP-SPF` specification draft (version 16) is ready for IESG submission.
+*   **Decision**: The `lsvr` working group will initiate the re-chartering process to formally include the Layer 2 L3DL work.
+*   **Action Item**: Chairs to submit the `BGP-SPF` draft (version 16) to the IESG shortly.
+*   **Action Item**: Chairs to start discussions on the `lsvr` working group re-charter (focusing on Layer 2 L3DL) beginning next week.
+*   **Action Item**: Jaimo to prompt discussion on his `BGP-SPF` Flood Reduction draft on the `lsvr` mailing list to gather feedback before requesting adoption.
+*   **Action Item**: Gunter to send an email to the `lsvr` mailing list proposing the inclusion of BFD negotiation/auto-discovery capabilities in the Layer 3 Neighbor Discovery protocol.
+*   **Action Item**: Chairs (Alvaro) to consult with IDR chairs regarding the potential scope and progression of the Layer 3 Neighbor Discovery draft within the `lsvr` working group.
+
+## Next Steps
+
+*   The `BGP-SPF` specification will be advanced to the IESG.
+*   The `lsvr` working group will engage in discussions to redefine its charter, with the intent of incorporating Layer 2 L3DL.
+*   Further technical discussions on `BGP-SPF` Flood Reduction and the Layer 3 Neighbor Discovery (including BFD integration and its placement within the IETF) will continue on the mailing list.
+*   Consultations with the IDR working group chairs will determine the path forward for the Layer 3 Neighbor Discovery work.

@@ -1,0 +1,50 @@
+**Session Date/Time:** 25 Jul 2022 14:00
+
+# snac
+
+## Summary
+
+The snac BoF discussed the problem of effectively integrating "stub networks" – typically small, constrained networks like those for IoT devices – into larger infrastructure networks (e.g., home Wi-Fi or enterprise LANs). The primary goal is to achieve mutual reachability and discoverability between devices on the stub network and devices on the infrastructure network, avoiding the limitations and scalability issues of simple bridging or Network Address Translation (NAT) solutions. Presentations highlighted the problem statement, use cases (Thread-based IoT networks, building automation), and existing approaches that use combinations of IPv6 Router Advertisements and DNS Service Discovery (DNS-SD) with unicast protocols for the stub network. The discussion confirmed a strong interest in solving this problem within the IETF, with a clear consensus to move forward with forming a working group, pending further refinement of the proposed charter regarding security and network dynamics.
+
+## Key Discussion Points
+
+*   **Problem Statement**: Existing mechanisms for connecting hosts to infrastructure networks (e.g., Wi-Fi) are well-understood. However, connecting *stub networks* (attached, dependent networks that don't provide routing) lacks a standardized, scalable solution. Current accidental solutions (like double NAT) hinder mutual reachability and service discovery.
+*   **Goals for Stub Networks**:
+    *   Enable mutual reachability between stub hosts and infrastructure hosts.
+    *   Enable mutual discoverability (e.g., finding an IoT light bulb from a phone on the main network).
+    *   Facilitate services like firmware downloads.
+    *   Ideally, integrate the stub network's routing and discovery into the main network.
+*   **Constraints**:
+    *   No changes to existing infrastructure networks or hosts on them (e.g., home routers, end-user devices).
+    *   Stub network routers can be "greenfield" (firmware can be updated/mandated).
+    *   Stub networks are not transit networks.
+    *   Solution must handle multiple stub routers connected to the same stub network, potentially bridging to different infrastructure networks (e.g., in a large home or factory).
+    *   Must handle dynamic topologies (e.g., network partitions, device movement).
+*   **Use Cases**:
+    *   **Home Automation (Thread/Matter)**: Low-power (802.15.4) Thread networks for devices like light bulbs. Bridging these directly to Wi-Fi causes scalability issues with large broadcast domains and multicast traffic (e.g., mDNS). A routed solution is needed to isolate multicast and manage bandwidth.
+    *   **Building Automation**: Multi-story buildings with diverse, vendor-specific systems requiring inter-floor communication (e.g., fire safety, sensors). Needs resilience to central network failures, where an operator might be "absentee" during an event.
+*   **Technical Approaches (current solutions discussed)**:
+    *   **IPv6 Reachability**: Utilize IPv6 Router Advertisements (RAs) with Prefix Information Options (PIO) and Route Information Options (RIO) to provide addressing (e.g., Unique Local Addresses - ULAs) and routing information for the stub network. Challenges include coordinating prefix generation among multiple stub routers.
+    *   **DNS Service Discovery (DNS-SD)**: Avoids multicast DNS (mDNS) on constrained stub networks. Stub devices use Service Registration Protocol (SRP) – a unicast DNS update – to register services with a stub router acting as an SRP registrar. The stub router then uses an advertising proxy to make these services discoverable via mDNS on the infrastructure network. For infrastructure services, stub devices query the stub router as a discovery proxy.
+*   **Contrasting ND Proxy vs. Routing**:
+    *   The presenter (Ted) and a contributor (Stewart) expressed concern that ND proxy solutions could lead to scalability issues due to inherent multicast dependencies on the infrastructure link and effectively creating larger "LAN-like" broadcast domains, which they believe is antithetical to internetwork design for scalability.
+    *   Another contributor (Pascal) countered that 6LoWPAN, which uses ND proxy techniques, *explicitly* avoids broadcast and builds scalable networks with unicast ND and routing protocols like RPL, demonstrating that ND proxy does not necessarily equate to unscalable broadcast domains if implemented correctly. The discussion highlighted a need for further clarification on the specific scalability concerns for each approach.
+*   **Security Concerns**: There was a strong call to explicitly include basic security considerations in the charter, such as defining default connectivity policies (e.g., whether stub networks should have internet access by default) or specifying how the customer edge (CE) router should manage security for connected stub networks. The aim is to avoid repeating past mistakes leading to vulnerabilities like the Mirai botnet.
+*   **Scope and Scalability**: Discussion about whether the scope should include issues like obtaining multiple prefix delegations from ISPs or using smaller than /64 prefixes for efficiency in cloud/virtualized environments. The general consensus was to start with a tightly scoped problem (the core stub network problem) and consider adding more advanced deliverables (like multiple prefix delegations or network partitioning/healing) later, if a working group is formed.
+
+## Decisions and Action Items
+
+*   **Decision**: There is strong support to form a working group on the "snac" problem space.
+*   **Action Item**: The proposed charter needs to be finalized on the mailing list, incorporating feedback and clarifications.
+*   **Action Item (Chair/Ted)**: Clarify the typo in the third paragraph of the charter (change "infrastructure network" to "stub network" for discovery).
+*   **Action Item (Chair/Ted)**: Initiate further discussion on the mailing list regarding:
+    *   The precise wording for including "basic security considerations" within the charter and the working group's scope.
+    *   Whether "network partitioning discovery and mitigation" should be explicitly included in the working group's scope.
+    *   Clarify the distinction between the proposed second and third deliverables.
+
+## Next Steps
+
+*   The BoF chairs will finalize the proposed charter based on discussions and feedback from this meeting and the mailing list.
+*   The refined charter will be submitted to the IESG for review and approval to establish a "snac" working group.
+*   Interested individuals are encouraged to continue discussions on the mailing list, particularly on the identified charter clarifications and scope items.
+*   Volunteers for authoring, editing, and reviewing documents within this problem space are noted and will be engaged if a working group is formed.

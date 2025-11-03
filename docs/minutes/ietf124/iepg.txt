@@ -1,0 +1,70 @@
+**Session Date/Time:** 02 Nov 2025 15:00
+
+# IEPG
+
+## Summary
+
+The IEPG session featured discussions on four key operational topics: improving DNS root server efficiency, analyzing IPv4 vs. IPv6 performance for authoritative DNS, measuring NAT64's impact on DNS, and proposing a new RPKI data distribution mechanism. A new co-chair, Jen Linkova, was welcomed. The "Making Loco Root the Default" discussion highlighted the growing, unfunded load on DNS root servers and advocated for widespread adoption of local root zone caching via Zone MD (RFC 8806) to enhance privacy, speed, and resilience. The IPv6 DNS performance study showed surprisingly similar performance to IPv4 in general measurements but revealed a significant IPv4 query dominance in enterprise customer data, prompting further investigation. Research into NAT64's impact on DNS indicated minimal performance overhead for throughput but increased noise and timeouts under certain MTU conditions, suggesting a preference for native queries where possible. Finally, a new RPKI data distribution protocol, ERIC Synchronization, was presented as a more efficient alternative to existing rsync and RRDP methods, introducing a "relay" concept to improve data propagation and resilience, with initial deployment experiments underway.
+
+## Key Discussion Points
+
+*   **Making Loco Root the Default (Presenter: Geoff Houston)**
+    *   **Problem Statement:** DNS root servers are experiencing rapid query load growth (40% over two years, reaching 130 billion queries/day) despite being an unfunded service. Existing scaling methods like anycast are inefficient for dense networks.
+    *   **Aggressive NSEC Caching:** RFC 8198 aimed to reduce negative responses hitting the root, but adoption is low (~50% of root queries are still negative), partly due to older resolver versions (BIND 9.18 and later support it, but older versions are prevalent). There's a notable discrepancy between recursive resolver NXDOMAIN rates (~2% observed by Cloudflare) and root server reported rates (~50-60%), suggesting significant "junk" traffic likely from non-resolver-like devices or bad search lists.
+    *   **Proposed Solution: Local Root Zone Caching:** Distribute the entire root zone (2.2 MB, signed with Zone MD, RFC 8806) to recursive resolvers. This allows resolvers to serve root zone queries locally.
+    *   **Benefits:** Faster resolution, improved privacy (queries not broadcast), reduced attack surface on root, decreased dependencies on external infrastructure.
+    *   **Implementation Status:** Major recursive resolvers (BIND, Unbound, NSD) support fetching the root zone via Zone MD. The root zone is updated twice daily.
+    *   **Call to Action:** A draft advocating for making local root zone caching the default is under discussion.
+
+*   **IPv4 vs. IPv6 for Authoritative DNS (Presenter: Shane Kerr)**
+    *   **Motivation:** Measure the performance of NS1's IPv6 authoritative DNS edge compared to IPv4.
+    *   **Methodology:** Used RIPE Atlas probes to query A-only and AAAA-only zones, attempting to minimize caching effects to isolate recursive-to-authoritative latency.
+    *   **RIPE Atlas Results:** IPv6 queries were slightly faster than IPv4, and success rates were comparable (97% for IPv4, 96% for IPv6) across random probes, which was a surprising finding given no explicit selection for IPv6-capable clients.
+    *   **Public Resolver Data (Cloudflare 1.1.1.1):** Showed an almost 50/50 split between IPv4 and IPv6 queries, indicating well-connected resolvers effectively utilize both.
+    *   **Enterprise Customer Data (NS1 Edge):** Revealed a significant discrepancy, with approximately twice as many IPv4 queries as IPv6.
+    *   **Conundrum & Hypothesis:** The RIPE Atlas probes likely represent more "network-aware" users, while enterprise customers may be running older, IPv4-centric infrastructure (e.g., Windows 2000 Active Directory DNS).
+    *   **Future Work:** Investigate the reasons for IPv4 dominance in enterprise traffic.
+    *   **Discussion:** Suggestion to make it a Best Current Practice (BCP) for zones to have at least one IPv6-only name server to expose and fix IPv6-related bugs in resolvers and increase IPv6 traffic.
+
+*   **NAT64 and DNS Measurements (Presenter: Tobias Fiebig)**
+    *   **Context:** Continuation of previous work measuring IPv6 readiness for DNS, now focusing on the impact of NAT64.
+    *   **Methodology:** Resolved Google's top 10 million domains using IPv4-only, IPv6-only, and dual-stack, under various MTU scenarios, with and without NAT64.
+    *   **Benchmarking NAT64:** Open-source NAT64 implementations (OpenBSD, TAYGA) showed minimal performance impact on throughput during iperf tests.
+    *   **DNS Measurements with NAT64:**
+        *   Offloading features tend to introduce more noise.
+        *   Throughput was slightly better without offloading.
+        *   More timeouts were observed with YOL compared to OpenBSD/TAYGA.
+        *   Broken-pass MTU discovery for on-link and on-path scenarios performed similarly poorly with NAT64, unlike native IPv6 where on-link usually performs better.
+        *   Dual-stack resolution also significantly suffered from broken-pass MTU discovery with an on-path MTU break.
+    *   **Minimally Covering NS Assets:** This methodology, used to reduce measurement time (from 3.5 hours to 30 minutes), might make IPv6 look worse than it is in absolute terms, but the relative impact of factors like MTU discovery remained consistent.
+    *   **Conclusion:** If there's a choice, native queries are preferable over piping them through NAT64, particularly concerning MTU issues.
+
+*   **RPKI Data Distribution (ERIC Synchronization) (Presenter: Job Snijders)**
+    *   **Current State:** RPKI distribution relies on rsync and RRDP. The RPKI database is growing (currently ~0.5 million objects, ~900 MB raw data), with ~2 objects/second appearing.
+    *   **Challenges with Existing Protocols:**
+        *   **Rsync:** Scales poorly for frequent synchronizations due to expensive difference calculation (e.g., 4MB handshake for sync check).
+        *   **RRDP (Repository Delta Protocol):** Downloads entire journal chapters, even if superseded by newer changes, leading to unnecessary data transfer. Also, a single timeout can trigger a full snapshot download (exponential "fist in the face").
+        *   **Architectural Limitations:** Star topology (each CA has one publication server), no redundancy, and clients cannot choose alternative data sources, leading to slow revocation propagation, congestion, and hyper-local path issues.
+    *   **ERIC Synchronization Protocol:** A new data replication system designed to address these issues.
+        *   **Concepts:** Merkle trees, content-addressable naming, sequence numbers, HTTP-based.
+        *   **ERIC Relay:** Introduces an intermediate network element that aggregates data from multiple publication servers and presents it to clients in a merged, efficient format. Relays can synchronize with other relays.
+        *   **Benefits:** Clients jump to the latest state (no intermediate downloads), only download what changed, static content, HTTP features (compression), light on state, clients can rotate between relays.
+        *   **Performance:** Preliminary measurements indicate ERIC Synchronization is more efficient (less bandwidth, IOPS) than rsync and RRDP in all measured circumstances.
+        *   **Deployment Story:** Relays act as spoolers, allowing existing CAs to maintain their current setups while clients can benefit from ERIC via relays. This simplifies adoption.
+        *   **Funding & Operators:** Tentative interest from Regional Registries (RRs) and cloud providers to operate globally reachable relays. A small number of committed relay operators (4-5) might be sufficient.
+        *   **Future Considerations:** How to make relays discoverable (DNS hostnames, hard-coding akin to root hints) and ensuring operational stability and trustworthiness of relay operators. Cryptographic mechanisms secure content integrity; operational stability is a separate concern. The protocol is named after Eric Buis.
+
+## Decisions and Action Items
+
+*   **Action Item:** Jen Linkova was introduced and welcomed as a new co-chair.
+*   **Action Item (Shane Kerr):** Investigate the reasons behind the observed IPv4 dominance in authoritative DNS queries from enterprise customers.
+*   **Action Item (Shane Kerr):** Propose a fix or update to zone checker tools that incorrectly complain about IPv6-only authoritative zones.
+*   **Action Item (Chairs):** Prepare a statement regarding the IESG's position on "legend instruction" slides often included by corporate presenters.
+*   **Action Item (Job Snijders and co-authors):** Continue to refine and update the ERIC Synchronization Protocol draft based on ongoing experimentation and feedback.
+*   **Action Item (Attendees):** Experiment with the publicly deployed ERIC relay at `relay.rpki-servers.org` and provide feedback.
+
+## Next Steps
+
+*   Continue discussion and work on the draft to make local root zone caching the default for DNS recursive resolvers.
+*   Further research into the specific drivers of IPv4 traffic for authoritative DNS in enterprise environments, aiming to understand and address any underlying issues that hinder IPv6 adoption.
+*   Advance the ERIC Synchronization Protocol through experimentation, gathering deployment experience, and iterate on the draft for potential adoption by an IETF working group. This includes exploring models for relay operator commitment and service discovery.
