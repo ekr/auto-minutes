@@ -32,13 +32,14 @@ let verbose = false;
  * Generate minutes for a session (checks cache first, otherwise downloads and generates)
  * @param {number} meetingNumber - IETF meeting number
  * @param {Object} session - Session object with sessionName and sessionId
- * @returns {Promise<string>} The generated minutes (raw markdown)
+ * @returns {Promise<Object>} Object with {minutes: string, wasGenerated: boolean}
  */
 async function generateSessionMinutes(meetingNumber, session) {
   // Check cache first
   if (await cacheExists(meetingNumber, session.sessionId)) {
     console.log(`  Loading from cache: ${session.sessionId}`);
-    return await getCachedMinutes(meetingNumber, session.sessionId);
+    const minutes = await getCachedMinutes(meetingNumber, session.sessionId);
+    return { minutes, wasGenerated: false };
   }
 
   // Download transcript
@@ -48,7 +49,7 @@ async function generateSessionMinutes(meetingNumber, session) {
     transcript = await downloadTranscript(session);
   } catch (error) {
     console.log(`  Could not fetch transcript: ${error.message}`);
-    return ""; // Return empty minutes if transcript unavailable
+    return { minutes: "", wasGenerated: false }; // Return empty minutes if transcript unavailable
   }
 
   // Generate minutes using LLM
@@ -59,7 +60,7 @@ async function generateSessionMinutes(meetingNumber, session) {
   await saveCachedMinutes(meetingNumber, session.sessionId, minutes);
   console.log(`  Cached: ${session.sessionId}`);
 
-  return minutes;
+  return { minutes, wasGenerated: true };
 }
 
 /**
@@ -230,6 +231,7 @@ async function main() {
 
       // Step 3: Process each session - generate/cache LLM summaries
       const sessionGroups = [];
+      let anyNewMinutes = false;
       for (const [sessionName, sessionGroup] of sessionsByName) {
         console.log(
           `\nProcessing session group: ${sessionName} (${sessionGroup.length} session(s))`,
@@ -242,10 +244,15 @@ async function main() {
           );
 
           // Generate minutes (uses cache if available, otherwise downloads and generates)
-          const minutes = await generateSessionMinutes(meetingNumber, session);
+          const result = await generateSessionMinutes(meetingNumber, session);
+
+          // Track if any new minutes were generated
+          if (result.wasGenerated) {
+            anyNewMinutes = true;
+          }
 
           // Skip if no minutes were generated (transcript unavailable)
-          if (!minutes) {
+          if (!result.minutes) {
             console.log(
               `  Skipping ${session.sessionName} [${session.sessionId}] - no transcript`,
             );
@@ -270,10 +277,14 @@ async function main() {
         }
       }
 
-      // Save manifest to cache
-      console.log("\nSaving cache manifest...");
-      await saveCacheManifest(meetingNumber, sessionGroups);
-      console.log(`Cached ${sessionGroups.length} session groups`);
+      // Save manifest to cache only if new minutes were generated
+      if (anyNewMinutes) {
+        console.log("\nSaving cache manifest...");
+        await saveCacheManifest(meetingNumber, sessionGroups);
+        console.log(`Cached ${sessionGroups.length} session groups`);
+      } else {
+        console.log("\nNo new minutes generated, skipping manifest update");
+      }
     }
 
     // OUTPUT STAGE: Generate markdown output files from cache for ALL meetings
