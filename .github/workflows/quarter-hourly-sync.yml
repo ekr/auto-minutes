@@ -1,0 +1,57 @@
+name: Quarter-hourly sync
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: quarter-hourly-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repository (main)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Checkout ietf-minutes/ietf-minutes-data (cache branch)
+        uses: actions/checkout@v4
+        with:
+          repository: ietf-minutes/ietf-minutes-data
+          ref: cache
+          path: ietf-minutes-data
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ] || [ -f yarn.lock ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Show repo status (debug)
+        run: |
+          echo "Workspace: $(pwd)"
+          echo "Contents of repo root:"
+          ls -la
+          echo "Contents of checked-out ietf-minutes-data:"
+          ls -la ietf-minutes-data || true
+
+      - name: Run Node command
+        run: |
+          node src/index.js -v --summarize 124
