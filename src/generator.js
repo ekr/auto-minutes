@@ -47,8 +47,11 @@ Requirements:
 - Include a ## Decisions and Action Items section if applicable
 - Include a ## Next Steps section if applicable
 - Be concise but capture all important technical discussions
+- Represent the major positions that come up in discussion
 - Use proper Markdown formatting
 - Focus on technical content and decisions
+- Remember that IETF participants are individuals, not representatives of companies or other entities
+- Remember that consensus is not judged in IETF meetings; it is established separately. It's OK to say things like "a poll of the room was taken" or "a sense of those present indicates..."
 
 The transcript is in JSON format with timestamps and text. Here is the transcript:
 
