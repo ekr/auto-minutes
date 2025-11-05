@@ -120,6 +120,7 @@ async function main() {
     .example("$0 --build", "Build site with 11ty (outputs to _site/)")
     .example("$0 --output --build", "Generate output and build site")
     .example("$0 --pages", "Build and prepare GitHub Pages")
+    .example("$0 --preview 123:6LO", "Preview minutes for IETF 123 6LO session")
     .option("summarize", {
       alias: "s",
       type: "number",
@@ -159,10 +160,20 @@ async function main() {
       default: "proceedings",
       description: "Source to fetch sessions from (proceedings or agenda)",
     })
+    .option("preview", {
+      type: "string",
+      description: "Preview minutes for a specific session (format: meeting:session-name)",
+    })
     .check((argv) => {
-      if (!argv.summarize && !argv.output && !argv.build && !argv.pages) {
+      if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview) {
         throw new Error(
-          "Must specify at least one action: --summarize, --output, --build, or --pages",
+          "Must specify at least one action: --summarize, --output, --build, --pages, or --preview",
+        );
+      }
+      // Ensure --preview is mutually exclusive with other actions
+      if (argv.preview && (argv.summarize || argv.output || argv.build || argv.pages)) {
+        throw new Error(
+          "--preview cannot be used with other actions (--summarize, --output, --build, --pages)",
         );
       }
       return true;
@@ -177,11 +188,12 @@ async function main() {
   const doOutput = argv.output;
   const doBuild = argv.build || argv.pages;
   const doPages = argv.pages;
+  const doPreview = argv.preview;
   const model = argv.model;
   const source = argv.source;
 
-  // Check for appropriate API key based on model (only needed for summarize)
-  if (doSummarize) {
+  // Check for appropriate API key based on model (only needed for summarize or preview)
+  if (doSummarize || doPreview) {
     if (model === "claude") {
       const apiKey = process.env.ANTHROPIC_API_KEY;
       if (!apiKey) {
@@ -203,6 +215,92 @@ async function main() {
   }
 
   try {
+    // PREVIEW MODE: Generate and print minutes for a specific session
+    if (doPreview) {
+      console.log("\n=== PREVIEW MODE ===");
+      console.log(`Using ${model} model...`);
+
+      // Parse the meeting:session-name format
+      const parts = doPreview.split(":");
+      if (parts.length !== 2) {
+        throw new Error(
+          "Invalid --preview format. Use: --preview meeting:session-name (e.g., --preview 123:6LO)",
+        );
+      }
+
+      const previewMeetingNumber = parseInt(parts[0], 10);
+      const previewSessionName = parts[1];
+
+      if (isNaN(previewMeetingNumber)) {
+        throw new Error(`Invalid meeting number: ${parts[0]}`);
+      }
+
+      console.log(
+        `Previewing: IETF ${previewMeetingNumber}, Session: ${previewSessionName}`,
+      );
+
+      // Fetch all sessions for the meeting
+      const fetchFunction =
+        source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
+      console.log(`Fetching session list from ${source}...`);
+      const allSessions = await fetchFunction(previewMeetingNumber);
+      console.log(`Found ${allSessions.length} total sessions`);
+
+      // Filter to matching sessions (case-insensitive)
+      const matchingSessions = allSessions.filter(
+        (s) => s.sessionName.toLowerCase() === previewSessionName.toLowerCase(),
+      );
+
+      if (matchingSessions.length === 0) {
+        throw new Error(
+          `No sessions found with name: ${previewSessionName}\nAvailable sessions: ${[...new Set(allSessions.map((s) => s.sessionName))].sort().join(", ")}`,
+        );
+      }
+
+      console.log(
+        `Found ${matchingSessions.length} session(s) matching "${previewSessionName}"`,
+      );
+
+      // Process each matching session
+      const allMinutes = [];
+      for (const session of matchingSessions) {
+        console.log(`\nProcessing: ${session.sessionId}`);
+
+        // Download transcript (no cache)
+        console.log("  Downloading transcript...");
+        let transcript;
+        try {
+          transcript = await downloadTranscript(session);
+        } catch (error) {
+          console.error(`  Error downloading transcript: ${error.message}`);
+          continue;
+        }
+
+        // Generate minutes using LLM (no cache)
+        console.log("  Generating minutes with LLM...");
+        const minutes = await generateMinutes(
+          transcript,
+          session.sessionName,
+          verbose,
+        );
+
+        // Add date/time header
+        const { dateTimeHeader } = parseSessionId(session.sessionId);
+        allMinutes.push(`${dateTimeHeader}${minutes}`);
+
+        console.log("  Done!");
+      }
+
+      // Print all minutes to stdout
+      console.log("\n" + "=".repeat(80));
+      console.log("GENERATED MINUTES");
+      console.log("=".repeat(80) + "\n");
+      console.log(allMinutes.join("\n\n---\n\n"));
+      console.log("\n" + "=".repeat(80));
+
+      return; // Exit after preview
+    }
+
     // SUMMARIZE STAGE: Download transcripts and generate LLM summaries
     if (doSummarize) {
       console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingNumber} ===`);
