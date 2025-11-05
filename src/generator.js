@@ -50,7 +50,7 @@ Requirements:
 - Use proper Markdown formatting
 - Focus on technical content and decisions
 - Remember that IETF participants are individuals, not representatives of companies or other entities
-- Remember that consensus is not judged in IETF meetings; it is established separately. It's OK to say things like "a poll of the room was taken" or "a sense of those present indicates..."
+- Don't state or imply that consensus was reached at the meeting. It's OK to say things like "a poll of the room was taken" or "a sense of those present indicates..."
 
 The transcript is in JSON format with timestamps and text. Here is the transcript:
 
