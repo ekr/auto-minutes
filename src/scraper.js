@@ -172,3 +172,85 @@ export async function downloadTranscript(session) {
   const response = await ietfFetch(transcriptUrl);
   return await response.text();
 }
+
+/**
+ * Validates session ID format
+ * Expected format: IETFXXX-SESSIONNAME-YYYYMMDD-HHMM
+ * Examples: IETF123-6LO-20250723-0730, IETF112-RTG-AREA-20211112-1200
+ * @param {string} sessionId - Session ID to validate
+ * @returns {boolean} True if valid, false otherwise
+ */
+export function isValidSessionId(sessionId) {
+  if (typeof sessionId !== 'string') {
+    return false;
+  }
+
+  // Pattern breakdown:
+  // ^IETF\d+       - Starts with IETF followed by meeting number
+  // -              - Separator
+  // [A-Za-z0-9\-]+ - Session name (alphanumeric + hyphens)
+  // -              - Separator
+  // \d{8}          - Date in YYYYMMDD format
+  // -              - Separator
+  // \d{4}$         - Time in HHMM format
+  const pattern = /^IETF\d+-[A-Za-z0-9\-]+-\d{8}-\d{4}$/;
+  return pattern.test(sessionId);
+}
+
+/**
+ * Wraps a session fetching function to filter out invalid session IDs
+ * @param {Function} fetchFunction - Function that fetches sessions (fetchSessionsFromProceedings or fetchSessionsFromAgenda)
+ * @param {number} meetingNumber - IETF meeting number
+ * @returns {Promise<Object>} Object with {validSessions: Array, invalidSessions: Array, stats: Object}
+ */
+export async function fetchSessionsWithValidation(fetchFunction, meetingNumber) {
+  // Call the underlying fetch function
+  const allSessions = await fetchFunction(meetingNumber);
+
+  // Separate valid and invalid sessions
+  const validSessions = [];
+  const invalidSessions = [];
+
+  for (const session of allSessions) {
+    if (isValidSessionId(session.sessionId)) {
+      validSessions.push(session);
+    } else {
+      invalidSessions.push(session);
+    }
+  }
+
+  // Log warnings for invalid sessions
+  if (invalidSessions.length > 0) {
+    console.warn(`\n[Session Validation] Found ${invalidSessions.length} session(s) with invalid IDs:`);
+    for (const session of invalidSessions) {
+      console.warn(`  - "${session.sessionName}" has invalid ID: "${session.sessionId}"`);
+    }
+    console.warn(`[Session Validation] These sessions will be skipped.\n`);
+  }
+
+  // Return both valid and invalid for transparency
+  return {
+    validSessions,
+    invalidSessions,
+    stats: {
+      total: allSessions.length,
+      valid: validSessions.length,
+      invalid: invalidSessions.length,
+      validationRate: allSessions.length > 0
+        ? ((validSessions.length / allSessions.length) * 100).toFixed(1) + '%'
+        : '0%'
+    }
+  };
+}
+
+/**
+ * Fetches sessions and returns only those with valid session IDs
+ * Convenience wrapper that returns just the valid sessions array
+ * @param {Function} fetchFunction - Function that fetches sessions
+ * @param {number} meetingNumber - IETF meeting number
+ * @returns {Promise<Array>} Array of sessions with valid IDs
+ */
+export async function fetchValidSessions(fetchFunction, meetingNumber) {
+  const result = await fetchSessionsWithValidation(fetchFunction, meetingNumber);
+  return result.validSessions;
+}

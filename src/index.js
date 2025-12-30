@@ -6,7 +6,7 @@
 import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript } from "./scraper.js";
+import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation } from "./scraper.js";
 import { initializeClaude, generateMinutes } from "./generator.js";
 import {
   saveMinutes,
@@ -240,11 +240,12 @@ async function main() {
       );
 
       // Fetch all sessions for the meeting
-      const fetchFunction =
+      const baseFetchFunction =
         source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
       console.log(`Fetching session list from ${source}...`);
-      const allSessions = await fetchFunction(previewMeetingNumber);
-      console.log(`Found ${allSessions.length} total sessions`);
+      const result = await fetchSessionsWithValidation(baseFetchFunction, previewMeetingNumber);
+      console.log(`Found ${result.stats.total} total sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
+      const allSessions = result.validSessions;
 
       // Filter to matching sessions (case-insensitive)
       const matchingSessions = allSessions.filter(
@@ -307,10 +308,11 @@ async function main() {
       console.log(`Using ${model} model...`);
 
       // Step 1: Fetch all sessions for the meeting
-      const fetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
+      const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
       console.log(`Fetching session list from ${source}...`);
-      const sessions = await fetchFunction(meetingNumber);
-      console.log(`Found ${sessions.length} sessions`);
+      const result = await fetchSessionsWithValidation(baseFetchFunction, meetingNumber);
+      console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
+      const sessions = result.validSessions;
 
       if (verbose) {
         console.log("\n=== Session List Structure (JSON) ===");

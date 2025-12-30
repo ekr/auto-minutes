@@ -2,7 +2,7 @@
  * Tests for IETF scraper
  */
 
-import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript } from './scraper.js';
+import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, isValidSessionId, fetchSessionsWithValidation, fetchValidSessions } from './scraper.js';
 
 describe('IETF Scraper', () => {
   // Use meeting 123 (local file available)
@@ -92,4 +92,84 @@ describe('Meetecho Scraper', () => {
     console.log(`Downloaded transcript length: ${transcript.length} characters`);
     console.log(`First 200 characters: ${transcript.substring(0, 200)}`);
   }, 30000); // 30 second timeout for network request
+});
+
+describe('Session ID Validation', () => {
+  test('isValidSessionId accepts valid session IDs', () => {
+    expect(isValidSessionId('IETF123-6LO-20250723-0730')).toBe(true);
+    expect(isValidSessionId('IETF112-AVTCORE-20211112-1200')).toBe(true);
+    expect(isValidSessionId('IETF999-RTG-AREA-20250101-1200')).toBe(true);
+    expect(isValidSessionId('IETF1-TEST-12345678-1234')).toBe(true);
+  });
+
+  test('isValidSessionId rejects invalid session IDs', () => {
+    expect(isValidSessionId('invalid-format')).toBe(false);
+    expect(isValidSessionId('IETF123-TEST-20250723')).toBe(false); // Missing time
+    expect(isValidSessionId('IETF123-TEST-2025-0730')).toBe(false); // Wrong date format
+    expect(isValidSessionId('123-TEST-20250723-0730')).toBe(false); // Missing IETF prefix
+    expect(isValidSessionId('')).toBe(false);
+    expect(isValidSessionId(null)).toBe(false);
+    expect(isValidSessionId(undefined)).toBe(false);
+    expect(isValidSessionId(123)).toBe(false);
+  });
+
+  test('fetchSessionsWithValidation returns validation stats', async () => {
+    const MEETING_NUMBER = 123;
+    const result = await fetchSessionsWithValidation(fetchSessionsFromProceedings, MEETING_NUMBER);
+
+    expect(result).toHaveProperty('validSessions');
+    expect(result).toHaveProperty('invalidSessions');
+    expect(result).toHaveProperty('stats');
+    expect(Array.isArray(result.validSessions)).toBe(true);
+    expect(Array.isArray(result.invalidSessions)).toBe(true);
+    expect(result.stats.total).toBe(result.stats.valid + result.stats.invalid);
+
+    // All returned sessions should have valid IDs
+    for (const session of result.validSessions) {
+      expect(isValidSessionId(session.sessionId)).toBe(true);
+    }
+
+    // All invalid sessions should have invalid IDs
+    for (const session of result.invalidSessions) {
+      expect(isValidSessionId(session.sessionId)).toBe(false);
+    }
+
+    console.log(`Validation stats: ${result.stats.total} total, ${result.stats.valid} valid, ${result.stats.invalid} invalid (${result.stats.validationRate})`);
+  }, 30000);
+
+  test('fetchSessionsWithValidation works with both fetch functions', async () => {
+    const MEETING_NUMBER = 123;
+
+    // Test with proceedings
+    const proceedingsResult = await fetchSessionsWithValidation(
+      fetchSessionsFromProceedings,
+      MEETING_NUMBER
+    );
+    expect(proceedingsResult.validSessions.length).toBeGreaterThan(0);
+
+    // Test with agenda
+    const agendaResult = await fetchSessionsWithValidation(
+      fetchSessionsFromAgenda,
+      MEETING_NUMBER
+    );
+    expect(agendaResult.validSessions.length).toBeGreaterThan(0);
+
+    console.log(`Proceedings: ${proceedingsResult.stats.valid} valid sessions`);
+    console.log(`Agenda: ${agendaResult.stats.valid} valid sessions`);
+  }, 30000);
+
+  test('fetchValidSessions returns only valid sessions', async () => {
+    const MEETING_NUMBER = 123;
+    const validSessions = await fetchValidSessions(fetchSessionsFromProceedings, MEETING_NUMBER);
+
+    expect(Array.isArray(validSessions)).toBe(true);
+    expect(validSessions.length).toBeGreaterThan(0);
+
+    // All returned sessions should have valid IDs
+    for (const session of validSessions) {
+      expect(isValidSessionId(session.sessionId)).toBe(true);
+    }
+
+    console.log(`fetchValidSessions returned ${validSessions.length} valid sessions`);
+  }, 30000);
 });
