@@ -42,7 +42,7 @@ and paste. You probably should double check for places
 where one of the AI processing steps has screwed up (e.g., "quick"
 for "QUIC"). Some of these
 issues may be in the original transcript generating stage and so
-are hard too fix in minutes generation.
+are hard to fix in minutes generation.
 
 ### What about future IETF meetings?
 
