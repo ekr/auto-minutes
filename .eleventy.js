@@ -11,5 +11,8 @@ export default async function (eleventyConfig) {
       layouts: "_layouts",
     },
     templateFormats: ["md"],
+    // Disable liquid/template processing of markdown files
+    // This prevents liquid from trying to parse {{ or {% in markdown content
+    markdownTemplateEngine: false,
   };
 }
