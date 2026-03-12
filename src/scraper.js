@@ -359,18 +359,30 @@ async function scrapeInterimSessionId(meetingSlug, groupName) {
  * @returns {Promise<Array>} Array of meeting objects from the API
  */
 async function queryInterimMeetings(queryParams) {
-  const apiUrl = `https://datatracker.ietf.org/api/v1/meeting/meeting/?type=interim&${queryParams}`;
-  const response = await fetch(apiUrl, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      'Accept': 'application/json',
-    },
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${apiUrl}: ${response.status} ${response.statusText}`);
+  let allObjects = [];
+  let url = `https://datatracker.ietf.org/api/v1/meeting/meeting/?type=interim&${queryParams}`;
+
+  while (url) {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        'Accept': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    allObjects = allObjects.concat(data.objects || []);
+
+    if (data.meta && data.meta.next) {
+      url = new URL(data.meta.next, 'https://datatracker.ietf.org').href;
+    } else {
+      url = null;
+    }
   }
-  const data = await response.json();
-  return data.objects || [];
+
+  return allObjects;
 }
 
 /**
