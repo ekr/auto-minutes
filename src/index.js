@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange } from "./scraper.js";
-import { initializeClaude, generateMinutes } from "./generator.js";
+import { initializeClaude, generateMinutes, setGenerationTimeout } from "./generator.js";
 import { transcribeSession } from "./transcriber.js";
 import {
   saveMinutes,
@@ -62,7 +62,13 @@ async function generateSessionMinutes(meetingNumber, session, useAudio = false, 
 
   // Generate minutes using LLM
   console.log(`  Generating minutes with LLM: ${session.sessionId}`);
-  const minutes = await generateMinutes(transcript, session.sessionName, verbose, modelName);
+  let minutes;
+  try {
+    minutes = await generateMinutes(transcript, session.sessionName, verbose, modelName);
+  } catch (error) {
+    console.log(`  Could not generate minutes: ${error.message}`);
+    return { minutes: "", wasGenerated: false };
+  }
 
   // Save to cache
   await saveCachedMinutes(meetingNumber, session.sessionId, minutes);
@@ -301,6 +307,11 @@ async function main() {
       type: "boolean",
       description: "Use audio transcription (download audio and transcribe with Gemini STT) instead of Meetecho text transcript",
     })
+    .option("timeout", {
+      type: "number",
+      default: 300,
+      description: "LLM generation timeout in seconds (default: 300 = 5 minutes)",
+    })
     .option("preview", {
       type: "string",
       description: "Preview minutes for a specific session (format: meeting:session-name)",
@@ -324,6 +335,7 @@ async function main() {
     .parse();
 
   verbose = argv.verbose;
+  setGenerationTimeout(argv.timeout * 1000);
   const doSummarize = !!argv.summarize;
   const doOutput = argv.output;
   const doBuild = argv.build || argv.pages;
