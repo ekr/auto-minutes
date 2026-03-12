@@ -18,6 +18,17 @@ export function setGenerationTimeout(ms) {
   generationTimeoutMs = ms;
 }
 
+/**
+ * Race a promise against the generation timeout, clearing the timer afterward.
+ */
+function withTimeout(promise, sessionName) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`LLM generation timed out after ${generationTimeoutMs / 1000}s for session: ${sessionName}`)), generationTimeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 let anthropic = null;
 let gemini = null;
 let currentModel = null;
@@ -89,7 +100,7 @@ Generate the meeting minutes:`;
       );
     }
 
-    const message = await Promise.race([
+    const message = await withTimeout(
       anthropic.messages.create({
         model: modelName || "claude-sonnet-4-6",
         max_tokens: 4096,
@@ -100,10 +111,8 @@ Generate the meeting minutes:`;
           },
         ],
       }),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`LLM generation timed out after ${generationTimeoutMs / 1000}s for session: ${sessionName}`)), generationTimeoutMs)
-      ),
-    ]);
+      sessionName,
+    );
 
     generatedText = message.content[0].text;
 
@@ -118,12 +127,7 @@ Generate the meeting minutes:`;
     }
 
     const model = gemini.getGenerativeModel({ model: modelName || "gemini-2.5-flash" });
-    const result = await Promise.race([
-      model.generateContent(prompt),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`LLM generation timed out after ${generationTimeoutMs / 1000}s for session: ${sessionName}`)), generationTimeoutMs)
-      ),
-    ]);
+    const result = await withTimeout(model.generateContent(prompt), sessionName);
     const response = result.response;
     generatedText = response.text();
 
