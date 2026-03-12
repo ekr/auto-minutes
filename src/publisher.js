@@ -44,36 +44,64 @@ export async function minutesExist(sessionName, outputDir = "output") {
 
 /**
  * Get cache directory for a meeting
- * @param {number} meetingNumber - IETF meeting number
+ * @param {number|string} meetingId - IETF meeting number or date string (e.g., "2026-03-03")
  * @returns {string} Cache directory path
  */
-function getCacheDir(meetingNumber) {
-  return path.join("cache", "output", `ietf${meetingNumber}`);
+function getCacheDir(meetingId) {
+  if (typeof meetingId === 'number' || /^\d+$/.test(meetingId)) {
+    return path.join("cache", "output", `ietf${meetingId}`);
+  }
+  // Date string or other identifier
+  return path.join("cache", "output", String(meetingId));
 }
 
 /**
- * Get all cached meeting numbers
- * @returns {Promise<Array<number>>} Array of meeting numbers
+ * Get all cached meeting IDs (numbers for plenary, date strings for interims)
+ * @returns {Promise<Array<number|string>>} Array of meeting IDs
  */
-export async function getCachedMeetingNumbers() {
+export async function getCachedMeetingIds() {
   const cacheBase = path.join("cache", "output");
 
   try {
     const entries = await fs.readdir(cacheBase, { withFileTypes: true });
-    const meetingNumbers = entries
-      .filter((entry) => entry.isDirectory() && entry.name.startsWith("ietf"))
-      .map((entry) => {
-        const match = entry.name.match(/^ietf(\d+)$/);
-        return match ? parseInt(match[1], 10) : null;
-      })
-      .filter((num) => num !== null)
-      .sort((a, b) => b - a); // Descending order
+    const meetingIds = [];
 
-    return meetingNumbers;
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+
+      // Match ietfNNN format (plenary meetings)
+      const ietfMatch = entry.name.match(/^ietf(\d+)$/);
+      if (ietfMatch) {
+        meetingIds.push(parseInt(ietfMatch[1], 10));
+        continue;
+      }
+
+      // Match YYYY-MM-DD format (interim meetings)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(entry.name)) {
+        meetingIds.push(entry.name);
+      }
+    }
+
+    // Sort: numbers descending, then date strings descending
+    meetingIds.sort((a, b) => {
+      if (typeof a === 'number' && typeof b === 'number') return b - a;
+      if (typeof a === 'string' && typeof b === 'string') return b.localeCompare(a);
+      // Numbers before strings
+      if (typeof a === 'number') return -1;
+      return 1;
+    });
+
+    return meetingIds;
   } catch (error) {
     // Cache directory doesn't exist yet
     return [];
   }
+}
+
+/** @deprecated Use getCachedMeetingIds instead */
+export async function getCachedMeetingNumbers() {
+  const ids = await getCachedMeetingIds();
+  return ids.filter(id => typeof id === 'number');
 }
 
 /**

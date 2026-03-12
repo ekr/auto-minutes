@@ -6,7 +6,7 @@
 import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber } from "./scraper.js";
+import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange } from "./scraper.js";
 import { initializeClaude, generateMinutes } from "./generator.js";
 import { transcribeSession } from "./transcriber.js";
 import {
@@ -21,7 +21,7 @@ import {
   getCachedSessionIds,
   saveCacheManifest,
   loadCacheManifest,
-  getCachedMeetingNumbers,
+  getCachedMeetingIds,
 } from "./publisher.js";
 
 // Load environment variables
@@ -117,11 +117,138 @@ function parseSessionId(sessionId) {
   return { sessionName, dateTimeHeader };
 }
 
+/**
+ * Parse the --summarize argument into a typed descriptor
+ * @param {string|number} value - Meeting number, "current", "number:group", "date:group", "date", or "date+"
+ * @returns {Object} Parsed descriptor with type field
+ */
+function parseSummarizeArg(value) {
+  const str = String(value);
+
+  // "current" → resolve via API
+  if (str.toLowerCase() === 'current') {
+    return { type: 'current' };
+  }
+
+  // colon format: date:group (interim) or number:group (plenary filtered)
+  if (str.includes(':')) {
+    const [left, group] = str.split(':', 2);
+    if (!left || !group) {
+      throw new Error(`Invalid format: "${str}". Expected "YYYY-MM-DD:GROUP" or "NUMBER:GROUP"`);
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(left)) {
+      return { type: 'interim', date: left, group };
+    }
+    const meetingNumber = parseInt(left, 10);
+    if (!isNaN(meetingNumber)) {
+      return { type: 'ietf-group', meetingNumber, group };
+    }
+    throw new Error(`Invalid format: "${str}". Left side of ":" must be a date (YYYY-MM-DD) or meeting number`);
+  }
+
+  // date+ → range of interims from date through today
+  if (str.endsWith('+') && /^\d{4}-\d{2}-\d{2}\+$/.test(str)) {
+    const startDate = str.slice(0, -1);
+    return { type: 'interim-range', startDate };
+  }
+
+  // bare date → all interims on that date
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return { type: 'interim-all', date: str };
+  }
+
+  // numeric → IETF meeting number
+  const meetingNumber = parseInt(str, 10);
+  if (isNaN(meetingNumber)) {
+    throw new Error(`Invalid meeting number: "${str}"`);
+  }
+  return { type: 'ietf', meetingNumber };
+}
+
+/**
+ * Process sessions for a single meetingId: generate/cache minutes and save manifest.
+ * @param {string|number} meetingId - Meeting identifier (number for IETF, date string for interim)
+ * @param {Array} sessions - Array of session objects
+ * @param {boolean} useAudio - Whether to use audio transcription
+ */
+async function processSummarizeSessions(meetingId, sessions, useAudio = false) {
+  if (verbose) {
+    console.log("\n=== Session List Structure (JSON) ===");
+    console.log(JSON.stringify(sessions, null, 2));
+    console.log("=== End Session List ===\n");
+  }
+
+  // Group sessions by name (multiple sessions can have the same name)
+  const sessionsByName = new Map();
+  for (const session of sessions) {
+    if (!sessionsByName.has(session.sessionName)) {
+      sessionsByName.set(session.sessionName, []);
+    }
+    sessionsByName.get(session.sessionName).push(session);
+  }
+
+  // Process each session - generate/cache LLM summaries
+  const sessionGroups = [];
+  let anyNewMinutes = false;
+  for (const [sessionName, sessionGroup] of sessionsByName) {
+    console.log(
+      `\nProcessing session group: ${sessionName} (${sessionGroup.length} session(s))`,
+    );
+
+    const processedSessions = [];
+    for (const session of sessionGroup) {
+      console.log(
+        `  Processing ${session.sessionName} [${session.sessionId}]...`,
+      );
+
+      const result = await generateSessionMinutes(meetingId, session, useAudio);
+
+      if (result.wasGenerated) {
+        anyNewMinutes = true;
+      }
+
+      if (!result.minutes) {
+        console.log(
+          `  Skipping ${session.sessionName} [${session.sessionId}] - no transcript`,
+        );
+        continue;
+      }
+
+      processedSessions.push({
+        sessionId: session.sessionId,
+        recordingUrl: session.recordingUrl,
+      });
+      console.log(
+        `  Completed ${session.sessionName} [${session.sessionId}]`,
+      );
+    }
+
+    if (processedSessions.length > 0) {
+      sessionGroups.push({
+        sessionName,
+        sessions: processedSessions,
+      });
+    }
+  }
+
+  if (anyNewMinutes) {
+    console.log("\nSaving cache manifest...");
+    await saveCacheManifest(meetingId, sessionGroups);
+    console.log(`Cached ${sessionGroups.length} session groups`);
+  } else {
+    console.log("\nNo new minutes generated, skipping manifest update");
+  }
+}
+
 async function main() {
   const argv = yargs(hideBin(process.argv))
     .usage("Usage: $0 [options]")
     .example("$0 --summarize 123", "Generate LLM summaries for IETF 123")
     .example("$0 --summarize current", "Generate LLM summaries for the current/upcoming IETF meeting")
+    .example("$0 --summarize 123:6LO", "Generate summaries for a specific WG at an IETF meeting")
+    .example("$0 --summarize 2026-03-03:AIPREF", "Generate summaries for an interim meeting")
+    .example("$0 --summarize 2026-03-03", "Generate summaries for all interims on a date")
+    .example("$0 --summarize 2026-03-03+", "Generate summaries for all interims from date through today")
     .example("$0 --summarize 123 --source agenda", "Fetch sessions from Meetecho agenda")
     .example("$0 --output", "Generate output markdown files from cache")
     .example("$0 --summarize 123 --output", "Generate summaries and output")
@@ -134,7 +261,7 @@ async function main() {
       alias: "s",
       type: "string",
       description:
-        'Generate LLM summaries for meeting number or "current" (cache raw minutes)',
+        "Generate LLM summaries: number, \"current\", number:group, date:group, date, or date+",
     })
     .option("output", {
       alias: "o",
@@ -205,22 +332,6 @@ async function main() {
   const model = argv.model;
   const source = argv.source;
   const useAudio = argv.audio;
-
-  // Resolve meeting number: "current" fetches from IETF datatracker, otherwise parse as number
-  let meetingNumber;
-  if (argv.summarize) {
-    if (argv.summarize.toLowerCase() === "current") {
-      console.log("Resolving current IETF meeting number...");
-      meetingNumber = await fetchCurrentMeetingNumber();
-      console.log(`Current IETF meeting: ${meetingNumber}`);
-    } else {
-      meetingNumber = parseInt(argv.summarize, 10);
-      if (isNaN(meetingNumber)) {
-        console.error(`Error: Invalid meeting number: ${argv.summarize}`);
-        process.exit(1);
-      }
-    }
-  }
 
   // Check for appropriate API key based on model (only needed for summarize or preview)
   if (doSummarize || doPreview) {
@@ -356,86 +467,84 @@ async function main() {
 
     // SUMMARIZE STAGE: Download transcripts and generate LLM summaries
     if (doSummarize) {
-      console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingNumber} ===`);
-      console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
+      const parsed = parseSummarizeArg(argv.summarize);
 
-      // Step 1: Fetch all sessions for the meeting
-      const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
-      console.log(`Fetching session list from ${source}...`);
-      const result = await fetchSessionsWithValidation(baseFetchFunction, meetingNumber);
-      console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
-      const sessions = result.validSessions;
+      if (parsed.type === 'interim-range') {
+        // Process all interims from startDate through today
+        console.log(`\n=== SUMMARIZE STAGE: Interims from ${parsed.startDate}+ ===`);
+        console.log(`Using ${model} model...`);
 
-      if (verbose) {
-        console.log("\n=== Session List Structure (JSON) ===");
-        console.log(JSON.stringify(sessions, null, 2));
-        console.log("=== End Session List ===\n");
-      }
+        const sessionsByDate = await fetchInterimSessionsInRange(parsed.startDate);
+        console.log(`\nFound sessions across ${sessionsByDate.size} date(s)`);
 
-      // Step 2: Group sessions by name (multiple sessions can have the same name)
-      const sessionsByName = new Map();
-      for (const session of sessions) {
-        if (!sessionsByName.has(session.sessionName)) {
-          sessionsByName.set(session.sessionName, []);
+        for (const [date, sessions] of sessionsByDate) {
+          console.log(`\n--- Processing interims for ${date} ---`);
+          await processSummarizeSessions(date, sessions, useAudio);
         }
-        sessionsByName.get(session.sessionName).push(session);
-      }
-
-      // Step 3: Process each session - generate/cache LLM summaries
-      const sessionGroups = [];
-      let anyNewMinutes = false;
-      for (const [sessionName, sessionGroup] of sessionsByName) {
-        console.log(
-          `\nProcessing session group: ${sessionName} (${sessionGroup.length} session(s))`,
-        );
-
-        const processedSessions = [];
-        for (const session of sessionGroup) {
-          console.log(
-            `  Processing ${session.sessionName} [${session.sessionId}]...`,
-          );
-
-          // Generate minutes (uses cache if available, otherwise downloads and generates)
-          const result = await generateSessionMinutes(meetingNumber, session, useAudio);
-
-          // Track if any new minutes were generated
-          if (result.wasGenerated) {
-            anyNewMinutes = true;
-          }
-
-          // Skip if no minutes were generated (transcript unavailable)
-          if (!result.minutes) {
-            console.log(
-              `  Skipping ${session.sessionName} [${session.sessionId}] - no transcript`,
-            );
-            continue;
-          }
-
-          processedSessions.push({
-            sessionId: session.sessionId,
-            recordingUrl: session.recordingUrl,
-          });
-          console.log(
-            `  Completed ${session.sessionName} [${session.sessionId}]`,
-          );
-        }
-
-        // Only add to manifest if at least one session was processed
-        if (processedSessions.length > 0) {
-          sessionGroups.push({
-            sessionName,
-            sessions: processedSessions,
-          });
-        }
-      }
-
-      // Save manifest to cache only if new minutes were generated
-      if (anyNewMinutes) {
-        console.log("\nSaving cache manifest...");
-        await saveCacheManifest(meetingNumber, sessionGroups);
-        console.log(`Cached ${sessionGroups.length} session groups`);
       } else {
-        console.log("\nNo new minutes generated, skipping manifest update");
+        // Single meetingId case: current, ietf, interim, or interim-all
+        let meetingId;
+        let sessions;
+
+        if (parsed.type === 'current') {
+          console.log("Resolving current IETF meeting number...");
+          meetingId = await fetchCurrentMeetingNumber();
+          console.log(`Current IETF meeting: ${meetingId}`);
+
+          console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
+          console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
+
+          const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
+          console.log(`Fetching session list from ${source}...`);
+          const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
+          console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
+          sessions = result.validSessions;
+        } else if (parsed.type === 'ietf-group') {
+          meetingId = parsed.meetingNumber;
+          console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} — ${parsed.group} ===`);
+          console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
+
+          const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
+          console.log(`Fetching session list from ${source}...`);
+          const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
+          console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
+          const groupLower = parsed.group.toLowerCase();
+          sessions = result.validSessions.filter(
+            s => s.sessionName.toLowerCase() === groupLower
+          );
+          if (sessions.length === 0) {
+            const available = [...new Set(result.validSessions.map(s => s.sessionName))].sort().join(', ');
+            throw new Error(`No sessions found matching "${parsed.group}" in IETF ${meetingId}.\nAvailable: ${available}`);
+          }
+          console.log(`Filtered to ${sessions.length} session(s) for ${parsed.group}`);
+        } else if (parsed.type === 'interim') {
+          meetingId = parsed.date;
+          console.log(`\n=== SUMMARIZE STAGE: Interim ${parsed.group} (${parsed.date}) ===`);
+          console.log(`Using ${model} model...`);
+
+          console.log(`Looking up interim meeting for ${parsed.group} on ${parsed.date}...`);
+          sessions = await fetchInterimSession(parsed.date, parsed.group);
+          console.log(`Found ${sessions.length} session(s)`);
+        } else if (parsed.type === 'interim-all') {
+          meetingId = parsed.date;
+          console.log(`\n=== SUMMARIZE STAGE: All interims on ${parsed.date} ===`);
+          console.log(`Using ${model} model...`);
+
+          sessions = await fetchAllInterimSessions(parsed.date);
+          console.log(`Found ${sessions.length} session(s)`);
+        } else {
+          meetingId = parsed.meetingNumber;
+          console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
+          console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
+
+          const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
+          console.log(`Fetching session list from ${source}...`);
+          const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
+          console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
+          sessions = result.validSessions;
+        }
+
+        await processSummarizeSessions(meetingId, sessions, useAudio);
       }
     }
 
@@ -444,17 +553,22 @@ async function main() {
       console.log("\n=== OUTPUT STAGE ===");
       console.log("Scanning cache for meetings...");
 
-      const cachedMeetings = await getCachedMeetingNumbers();
+      const cachedMeetings = await getCachedMeetingIds();
       console.log(
         `Found ${cachedMeetings.length} cached meetings: ${cachedMeetings.join(", ")}`,
       );
 
-      for (const meetingNum of cachedMeetings) {
-        console.log(`\n--- Processing IETF ${meetingNum} ---`);
-        const outputDir = `site/minutes/ietf${meetingNum}`;
+      for (const meetingId of cachedMeetings) {
+        const isPlenary = typeof meetingId === 'number';
+        const label = isPlenary ? `IETF ${meetingId}` : `Interim ${meetingId}`;
+        const outputDir = isPlenary
+          ? `site/minutes/ietf${meetingId}`
+          : `site/minutes/${meetingId}`;
+
+        console.log(`\n--- Processing ${label} ---`);
 
         console.log("Loading cache manifest...");
-        const sessionGroups = await loadCacheManifest(meetingNum);
+        const sessionGroups = await loadCacheManifest(meetingId);
         console.log(`Found ${sessionGroups.length} session groups`);
 
         const processedSessions = [];
@@ -466,7 +580,7 @@ async function main() {
 
           for (const session of group.sessions) {
             const minutes = await getCachedMinutes(
-              meetingNum,
+              meetingId,
               session.sessionId,
             );
             const { dateTimeHeader } = parseSessionId(session.sessionId);
@@ -491,7 +605,7 @@ async function main() {
         // Generate index page
         console.log("Generating index...");
         await generateIndex(processedSessions, outputDir);
-        console.log(`Completed IETF ${meetingNum}`);
+        console.log(`Completed ${label}`);
       }
 
       // Generate WG pages
