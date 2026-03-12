@@ -254,3 +254,50 @@ export async function fetchValidSessions(fetchFunction, meetingNumber) {
   const result = await fetchSessionsWithValidation(fetchFunction, meetingNumber);
   return result.validSessions;
 }
+
+/**
+ * Fetches the current or next upcoming IETF meeting number from the datatracker API.
+ * "Current" means a meeting whose date range includes today, or the next future meeting
+ * if no meeting is currently in progress.
+ * @returns {Promise<number>} The current/upcoming IETF meeting number
+ */
+export async function fetchCurrentMeetingNumber() {
+  const url = 'https://datatracker.ietf.org/api/v1/meeting/meeting/?type=ietf&limit=10&order_by=-date&format=json';
+  const response = await ietfFetch(url);
+  const data = JSON.parse(await response.text());
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const meetings = data.objects;
+
+  // Find a meeting currently in progress (today falls within start..start+days)
+  for (const meeting of meetings) {
+    const start = new Date(meeting.date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + (meeting.days || 7));
+
+    if (today >= start && today <= end) {
+      return parseInt(meeting.number, 10);
+    }
+  }
+
+  // No meeting in progress — find the next upcoming meeting
+  let closest = null;
+  for (const meeting of meetings) {
+    const start = new Date(meeting.date);
+    start.setHours(0, 0, 0, 0);
+    if (start > today) {
+      if (!closest || start < new Date(closest.date)) {
+        closest = meeting;
+      }
+    }
+  }
+
+  if (closest) {
+    return parseInt(closest.number, 10);
+  }
+
+  throw new Error('Could not determine the current IETF meeting number from the datatracker API');
+}
