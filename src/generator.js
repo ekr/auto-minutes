@@ -6,7 +6,16 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const GENERATION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+let generationTimeoutMs = DEFAULT_TIMEOUT_MS;
+
+/**
+ * Set the generation timeout
+ * @param {number} ms - Timeout in milliseconds
+ */
+export function setGenerationTimeout(ms) {
+  generationTimeoutMs = ms;
+}
 
 let anthropic = null;
 let gemini = null;
@@ -89,7 +98,7 @@ Generate the meeting minutes:`;
         ],
       }),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`LLM generation timed out after 5 minutes for session: ${sessionName}`)), GENERATION_TIMEOUT_MS)
+        setTimeout(() => reject(new Error(`LLM generation timed out after ${generationTimeoutMs / 1000}s for session: ${sessionName}`)), generationTimeoutMs)
       ),
     ]);
 
@@ -109,7 +118,7 @@ Generate the meeting minutes:`;
     const result = await Promise.race([
       model.generateContent(prompt),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`LLM generation timed out after 5 minutes for session: ${sessionName}`)), GENERATION_TIMEOUT_MS)
+        setTimeout(() => reject(new Error(`LLM generation timed out after ${generationTimeoutMs / 1000}s for session: ${sessionName}`)), generationTimeoutMs)
       ),
     ]);
     const response = result.response;
