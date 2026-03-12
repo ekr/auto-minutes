@@ -43,6 +43,23 @@ export async function minutesExist(sessionName, outputDir = "output") {
 }
 
 /**
+ * Extract a YYYY-MM-DD date from a plenary manifest's first sessionId.
+ * SessionId format: IETFXXX-NAME-YYYYMMDD-HHMM
+ * Falls back to "0000-00-00" if no date can be parsed.
+ */
+function extractDateFromManifest(manifest, meetingId) {
+  for (const group of manifest.sessionGroups || []) {
+    for (const session of group.sessions || []) {
+      const sid = session.sessionId;
+      if (!sid) continue;
+      const m = sid.match(/(\d{4})(\d{2})(\d{2})-\d{4}$/);
+      if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    }
+  }
+  return "0000-00-00";
+}
+
+/**
  * Get cache directory for a meeting
  * @param {number|string} meetingId - IETF meeting number or date string (e.g., "2026-03-03")
  * @returns {string} Cache directory path
@@ -321,39 +338,53 @@ export async function generateIndex(sessions, outputDir = "output") {
  * @param {string} siteDir - Base site directory (default: 'site')
  */
 export async function generateWgPages(siteDir = "site") {
-  const cacheOutputDir = path.join("cache", "output");
-  const meetingNumbers = await getCachedMeetingNumbers();
+  const meetingIds = await getCachedMeetingIds();
 
-  if (meetingNumbers.length === 0) {
+  if (meetingIds.length === 0) {
     console.log("No cached meetings found, skipping WG page generation");
     return;
   }
 
-  // Build map of WG name -> [{meetingNumber, sanitizedName}]
+  // Build map of sanitized WG name -> {displayName, meetings: [{id, date, label, linkPath}]}
   const wgMeetings = new Map();
 
-  for (const meetingNum of meetingNumbers) {
+  for (const meetingId of meetingIds) {
+    const isPlenary = typeof meetingId === 'number';
+    const cacheDir = getCacheDir(meetingId);
+    const linkPath = isPlenary ? `ietf${meetingId}` : String(meetingId);
+
     try {
-      const manifestPath = path.join(
-        cacheOutputDir,
-        `ietf${meetingNum}`,
-        ".manifest.json",
-      );
+      const manifestPath = path.join(cacheDir, ".manifest.json");
       const content = await fs.readFile(manifestPath, "utf-8");
       const manifest = JSON.parse(content);
 
+      // Extract a sortable date for this meeting
+      let date;
+      if (!isPlenary) {
+        date = String(meetingId);
+      } else {
+        // Parse date from first session's sessionId (format: IETFXXX-NAME-YYYYMMDD-HHMM)
+        date = extractDateFromManifest(manifest, meetingId);
+      }
+
       for (const group of manifest.sessionGroups) {
-        const name = group.sessionName;
-        if (!wgMeetings.has(name)) {
-          wgMeetings.set(name, []);
+        const key = sanitizeSessionName(group.sessionName);
+        if (!wgMeetings.has(key)) {
+          wgMeetings.set(key, { displayName: group.sessionName, meetings: [] });
         }
-        wgMeetings.get(name).push(meetingNum);
+        const label = isPlenary ? `IETF ${meetingId} (${date})` : `Interim ${meetingId}`;
+        wgMeetings.get(key).meetings.push({ id: meetingId, date, label, linkPath });
       }
     } catch (error) {
       console.warn(
-        `Could not read manifest for IETF ${meetingNum}: ${error.message}`,
+        `Could not read manifest for meeting ${meetingId}: ${error.message}`,
       );
     }
+  }
+
+  // Sort entries by date descending within each WG
+  for (const { meetings } of wgMeetings.values()) {
+    meetings.sort((a, b) => b.date.localeCompare(a.date));
   }
 
   // Generate WG directory
@@ -361,36 +392,32 @@ export async function generateWgPages(siteDir = "site") {
   await fs.mkdir(wgDir, { recursive: true });
 
   // Generate a page for each WG
-  const wgNames = [...wgMeetings.keys()].sort((a, b) =>
-    a.toLowerCase().localeCompare(b.toLowerCase()),
-  );
+  const wgKeys = [...wgMeetings.keys()].sort((a, b) => a.localeCompare(b));
 
-  for (const wgName of wgNames) {
-    const meetings = wgMeetings.get(wgName);
-    // Already sorted descending from getCachedMeetingNumbers
-    const sanitizedWg = sanitizeSessionName(wgName);
+  for (const key of wgKeys) {
+    const { displayName, meetings } = wgMeetings.get(key);
 
-    let content = `# ${wgName}\n\n`;
+    let content = `# ${displayName}\n\n`;
 
-    for (const meetingNum of meetings) {
-      content += `- [IETF ${meetingNum}](../ietf${meetingNum}/${sanitizedWg}.html)\n`;
+    for (const meeting of meetings) {
+      content += `- [${meeting.label}](../${meeting.linkPath}/${key}.html)\n`;
     }
 
-    const wgFilePath = path.join(wgDir, `${sanitizedWg}.md`);
+    const wgFilePath = path.join(wgDir, `${key}.md`);
     await fs.writeFile(wgFilePath, content, "utf-8");
   }
 
   // Generate WG index page
   let indexContent = "# Working Groups\n\n";
-  for (const wgName of wgNames) {
-    const sanitizedWg = sanitizeSessionName(wgName);
-    indexContent += `- [${wgName}](${sanitizedWg}.html)\n`;
+  for (const key of wgKeys) {
+    const { displayName } = wgMeetings.get(key);
+    indexContent += `- [${displayName}](${key}.html)\n`;
   }
 
   const indexPath = path.join(wgDir, "index.md");
   await fs.writeFile(indexPath, indexContent, "utf-8");
 
-  console.log(`Generated ${wgNames.length} WG pages`);
+  console.log(`Generated ${wgKeys.length} WG pages`);
 }
 
 /**
