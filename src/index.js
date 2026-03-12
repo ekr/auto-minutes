@@ -8,6 +8,7 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation } from "./scraper.js";
 import { initializeClaude, generateMinutes } from "./generator.js";
+import { transcribeSession } from "./transcriber.js";
 import {
   saveMinutes,
   generateIndex,
@@ -34,7 +35,7 @@ let verbose = false;
  * @param {Object} session - Session object with sessionName and sessionId
  * @returns {Promise<Object>} Object with {minutes: string, wasGenerated: boolean}
  */
-async function generateSessionMinutes(meetingNumber, session) {
+async function generateSessionMinutes(meetingNumber, session, useAudio = false) {
   // Check cache first
   if (await cacheExists(meetingNumber, session.sessionId)) {
     console.log(`  Loading from cache: ${session.sessionId}`);
@@ -42,11 +43,16 @@ async function generateSessionMinutes(meetingNumber, session) {
     return { minutes, wasGenerated: false };
   }
 
-  // Download transcript
-  console.log(`  Downloading transcript: ${session.sessionId}`);
+  // Download transcript - either from audio or text
   let transcript;
   try {
-    transcript = await downloadTranscript(session);
+    if (useAudio) {
+      console.log(`  Transcribing audio: ${session.sessionId}`);
+      transcript = await transcribeSession(session, process.env.GEMINI_API_KEY, verbose);
+    } else {
+      console.log(`  Downloading transcript: ${session.sessionId}`);
+      transcript = await downloadTranscript(session);
+    }
   } catch (error) {
     console.log(`  Could not fetch transcript: ${error.message}`);
     return { minutes: "", wasGenerated: false }; // Return empty minutes if transcript unavailable
@@ -121,6 +127,7 @@ async function main() {
     .example("$0 --output --build", "Generate output and build site")
     .example("$0 --pages", "Build and prepare GitHub Pages")
     .example("$0 --preview 123:6LO", "Preview minutes for IETF 123 6LO session")
+    .example("$0 --preview 123:6LO --audio", "Preview with audio transcription")
     .option("summarize", {
       alias: "s",
       type: "number",
@@ -160,6 +167,11 @@ async function main() {
       default: "proceedings",
       description: "Source to fetch sessions from (proceedings or agenda)",
     })
+    .option("audio", {
+      alias: "a",
+      type: "boolean",
+      description: "Use audio transcription (download audio and transcribe with Gemini STT) instead of Meetecho text transcript",
+    })
     .option("preview", {
       type: "string",
       description: "Preview minutes for a specific session (format: meeting:session-name)",
@@ -191,6 +203,7 @@ async function main() {
   const doPreview = argv.preview;
   const model = argv.model;
   const source = argv.source;
+  const useAudio = argv.audio;
 
   // Check for appropriate API key based on model (only needed for summarize or preview)
   if (doSummarize || doPreview) {
@@ -212,13 +225,23 @@ async function main() {
       const { initializeGemini } = await import("./generator.js");
       initializeGemini(apiKey);
     }
+
+    // --audio always requires GEMINI_API_KEY for STT, even when using claude for minutes
+    if (useAudio && model === "claude") {
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (!geminiKey) {
+        console.error("Error: GEMINI_API_KEY is required for --audio (Gemini STT)");
+        console.error("Please add GEMINI_API_KEY to your .env file");
+        process.exit(1);
+      }
+    }
   }
 
   try {
     // PREVIEW MODE: Generate and print minutes for a specific session
     if (doPreview) {
       console.log("\n=== PREVIEW MODE ===");
-      console.log(`Using ${model} model...`);
+      console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
 
       // Parse the meeting:session-name format
       const parts = doPreview.split(":");
@@ -267,13 +290,18 @@ async function main() {
       for (const session of matchingSessions) {
         console.log(`\nProcessing: ${session.sessionId}`);
 
-        // Download transcript (no cache)
-        console.log("  Downloading transcript...");
+        // Download transcript (no cache) - either from audio or text
         let transcript;
         try {
-          transcript = await downloadTranscript(session);
+          if (useAudio) {
+            console.log("  Using audio transcription...");
+            transcript = await transcribeSession(session, process.env.GEMINI_API_KEY, verbose);
+          } else {
+            console.log("  Downloading transcript...");
+            transcript = await downloadTranscript(session);
+          }
         } catch (error) {
-          console.error(`  Error downloading transcript: ${error.message}`);
+          console.error(`  Error getting transcript: ${error.message}`);
           continue;
         }
 
@@ -305,7 +333,7 @@ async function main() {
     // SUMMARIZE STAGE: Download transcripts and generate LLM summaries
     if (doSummarize) {
       console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingNumber} ===`);
-      console.log(`Using ${model} model...`);
+      console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
 
       // Step 1: Fetch all sessions for the meeting
       const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
@@ -344,7 +372,7 @@ async function main() {
           );
 
           // Generate minutes (uses cache if available, otherwise downloads and generates)
-          const result = await generateSessionMinutes(meetingNumber, session);
+          const result = await generateSessionMinutes(meetingNumber, session, useAudio);
 
           // Track if any new minutes were generated
           if (result.wasGenerated) {
