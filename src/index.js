@@ -14,6 +14,7 @@ import {
   generateIndex,
   minutesExist,
   generateRootIndex,
+  generateWgPages,
   cacheExists,
   saveCachedMinutes,
   getCachedMinutes,
@@ -492,6 +493,10 @@ async function main() {
         await generateIndex(processedSessions, outputDir);
         console.log(`Completed IETF ${meetingNum}`);
       }
+
+      // Generate WG pages
+      console.log("\nGenerating WG pages...");
+      await generateWgPages();
 
       // Generate root index
       console.log("\nGenerating root index...");

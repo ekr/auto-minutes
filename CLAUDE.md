@@ -63,3 +63,7 @@ npm start <meeting-number>
 - `cheerio` - HTML parsing for scraping
 - `node-fetch` - HTTP requests
 - `dotenv` - Environment variable management
+
+## Pull Requests
+
+PRs should be created against the upstream repo `ekr/auto-minutes`, not the fork.

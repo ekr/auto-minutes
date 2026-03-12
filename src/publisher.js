@@ -289,6 +289,83 @@ export async function generateIndex(sessions, outputDir = "output") {
 }
 
 /**
+ * Generate per-WG pages showing all meetings for each WG in reverse chronological order
+ * @param {string} siteDir - Base site directory (default: 'site')
+ */
+export async function generateWgPages(siteDir = "site") {
+  const cacheOutputDir = path.join("cache", "output");
+  const meetingNumbers = await getCachedMeetingNumbers();
+
+  if (meetingNumbers.length === 0) {
+    console.log("No cached meetings found, skipping WG page generation");
+    return;
+  }
+
+  // Build map of WG name -> [{meetingNumber, sanitizedName}]
+  const wgMeetings = new Map();
+
+  for (const meetingNum of meetingNumbers) {
+    try {
+      const manifestPath = path.join(
+        cacheOutputDir,
+        `ietf${meetingNum}`,
+        ".manifest.json",
+      );
+      const content = await fs.readFile(manifestPath, "utf-8");
+      const manifest = JSON.parse(content);
+
+      for (const group of manifest.sessionGroups) {
+        const name = group.sessionName;
+        if (!wgMeetings.has(name)) {
+          wgMeetings.set(name, []);
+        }
+        wgMeetings.get(name).push(meetingNum);
+      }
+    } catch (error) {
+      console.warn(
+        `Could not read manifest for IETF ${meetingNum}: ${error.message}`,
+      );
+    }
+  }
+
+  // Generate WG directory
+  const wgDir = path.join(siteDir, "minutes", "wg");
+  await fs.mkdir(wgDir, { recursive: true });
+
+  // Generate a page for each WG
+  const wgNames = [...wgMeetings.keys()].sort((a, b) =>
+    a.toLowerCase().localeCompare(b.toLowerCase()),
+  );
+
+  for (const wgName of wgNames) {
+    const meetings = wgMeetings.get(wgName);
+    // Already sorted descending from getCachedMeetingNumbers
+    const sanitizedWg = sanitizeSessionName(wgName);
+
+    let content = `# ${wgName}\n\n`;
+
+    for (const meetingNum of meetings) {
+      content += `- [IETF ${meetingNum}](../ietf${meetingNum}/${sanitizedWg}.html)\n`;
+    }
+
+    const wgFilePath = path.join(wgDir, `${sanitizedWg}.md`);
+    await fs.writeFile(wgFilePath, content, "utf-8");
+  }
+
+  // Generate WG index page
+  let indexContent = "# Working Groups\n\n";
+  for (const wgName of wgNames) {
+    const sanitizedWg = sanitizeSessionName(wgName);
+    indexContent += `- [${wgName}](${sanitizedWg}.html)\n`;
+  }
+
+  const indexPath = path.join(wgDir, "index.md");
+  await fs.writeFile(indexPath, indexContent, "utf-8");
+
+  console.log(`Generated ${wgNames.length} WG pages`);
+}
+
+/**
  * Generate root index.md from template
  * Scans cache/output for meeting folders and adds them to the index
  * @param {string} destPath - Destination path for the index file (default: 'site/index.md')
@@ -326,6 +403,12 @@ export async function generateRootIndex(destPath = "site/index.md") {
     meetingsList = "No meetings processed yet.\n";
   }
 
+  // Add WG index link
+  let wgSection = "";
+  if (meetings.length > 0) {
+    wgSection = "\n# Working Groups\n\n[Browse by working group](minutes/wg/index.html)\n";
+  }
+
   // Replace the meetings section (after "# Meetings")
   const meetingsMarker = "# Meetings\n";
   const markerIndex = template.indexOf(meetingsMarker);
@@ -334,10 +417,10 @@ export async function generateRootIndex(destPath = "site/index.md") {
       0,
       markerIndex + meetingsMarker.length,
     );
-    template = beforeMarker + "\n" + meetingsList;
+    template = beforeMarker + "\n" + meetingsList + wgSection;
   } else {
     // If marker not found, append to end
-    template += "\n\n# Meetings\n\n" + meetingsList;
+    template += "\n\n# Meetings\n\n" + meetingsList + wgSection;
   }
 
   // Write the index file
