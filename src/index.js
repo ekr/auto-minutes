@@ -119,7 +119,7 @@ function parseSessionId(sessionId) {
 
 /**
  * Parse the --summarize argument into a typed descriptor
- * @param {string|number} value - Meeting number, "current", "date:group", "date", or "date+"
+ * @param {string|number} value - Meeting number, "current", "number:group", "date:group", "date", or "date+"
  * @returns {Object} Parsed descriptor with type field
  */
 function parseSummarizeArg(value) {
@@ -130,16 +130,20 @@ function parseSummarizeArg(value) {
     return { type: 'current' };
   }
 
-  // date:group → single interim
+  // colon format: date:group (interim) or number:group (plenary filtered)
   if (str.includes(':')) {
-    const [date, group] = str.split(':', 2);
-    if (!date || !group) {
-      throw new Error(`Invalid interim format: "${str}". Expected "YYYY-MM-DD:GROUP" (e.g., "2026-03-03:AIPREF")`);
+    const [left, group] = str.split(':', 2);
+    if (!left || !group) {
+      throw new Error(`Invalid format: "${str}". Expected "YYYY-MM-DD:GROUP" or "NUMBER:GROUP"`);
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      throw new Error(`Invalid date format: "${date}". Expected YYYY-MM-DD`);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(left)) {
+      return { type: 'interim', date: left, group };
     }
-    return { type: 'interim', date, group };
+    const meetingNumber = parseInt(left, 10);
+    if (!isNaN(meetingNumber)) {
+      return { type: 'ietf-group', meetingNumber, group };
+    }
+    throw new Error(`Invalid format: "${str}". Left side of ":" must be a date (YYYY-MM-DD) or meeting number`);
   }
 
   // date+ → range of interims from date through today
@@ -241,6 +245,7 @@ async function main() {
     .usage("Usage: $0 [options]")
     .example("$0 --summarize 123", "Generate LLM summaries for IETF 123")
     .example("$0 --summarize current", "Generate LLM summaries for the current/upcoming IETF meeting")
+    .example("$0 --summarize 123:6LO", "Generate summaries for a specific WG at an IETF meeting")
     .example("$0 --summarize 2026-03-03:AIPREF", "Generate summaries for an interim meeting")
     .example("$0 --summarize 2026-03-03", "Generate summaries for all interims on a date")
     .example("$0 --summarize 2026-03-03+", "Generate summaries for all interims from date through today")
@@ -256,7 +261,7 @@ async function main() {
       alias: "s",
       type: "string",
       description:
-        "Generate LLM summaries: meeting number, \"current\", date:group, date (all interims), or date+ (range)",
+        "Generate LLM summaries: number, \"current\", number:group, date:group, date, or date+",
     })
     .option("output", {
       alias: "o",
@@ -494,6 +499,24 @@ async function main() {
           const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
           console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
           sessions = result.validSessions;
+        } else if (parsed.type === 'ietf-group') {
+          meetingId = parsed.meetingNumber;
+          console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} — ${parsed.group} ===`);
+          console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
+
+          const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
+          console.log(`Fetching session list from ${source}...`);
+          const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
+          console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
+          const groupLower = parsed.group.toLowerCase();
+          sessions = result.validSessions.filter(
+            s => s.sessionName.toLowerCase() === groupLower
+          );
+          if (sessions.length === 0) {
+            const available = [...new Set(result.validSessions.map(s => s.sessionName))].sort().join(', ');
+            throw new Error(`No sessions found matching "${parsed.group}" in IETF ${meetingId}.\nAvailable: ${available}`);
+          }
+          console.log(`Filtered to ${sessions.length} session(s) for ${parsed.group}`);
         } else if (parsed.type === 'interim') {
           meetingId = parsed.date;
           console.log(`\n=== SUMMARIZE STAGE: Interim ${parsed.group} (${parsed.date}) ===`);
