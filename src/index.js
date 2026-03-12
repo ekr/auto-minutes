@@ -31,6 +31,26 @@ dotenv.config();
 let verbose = false;
 
 /**
+ * Run async tasks with a concurrency limit
+ * @param {Array<Function>} tasks - Array of functions that return promises
+ * @param {number} limit - Maximum number of concurrent tasks
+ * @returns {Promise<Array>} Results in the same order as tasks
+ */
+async function runWithConcurrency(tasks, limit) {
+  const results = [];
+  const executing = new Set();
+  for (const task of tasks) {
+    const p = task().then(r => { executing.delete(p); return r; });
+    executing.add(p);
+    results.push(p);
+    if (executing.size >= limit) {
+      await Promise.race(executing);
+    }
+  }
+  return Promise.all(results);
+}
+
+/**
  * Generate minutes for a session (checks cache first, otherwise downloads and generates)
  * @param {number} meetingNumber - IETF meeting number
  * @param {Object} session - Session object with sessionName and sessionId
@@ -178,7 +198,7 @@ function parseSummarizeArg(value) {
  * @param {Array} sessions - Array of session objects
  * @param {boolean} useAudio - Whether to use audio transcription
  */
-async function processSummarizeSessions(meetingId, sessions, useAudio = false, modelName = null) {
+async function processSummarizeSessions(meetingId, sessions, useAudio = false, modelName = null, parallel = 1) {
   if (verbose) {
     console.log("\n=== Session List Structure (JSON) ===");
     console.log(JSON.stringify(sessions, null, 2));
@@ -194,42 +214,50 @@ async function processSummarizeSessions(meetingId, sessions, useAudio = false, m
     sessionsByName.get(session.sessionName).push(session);
   }
 
-  // Process each session - generate/cache LLM summaries
+  // Build task list from all sessions
+  const allTasks = [];
+  for (const [sessionName, sessionGroup] of sessionsByName) {
+    for (const session of sessionGroup) {
+      allTasks.push({ sessionName, session });
+    }
+  }
+
+  if (parallel > 1) {
+    console.log(`\nProcessing ${allTasks.length} session(s) with concurrency=${parallel}`);
+  }
+
+  // Process sessions with concurrency limit
+  const results = await runWithConcurrency(
+    allTasks.map(({ sessionName, session }) => async () => {
+      console.log(`  Processing ${sessionName} [${session.sessionId}]...`);
+      const result = await generateSessionMinutes(meetingId, session, useAudio, modelName);
+      if (!result.minutes) {
+        console.log(`  Skipping ${sessionName} [${session.sessionId}] - no transcript`);
+      } else {
+        console.log(`  Completed ${sessionName} [${session.sessionId}]`);
+      }
+      return { sessionName, session, result };
+    }),
+    parallel,
+  );
+
+  // Collect results into session groups (preserving original group order)
   const sessionGroups = [];
   let anyNewMinutes = false;
-  for (const [sessionName, sessionGroup] of sessionsByName) {
-    console.log(
-      `\nProcessing session group: ${sessionName} (${sessionGroup.length} session(s))`,
-    );
-
+  for (const [sessionName] of sessionsByName) {
+    const groupResults = results.filter(r => r.sessionName === sessionName);
     const processedSessions = [];
-    for (const session of sessionGroup) {
-      console.log(
-        `  Processing ${session.sessionName} [${session.sessionId}]...`,
-      );
-
-      const result = await generateSessionMinutes(meetingId, session, useAudio, modelName);
-
+    for (const { session, result } of groupResults) {
       if (result.wasGenerated) {
         anyNewMinutes = true;
       }
-
-      if (!result.minutes) {
-        console.log(
-          `  Skipping ${session.sessionName} [${session.sessionId}] - no transcript`,
-        );
-        continue;
+      if (result.minutes) {
+        processedSessions.push({
+          sessionId: session.sessionId,
+          recordingUrl: session.recordingUrl,
+        });
       }
-
-      processedSessions.push({
-        sessionId: session.sessionId,
-        recordingUrl: session.recordingUrl,
-      });
-      console.log(
-        `  Completed ${session.sessionName} [${session.sessionId}]`,
-      );
     }
-
     if (processedSessions.length > 0) {
       sessionGroups.push({
         sessionName,
@@ -264,6 +292,7 @@ async function main() {
     .example("$0 --pages", "Build and prepare GitHub Pages")
     .example("$0 --preview 123:6LO", "Preview minutes for IETF 123 6LO session")
     .example("$0 --preview 123:6LO --audio", "Preview with audio transcription")
+    .example("$0 --summarize 123 -j 5", "Process 5 sessions in parallel")
     .option("summarize", {
       alias: "s",
       type: "string",
@@ -312,6 +341,12 @@ async function main() {
       default: 300,
       description: "LLM generation timeout in seconds (default: 300 = 5 minutes)",
     })
+    .option("parallel", {
+      alias: "j",
+      type: "number",
+      default: 1,
+      description: "Number of sessions to process in parallel",
+    })
     .option("preview", {
       type: "string",
       description: "Preview minutes for a specific session (format: meeting:session-name)",
@@ -343,6 +378,7 @@ async function main() {
   const doPreview = argv.preview;
   const source = argv.source;
   const useAudio = argv.audio;
+  const parallel = argv.parallel;
 
   // Resolve model shorthand names and determine provider
   let modelName = argv.model;
@@ -509,7 +545,7 @@ async function main() {
 
         for (const [date, sessions] of sessionsByDate) {
           console.log(`\n--- Processing interims for ${date} ---`);
-          await processSummarizeSessions(date, sessions, useAudio, modelName);
+          await processSummarizeSessions(date, sessions, useAudio, modelName, parallel);
         }
       } else {
         // Single meetingId case: current, ietf, interim, or interim-all
@@ -574,7 +610,7 @@ async function main() {
           sessions = result.validSessions;
         }
 
-        await processSummarizeSessions(meetingId, sessions, useAudio, modelName);
+        await processSummarizeSessions(meetingId, sessions, useAudio, modelName, parallel);
       }
     }
 
