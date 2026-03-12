@@ -33,9 +33,10 @@ export function initializeGemini(apiKey) {
  * @param {string} transcript - The meeting transcript text (JSON format)
  * @param {string} sessionName - Name of the session
  * @param {boolean} verbose - Whether to log verbose status information
+ * @param {string} modelName - Full model name to use (e.g., "gemini-3-flash", "claude-sonnet-4-6")
  * @returns {Promise<string>} Generated minutes in Markdown format
  */
-export async function generateMinutes(transcript, sessionName, verbose = false) {
+export async function generateMinutes(transcript, sessionName, verbose = false, modelName = null) {
   const prompt = `You are an expert technical writer for the IETF. Convert the following meeting transcript into well-structured meeting minutes in Markdown format. It should contain an account of the discussion including any decisions made.
 
 Session: ${sessionName}
@@ -59,7 +60,7 @@ ${transcript}
 Generate the meeting minutes:`;
 
   if (verbose) {
-    console.log(`    [LLM] Model: ${currentModel}`);
+    console.log(`    [LLM] Model: ${modelName || currentModel}`);
     console.log(`    [LLM] Transcript: ${transcript.length} chars, Prompt: ${prompt.length} chars`);
     console.log(`    [LLM] Sending API request...`);
   }
@@ -75,7 +76,7 @@ Generate the meeting minutes:`;
     }
 
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: modelName || "claude-sonnet-4-6",
       max_tokens: 4096,
       messages: [
         {
@@ -97,7 +98,7 @@ Generate the meeting minutes:`;
       );
     }
 
-    const model = gemini.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = gemini.getGenerativeModel({ model: modelName || "gemini-2.5-flash" });
     const result = await model.generateContent(prompt);
     const response = result.response;
     generatedText = response.text();
