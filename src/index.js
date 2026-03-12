@@ -34,9 +34,10 @@ let verbose = false;
  * Generate minutes for a session (checks cache first, otherwise downloads and generates)
  * @param {number} meetingNumber - IETF meeting number
  * @param {Object} session - Session object with sessionName and sessionId
+ * @param {string} modelName - Full model name to use
  * @returns {Promise<Object>} Object with {minutes: string, wasGenerated: boolean}
  */
-async function generateSessionMinutes(meetingNumber, session, useAudio = false) {
+async function generateSessionMinutes(meetingNumber, session, useAudio = false, modelName = null) {
   // Check cache first
   if (await cacheExists(meetingNumber, session.sessionId)) {
     console.log(`  Loading from cache: ${session.sessionId}`);
@@ -61,7 +62,7 @@ async function generateSessionMinutes(meetingNumber, session, useAudio = false) 
 
   // Generate minutes using LLM
   console.log(`  Generating minutes with LLM: ${session.sessionId}`);
-  const minutes = await generateMinutes(transcript, session.sessionName, verbose);
+  const minutes = await generateMinutes(transcript, session.sessionName, verbose, modelName);
 
   // Save to cache
   await saveCachedMinutes(meetingNumber, session.sessionId, minutes);
@@ -171,7 +172,7 @@ function parseSummarizeArg(value) {
  * @param {Array} sessions - Array of session objects
  * @param {boolean} useAudio - Whether to use audio transcription
  */
-async function processSummarizeSessions(meetingId, sessions, useAudio = false) {
+async function processSummarizeSessions(meetingId, sessions, useAudio = false, modelName = null) {
   if (verbose) {
     console.log("\n=== Session List Structure (JSON) ===");
     console.log(JSON.stringify(sessions, null, 2));
@@ -201,7 +202,7 @@ async function processSummarizeSessions(meetingId, sessions, useAudio = false) {
         `  Processing ${session.sessionName} [${session.sessionId}]...`,
       );
 
-      const result = await generateSessionMinutes(meetingId, session, useAudio);
+      const result = await generateSessionMinutes(meetingId, session, useAudio, modelName);
 
       if (result.wasGenerated) {
         anyNewMinutes = true;
@@ -281,9 +282,8 @@ async function main() {
     .option("model", {
       alias: "m",
       type: "string",
-      choices: ["claude", "gemini"],
-      default: "gemini",
-      description: "LLM model to use for generating minutes",
+      default: "gemini-2.5-flash",
+      description: "LLM model to use (e.g., gemini-3-flash, claude-sonnet-4-6, or shorthand: gemini, claude)",
     })
     .option("verbose", {
       alias: "v",
@@ -329,13 +329,30 @@ async function main() {
   const doBuild = argv.build || argv.pages;
   const doPages = argv.pages;
   const doPreview = argv.preview;
-  const model = argv.model;
   const source = argv.source;
   const useAudio = argv.audio;
 
-  // Check for appropriate API key based on model (only needed for summarize or preview)
+  // Resolve model shorthand names and determine provider
+  let modelName = argv.model;
+  if (modelName === "gemini") {
+    modelName = "gemini-2.5-flash";
+  } else if (modelName === "claude") {
+    modelName = "claude-sonnet-4-6";
+  }
+
+  let provider;
+  if (modelName.startsWith("gemini")) {
+    provider = "gemini";
+  } else if (modelName.startsWith("claude")) {
+    provider = "claude";
+  } else {
+    console.error(`Error: Unknown model "${modelName}". Model name must start with "gemini" or "claude".`);
+    process.exit(1);
+  }
+
+  // Check for appropriate API key based on provider (only needed for summarize or preview)
   if (doSummarize || doPreview) {
-    if (model === "claude") {
+    if (provider === "claude") {
       const apiKey = process.env.ANTHROPIC_API_KEY;
       if (!apiKey) {
         console.error("Error: ANTHROPIC_API_KEY not found in environment");
@@ -343,7 +360,7 @@ async function main() {
         process.exit(1);
       }
       initializeClaude(apiKey);
-    } else if (model === "gemini") {
+    } else if (provider === "gemini") {
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
         console.error("Error: GEMINI_API_KEY not found in environment");
@@ -355,7 +372,7 @@ async function main() {
     }
 
     // --audio always requires GEMINI_API_KEY for STT, even when using claude for minutes
-    if (useAudio && model === "claude") {
+    if (useAudio && provider === "claude") {
       const geminiKey = process.env.GEMINI_API_KEY;
       if (!geminiKey) {
         console.error("Error: GEMINI_API_KEY is required for --audio (Gemini STT)");
@@ -369,7 +386,7 @@ async function main() {
     // PREVIEW MODE: Generate and print minutes for a specific session
     if (doPreview) {
       console.log("\n=== PREVIEW MODE ===");
-      console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
+      console.log(`Using model: ${modelName}${useAudio ? " (audio transcription enabled)" : ""}`);
 
       // Parse the meeting:session-name format
       const parts = doPreview.split(":");
@@ -446,6 +463,7 @@ async function main() {
           transcript,
           session.sessionName,
           verbose,
+          modelName,
         );
 
         // Add date/time header
@@ -472,14 +490,14 @@ async function main() {
       if (parsed.type === 'interim-range') {
         // Process all interims from startDate through today
         console.log(`\n=== SUMMARIZE STAGE: Interims from ${parsed.startDate}+ ===`);
-        console.log(`Using ${model} model...`);
+        console.log(`Using model: ${modelName}`);
 
         const sessionsByDate = await fetchInterimSessionsInRange(parsed.startDate);
         console.log(`\nFound sessions across ${sessionsByDate.size} date(s)`);
 
         for (const [date, sessions] of sessionsByDate) {
           console.log(`\n--- Processing interims for ${date} ---`);
-          await processSummarizeSessions(date, sessions, useAudio);
+          await processSummarizeSessions(date, sessions, useAudio, modelName);
         }
       } else {
         // Single meetingId case: current, ietf, interim, or interim-all
@@ -492,7 +510,7 @@ async function main() {
           console.log(`Current IETF meeting: ${meetingId}`);
 
           console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
-          console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
+          console.log(`Using model: ${modelName}${useAudio ? " (audio transcription enabled)" : ""}`);
 
           const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
           console.log(`Fetching session list from ${source}...`);
@@ -502,7 +520,7 @@ async function main() {
         } else if (parsed.type === 'ietf-group') {
           meetingId = parsed.meetingNumber;
           console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} — ${parsed.group} ===`);
-          console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
+          console.log(`Using model: ${modelName}${useAudio ? " (audio transcription enabled)" : ""}`);
 
           const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
           console.log(`Fetching session list from ${source}...`);
@@ -520,7 +538,7 @@ async function main() {
         } else if (parsed.type === 'interim') {
           meetingId = parsed.date;
           console.log(`\n=== SUMMARIZE STAGE: Interim ${parsed.group} (${parsed.date}) ===`);
-          console.log(`Using ${model} model...`);
+          console.log(`Using model: ${modelName}`);
 
           console.log(`Looking up interim meeting for ${parsed.group} on ${parsed.date}...`);
           sessions = await fetchInterimSession(parsed.date, parsed.group);
@@ -528,14 +546,14 @@ async function main() {
         } else if (parsed.type === 'interim-all') {
           meetingId = parsed.date;
           console.log(`\n=== SUMMARIZE STAGE: All interims on ${parsed.date} ===`);
-          console.log(`Using ${model} model...`);
+          console.log(`Using model: ${modelName}`);
 
           sessions = await fetchAllInterimSessions(parsed.date);
           console.log(`Found ${sessions.length} session(s)`);
         } else {
           meetingId = parsed.meetingNumber;
           console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
-          console.log(`Using ${model} model...${useAudio ? " (audio transcription enabled)" : ""}`);
+          console.log(`Using model: ${modelName}${useAudio ? " (audio transcription enabled)" : ""}`);
 
           const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
           console.log(`Fetching session list from ${source}...`);
@@ -544,7 +562,7 @@ async function main() {
           sessions = result.validSessions;
         }
 
-        await processSummarizeSessions(meetingId, sessions, useAudio);
+        await processSummarizeSessions(meetingId, sessions, useAudio, modelName);
       }
     }
 
