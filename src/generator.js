@@ -5,6 +5,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { sanitizeSessionName } from "./publisher.js";
 
 let anthropic = null;
 let gemini = null;
@@ -37,12 +38,14 @@ export function initializeGemini(apiKey) {
  * @returns {Promise<string>} Generated minutes in Markdown format
  */
 export async function generateMinutes(transcript, sessionName, verbose = false, modelName = null) {
+  const sanitizedName = sanitizeSessionName(sessionName);
+  const wgLink = `../wg/${sanitizedName}.html`;
   const prompt = `You are an expert technical writer for the IETF. Convert the following meeting transcript into well-structured meeting minutes in Markdown format. It should contain an account of the discussion including any decisions made.
 
 Session: ${sessionName}
 
 Requirements:
-- Start with a # header with the session name
+- Start with a # header linking to the WG page: # [${sessionName}](${wgLink})
 - Include a ## Summary section with a brief overview
 - Include a ## Key Discussion Points section with bullet points
 - Include a ## Decisions and Action Items section if applicable
