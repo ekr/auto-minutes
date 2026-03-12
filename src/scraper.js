@@ -181,19 +181,20 @@ export async function downloadTranscript(session) {
  * @returns {boolean} True if valid, false otherwise
  */
 export function isValidSessionId(sessionId) {
+  // Also accepts interim format: IETF-GROUPNAME-YYYYMMDD-HHMM (no meeting number)
   if (typeof sessionId !== 'string') {
     return false;
   }
 
   // Pattern breakdown:
-  // ^IETF\d+       - Starts with IETF followed by meeting number
+  // ^IETF\d*       - Starts with IETF followed by optional meeting number
   // -              - Separator
   // [A-Za-z0-9\-]+ - Session name (alphanumeric + hyphens)
   // -              - Separator
   // \d{8}          - Date in YYYYMMDD format
   // -              - Separator
   // \d{4}$         - Time in HHMM format
-  const pattern = /^IETF\d+-[A-Za-z0-9\-]+-\d{8}-\d{4}$/;
+  const pattern = /^IETF\d*-[A-Za-z0-9\-]+-\d{8}-\d{4}$/;
   return pattern.test(sessionId);
 }
 
@@ -300,4 +301,202 @@ export async function fetchCurrentMeetingNumber() {
   }
 
   throw new Error('Could not determine the current IETF meeting number from the datatracker API');
+}
+
+/**
+ * Extract group name from an interim meeting slug.
+ * Format: interim-YYYY-GROUP-NN → GROUP
+ * @param {string} slug - Meeting slug (e.g., "interim-2026-aipref-08")
+ * @returns {string} Group name
+ */
+export function extractGroupFromSlug(slug) {
+  const parts = slug.split('-');
+  if (parts.length < 4) {
+    throw new Error(`Cannot extract group from slug: "${slug}"`);
+  }
+  return parts.slice(2, -1).join('-');
+}
+
+/**
+ * Scrape a session page to find the Meetecho player link and session ID.
+ * @param {string} meetingSlug - Meeting slug (e.g., "interim-2026-aipref-08")
+ * @param {string} groupName - Working group name (e.g., "aipref")
+ * @returns {Promise<{sessionId: string, recordingUrl: string}|null>} Session info or null if not found
+ */
+async function scrapeInterimSessionId(meetingSlug, groupName) {
+  const sessionUrl = `https://datatracker.ietf.org/meeting/${meetingSlug}/session/${groupName.toLowerCase()}`;
+  const sessionResponse = await ietfFetch(sessionUrl);
+  const html = await sessionResponse.text();
+
+  const $ = cheerio.load(html);
+
+  let sessionId = null;
+  let recordingUrl = null;
+
+  $('a').each((i, elem) => {
+    const href = $(elem).attr('href');
+    if (href && href.includes('meetecho-player.ietf.org/playout')) {
+      recordingUrl = href;
+      try {
+        const url = new URL(href);
+        sessionId = url.searchParams.get('session');
+      } catch (e) {
+        // ignore malformed URLs
+      }
+    }
+  });
+
+  if (!sessionId) {
+    return null;
+  }
+
+  return { sessionId, recordingUrl };
+}
+
+/**
+ * Query the datatracker API for interim meetings with given parameters.
+ * @param {string} queryParams - URL query parameters (e.g., "date=2026-03-03")
+ * @returns {Promise<Array>} Array of meeting objects from the API
+ */
+async function queryInterimMeetings(queryParams) {
+  const apiUrl = `https://datatracker.ietf.org/api/v1/meeting/meeting/?type=interim&${queryParams}`;
+  const response = await fetch(apiUrl, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      'Accept': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${apiUrl}: ${response.status} ${response.statusText}`);
+  }
+  const data = await response.json();
+  return data.objects || [];
+}
+
+/**
+ * Fetches session info for an IETF interim meeting given a date and group name.
+ * @param {string} date - Meeting date in YYYY-MM-DD format
+ * @param {string} groupName - Working group name (e.g., "aipref")
+ * @returns {Promise<Array>} Array with single session object {sessionName, sessionId, recordingUrl}
+ */
+export async function fetchInterimSession(date, groupName) {
+  const meetings = await queryInterimMeetings(`date=${date}`);
+  if (meetings.length === 0) {
+    throw new Error(`No interim meetings found for date ${date}`);
+  }
+
+  const groupLower = groupName.toLowerCase();
+  const meeting = meetings.find(m =>
+    m.number && m.number.toLowerCase().includes(groupLower)
+  );
+
+  if (!meeting) {
+    const available = meetings.map(m => m.number).join(', ');
+    throw new Error(`No interim meeting found for group "${groupName}" on ${date}. Available: ${available}`);
+  }
+
+  const meetingSlug = meeting.number;
+  console.log(`Found interim meeting: ${meetingSlug}`);
+
+  const result = await scrapeInterimSessionId(meetingSlug, groupLower);
+  if (!result) {
+    throw new Error(`Could not find Meetecho session ID for ${meetingSlug}`);
+  }
+
+  return [{
+    sessionName: groupName.toUpperCase(),
+    sessionId: result.sessionId,
+    recordingUrl: result.recordingUrl,
+  }];
+}
+
+/**
+ * Fetches all interim sessions for a given date.
+ * @param {string} date - Meeting date in YYYY-MM-DD format
+ * @returns {Promise<Array>} Array of session objects {sessionName, sessionId, recordingUrl}
+ */
+export async function fetchAllInterimSessions(date) {
+  const meetings = await queryInterimMeetings(`date=${date}`);
+  if (meetings.length === 0) {
+    throw new Error(`No interim meetings found for date ${date}`);
+  }
+
+  console.log(`Found ${meetings.length} interim meeting(s) on ${date}`);
+
+  const sessions = [];
+  for (const meeting of meetings) {
+    const slug = meeting.number;
+    const groupName = extractGroupFromSlug(slug);
+    console.log(`  Looking up session for ${slug} (group: ${groupName})...`);
+
+    const result = await scrapeInterimSessionId(slug, groupName);
+    if (!result) {
+      console.warn(`  Warning: No Meetecho link found for ${slug}, skipping`);
+      continue;
+    }
+
+    sessions.push({
+      sessionName: groupName.toUpperCase(),
+      sessionId: result.sessionId,
+      recordingUrl: result.recordingUrl,
+    });
+  }
+
+  return sessions;
+}
+
+/**
+ * Fetches all interim sessions from startDate through today.
+ * @param {string} startDate - Start date in YYYY-MM-DD format
+ * @returns {Promise<Map<string, Array>>} Map of date → array of session objects
+ */
+export async function fetchInterimSessionsInRange(startDate) {
+  const today = new Date().toISOString().split('T')[0];
+  const meetings = await queryInterimMeetings(`date__gte=${startDate}&date__lte=${today}&limit=100`);
+  if (meetings.length === 0) {
+    throw new Error(`No interim meetings found from ${startDate} through ${today}`);
+  }
+
+  console.log(`Found ${meetings.length} interim meeting(s) from ${startDate} to ${today}`);
+
+  // Group meetings by date
+  const meetingsByDate = new Map();
+  for (const meeting of meetings) {
+    const date = meeting.date;
+    if (!meetingsByDate.has(date)) {
+      meetingsByDate.set(date, []);
+    }
+    meetingsByDate.get(date).push(meeting);
+  }
+
+  // Process each date
+  const result = new Map();
+  for (const [date, dateMeetings] of meetingsByDate) {
+    console.log(`\n  Processing ${date} (${dateMeetings.length} meeting(s))...`);
+    const sessions = [];
+
+    for (const meeting of dateMeetings) {
+      const slug = meeting.number;
+      const groupName = extractGroupFromSlug(slug);
+      console.log(`    Looking up session for ${slug} (group: ${groupName})...`);
+
+      const scraped = await scrapeInterimSessionId(slug, groupName);
+      if (!scraped) {
+        console.warn(`    Warning: No Meetecho link found for ${slug}, skipping`);
+        continue;
+      }
+
+      sessions.push({
+        sessionName: groupName.toUpperCase(),
+        sessionId: scraped.sessionId,
+        recordingUrl: scraped.recordingUrl,
+      });
+    }
+
+    if (sessions.length > 0) {
+      result.set(date, sessions);
+    }
+  }
+
+  return result;
 }
