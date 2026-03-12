@@ -249,14 +249,7 @@ export async function saveMinutes(
     }
   }
 
-  // Make the WG name in the heading link to the WG page
-  const wgLink = `../wg/${sanitizedName}.html`;
-  const linkedContent = content.replace(
-    /^(# )(.+)$/m,
-    `$1[$2](${wgLink})`,
-  );
-
-  const contentWithLink = `${header}\n\n${linkedContent}`;
+  const contentWithLink = `${header}\n\n${content}`;
 
   // Write markdown file
   const mdFilename = `${sanitizedName}.md`;
