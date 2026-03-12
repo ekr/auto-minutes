@@ -6,6 +6,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const GENERATION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
 let anthropic = null;
 let gemini = null;
 let currentModel = null;
@@ -75,16 +77,21 @@ Generate the meeting minutes:`;
       );
     }
 
-    const message = await anthropic.messages.create({
-      model: modelName || "claude-sonnet-4-6",
-      max_tokens: 4096,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
+    const message = await Promise.race([
+      anthropic.messages.create({
+        model: modelName || "claude-sonnet-4-6",
+        max_tokens: 4096,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`LLM generation timed out after 5 minutes for session: ${sessionName}`)), GENERATION_TIMEOUT_MS)
+      ),
+    ]);
 
     generatedText = message.content[0].text;
 
@@ -99,7 +106,12 @@ Generate the meeting minutes:`;
     }
 
     const model = gemini.getGenerativeModel({ model: modelName || "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`LLM generation timed out after 5 minutes for session: ${sessionName}`)), GENERATION_TIMEOUT_MS)
+      ),
+    ]);
     const response = result.response;
     generatedText = response.text();
 

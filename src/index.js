@@ -62,7 +62,13 @@ async function generateSessionMinutes(meetingNumber, session, useAudio = false, 
 
   // Generate minutes using LLM
   console.log(`  Generating minutes with LLM: ${session.sessionId}`);
-  const minutes = await generateMinutes(transcript, session.sessionName, verbose, modelName);
+  let minutes;
+  try {
+    minutes = await generateMinutes(transcript, session.sessionName, verbose, modelName);
+  } catch (error) {
+    console.log(`  Could not generate minutes: ${error.message}`);
+    return { minutes: "", wasGenerated: false };
+  }
 
   // Save to cache
   await saveCachedMinutes(meetingNumber, session.sessionId, minutes);
