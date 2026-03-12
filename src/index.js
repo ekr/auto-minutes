@@ -6,7 +6,7 @@
 import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation } from "./scraper.js";
+import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber } from "./scraper.js";
 import { initializeClaude, generateMinutes } from "./generator.js";
 import {
   saveMinutes,
@@ -114,6 +114,7 @@ async function main() {
   const argv = yargs(hideBin(process.argv))
     .usage("Usage: $0 [options]")
     .example("$0 --summarize 123", "Generate LLM summaries for IETF 123")
+    .example("$0 --summarize current", "Generate LLM summaries for the current/upcoming IETF meeting")
     .example("$0 --summarize 123 --source agenda", "Fetch sessions from Meetecho agenda")
     .example("$0 --output", "Generate output markdown files from cache")
     .example("$0 --summarize 123 --output", "Generate summaries and output")
@@ -123,9 +124,9 @@ async function main() {
     .example("$0 --preview 123:6LO", "Preview minutes for IETF 123 6LO session")
     .option("summarize", {
       alias: "s",
-      type: "number",
+      type: "string",
       description:
-        "Generate LLM summaries for meeting number (cache raw minutes)",
+        'Generate LLM summaries for meeting number or "current" (cache raw minutes)',
     })
     .option("output", {
       alias: "o",
@@ -182,7 +183,6 @@ async function main() {
     .alias("help", "h")
     .parse();
 
-  const meetingNumber = argv.summarize;
   verbose = argv.verbose;
   const doSummarize = !!argv.summarize;
   const doOutput = argv.output;
@@ -191,6 +191,22 @@ async function main() {
   const doPreview = argv.preview;
   const model = argv.model;
   const source = argv.source;
+
+  // Resolve meeting number: "current" fetches from IETF datatracker, otherwise parse as number
+  let meetingNumber;
+  if (argv.summarize) {
+    if (argv.summarize.toLowerCase() === "current") {
+      console.log("Resolving current IETF meeting number...");
+      meetingNumber = await fetchCurrentMeetingNumber();
+      console.log(`Current IETF meeting: ${meetingNumber}`);
+    } else {
+      meetingNumber = parseInt(argv.summarize, 10);
+      if (isNaN(meetingNumber)) {
+        console.error(`Error: Invalid meeting number: ${argv.summarize}`);
+        process.exit(1);
+      }
+    }
+  }
 
   // Check for appropriate API key based on model (only needed for summarize or preview)
   if (doSummarize || doPreview) {
@@ -228,11 +244,18 @@ async function main() {
         );
       }
 
-      const previewMeetingNumber = parseInt(parts[0], 10);
+      let previewMeetingNumber;
       const previewSessionName = parts[1];
 
-      if (isNaN(previewMeetingNumber)) {
-        throw new Error(`Invalid meeting number: ${parts[0]}`);
+      if (parts[0].toLowerCase() === "current") {
+        console.log("Resolving current IETF meeting number...");
+        previewMeetingNumber = await fetchCurrentMeetingNumber();
+        console.log(`Current IETF meeting: ${previewMeetingNumber}`);
+      } else {
+        previewMeetingNumber = parseInt(parts[0], 10);
+        if (isNaN(previewMeetingNumber)) {
+          throw new Error(`Invalid meeting number: ${parts[0]}`);
+        }
       }
 
       console.log(
