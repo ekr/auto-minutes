@@ -544,8 +544,12 @@ async function main() {
         console.log(`\nFound sessions across ${sessionsByDate.size} date(s)`);
 
         for (const [date, sessions] of sessionsByDate) {
-          console.log(`\n--- Processing interims for ${date} ---`);
-          await processSummarizeSessions(date, sessions, useAudio, modelName, parallel);
+          try {
+            console.log(`\n--- Processing interims for ${date} ---`);
+            await processSummarizeSessions(date, sessions, useAudio, modelName, parallel);
+          } catch (error) {
+            console.warn(`Warning: Failed to process interims for ${date}: ${error.message}`);
+          }
         }
       } else {
         // Single meetingId case: current, ietf, interim, or interim-all
