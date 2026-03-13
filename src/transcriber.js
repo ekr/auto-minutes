@@ -214,13 +214,305 @@ function getTranscriptCachePath(sessionId) {
 }
 
 /**
- * Full pipeline: fetch audio stream, download (with cache), transcribe (with cache)
- * @param {Object} session - Session object with sessionId
- * @param {string} apiKey - Gemini API key
+ * Get audio duration in seconds using ffprobe
+ * @param {string} audioPath - Path to audio file
+ * @returns {number} Duration in seconds
+ */
+function getAudioDuration(audioPath) {
+  const output = execSync(
+    `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${audioPath}"`,
+    { encoding: "utf-8" },
+  );
+  return parseFloat(output.trim());
+}
+
+/**
+ * Split audio into segments of a given duration
+ * @param {string} audioPath - Path to audio file
+ * @param {number} segmentSeconds - Segment duration in seconds
+ * @param {boolean} verbose - Whether to log verbose output
+ * @returns {Promise<string[]>} Array of segment file paths (in a temp directory)
+ */
+async function splitAudio(audioPath, segmentSeconds, verbose = false) {
+  const tempDir = path.join(os.tmpdir(), `auto-minutes-segments-${randomUUID()}`);
+  await fsPromises.mkdir(tempDir, { recursive: true });
+
+  const ext = path.extname(audioPath);
+  const pattern = path.join(tempDir, `segment%03d${ext}`);
+
+  if (verbose) {
+    console.log(`    [GoogleSTT] Splitting audio into ${segmentSeconds}s segments...`);
+  }
+  execSync(
+    `ffmpeg -hide_banner -loglevel error -i "${audioPath}" -f segment -segment_time ${segmentSeconds} -c copy "${pattern}"`,
+    { stdio: verbose ? "inherit" : "ignore" },
+  );
+
+  const files = (await fsPromises.readdir(tempDir))
+    .filter(f => f.startsWith("segment"))
+    .sort()
+    .map(f => path.join(tempDir, f));
+
+  if (verbose) {
+    console.log(`    [GoogleSTT] Split into ${files.length} segments`);
+  }
+  return files;
+}
+
+/**
+ * Transcribe an audio file using Google Cloud Speech-to-Text (batch recognition)
+ * Splits files longer than 30 minutes into segments and recognizes them all in one batch call.
+ * @param {string} audioPath - Path to the local audio file
+ * @param {string} model - STT model name (e.g., "chirp_3", "chirp_2")
  * @param {boolean} verbose - Whether to log verbose output
  * @returns {Promise<string>} Transcript text
  */
-export async function transcribeSession(session, apiKey, verbose = false) {
+export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", verbose = false) {
+  const { Storage } = await import("@google-cloud/storage");
+
+  const bucketName = process.env.GCS_BUCKET;
+  if (!bucketName) {
+    throw new Error("GCS_BUCKET environment variable is required for --stt-model google");
+  }
+
+  const storage = new Storage();
+  // chirp_3 requires multi-region "us" endpoint; chirp_2 uses us-central1
+  let apiEndpoint;
+  if (model === "chirp_3") {
+    apiEndpoint = "us-speech.googleapis.com";
+  } else if (model.startsWith("chirp")) {
+    apiEndpoint = "us-central1-speech.googleapis.com";
+  }
+
+  // Check duration and split if needed
+  const duration = getAudioDuration(audioPath);
+  const SEGMENT_SECONDS = 1800; // 30 minutes
+  let audioFiles;
+  let tempSegmentDir = null;
+
+  if (duration > SEGMENT_SECONDS) {
+    audioFiles = await splitAudio(audioPath, SEGMENT_SECONDS, verbose);
+    tempSegmentDir = path.dirname(audioFiles[0]);
+  } else {
+    audioFiles = [audioPath];
+  }
+
+  // Upload all files to GCS
+  const gcsFileNames = [];
+  const gcsUris = [];
+  for (const file of audioFiles) {
+    const gcsName = `auto-minutes-tmp/${randomUUID()}${path.extname(file)}`;
+    gcsFileNames.push(gcsName);
+    gcsUris.push(`gs://${bucketName}/${gcsName}`);
+  }
+
+  try {
+    if (verbose) {
+      console.log(`    [GoogleSTT] Uploading ${audioFiles.length} file(s) to GCS...`);
+    }
+    await Promise.all(
+      audioFiles.map((file, i) =>
+        storage.bucket(bucketName).upload(file, { destination: gcsFileNames[i] })
+      ),
+    );
+
+    if (verbose) {
+      console.log(`    [GoogleSTT] Upload complete. Starting batch recognition...`);
+    }
+
+    // Use REST API for batch recognize, polling, and results (gRPC LRO blocks event loop)
+    const { GoogleAuth } = await import("google-auth-library");
+    const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
+    const projectId = await auth.getProjectId();
+    let location = "global";
+    if (model === "chirp_3") location = "us";
+    else if (model.startsWith("chirp")) location = "us-central1";
+    const restHost = apiEndpoint || "speech.googleapis.com";
+    const recognizer = `projects/${projectId}/locations/${location}/recognizers/_`;
+
+    // Launch parallel batch recognize calls via REST
+    if (verbose) {
+      console.log(`    [GoogleSTT] Starting ${gcsUris.length} batch recognition(s)...`);
+    }
+    const token = await auth.getAccessToken();
+    const opNames = await Promise.all(
+      gcsUris.map(async (uri) => {
+        const res = await fetch(
+          `https://${restHost}/v2/${recognizer}:batchRecognize`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              config: {
+                languageCodes: ["en-US"],
+                model,
+                autoDecodingConfig: {},
+              },
+              files: [{ uri }],
+              recognitionOutputConfig: {
+                inlineResponseConfig: {},
+              },
+            }),
+          },
+        );
+        const data = await res.json();
+        if (data.error) {
+          throw new Error(`BatchRecognize failed: ${data.error.message}`);
+        }
+        return data.name;
+      }),
+    );
+
+    for (let i = 0; i < opNames.length; i++) {
+      console.log(`    [GoogleSTT] Segment ${i}: operation ${opNames[i]}`);
+    }
+
+    // Poll until all complete
+    console.log(`    [GoogleSTT] Waiting for ${opNames.length} transcription(s) to complete...`);
+    const startTime = Date.now();
+    const completed = new Array(opNames.length).fill(false);
+    const opResults = new Array(opNames.length).fill(null);
+
+    while (completed.some(c => !c)) {
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      const pollToken = await auth.getAccessToken();
+      const statuses = [];
+      for (let i = 0; i < opNames.length; i++) {
+        if (completed[i]) {
+          statuses.push(`seg${i}: done`);
+          continue;
+        }
+        try {
+          const res = await fetch(`https://${restHost}/v2/${opNames[i]}`, {
+            headers: { Authorization: `Bearer ${pollToken}` },
+          });
+          const data = await res.json();
+          if (data.done) {
+            completed[i] = true;
+            opResults[i] = data.response;
+            statuses.push(`seg${i}: done`);
+          } else {
+            const pct = data.metadata?.progressPercent || 0;
+            statuses.push(`seg${i}: ${pct}%`);
+          }
+        } catch (e) {
+          statuses.push(`seg${i}: error(${e.message.slice(0, 40)})`);
+        }
+      }
+      console.log(`    [GoogleSTT] ${elapsed}s: ${statuses.join(", ")}`);
+    }
+
+    if (verbose) {
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      console.log(`    [GoogleSTT] All transcriptions complete (${elapsed}s)`);
+    }
+
+    // Extract transcripts from REST responses
+    const transcriptParts = [];
+    for (let i = 0; i < gcsUris.length; i++) {
+      const response = opResults[i];
+      const fileResult = response.results && response.results[gcsUris[i]];
+      if (!fileResult) continue;
+
+      if (fileResult.error && fileResult.error.message) {
+        throw new Error(`Google STT error for segment ${i}: ${fileResult.error.message}`);
+      }
+
+      const transcriptData = fileResult.inlineResult && fileResult.inlineResult.transcript;
+      if (transcriptData && transcriptData.results) {
+        for (const result of transcriptData.results) {
+          if (result.alternatives && result.alternatives.length > 0) {
+            transcriptParts.push(result.alternatives[0].transcript);
+          }
+        }
+      }
+    }
+
+    const transcript = transcriptParts.join("\n");
+    if (verbose) {
+      console.log(`    [GoogleSTT] Transcript: ${transcriptParts.length} parts, ${transcript.length} chars`);
+    }
+    return transcript;
+  } finally {
+    // Clean up GCS files
+    await Promise.all(
+      gcsFileNames.map(async (name) => {
+        try {
+          await storage.bucket(bucketName).file(name).delete();
+        } catch (e) {
+          if (verbose) {
+            console.error(`    [GoogleSTT] Failed to delete gs://${bucketName}/${name}: ${e.message}`);
+          }
+        }
+      }),
+    );
+    if (verbose) {
+      console.log(`    [GoogleSTT] Cleaned up ${gcsFileNames.length} GCS file(s)`);
+    }
+
+    // Clean up temp segment directory
+    if (tempSegmentDir) {
+      await fsPromises.rm(tempSegmentDir, { recursive: true, force: true });
+    }
+  }
+}
+
+/**
+ * Download audio for a session (with caching)
+ * @param {Object} session - Session object with sessionId
+ * @param {boolean} verbose - Whether to log verbose output
+ * @returns {Promise<string>} Path to cached audio file
+ */
+async function downloadSessionAudio(session, verbose = false) {
+  const cachePath = getAudioCachePath(session.sessionId);
+
+  if (audioCacheExists(session.sessionId)) {
+    console.log(`  Using cached audio: ${cachePath}`);
+    return cachePath;
+  }
+
+  if (verbose) {
+    console.log(`    [Transcribe] Fetching Cloudflare video ID for ${session.sessionId}...`);
+  }
+  const streamUrl = await getAudioStreamUrl(session.sessionId);
+  if (verbose) {
+    console.log(`    [Transcribe] Stream URL: ${streamUrl}`);
+  }
+
+  const tempPath = path.join(os.tmpdir(), `auto-minutes-${randomUUID()}.mp3`);
+  try {
+    console.log(`  Downloading audio...`);
+    downloadAudio(streamUrl, tempPath, verbose);
+
+    await fsPromises.mkdir(AUDIO_CACHE_DIR, { recursive: true });
+    await fsPromises.copyFile(tempPath, cachePath);
+  } finally {
+    if (fs.existsSync(tempPath)) {
+      fs.unlinkSync(tempPath);
+    }
+  }
+
+  if (verbose) {
+    const stats = fs.statSync(cachePath);
+    console.log(`    [Transcribe] Audio cached: ${(stats.size / 1024 / 1024).toFixed(1)} MB → ${cachePath}`);
+  }
+
+  return cachePath;
+}
+
+/**
+ * Full pipeline: fetch audio stream, download (with cache), transcribe (with cache)
+ * @param {Object} session - Session object with sessionId
+ * @param {string} sttModel - STT model: "gemini" or "google"
+ * @param {string} apiKey - Gemini API key (required for sttModel "gemini")
+ * @param {boolean} verbose - Whether to log verbose output
+ * @returns {Promise<string>} Transcript text
+ */
+export async function transcribeSession(session, sttModel, apiKey, verbose = false) {
   const transcriptCachePath = getTranscriptCachePath(session.sessionId);
 
   // Check transcript cache first
@@ -229,45 +521,20 @@ export async function transcribeSession(session, apiKey, verbose = false) {
     return await fsPromises.readFile(transcriptCachePath, "utf-8");
   }
 
-  const cachePath = getAudioCachePath(session.sessionId);
+  // Step 1: Download audio
+  const audioPath = await downloadSessionAudio(session, verbose);
 
-  // Step 1: Get audio (from cache or download)
-  if (audioCacheExists(session.sessionId)) {
-    console.log(`  Using cached audio: ${cachePath}`);
+  // Step 2: Transcribe with chosen backend
+  let transcript;
+  if (sttModel.startsWith("google")) {
+    const chirpModel = sttModel.includes(":") ? sttModel.split(":")[1] : "chirp_2";
+    console.log(`  Transcribing audio with Google Cloud STT (${chirpModel})...`);
+    transcript = await transcribeAudioGoogleSTT(audioPath, chirpModel, verbose);
   } else {
-    // Get the audio stream URL
-    if (verbose) {
-      console.log(`    [Transcribe] Fetching Cloudflare video ID for ${session.sessionId}...`);
-    }
-    const streamUrl = await getAudioStreamUrl(session.sessionId);
-    if (verbose) {
-      console.log(`    [Transcribe] Stream URL: ${streamUrl}`);
-    }
-
-    // Download to a temp file first, then move to cache (atomic)
-    const tempPath = path.join(os.tmpdir(), `auto-minutes-${randomUUID()}.mp3`);
-    try {
-      console.log(`  Downloading audio...`);
-      downloadAudio(streamUrl, tempPath, verbose);
-
-      // Move to cache
-      await fsPromises.mkdir(AUDIO_CACHE_DIR, { recursive: true });
-      await fsPromises.copyFile(tempPath, cachePath);
-    } finally {
-      if (fs.existsSync(tempPath)) {
-        fs.unlinkSync(tempPath);
-      }
-    }
-
-    if (verbose) {
-      const stats = fs.statSync(cachePath);
-      console.log(`    [Transcribe] Audio cached: ${(stats.size / 1024 / 1024).toFixed(1)} MB → ${cachePath}`);
-    }
+    // gemini (default)
+    console.log(`  Transcribing audio with Gemini...`);
+    transcript = await transcribeAudio(audioPath, apiKey, "gemini-2.5-flash", verbose);
   }
-
-  // Step 2: Transcribe from cached file
-  console.log(`  Transcribing audio with Gemini...`);
-  const transcript = await transcribeAudio(cachePath, apiKey, "gemini-2.5-flash", verbose);
 
   // Save transcript to cache
   await fsPromises.mkdir(TRANSCRIPT_CACHE_DIR, { recursive: true });

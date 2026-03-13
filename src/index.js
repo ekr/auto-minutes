@@ -57,7 +57,7 @@ async function runWithConcurrency(tasks, limit) {
  * @param {string} modelName - Full model name to use
  * @returns {Promise<Object>} Object with {minutes: string, wasGenerated: boolean}
  */
-async function generateSessionMinutes(meetingNumber, session, useAudio = false, modelName = null) {
+async function generateSessionMinutes(meetingNumber, session, sttModel = null, modelName = null) {
   // Check cache first
   if (await cacheExists(meetingNumber, session.sessionId)) {
     console.log(`  Loading from cache: ${session.sessionId}`);
@@ -65,12 +65,12 @@ async function generateSessionMinutes(meetingNumber, session, useAudio = false, 
     return { minutes, wasGenerated: false };
   }
 
-  // Download transcript - either from audio or text
+  // Download transcript - either from audio (via STT) or text
   let transcript;
   try {
-    if (useAudio) {
-      console.log(`  Transcribing audio: ${session.sessionId}`);
-      transcript = await transcribeSession(session, process.env.GEMINI_API_KEY, verbose);
+    if (sttModel) {
+      console.log(`  Transcribing audio (${sttModel}): ${session.sessionId}`);
+      transcript = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose);
     } else {
       console.log(`  Downloading transcript: ${session.sessionId}`);
       transcript = await downloadTranscript(session);
@@ -196,9 +196,9 @@ function parseSummarizeArg(value) {
  * Process sessions for a single meetingId: generate/cache minutes and save manifest.
  * @param {string|number} meetingId - Meeting identifier (number for IETF, date string for interim)
  * @param {Array} sessions - Array of session objects
- * @param {boolean} useAudio - Whether to use audio transcription
+ * @param {string|null} sttModel - STT model to use, or null for text transcripts
  */
-async function processSummarizeSessions(meetingId, sessions, useAudio = false, modelName = null, parallel = 1) {
+async function processSummarizeSessions(meetingId, sessions, sttModel = null, modelName = null, parallel = 1) {
   if (verbose) {
     console.log("\n=== Session List Structure (JSON) ===");
     console.log(JSON.stringify(sessions, null, 2));
@@ -230,7 +230,7 @@ async function processSummarizeSessions(meetingId, sessions, useAudio = false, m
   const results = await runWithConcurrency(
     allTasks.map(({ sessionName, session }) => async () => {
       console.log(`  Processing ${sessionName} [${session.sessionId}]...`);
-      const result = await generateSessionMinutes(meetingId, session, useAudio, modelName);
+      const result = await generateSessionMinutes(meetingId, session, sttModel, modelName);
       if (!result.minutes) {
         console.log(`  Skipping ${sessionName} [${session.sessionId}] - no transcript`);
       } else {
@@ -291,7 +291,8 @@ async function main() {
     .example("$0 --output --build", "Generate output and build site")
     .example("$0 --pages", "Build and prepare GitHub Pages")
     .example("$0 --preview 123:6LO", "Preview minutes for IETF 123 6LO session")
-    .example("$0 --preview 123:6LO --audio", "Preview with audio transcription")
+    .example("$0 --preview 123:6LO --audio", "Preview with audio transcription (Google STT)")
+    .example("$0 --preview 123:6LO --audio --stt-model gemini", "Preview with Gemini STT")
     .example("$0 --summarize 123 -j 5", "Process 5 sessions in parallel")
     .option("summarize", {
       alias: "s",
@@ -334,7 +335,12 @@ async function main() {
     .option("audio", {
       alias: "a",
       type: "boolean",
-      description: "Use audio transcription (download audio and transcribe with Gemini STT) instead of Meetecho text transcript",
+      description: "Use audio transcription instead of Meetecho text transcript",
+    })
+    .option("stt-model", {
+      type: "string",
+      default: "google",
+      description: "STT backend when --audio is used: \"google\", \"google:chirp_2\", \"google:chirp_3\" (default), or \"gemini\"",
     })
     .option("timeout", {
       type: "number",
@@ -377,7 +383,7 @@ async function main() {
   const doPages = argv.pages;
   const doPreview = argv.preview;
   const source = argv.source;
-  const useAudio = argv.audio;
+  const sttModel = argv.audio ? (argv.sttModel || "google") : null;
   const parallel = argv.parallel;
 
   // Resolve model shorthand names and determine provider
@@ -419,12 +425,26 @@ async function main() {
       initializeGemini(apiKey);
     }
 
-    // --audio always requires GEMINI_API_KEY for STT, even when using claude for minutes
-    if (useAudio && provider === "claude") {
+    // --stt-model gemini requires GEMINI_API_KEY for STT, even when using claude for minutes
+    if (sttModel === "gemini" && provider === "claude") {
       const geminiKey = process.env.GEMINI_API_KEY;
       if (!geminiKey) {
-        console.error("Error: GEMINI_API_KEY is required for --audio (Gemini STT)");
+        console.error("Error: GEMINI_API_KEY is required for --stt-model gemini");
         console.error("Please add GEMINI_API_KEY to your .env file");
+        process.exit(1);
+      }
+    }
+
+    // --stt-model google requires GCS_BUCKET and GOOGLE_APPLICATION_CREDENTIALS
+    if (sttModel && sttModel.startsWith("google")) {
+      if (!process.env.GCS_BUCKET) {
+        console.error("Error: GCS_BUCKET environment variable is required for --stt-model google");
+        console.error("Please add GCS_BUCKET=<your-bucket-name> to your .env file");
+        process.exit(1);
+      }
+      if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        console.error("Error: GOOGLE_APPLICATION_CREDENTIALS environment variable is required for --stt-model google");
+        console.error("Please set it to the path of your service account JSON key file");
         process.exit(1);
       }
     }
@@ -434,7 +454,7 @@ async function main() {
     // PREVIEW MODE: Generate and print minutes for a specific session
     if (doPreview) {
       console.log("\n=== PREVIEW MODE ===");
-      console.log(`Using model: ${modelName}${useAudio ? " (audio transcription enabled)" : ""}`);
+      console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);
 
       // Parse the meeting:session-name format
       const parts = doPreview.split(":");
@@ -493,9 +513,9 @@ async function main() {
         // Download transcript (no cache) - either from audio or text
         let transcript;
         try {
-          if (useAudio) {
-            console.log("  Using audio transcription...");
-            transcript = await transcribeSession(session, process.env.GEMINI_API_KEY, verbose);
+          if (sttModel) {
+            console.log(`  Using audio transcription (${sttModel})...`);
+            transcript = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose);
           } else {
             console.log("  Downloading transcript...");
             transcript = await downloadTranscript(session);
@@ -546,7 +566,7 @@ async function main() {
         for (const [date, sessions] of sessionsByDate) {
           try {
             console.log(`\n--- Processing interims for ${date} ---`);
-            await processSummarizeSessions(date, sessions, useAudio, modelName, parallel);
+            await processSummarizeSessions(date, sessions, sttModel, modelName, parallel);
           } catch (error) {
             console.warn(`Warning: Failed to process interims for ${date}: ${error.message}`);
           }
@@ -562,7 +582,7 @@ async function main() {
           console.log(`Current IETF meeting: ${meetingId}`);
 
           console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
-          console.log(`Using model: ${modelName}${useAudio ? " (audio transcription enabled)" : ""}`);
+          console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);
 
           const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
           console.log(`Fetching session list from ${source}...`);
@@ -572,7 +592,7 @@ async function main() {
         } else if (parsed.type === 'ietf-group') {
           meetingId = parsed.meetingNumber;
           console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} — ${parsed.group} ===`);
-          console.log(`Using model: ${modelName}${useAudio ? " (audio transcription enabled)" : ""}`);
+          console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);
 
           const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
           console.log(`Fetching session list from ${source}...`);
@@ -605,7 +625,7 @@ async function main() {
         } else {
           meetingId = parsed.meetingNumber;
           console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
-          console.log(`Using model: ${modelName}${useAudio ? " (audio transcription enabled)" : ""}`);
+          console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);
 
           const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
           console.log(`Fetching session list from ${source}...`);
@@ -614,7 +634,7 @@ async function main() {
           sessions = result.validSessions;
         }
 
-        await processSummarizeSessions(meetingId, sessions, useAudio, modelName, parallel);
+        await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel);
       }
     }
 
