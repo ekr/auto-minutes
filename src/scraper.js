@@ -430,7 +430,8 @@ export async function fetchInterimSession(date, groupName) {
 export async function fetchAllInterimSessions(date) {
   const meetings = await queryInterimMeetings(`date=${date}`);
   if (meetings.length === 0) {
-    throw new Error(`No interim meetings found for date ${date}`);
+    console.warn(`Warning: No interim meetings found for date ${date}`);
+    return [];
   }
 
   console.log(`Found ${meetings.length} interim meeting(s) on ${date}`);
@@ -441,7 +442,13 @@ export async function fetchAllInterimSessions(date) {
     const groupName = extractGroupFromSlug(slug);
     console.log(`  Looking up session for ${slug} (group: ${groupName})...`);
 
-    const result = await scrapeInterimSessionId(slug, groupName);
+    let result;
+    try {
+      result = await scrapeInterimSessionId(slug, groupName);
+    } catch (error) {
+      console.warn(`  Warning: Failed to look up session for ${slug}: ${error.message}`);
+      continue;
+    }
     if (!result) {
       console.warn(`  Warning: No Meetecho link found for ${slug}, skipping`);
       continue;
@@ -466,7 +473,8 @@ export async function fetchInterimSessionsInRange(startDate) {
   const today = new Date().toISOString().split('T')[0];
   const meetings = await queryInterimMeetings(`date__gte=${startDate}&date__lte=${today}&limit=100`);
   if (meetings.length === 0) {
-    throw new Error(`No interim meetings found from ${startDate} through ${today}`);
+    console.warn(`Warning: No interim meetings found from ${startDate} through ${today}`);
+    return new Map();
   }
 
   console.log(`Found ${meetings.length} interim meeting(s) from ${startDate} to ${today}`);
@@ -492,7 +500,13 @@ export async function fetchInterimSessionsInRange(startDate) {
       const groupName = extractGroupFromSlug(slug);
       console.log(`    Looking up session for ${slug} (group: ${groupName})...`);
 
-      const scraped = await scrapeInterimSessionId(slug, groupName);
+      let scraped;
+      try {
+        scraped = await scrapeInterimSessionId(slug, groupName);
+      } catch (error) {
+        console.warn(`    Warning: Failed to look up session for ${slug}: ${error.message}`);
+        continue;
+      }
       if (!scraped) {
         console.warn(`    Warning: No Meetecho link found for ${slug}, skipping`);
         continue;
