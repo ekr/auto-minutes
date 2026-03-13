@@ -469,15 +469,15 @@ export async function fetchAllInterimSessions(date) {
  * @param {string} startDate - Start date in YYYY-MM-DD format
  * @returns {Promise<Map<string, Array>>} Map of date → array of session objects
  */
-export async function fetchInterimSessionsInRange(startDate) {
-  const today = new Date().toISOString().split('T')[0];
-  const meetings = await queryInterimMeetings(`date__gte=${startDate}&date__lte=${today}&limit=100`);
+export async function fetchInterimSessionsInRange(startDate, endDate = null) {
+  const end = endDate || new Date().toISOString().split('T')[0];
+  const meetings = await queryInterimMeetings(`date__gte=${startDate}&date__lte=${end}&limit=100`);
   if (meetings.length === 0) {
-    console.warn(`Warning: No interim meetings found from ${startDate} through ${today}`);
+    console.warn(`Warning: No interim meetings found from ${startDate} through ${end}`);
     return new Map();
   }
 
-  console.log(`Found ${meetings.length} interim meeting(s) from ${startDate} to ${today}`);
+  console.log(`Found ${meetings.length} interim meeting(s) from ${startDate} to ${end}`);
 
   // Group meetings by date
   const meetingsByDate = new Map();

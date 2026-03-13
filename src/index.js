@@ -146,7 +146,7 @@ function parseSessionId(sessionId) {
 
 /**
  * Parse the --summarize argument into a typed descriptor
- * @param {string|number} value - Meeting number, "current", "number:group", "date:group", "date", or "date+"
+ * @param {string|number} value - Meeting number, "current", "number:group", "date:group", "date", "date+", "date-date", or "date-date:group"
  * @returns {Object} Parsed descriptor with type field
  */
 function parseSummarizeArg(value) {
@@ -155,6 +155,15 @@ function parseSummarizeArg(value) {
   // "current" → resolve via API
   if (str.toLowerCase() === 'current') {
     return { type: 'current' };
+  }
+
+  // date-date or date-date:group → explicit date range of interims
+  // Must be checked before the general colon format below
+  if (/^\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}(:.+)?$/.test(str)) {
+    const startDate = str.slice(0, 10);
+    const endDate = str.slice(11, 21);
+    const group = str.length > 21 ? str.slice(22) : undefined;
+    return { type: 'interim-range', startDate, endDate, ...(group && { group }) };
   }
 
   // colon format: date:group (interim) or number:group (plenary filtered)
@@ -284,6 +293,8 @@ async function main() {
     .example("$0 --summarize 2026-03-03:AIPREF", "Generate summaries for an interim meeting")
     .example("$0 --summarize 2026-03-03", "Generate summaries for all interims on a date")
     .example("$0 --summarize 2026-03-03+", "Generate summaries for all interims from date through today")
+    .example("$0 --summarize 2026-03-01-2026-03-13", "Generate summaries for interims in a date range")
+    .example("$0 --summarize 2026-03-01-2026-03-13:AIPREF", "Generate summaries for a specific WG in a date range")
     .example("$0 --summarize 123 --source agenda", "Fetch sessions from Meetecho agenda")
     .example("$0 --output", "Generate output markdown files from cache")
     .example("$0 --summarize 123 --output", "Generate summaries and output")
@@ -297,7 +308,7 @@ async function main() {
       alias: "s",
       type: "string",
       description:
-        "Generate LLM summaries: number, \"current\", number:group, date:group, date, or date+",
+        "Generate LLM summaries: number, \"current\", number:group, date:group, date, date+, date-date, or date-date:group",
     })
     .option("output", {
       alias: "o",
@@ -536,17 +547,24 @@ async function main() {
       const parsed = parseSummarizeArg(argv.summarize);
 
       if (parsed.type === 'interim-range') {
-        // Process all interims from startDate through today
-        console.log(`\n=== SUMMARIZE STAGE: Interims from ${parsed.startDate}+ ===`);
+        // Process interims in a date range
+        const rangeLabel = parsed.endDate
+          ? `${parsed.startDate} to ${parsed.endDate}`
+          : `${parsed.startDate}+`;
+        console.log(`\n=== SUMMARIZE STAGE: Interims from ${rangeLabel} ===`);
         console.log(`Using model: ${modelName}`);
 
-        const sessionsByDate = await fetchInterimSessionsInRange(parsed.startDate);
+        const sessionsByDate = await fetchInterimSessionsInRange(parsed.startDate, parsed.endDate);
         console.log(`\nFound sessions across ${sessionsByDate.size} date(s)`);
 
         for (const [date, sessions] of sessionsByDate) {
+          const filtered = parsed.group
+            ? sessions.filter(s => s.sessionName.toLowerCase() === parsed.group.toLowerCase())
+            : sessions;
+          if (filtered.length === 0) continue;
           try {
             console.log(`\n--- Processing interims for ${date} ---`);
-            await processSummarizeSessions(date, sessions, useAudio, modelName, parallel);
+            await processSummarizeSessions(date, filtered, useAudio, modelName, parallel);
           } catch (error) {
             console.warn(`Warning: Failed to process interims for ${date}: ${error.message}`);
           }
