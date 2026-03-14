@@ -328,7 +328,7 @@ async function main() {
     .option("model", {
       alias: "m",
       type: "string",
-      default: "gemini-2.5-flash",
+      default: "gemini-3.1-pro-preview",
       description: "LLM model to use (e.g., gemini-3-flash, claude-sonnet-4-6, or shorthand: gemini, claude)",
     })
     .option("verbose", {
@@ -394,7 +394,7 @@ async function main() {
   // Resolve model shorthand names and determine provider
   let modelName = argv.model;
   if (modelName === "gemini") {
-    modelName = "gemini-2.5-flash";
+    modelName = "gemini-3.1-pro-preview";
   } else if (modelName === "claude") {
     modelName = "claude-sonnet-4-6";
   }

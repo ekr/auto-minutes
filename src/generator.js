@@ -126,7 +126,7 @@ Generate the meeting minutes:`;
       );
     }
 
-    const model = gemini.getGenerativeModel({ model: modelName || "gemini-2.5-flash" });
+    const model = gemini.getGenerativeModel({ model: modelName || "gemini-3.1-pro-preview" });
     const result = await withTimeout(model.generateContent(prompt), sessionName);
     const response = result.response;
     generatedText = response.text();

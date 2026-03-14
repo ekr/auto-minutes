@@ -12,9 +12,19 @@ import path from "path";
 import os from "os";
 import { randomUUID } from "crypto";
 import fetch from "node-fetch";
+import { downloadTranscript } from "./scraper.js";
 
 const AUDIO_CACHE_DIR = path.join("cache", "audio");
 const TRANSCRIPT_CACHE_DIR = path.join("cache", "transcripts");
+
+// Audio transcripts are typically ~88% of official transcript word count (based on TLS/IETF124).
+// If below this ratio, the transcription was likely truncated.
+const TRUNCATION_RATIO_THRESHOLD = 0.6;
+const MAX_TRANSCRIPTION_ATTEMPTS = 3;
+
+function wordCount(text) {
+  return text.split(/\s+/).filter(Boolean).length;
+}
 
 /**
  * Fetch the Cloudflare video ID for a session from the Meetecho sessions API
@@ -79,7 +89,7 @@ export function downloadAudio(streamUrl, outputPath, verbose = false) {
  * @param {boolean} verbose - Whether to log verbose output
  * @returns {Promise<string>} Transcript text
  */
-export async function transcribeAudio(audioPath, apiKey, model = "gemini-2.5-flash", verbose = false) {
+export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.1-pro-preview", verbose = false) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const fileManager = new GoogleAIFileManager(apiKey);
   const requestOptions = { timeout: 600000 }; // 10 minutes for long audio
@@ -150,7 +160,7 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-2.5-fla
         },
       },
       {
-        text: "Please provide a verbatim transcript of the audio in this video.",
+        text: "Please provide a complete verbatim transcript of the ENTIRE audio from start to finish. Do not stop early or summarize — transcribe every word spoken throughout the full recording. Identify speakers and label each speaker change (e.g., 'Speaker 1:', 'Speaker 2:'). If you can identify speakers by name from context, use their names instead.",
       },
     ]);
 
@@ -265,9 +275,47 @@ export async function transcribeSession(session, apiKey, verbose = false) {
     }
   }
 
-  // Step 2: Transcribe from cached file
-  console.log(`  Transcribing audio with Gemini...`);
-  const transcript = await transcribeAudio(cachePath, apiKey, "gemini-2.5-flash", verbose);
+  // Fetch official transcript for length comparison
+  let officialWordCount = 0;
+  try {
+    const officialTranscript = await downloadTranscript(session);
+    officialWordCount = wordCount(officialTranscript);
+    if (verbose) {
+      console.log(`    [Transcribe] Official transcript: ${officialWordCount} words`);
+    }
+  } catch (error) {
+    if (verbose) {
+      console.log(`    [Transcribe] Could not fetch official transcript for comparison: ${error.message}`);
+    }
+  }
+
+  // Step 2: Transcribe from cached file, with truncation detection
+  let transcript;
+  for (let attempt = 1; attempt <= MAX_TRANSCRIPTION_ATTEMPTS; attempt++) {
+    console.log(`  Transcribing audio with Gemini${attempt > 1 ? ` (attempt ${attempt})` : ""}...`);
+    transcript = await transcribeAudio(cachePath, apiKey, "gemini-3.1-pro-preview", verbose);
+
+    const audioWords = wordCount(transcript);
+    if (verbose) {
+      console.log(`    [Transcribe] Audio transcript: ${audioWords} words`);
+    }
+
+    if (officialWordCount > 0) {
+      const ratio = audioWords / officialWordCount;
+      if (verbose) {
+        console.log(`    [Transcribe] Word count ratio: ${ratio.toFixed(2)} (threshold: ${TRUNCATION_RATIO_THRESHOLD})`);
+      }
+      if (ratio >= TRUNCATION_RATIO_THRESHOLD || attempt >= MAX_TRANSCRIPTION_ATTEMPTS) {
+        if (ratio < TRUNCATION_RATIO_THRESHOLD) {
+          console.warn(`  Warning: Audio transcript appears truncated (${audioWords} words vs ${officialWordCount} official, ratio ${ratio.toFixed(2)})`);
+        }
+        break;
+      }
+      console.warn(`  Audio transcript appears truncated (${audioWords} words vs ${officialWordCount} official, ratio ${ratio.toFixed(2)}). Retrying...`);
+    } else {
+      break;
+    }
+  }
 
   // Save transcript to cache
   await fsPromises.mkdir(TRANSCRIPT_CACHE_DIR, { recursive: true });
