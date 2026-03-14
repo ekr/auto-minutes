@@ -31,6 +31,88 @@ async function ietfFetch(url) {
 }
 
 /**
+ * Parse a single CSV line with RFC 4180 quoting support.
+ * Handles quoted fields that may contain commas or embedded double-quotes ("").
+ * @param {string} line - A single CSV line
+ * @returns {Array<string>} Array of field values (unquoted, trimmed for unquoted fields)
+ */
+export function parseCSVLine(line) {
+  const values = [];
+  let i = 0;
+
+  while (i < line.length) {
+    if (line[i] === '"') {
+      // Quoted field: consume until closing unescaped quote
+      let value = '';
+      i++; // skip opening quote
+      while (i < line.length) {
+        if (line[i] === '"' && line[i + 1] === '"') {
+          value += '"';
+          i += 2;
+        } else if (line[i] === '"') {
+          i++; // skip closing quote
+          break;
+        } else {
+          value += line[i++];
+        }
+      }
+      values.push(value);
+      // Skip field separator; trailing comma → empty final field
+      if (i < line.length && line[i] === ',') {
+        i++;
+        if (i === line.length) values.push('');
+      }
+    } else {
+      // Unquoted field: read until next comma
+      const end = line.indexOf(',', i);
+      if (end === -1) {
+        values.push(line.slice(i).trim());
+        break;
+      }
+      values.push(line.slice(i, end).trim());
+      i = end + 1;
+      // Trailing comma → empty final field
+      if (i === line.length) values.push('');
+    }
+  }
+
+  return values;
+}
+
+/**
+ * Fetches working group documents from datatracker CSV
+ * @param {string} wgName - Working group name (e.g., 'privacypass')
+ * @returns {Promise<Array>} Array of draft objects with name, title, status, etc.
+ */
+export async function fetchWorkingGroupDocuments(wgName) {
+  const url = `https://datatracker.ietf.org/group/${wgName}/documents/csv/`;
+  const response = await ietfFetch(url);
+  const csvText = await response.text();
+
+  const documents = [];
+  const lines = csvText.trim().split('\n');
+
+  if (lines.length < 2) {
+    return documents; // No data or just header
+  }
+
+  const headers = parseCSVLine(lines[0]);
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    if (values.length === headers.length) {
+      const doc = {};
+      headers.forEach((header, index) => {
+        doc[header] = values[index];
+      });
+      documents.push(doc);
+    }
+  }
+
+  return documents;
+}
+
+/**
  * Fetches the proceedings page for a given IETF meeting
  * @param {number} meetingNumber - The IETF meeting number
  * @returns {Promise<Array>} Array of session objects with name, group, and transcript URL
@@ -419,6 +501,7 @@ export async function fetchInterimSession(date, groupName) {
     sessionName: groupName.toUpperCase(),
     sessionId: result.sessionId,
     recordingUrl: result.recordingUrl,
+    meetingSlug,
   }];
 }
 
@@ -458,6 +541,7 @@ export async function fetchAllInterimSessions(date) {
       sessionName: groupName.toUpperCase(),
       sessionId: result.sessionId,
       recordingUrl: result.recordingUrl,
+      meetingSlug: slug,
     });
   }
 
@@ -516,11 +600,82 @@ export async function fetchInterimSessionsInRange(startDate, endDate = null) {
         sessionName: groupName.toUpperCase(),
         sessionId: scraped.sessionId,
         recordingUrl: scraped.recordingUrl,
+        meetingSlug: slug,
       });
     }
 
     if (sessions.length > 0) {
       result.set(date, sessions);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Fetches slides and bluesheet information from a session page
+ * @param {number} meetingNumber - The IETF meeting number (e.g., 124)
+ * @param {string} sessionSlug - The session slug (e.g., 'privacypass')
+ * @returns {Promise<Object>} Object with slides array and bluesheet content
+ */
+export async function fetchSessionSlidesAndBluesheet(meetingNumber, sessionSlug) {
+  const sessionUrl = `https://datatracker.ietf.org/meeting/${meetingNumber}/session/${sessionSlug}`;
+  const response = await ietfFetch(sessionUrl);
+  const html = await response.text();
+
+  const $ = cheerio.load(html);
+
+  const result = {
+    slides: [],
+    bluesheet: null
+  };
+
+  // Extract slides information
+  // Look for the 'Slides' section and parse the table of slide decks
+  const slidesHeader = $('h3:contains("Slides")').first();
+  if (slidesHeader.length > 0) {
+    const slidesTable = slidesHeader.nextAll('table').first();
+    slidesTable.find('tr').each((i, row) => {
+      const cells = $(row).find('td');
+      if (cells.length === 0) return;
+
+      // The first link in the row is typically the slide deck materials link.
+      const link = cells.first().find('a').first();
+      if (link.length === 0) return;
+
+      const slideTitle = link.text().trim();
+      const href = link.attr('href');
+      if (!href) return;
+
+      // Normalize to absolute URL
+      let url;
+      try {
+        url = new URL(href, 'https://datatracker.ietf.org').toString();
+      } catch {
+        url = href;
+      }
+
+      result.slides.push({
+        title: slideTitle,
+        url,
+      });
+    });
+  }
+
+  // Extract bluesheet information
+  // Look for the bluesheet link in the session page
+  const bluesheetLink = $('a:contains("Bluesheets")').first();
+  if (bluesheetLink.length > 0) {
+    const bluesheetHref = bluesheetLink.attr('href');
+    if (bluesheetHref) {
+      try {
+        // Normalize to absolute URL
+        const bluesheetUrl = new URL(bluesheetHref, 'https://datatracker.ietf.org').toString();
+        const bluesheetResponse = await ietfFetch(bluesheetUrl);
+        result.bluesheet = await bluesheetResponse.text();
+      } catch (error) {
+        console.warn(`Could not fetch bluesheet: ${error.message}`);
+      }
     }
   }
 
