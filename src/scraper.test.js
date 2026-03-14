@@ -2,7 +2,57 @@
  * Tests for IETF scraper
  */
 
-import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, isValidSessionId, fetchSessionsWithValidation, fetchValidSessions } from './scraper.js';
+import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, isValidSessionId, fetchSessionsWithValidation, fetchValidSessions, parseCSVLine } from './scraper.js';
+
+describe('parseCSVLine (RFC 4180)', () => {
+  test('parses simple unquoted fields', () => {
+    expect(parseCSVLine('a,b,c')).toEqual(['a', 'b', 'c']);
+  });
+
+  test('parses quoted fields', () => {
+    expect(parseCSVLine('"a","b","c"')).toEqual(['a', 'b', 'c']);
+  });
+
+  test('quoted field containing a comma', () => {
+    expect(parseCSVLine('"draft-ietf-foo, a proposal",Active')).toEqual([
+      'draft-ietf-foo, a proposal',
+      'Active',
+    ]);
+  });
+
+  test('quoted field containing escaped double-quote (RFC 4180 "")', () => {
+    expect(parseCSVLine('"He said ""hello""",Active')).toEqual([
+      'He said "hello"',
+      'Active',
+    ]);
+  });
+
+  test('mixed quoted and unquoted fields', () => {
+    expect(parseCSVLine('draft-ietf-foo,"Title with, comma",Active')).toEqual([
+      'draft-ietf-foo',
+      'Title with, comma',
+      'Active',
+    ]);
+  });
+
+  test('trailing comma emits empty field', () => {
+    expect(parseCSVLine('a,b,')).toEqual(['a', 'b', '']);
+  });
+
+  test('single field with no commas', () => {
+    expect(parseCSVLine('onlyfield')).toEqual(['onlyfield']);
+  });
+
+  test('empty string returns empty array', () => {
+    expect(parseCSVLine('')).toEqual([]);
+  });
+
+  test('field count stays correct across all row types', () => {
+    const headers = parseCSVLine('Name,Title,Status');
+    const row = parseCSVLine('"draft-ietf-foo","The Foo Protocol, version 2","I-D Exists"');
+    expect(row.length).toBe(headers.length);
+  });
+});
 
 describe('IETF Scraper', () => {
   // Use meeting 123 (local file available)

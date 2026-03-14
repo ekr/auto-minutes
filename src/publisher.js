@@ -58,19 +58,23 @@ export function extractDraftsFromTranscript(transcript) {
 }
 
 /**
- * Add inline links to draft references in markdown content
+ * Add inline links to draft references in markdown content.
+ * Skips draft names that are already inside a markdown link to avoid double-linking.
  * @param {string} content - The markdown content
  * @returns {string} Content with inline draft links
  */
 export function addInlineDraftLinks(content) {
-  // Replace draft-* patterns with markdown links, handling backtick-escaped drafts
-  // This regex matches optional backticks around draft-* followed by word boundaries
-  return content.replace(/`?\bdraft-[a-zA-Z0-9-]+\b`?/g, (match) => {
-    // Remove backticks if present
-    const draftName = match.replace(/`/g, '').toLowerCase();
-    const displayName = match.replace(/`/g, '');
-    return `[${displayName}](https://datatracker.ietf.org/doc/${draftName}/)`;
-  });
+  // The alternation matches either a complete existing markdown link (captured in group 1,
+  // left unchanged) or a bare/backtick-wrapped draft name (captured in group 2, linkified).
+  return content.replace(
+    /(\[(?:[^\[\]]|\[[^\[\]]*\])*\]\([^)]*\))|(`?\bdraft-[a-zA-Z0-9-]+\b`?)/g,
+    (match, existingLink, draft) => {
+      if (existingLink) return existingLink; // Already a markdown link — leave it alone
+      const draftName = draft.replace(/`/g, '').toLowerCase();
+      const displayName = draft.replace(/`/g, '');
+      return `[${displayName}](https://datatracker.ietf.org/doc/${draftName}/)`;
+    }
+  );
 }
 
 /**
@@ -218,6 +222,12 @@ export async function saveCachedMinutes(meetingNumber, sessionId, minutes) {
   await fs.writeFile(cachePath, minutes, "utf-8");
 }
 
+/**
+ * Save auxiliary metadata (slides, bluesheet) alongside cached minutes
+ * @param {number|string} meetingNumber - IETF meeting number or date string
+ * @param {string} sessionId - Session ID
+ * @param {Object} metadata - Metadata to store (e.g. { slides, bluesheetText })
+ */
 export async function saveCacheMetadata(meetingNumber, sessionId, metadata) {
   const cacheDir = getCacheDir(meetingNumber);
   await fs.mkdir(cacheDir, { recursive: true });
@@ -226,10 +236,20 @@ export async function saveCacheMetadata(meetingNumber, sessionId, metadata) {
   await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2), "utf-8");
 }
 
+/**
+ * Load auxiliary metadata for a cached session. Returns null if not present.
+ * @param {number|string} meetingNumber - IETF meeting number or date string
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<Object|null>} Parsed metadata object, or null if not found
+ */
 export async function getCachedMetadata(meetingNumber, sessionId) {
   const metaPath = getCacheMetaFile(meetingNumber, sessionId);
-  const content = await fs.readFile(metaPath, "utf-8");
-  return JSON.parse(content);
+  try {
+    const content = await fs.readFile(metaPath, "utf-8");
+    return JSON.parse(content);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -306,7 +326,6 @@ export async function loadCacheManifest(meetingNumber) {
  * @param {Array<string>} recordingUrls - Array of recording URLs for this session
  * @param {string} transcriptFile - Optional filename of transcript file relative to output dir
  * @param {number|string} meetingId - IETF meeting number or date string
- * @param {Array<string>} transcripts - Array of transcript texts for draft extraction
  */
 export async function saveMinutes(
   sessionName,
@@ -315,7 +334,6 @@ export async function saveMinutes(
   recordingUrls = [],
   transcriptFile = null,
   meetingId = null,
-  transcripts = [],
 ) {
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
@@ -351,25 +369,22 @@ export async function saveMinutes(
     header += ` | [Session Materials](${materialsUrl})`;
   }
 
+  // Extract draft names from the LLM-generated content before linkifying, so the
+  // "Related Documents" section lists every draft regardless of surrounding context.
+  const draftMatches = content.match(/\bdraft-[a-zA-Z0-9-]+\b/gi) || [];
+  const allDrafts = new Set(draftMatches.map(d => d.toLowerCase()));
+
   let contentWithLinks = `${header}\n\n${content}`;
 
   // Add inline draft links to the content
   contentWithLinks = addInlineDraftLinks(contentWithLinks);
 
-  // Extract and add draft links section if transcripts are available
-  if (transcripts.length > 0) {
-    const allDrafts = new Set();
-    for (const transcript of transcripts) {
-      const drafts = extractDraftsFromTranscript(transcript);
-      drafts.forEach(draft => allDrafts.add(draft));
-    }
-
-    if (allDrafts.size > 0) {
-      const draftLinks = Array.from(allDrafts)
-        .map(draft => `[${draft}](https://datatracker.ietf.org/doc/${draft}/)`)
-        .join(", ");
-      contentWithLinks += `\n\n## Related Documents\n\n${draftLinks}`;
-    }
+  // Append a "Related Documents" summary section listing all referenced drafts
+  if (allDrafts.size > 0) {
+    const draftLinks = Array.from(allDrafts).sort()
+      .map(draft => `[${draft}](https://datatracker.ietf.org/doc/${draft}/)`)
+      .join(", ");
+    contentWithLinks += `\n\n## Related Documents\n\n${draftLinks}`;
   }
 
   // Write markdown file

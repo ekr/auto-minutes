@@ -6,7 +6,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { sanitizeSessionName } from "./publisher.js";
-import { fetchWorkingGroupDocuments, fetchSessionMaterials, fetchSessionSlidesAndBluesheet } from "./scraper.js";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 let generationTimeoutMs = DEFAULT_TIMEOUT_MS;
@@ -58,66 +57,42 @@ export function initializeGemini(apiKey) {
  * @param {string} sessionName - Name of the session
  * @param {boolean} verbose - Whether to log verbose status information
  * @param {string} modelName - Full model name to use (e.g., "gemini-3-flash", "claude-sonnet-4-6")
- * @param {string} sessionId - Session ID (optional, for fetching materials)
+ * @param {Object} context - Pre-fetched session context (optional)
+ * @param {Object} context.slidesAndBluesheet - Slides and bluesheet data from fetchSessionSlidesAndBluesheet
+ * @param {Array}  context.wgDocuments - Working group documents from fetchWorkingGroupDocuments
  * @returns {Promise<string>} Generated minutes in Markdown format
  */
-export async function generateMinutes(transcript, sessionName, verbose = false, modelName = null, sessionId = null, sessionContext = null) {
+export async function generateMinutes(transcript, sessionName, verbose = false, modelName = null, context = null) {
   const sanitizedName = sanitizeSessionName(sessionName);
   const wgLink = `../wg/${sanitizedName}.html`;
 
-  // Extract working group name (assume it's the session name in lowercase)
-  const wgName = sessionName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const { slidesAndBluesheet = null, wgDocuments = [] } = context || {};
 
-  // Fetch working group documents for context
+  // Build working group documents context from pre-fetched data
   let wgDocumentsContext = '';
-  try {
-    const documents = await fetchWorkingGroupDocuments(wgName);
-    if (documents.length > 0) {
-      // Filter to only active drafts and recent ones to keep context manageable
-      const activeDrafts = documents.filter(doc =>
-        doc.Name && doc.Name.startsWith('draft-ietf-') &&
-        (doc['Status in the IETF process'] === 'I-D Exists' ||
-         doc['Status in the IETF process'] === 'Active' ||
-         doc['Status in the IETF process'].includes('WG'))
-      ).slice(0, 10); // Limit to 10 most relevant drafts
+  if (wgDocuments.length > 0) {
+    // Filter to active drafts only, limit to 10 to keep the prompt manageable
+    const activeDrafts = wgDocuments.filter(doc =>
+      doc.Name && doc.Name.startsWith('draft-ietf-') &&
+      (doc['Status in the IETF process'] === 'I-D Exists' ||
+       doc['Status in the IETF process'] === 'Active' ||
+       doc['Status in the IETF process'].includes('WG'))
+    ).slice(0, 10);
 
-      if (activeDrafts.length > 0) {
-        wgDocumentsContext = `\n\nWorking Group Documents Context:\nThe following active drafts are associated with the ${sessionName} working group:\n`;
-        activeDrafts.forEach(doc => {
-          if (doc.Name && doc.Title && doc['Status in the IETF process']) {
-            wgDocumentsContext += `- ${doc.Name}: ${doc.Title} (${doc['Status in the IETF process']})\n`;
-          }
-        });
-        wgDocumentsContext += '\nWhen referencing drafts in the minutes, use the exact draft names from this list.\n';
-      }
-    }
-  } catch (error) {
-    if (verbose) {
-      console.log(`    [LLM] Warning: Could not fetch WG documents for ${wgName}: ${error.message}`);
+    if (activeDrafts.length > 0) {
+      wgDocumentsContext = `\n\nWorking Group Documents Context:\nThe following active drafts are associated with the ${sessionName} working group:\n`;
+      activeDrafts.forEach(doc => {
+        if (doc.Name && doc.Title && doc['Status in the IETF process']) {
+          wgDocumentsContext += `- ${doc.Name}: ${doc.Title} (${doc['Status in the IETF process']})\n`;
+        }
+      });
+      wgDocumentsContext += '\nWhen referencing drafts in the minutes, use the exact draft names from this list.\n';
     }
   }
 
-  // Fetch session materials (slides) and bluesheet for context
+  // Build slides and bluesheet context from pre-fetched data
   let sessionMaterialsContext = '';
   let bluesheetContext = '';
-  let slidesAndBluesheet = sessionContext;
-
-  if (sessionId && !slidesAndBluesheet) {
-    try {
-      // Extract meeting number and session slug from sessionId (e.g., IETF124-PRIVACYPASS-20251105-1700)
-      const meetingMatch = sessionId.match(/IETF(\d+)-([^-]+)-/);
-      if (meetingMatch) {
-        const meetingNumber = parseInt(meetingMatch[1], 10);
-        const sessionSlug = meetingMatch[2].toLowerCase();
-
-        slidesAndBluesheet = await fetchSessionSlidesAndBluesheet(meetingNumber, sessionSlug);
-      }
-    } catch (error) {
-      if (verbose) {
-        console.log(`    [LLM] Warning: Could not fetch session slides and bluesheet for ${sessionId}: ${error.message}`);
-      }
-    }
-  }
 
   if (slidesAndBluesheet) {
     // Build slides context
@@ -129,7 +104,21 @@ export async function generateMinutes(transcript, sessionName, verbose = false, 
       sessionMaterialsContext += `\nWhen referencing specific presentations, use the slide titles and include the link to the slide deck.\n`;
     }
 
-    // Build bluesheet context with participant names
+    // Build bluesheet context with participant names.
+    //
+    // Expected bluesheet format (plain text from datatracker):
+    //   <preamble lines>
+    //   Attendees         ← triggers start of name collection
+    //   =========
+    //   First Last   affiliation   (tab- or multi-space separated columns)
+    //   ...
+    //   <separator line of ---/=== or end of file signals end of section>
+    //
+    // NOTE: participant names are sourced verbatim from the IETF bluesheet and
+    // embedded directly into the LLM prompt. Although bluesheets are authored by
+    // trusted IETF staff, names are treated as untrusted data here: they are
+    // listed as a comma-separated data block, which limits their influence on the
+    // prompt structure. Do not interpolate them into instruction sentences.
     if (slidesAndBluesheet.bluesheet) {
       const lines = slidesAndBluesheet.bluesheet.split('\n');
       const participants = new Set();
@@ -144,11 +133,15 @@ export async function generateMinutes(transcript, sessionName, verbose = false, 
           continue;
         }
 
-        if (!trimmed || /^[-=]{3,}/.test(trimmed)) {
+        // A separator line (---/===) signals the end of the attendee section
+        if (/^[-=]{3,}/.test(trimmed)) {
           break;
         }
 
-        // Split by tabs or multiple spaces (typical bluesheet formatting)
+        // Blank lines within the attendee block are skipped (don't end the section)
+        if (!trimmed) continue;
+
+        // Columns are separated by tabs or two-or-more spaces; first column is the name
         const parts = trimmed.split(/\t| {2,}/).map(p => p.trim()).filter(Boolean);
         if (parts.length === 0) continue;
 

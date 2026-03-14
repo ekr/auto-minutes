@@ -9,7 +9,7 @@ import path from "path";
 import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet } from "./scraper.js";
+import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout } from "./generator.js";
 import { transcribeSession, getTranscriptCachePath } from "./transcriber.js";
 import {
@@ -35,6 +35,55 @@ dotenv.config();
 
 // Global verbose flag
 let verbose = false;
+
+/**
+ * Extract the session slug from a session ID.
+ * Session ID format: IETF{N}-{SLUG...}-{YYYYMMDD}-{HHMM}
+ * The slug can contain hyphens (e.g., "rtg-area"), so we strip the IETF prefix
+ * and the trailing date/time components.
+ * @param {string} sessionId - e.g. "IETF124-PRIVACYPASS-20251105-1700"
+ * @returns {string} Lowercase slug, e.g. "privacypass" or "rtg-area"
+ */
+function sessionSlugFromId(sessionId) {
+  const parts = sessionId.split('-');
+  // parts[0] = "IETF124", last two = "YYYYMMDD", "HHMM"
+  return parts.slice(1, -2).join('-').toLowerCase();
+}
+
+/**
+ * Fetch slides/bluesheet and WG documents for a session in parallel.
+ * Returns null gracefully for interim sessions (no numeric meeting number)
+ * or when fetches fail.
+ * @param {Object} session - Session object with sessionId property
+ * @returns {Promise<{slidesAndBluesheet: Object|null, wgDocuments: Array}>}
+ */
+async function fetchContextForSession(session) {
+  const meetingMatch = session.sessionId.match(/^IETF(\d+)-/);
+  if (!meetingMatch) {
+    // Interim sessions (IETF-GROUP-...) have no numeric meeting number
+    return { slidesAndBluesheet: null, wgDocuments: [] };
+  }
+
+  const meetingNum = parseInt(meetingMatch[1], 10);
+  const sessionSlug = sessionSlugFromId(session.sessionId);
+
+  const [slidesResult, docsResult] = await Promise.allSettled([
+    fetchSessionSlidesAndBluesheet(meetingNum, sessionSlug),
+    fetchWorkingGroupDocuments(sessionSlug),
+  ]);
+
+  if (verbose && slidesResult.status === 'rejected') {
+    console.log(`    [context] Could not fetch slides/bluesheet: ${slidesResult.reason?.message}`);
+  }
+  if (verbose && docsResult.status === 'rejected') {
+    console.log(`    [context] Could not fetch WG documents: ${docsResult.reason?.message}`);
+  }
+
+  return {
+    slidesAndBluesheet: slidesResult.status === 'fulfilled' ? slidesResult.value : null,
+    wgDocuments: docsResult.status === 'fulfilled' ? docsResult.value : [],
+  };
+}
 
 /**
  * Run async tasks with a concurrency limit
@@ -69,17 +118,15 @@ async function generateSessionMinutes(meetingNumber, session, useAudio = false, 
     console.log(`  Loading from cache: ${session.sessionId}`);
     const minutes = await getCachedMinutes(meetingNumber, session.sessionId);
 
-    // Load cached metadata if present
-    try {
-      const metadata = await getCachedMetadata(meetingNumber, session.sessionId);
-      if (metadata && metadata.slides) {
+    // Load cached metadata if present (informational only)
+    const metadata = await getCachedMetadata(meetingNumber, session.sessionId);
+    if (metadata) {
+      if (metadata.slides?.length) {
         console.log(`  Loaded ${metadata.slides.length} cached slide deck(s)`);
       }
-      if (metadata && metadata.bluesheetUrl) {
-        console.log(`  Loaded cached bluesheet URL: ${metadata.bluesheetUrl}`);
+      if (metadata.bluesheetText) {
+        console.log(`  Loaded cached bluesheet (${metadata.bluesheetText.length} chars)`);
       }
-    } catch {
-      // Ignore if metadata not present
     }
 
     return { minutes, wasGenerated: false };
@@ -100,41 +147,29 @@ async function generateSessionMinutes(meetingNumber, session, useAudio = false, 
     return { minutes: "", wasGenerated: false }; // Return empty minutes if transcript unavailable
   }
 
-  // Fetch slides and bluesheet for context
-  let slidesAndBluesheet = null;
-  try {
-    console.log(`  Fetching slides and bluesheet: ${session.sessionId}`);
+  // Fetch slides, bluesheet, and WG documents for LLM context
+  console.log(`  Fetching context (slides, bluesheet, WG docs): ${session.sessionId}`);
+  const context = await fetchContextForSession(session);
 
-    // Parse meeting number and session slug from session ID
-    const match = session.sessionId.match(/IETF(\d+)-([^-]+)-/);
-    if (match) {
-      const meetingNum = parseInt(match[1], 10);
-      const sessionSlug = match[2].toLowerCase();
-      slidesAndBluesheet = await fetchSessionSlidesAndBluesheet(meetingNum, sessionSlug);
+  if (context.slidesAndBluesheet) {
+    await saveCacheMetadata(meetingNumber, session.sessionId, {
+      slides: context.slidesAndBluesheet.slides || [],
+      bluesheetText: context.slidesAndBluesheet.bluesheet || null,
+    });
 
-      if (slidesAndBluesheet) {
-        await saveCacheMetadata(meetingNumber, session.sessionId, {
-          slides: slidesAndBluesheet.slides || [],
-          bluesheetUrl: slidesAndBluesheet.bluesheet ? slidesAndBluesheet.bluesheet.slice(0, 256) : null,
-        });
-
-        if (slidesAndBluesheet.slides?.length) {
-          console.log(`  Cached ${slidesAndBluesheet.slides.length} slide deck(s)`);
-        }
-        if (slidesAndBluesheet.bluesheet) {
-          console.log(`  Cached bluesheet text (${slidesAndBluesheet.bluesheet.length} chars)`);
-        }
-      }
+    if (context.slidesAndBluesheet.slides?.length) {
+      console.log(`  Cached ${context.slidesAndBluesheet.slides.length} slide deck(s)`);
     }
-  } catch (error) {
-    console.log(`  Could not fetch slides/bluesheet: ${error.message}`);
+    if (context.slidesAndBluesheet.bluesheet) {
+      console.log(`  Cached bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
+    }
   }
 
   // Generate minutes using LLM
   console.log(`  Generating minutes with LLM: ${session.sessionId}`);
   let minutes;
   try {
-    minutes = await generateMinutes(transcript, session.sessionName, verbose, modelName, session.sessionId, slidesAndBluesheet);
+    minutes = await generateMinutes(transcript, session.sessionName, verbose, modelName, context);
   } catch (error) {
     console.log(`  Could not generate minutes: ${error.message}`);
     return { minutes: "", wasGenerated: false };
@@ -566,19 +601,9 @@ async function main() {
           continue;
         }
 
-        // Fetch slides and bluesheet for context (no cache in preview)
-        let slidesAndBluesheet = null;
-        try {
-          console.log("  Fetching slides and bluesheet...");
-          const match = session.sessionId.match(/IETF(\d+)-([^-]+)-/);
-          if (match) {
-            const meetingNum = parseInt(match[1], 10);
-            const sessionSlug = match[2].toLowerCase();
-            slidesAndBluesheet = await fetchSessionSlidesAndBluesheet(meetingNum, sessionSlug);
-          }
-        } catch (error) {
-          console.log(`  Could not fetch slides/bluesheet: ${error.message}`);
-        }
+        // Fetch slides, bluesheet, and WG documents for context (no cache in preview)
+        console.log("  Fetching context (slides, bluesheet, WG docs)...");
+        const context = await fetchContextForSession(session);
 
         // Generate minutes using LLM (no cache)
         console.log("  Generating minutes with LLM...");
@@ -587,8 +612,7 @@ async function main() {
           session.sessionName,
           verbose,
           modelName,
-          session.sessionId,
-          slidesAndBluesheet,
+          context,
         );
 
         // Add date/time header
@@ -731,7 +755,6 @@ async function main() {
 
           const allMinutes = [];
           const recordingUrls = [];
-          const transcripts = [];
 
           for (const session of group.sessions) {
             const minutes = await getCachedMinutes(
@@ -741,14 +764,6 @@ async function main() {
             const { dateTimeHeader } = parseSessionId(session.sessionId);
             allMinutes.push(`${dateTimeHeader}${minutes}`);
             recordingUrls.push(session.recordingUrl);
-
-            // Load transcript for draft extraction
-            try {
-              const transcript = await downloadTranscript(session);
-              transcripts.push(transcript);
-            } catch (error) {
-              console.warn(`  Warning: Could not load transcript for ${session.sessionId}: ${error.message}`);
-            }
           }
 
           // Concatenate all minutes for this session name
@@ -778,7 +793,7 @@ async function main() {
             console.log(`  Copied transcript: ${transcriptFile}`);
           }
 
-          // Save to output (with recording URLs and transcripts for draft extraction)
+          // Save to output — draft links are extracted from the generated minutes content
           await saveMinutes(
             group.sessionName,
             combinedMinutes,
@@ -786,7 +801,6 @@ async function main() {
             recordingUrls,
             transcriptFile,
             meetingId,
-            transcripts,
           );
           processedSessions.push(group.sessionName);
           console.log(`  Saved: ${group.sessionName}`);

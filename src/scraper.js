@@ -31,6 +31,55 @@ async function ietfFetch(url) {
 }
 
 /**
+ * Parse a single CSV line with RFC 4180 quoting support.
+ * Handles quoted fields that may contain commas or embedded double-quotes ("").
+ * @param {string} line - A single CSV line
+ * @returns {Array<string>} Array of field values (unquoted, trimmed for unquoted fields)
+ */
+export function parseCSVLine(line) {
+  const values = [];
+  let i = 0;
+
+  while (i < line.length) {
+    if (line[i] === '"') {
+      // Quoted field: consume until closing unescaped quote
+      let value = '';
+      i++; // skip opening quote
+      while (i < line.length) {
+        if (line[i] === '"' && line[i + 1] === '"') {
+          value += '"';
+          i += 2;
+        } else if (line[i] === '"') {
+          i++; // skip closing quote
+          break;
+        } else {
+          value += line[i++];
+        }
+      }
+      values.push(value);
+      // Skip field separator; trailing comma → empty final field
+      if (i < line.length && line[i] === ',') {
+        i++;
+        if (i === line.length) values.push('');
+      }
+    } else {
+      // Unquoted field: read until next comma
+      const end = line.indexOf(',', i);
+      if (end === -1) {
+        values.push(line.slice(i).trim());
+        break;
+      }
+      values.push(line.slice(i, end).trim());
+      i = end + 1;
+      // Trailing comma → empty final field
+      if (i === line.length) values.push('');
+    }
+  }
+
+  return values;
+}
+
+/**
  * Fetches working group documents from datatracker CSV
  * @param {string} wgName - Working group name (e.g., 'privacypass')
  * @returns {Promise<Array>} Array of draft objects with name, title, status, etc.
@@ -47,11 +96,10 @@ export async function fetchWorkingGroupDocuments(wgName) {
     return documents; // No data or just header
   }
 
-  // Parse CSV (simple parsing, assuming no quoted fields with commas)
-  const headers = lines[0].split(',').map(h => h.trim());
+  const headers = parseCSVLine(lines[0]);
 
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim());
+    const values = parseCSVLine(lines[i]);
     if (values.length === headers.length) {
       const doc = {};
       headers.forEach((header, index) => {
@@ -62,44 +110,6 @@ export async function fetchWorkingGroupDocuments(wgName) {
   }
 
   return documents;
-}
-
-/**
- * Fetches session materials (slides, etc.) from datatracker API
- * @param {string} sessionId - Session ID (e.g., 'IETF124-PRIVACYPASS-20251105-1700')
- * @param {number} numericSessionId - Optional numeric session ID if known
- * @returns {Promise<Object>} Session materials data with slides, minutes, etc.
- */
-export async function fetchSessionMaterials(sessionId, numericSessionId = null) {
-  try {
-    let sessionNum = numericSessionId;
-
-    if (!sessionNum) {
-      // Try to find the session by searching proceedings
-      const meetingNumber = sessionId.match(/IETF(\d+)/)?.[1];
-      if (!meetingNumber) {
-        throw new Error(`Could not extract meeting number from session ID: ${sessionId}`);
-      }
-
-      // For now, let's try some common session IDs or use a mapping
-      // This is a temporary solution - in production, we'd need a better way
-      const knownSessions = {
-        'IETF124-PRIVACYPASS-20251105-1700': 34761
-      };
-
-      sessionNum = knownSessions[sessionId];
-      if (!sessionNum) {
-        throw new Error(`Unknown session ID mapping for ${sessionId}`);
-      }
-    }
-
-    const materialsUrl = `https://datatracker.ietf.org/api/meeting/session/${sessionNum}/materials`;
-    const materialsResponse = await ietfFetch(materialsUrl);
-    return await materialsResponse.json();
-  } catch (error) {
-    console.warn(`Could not fetch session materials for ${sessionId}: ${error.message}`);
-    return null;
-  }
 }
 
 /**
