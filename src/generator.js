@@ -106,49 +106,27 @@ export async function generateMinutes(transcript, sessionName, verbose = false, 
 
     // Build bluesheet context with participant names.
     //
-    // Expected bluesheet format (plain text from datatracker):
-    //   <preamble lines>
-    //   Attendees         ← triggers start of name collection
-    //   =========
-    //   First Last   affiliation   (tab- or multi-space separated columns)
-    //   ...
-    //   <separator line of ---/=== or end of file signals end of section>
+    // Actual bluesheet format (e.g. bluesheets-124-privacypass-*.txt):
+    //   Bluesheet for IETF-NNN: <group>  <day-time>
+    //   ================================================================
+    //   N attendees.     ← "attendees" keyword triggers name collection
     //
-    // NOTE: participant names are sourced verbatim from the IETF bluesheet and
-    // embedded directly into the LLM prompt. Although bluesheets are authored by
-    // trusted IETF staff, names are treated as untrusted data here: they are
-    // listed as a comma-separated data block, which limits their influence on the
-    // prompt structure. Do not interpolate them into instruction sentences.
+    //   First Last<TAB>Affiliation
+    //   ...
+    //
+    // NOTE: names are embedded verbatim in the LLM prompt. They are listed as
+    // a comma-separated data block to limit prompt injection risk.
     if (slidesAndBluesheet.bluesheet) {
       const lines = slidesAndBluesheet.bluesheet.split('\n');
       const participants = new Set();
-      let inAttendeeSection = false;
+      const startIdx = lines.findIndex(l => /\battendees\b/i.test(l));
 
-      for (const line of lines) {
+      for (const line of startIdx >= 0 ? lines.slice(startIdx + 1) : []) {
         const trimmed = line.trim();
-        if (!inAttendeeSection) {
-          if (/\battendees\b/i.test(trimmed)) {
-            inAttendeeSection = true;
-          }
-          continue;
-        }
-
-        // A separator line (---/===) signals the end of the attendee section
-        if (/^[-=]{3,}/.test(trimmed)) {
-          break;
-        }
-
-        // Blank lines within the attendee block are skipped (don't end the section)
+        if (/^[-=]{3,}/.test(trimmed)) break; // safety net for variant formats
         if (!trimmed) continue;
-
-        // Columns are separated by tabs or two-or-more spaces; first column is the name
-        const parts = trimmed.split(/\t| {2,}/).map(p => p.trim()).filter(Boolean);
-        if (parts.length === 0) continue;
-
-        const name = parts[0];
-        if (name && name.length > 2) {
-          participants.add(name);
-        }
+        const name = trimmed.split(/\t| {2,}/)[0].trim();
+        if (name.length > 2) participants.add(name);
       }
 
       if (participants.size > 0) {
