@@ -219,7 +219,7 @@ function audioCacheExists(sessionId) {
  * @param {string} sessionId - Session ID
  * @returns {string} Path to cached transcript file
  */
-function getTranscriptCachePath(sessionId) {
+export function getTranscriptCachePath(sessionId) {
   return path.join(TRANSCRIPT_CACHE_DIR, `${sessionId}.txt`);
 }
 

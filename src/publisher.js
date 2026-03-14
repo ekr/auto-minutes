@@ -236,12 +236,14 @@ export async function loadCacheManifest(meetingNumber) {
  * @param {string} content - The markdown content
  * @param {string} outputDir - Directory to save files (default: 'output')
  * @param {Array<string>} recordingUrls - Array of recording URLs for this session
+ * @param {string} transcriptFile - Optional filename of transcript file relative to output dir
  */
 export async function saveMinutes(
   sessionName,
   content,
   outputDir = "output",
   recordingUrls = [],
+  transcriptFile = null,
 ) {
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
@@ -252,6 +254,11 @@ export async function saveMinutes(
 
   // Build header with links
   let header = `[Markdown Version](${txtFilename})`;
+
+  // Add transcript link
+  if (transcriptFile) {
+    header += ` | [Transcript](${transcriptFile})`;
+  }
 
   // Add recording link(s)
   if (recordingUrls.length > 0) {

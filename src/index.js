@@ -3,12 +3,15 @@
  * Orchestrates the process of generating meeting minutes from IETF transcripts
  */
 
+import fs from "fs/promises";
+import { existsSync } from "fs";
+import path from "path";
 import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange } from "./scraper.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout } from "./generator.js";
-import { transcribeSession } from "./transcriber.js";
+import { transcribeSession, getTranscriptCachePath } from "./transcriber.js";
 import {
   saveMinutes,
   generateIndex,
@@ -22,6 +25,7 @@ import {
   saveCacheManifest,
   loadCacheManifest,
   getCachedMeetingIds,
+  sanitizeSessionName,
 } from "./publisher.js";
 
 // Load environment variables
@@ -679,12 +683,37 @@ async function main() {
           // Concatenate all minutes for this session name
           const combinedMinutes = allMinutes.join("\n\n---\n\n");
 
-          // Save to output (with recording URLs)
+          // Check for cached transcripts and copy to output
+          let transcriptFile = null;
+          const allTranscripts = [];
+          for (const session of group.sessions) {
+            const transcriptPath = getTranscriptCachePath(session.sessionId);
+            if (existsSync(transcriptPath)) {
+              const { dateTimeHeader } = parseSessionId(session.sessionId);
+              const transcript = await fs.readFile(transcriptPath, "utf-8");
+              allTranscripts.push(`${dateTimeHeader}${transcript}`);
+            }
+          }
+          if (allTranscripts.length > 0) {
+            const sanitizedName = sanitizeSessionName(group.sessionName);
+            transcriptFile = `${sanitizedName}-transcript.txt`;
+            const combinedTranscripts = allTranscripts.join("\n\n---\n\n");
+            await fs.mkdir(outputDir, { recursive: true });
+            await fs.writeFile(
+              path.join(outputDir, transcriptFile),
+              combinedTranscripts,
+              "utf-8",
+            );
+            console.log(`  Copied transcript: ${transcriptFile}`);
+          }
+
+          // Save to output (with recording URLs and transcript link)
           await saveMinutes(
             group.sessionName,
             combinedMinutes,
             outputDir,
             recordingUrls,
+            transcriptFile,
           );
           processedSessions.push(group.sessionName);
           console.log(`  Saved: ${group.sessionName}`);
