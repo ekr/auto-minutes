@@ -79,7 +79,7 @@ export function downloadAudio(streamUrl, outputPath, verbose = false) {
  * @param {boolean} verbose - Whether to log verbose output
  * @returns {Promise<string>} Transcript text
  */
-export async function transcribeAudio(audioPath, apiKey, model = "gemini-2.5-flash", verbose = false) {
+export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.1-pro-preview", verbose = false) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const fileManager = new GoogleAIFileManager(apiKey);
   const requestOptions = { timeout: 600000 }; // 10 minutes for long audio
@@ -267,7 +267,7 @@ export async function transcribeSession(session, apiKey, verbose = false) {
 
   // Step 2: Transcribe from cached file
   console.log(`  Transcribing audio with Gemini...`);
-  const transcript = await transcribeAudio(cachePath, apiKey, "gemini-2.5-flash", verbose);
+  const transcript = await transcribeAudio(cachePath, apiKey, "gemini-3.1-pro-preview", verbose);
 
   // Save transcript to cache
   await fsPromises.mkdir(TRANSCRIPT_CACHE_DIR, { recursive: true });
