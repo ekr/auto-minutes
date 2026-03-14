@@ -24,6 +24,54 @@ export function sanitizeSessionName(sessionName) {
 }
 
 /**
+ * Extract draft references from transcript text
+ * @param {string} transcript - The meeting transcript (JSON format)
+ * @returns {Array<string>} Array of unique draft names found
+ */
+export function extractDraftsFromTranscript(transcript) {
+  const drafts = new Set();
+
+  try {
+    // Parse the JSON transcript
+    const transcriptData = JSON.parse(transcript);
+
+    // Look for draft references in the text
+    for (const entry of transcriptData) {
+      if (entry.text) {
+        // Match draft-* patterns (including draft-ietf-*, draft-*, etc.)
+        const draftMatches = entry.text.match(/draft-[a-zA-Z0-9-]+/g);
+        if (draftMatches) {
+          draftMatches.forEach(match => drafts.add(match.toLowerCase()));
+        }
+      }
+    }
+  } catch (error) {
+    // If JSON parsing fails, try to extract from raw text
+    console.warn("Failed to parse transcript as JSON, falling back to text search:", error.message);
+    const draftMatches = transcript.match(/draft-[a-zA-Z0-9-]+/g);
+    if (draftMatches) {
+      draftMatches.forEach(match => drafts.add(match.toLowerCase()));
+    }
+  }
+
+  return Array.from(drafts).sort();
+}
+
+/**
+ * Add inline links to draft references in markdown content
+ * @param {string} content - The markdown content
+ * @returns {string} Content with inline draft links
+ */
+export function addInlineDraftLinks(content) {
+  // Replace draft-* patterns with markdown links
+  // This regex matches draft-* followed by word boundaries
+  return content.replace(/\bdraft-[a-zA-Z0-9-]+\b/g, (match) => {
+    const draftName = match.toLowerCase();
+    return `[${match}](https://datatracker.ietf.org/doc/${draftName}/)`;
+  });
+}
+
+/**
  * Check if minutes already exist for a session
  * @param {string} sessionName - Name of the session
  * @param {string} outputDir - Directory where minutes are saved
@@ -131,6 +179,10 @@ function getCacheFile(meetingNumber, sessionId) {
   return path.join(getCacheDir(meetingNumber), sessionId);
 }
 
+function getCacheMetaFile(meetingNumber, sessionId) {
+  return path.join(getCacheDir(meetingNumber), `${sessionId}.meta.json`);
+}
+
 /**
  * Check if cached minutes exist for a specific session ID
  * @param {number} meetingNumber - IETF meeting number
@@ -164,6 +216,20 @@ export async function saveCachedMinutes(meetingNumber, sessionId, minutes) {
   await fs.writeFile(cachePath, minutes, "utf-8");
 }
 
+export async function saveCacheMetadata(meetingNumber, sessionId, metadata) {
+  const cacheDir = getCacheDir(meetingNumber);
+  await fs.mkdir(cacheDir, { recursive: true });
+
+  const metaPath = getCacheMetaFile(meetingNumber, sessionId);
+  await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2), "utf-8");
+}
+
+export async function getCachedMetadata(meetingNumber, sessionId) {
+  const metaPath = getCacheMetaFile(meetingNumber, sessionId);
+  const content = await fs.readFile(metaPath, "utf-8");
+  return JSON.parse(content);
+}
+
 /**
  * Load cached minutes for a specific session ID
  * @param {number} meetingNumber - IETF meeting number
@@ -185,7 +251,7 @@ export async function getCachedSessionIds(meetingNumber) {
 
   try {
     const entries = await fs.readdir(cacheDir);
-    return entries.filter((entry) => !entry.startsWith("."));
+    return entries.filter((entry) => !entry.startsWith(".") && !entry.endsWith('.meta.json'));
   } catch (error) {
     // Cache directory doesn't exist yet
     return [];
@@ -237,6 +303,8 @@ export async function loadCacheManifest(meetingNumber) {
  * @param {string} outputDir - Directory to save files (default: 'output')
  * @param {Array<string>} recordingUrls - Array of recording URLs for this session
  * @param {string} transcriptFile - Optional filename of transcript file relative to output dir
+ * @param {number|string} meetingId - IETF meeting number or date string
+ * @param {Array<string>} transcripts - Array of transcript texts for draft extraction
  */
 export async function saveMinutes(
   sessionName,
@@ -244,6 +312,8 @@ export async function saveMinutes(
   outputDir = "output",
   recordingUrls = [],
   transcriptFile = null,
+  meetingId = null,
+  transcripts = [],
 ) {
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
@@ -273,12 +343,37 @@ export async function saveMinutes(
     }
   }
 
-  const contentWithLink = `${header}\n\n${content}`;
+  // Add session materials link if meeting ID is available
+  if (meetingId && typeof meetingId === 'number') {
+    const materialsUrl = `https://datatracker.ietf.org/meeting/${meetingId}/materials/agenda-${meetingId}-${sanitizedName}`;
+    header += ` | [Session Materials](${materialsUrl})`;
+  }
+
+  let contentWithLinks = `${header}\n\n${content}`;
+
+  // Add inline draft links to the content
+  contentWithLinks = addInlineDraftLinks(contentWithLinks);
+
+  // Extract and add draft links section if transcripts are available
+  if (transcripts.length > 0) {
+    const allDrafts = new Set();
+    for (const transcript of transcripts) {
+      const drafts = extractDraftsFromTranscript(transcript);
+      drafts.forEach(draft => allDrafts.add(draft));
+    }
+
+    if (allDrafts.size > 0) {
+      const draftLinks = Array.from(allDrafts)
+        .map(draft => `[${draft}](https://datatracker.ietf.org/doc/${draft}/)`)
+        .join(", ");
+      contentWithLinks += `\n\n## Related Documents\n\n${draftLinks}`;
+    }
+  }
 
   // Write markdown file
   const mdFilename = `${sanitizedName}.md`;
   const mdFilepath = path.join(outputDir, mdFilename);
-  await fs.writeFile(mdFilepath, contentWithLink, "utf-8");
+  await fs.writeFile(mdFilepath, contentWithLinks, "utf-8");
 
   // Write text file (same content)
   const txtFilepath = path.join(outputDir, txtFilename);

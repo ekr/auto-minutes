@@ -31,6 +31,78 @@ async function ietfFetch(url) {
 }
 
 /**
+ * Fetches working group documents from datatracker CSV
+ * @param {string} wgName - Working group name (e.g., 'privacypass')
+ * @returns {Promise<Array>} Array of draft objects with name, title, status, etc.
+ */
+export async function fetchWorkingGroupDocuments(wgName) {
+  const url = `https://datatracker.ietf.org/group/${wgName}/documents/csv/`;
+  const response = await ietfFetch(url);
+  const csvText = await response.text();
+
+  const documents = [];
+  const lines = csvText.trim().split('\n');
+
+  if (lines.length < 2) {
+    return documents; // No data or just header
+  }
+
+  // Parse CSV (simple parsing, assuming no quoted fields with commas)
+  const headers = lines[0].split(',').map(h => h.trim());
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',').map(v => v.trim());
+    if (values.length === headers.length) {
+      const doc = {};
+      headers.forEach((header, index) => {
+        doc[header] = values[index];
+      });
+      documents.push(doc);
+    }
+  }
+
+  return documents;
+}
+
+/**
+ * Fetches session materials (slides, etc.) from datatracker API
+ * @param {string} sessionId - Session ID (e.g., 'IETF124-PRIVACYPASS-20251105-1700')
+ * @param {number} numericSessionId - Optional numeric session ID if known
+ * @returns {Promise<Object>} Session materials data with slides, minutes, etc.
+ */
+export async function fetchSessionMaterials(sessionId, numericSessionId = null) {
+  try {
+    let sessionNum = numericSessionId;
+
+    if (!sessionNum) {
+      // Try to find the session by searching proceedings
+      const meetingNumber = sessionId.match(/IETF(\d+)/)?.[1];
+      if (!meetingNumber) {
+        throw new Error(`Could not extract meeting number from session ID: ${sessionId}`);
+      }
+
+      // For now, let's try some common session IDs or use a mapping
+      // This is a temporary solution - in production, we'd need a better way
+      const knownSessions = {
+        'IETF124-PRIVACYPASS-20251105-1700': 34761
+      };
+
+      sessionNum = knownSessions[sessionId];
+      if (!sessionNum) {
+        throw new Error(`Unknown session ID mapping for ${sessionId}`);
+      }
+    }
+
+    const materialsUrl = `https://datatracker.ietf.org/api/meeting/session/${sessionNum}/materials`;
+    const materialsResponse = await ietfFetch(materialsUrl);
+    return await materialsResponse.json();
+  } catch (error) {
+    console.warn(`Could not fetch session materials for ${sessionId}: ${error.message}`);
+    return null;
+  }
+}
+
+/**
  * Fetches the proceedings page for a given IETF meeting
  * @param {number} meetingNumber - The IETF meeting number
  * @returns {Promise<Array>} Array of session objects with name, group, and transcript URL
@@ -521,6 +593,76 @@ export async function fetchInterimSessionsInRange(startDate, endDate = null) {
 
     if (sessions.length > 0) {
       result.set(date, sessions);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Fetches slides and bluesheet information from a session page
+ * @param {number} meetingNumber - The IETF meeting number (e.g., 124)
+ * @param {string} sessionSlug - The session slug (e.g., 'privacypass')
+ * @returns {Promise<Object>} Object with slides array and bluesheet content
+ */
+export async function fetchSessionSlidesAndBluesheet(meetingNumber, sessionSlug) {
+  const sessionUrl = `https://datatracker.ietf.org/meeting/${meetingNumber}/session/${sessionSlug}`;
+  const response = await ietfFetch(sessionUrl);
+  const html = await response.text();
+
+  const $ = cheerio.load(html);
+
+  const result = {
+    slides: [],
+    bluesheet: null
+  };
+
+  // Extract slides information
+  // Look for the 'Slides' section and parse the table of slide decks
+  const slidesHeader = $('h3:contains("Slides")').first();
+  if (slidesHeader.length > 0) {
+    const slidesTable = slidesHeader.nextAll('table').first();
+    slidesTable.find('tr').each((i, row) => {
+      const cells = $(row).find('td');
+      if (cells.length === 0) return;
+
+      // The first link in the row is typically the slide deck materials link.
+      const link = cells.first().find('a').first();
+      if (link.length === 0) return;
+
+      const slideTitle = link.text().trim();
+      const href = link.attr('href');
+      if (!href) return;
+
+      // Normalize to absolute URL
+      let url;
+      try {
+        url = new URL(href, 'https://datatracker.ietf.org').toString();
+      } catch {
+        url = href;
+      }
+
+      result.slides.push({
+        title: slideTitle,
+        url,
+      });
+    });
+  }
+
+  // Extract bluesheet information
+  // Look for the bluesheet link in the session page
+  const bluesheetLink = $('a:contains("Bluesheets")').first();
+  if (bluesheetLink.length > 0) {
+    const bluesheetHref = bluesheetLink.attr('href');
+    if (bluesheetHref) {
+      try {
+        // Normalize to absolute URL
+        const bluesheetUrl = new URL(bluesheetHref, 'https://datatracker.ietf.org').toString();
+        const bluesheetResponse = await ietfFetch(bluesheetUrl);
+        result.bluesheet = await bluesheetResponse.text();
+      } catch (error) {
+        console.warn(`Could not fetch bluesheet: ${error.message}`);
+      }
     }
   }
 

@@ -6,6 +6,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { sanitizeSessionName } from "./publisher.js";
+import { fetchWorkingGroupDocuments, fetchSessionMaterials, fetchSessionSlidesAndBluesheet } from "./scraper.js";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 let generationTimeoutMs = DEFAULT_TIMEOUT_MS;
@@ -57,14 +58,120 @@ export function initializeGemini(apiKey) {
  * @param {string} sessionName - Name of the session
  * @param {boolean} verbose - Whether to log verbose status information
  * @param {string} modelName - Full model name to use (e.g., "gemini-3-flash", "claude-sonnet-4-6")
+ * @param {string} sessionId - Session ID (optional, for fetching materials)
  * @returns {Promise<string>} Generated minutes in Markdown format
  */
-export async function generateMinutes(transcript, sessionName, verbose = false, modelName = null) {
+export async function generateMinutes(transcript, sessionName, verbose = false, modelName = null, sessionId = null, sessionContext = null) {
   const sanitizedName = sanitizeSessionName(sessionName);
   const wgLink = `../wg/${sanitizedName}.html`;
+
+  // Extract working group name (assume it's the session name in lowercase)
+  const wgName = sessionName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  // Fetch working group documents for context
+  let wgDocumentsContext = '';
+  try {
+    const documents = await fetchWorkingGroupDocuments(wgName);
+    if (documents.length > 0) {
+      // Filter to only active drafts and recent ones to keep context manageable
+      const activeDrafts = documents.filter(doc =>
+        doc.Name && doc.Name.startsWith('draft-ietf-') &&
+        (doc['Status in the IETF process'] === 'I-D Exists' ||
+         doc['Status in the IETF process'] === 'Active' ||
+         doc['Status in the IETF process'].includes('WG'))
+      ).slice(0, 10); // Limit to 10 most relevant drafts
+
+      if (activeDrafts.length > 0) {
+        wgDocumentsContext = `\n\nWorking Group Documents Context:\nThe following active drafts are associated with the ${sessionName} working group:\n`;
+        activeDrafts.forEach(doc => {
+          if (doc.Name && doc.Title && doc['Status in the IETF process']) {
+            wgDocumentsContext += `- ${doc.Name}: ${doc.Title} (${doc['Status in the IETF process']})\n`;
+          }
+        });
+        wgDocumentsContext += '\nWhen referencing drafts in the minutes, use the exact draft names from this list.\n';
+      }
+    }
+  } catch (error) {
+    if (verbose) {
+      console.log(`    [LLM] Warning: Could not fetch WG documents for ${wgName}: ${error.message}`);
+    }
+  }
+
+  // Fetch session materials (slides) and bluesheet for context
+  let sessionMaterialsContext = '';
+  let bluesheetContext = '';
+  let slidesAndBluesheet = sessionContext;
+
+  if (sessionId && !slidesAndBluesheet) {
+    try {
+      // Extract meeting number and session slug from sessionId (e.g., IETF124-PRIVACYPASS-20251105-1700)
+      const meetingMatch = sessionId.match(/IETF(\d+)-([^-]+)-/);
+      if (meetingMatch) {
+        const meetingNumber = parseInt(meetingMatch[1], 10);
+        const sessionSlug = meetingMatch[2].toLowerCase();
+
+        slidesAndBluesheet = await fetchSessionSlidesAndBluesheet(meetingNumber, sessionSlug);
+      }
+    } catch (error) {
+      if (verbose) {
+        console.log(`    [LLM] Warning: Could not fetch session slides and bluesheet for ${sessionId}: ${error.message}`);
+      }
+    }
+  }
+
+  if (slidesAndBluesheet) {
+    // Build slides context
+    if (slidesAndBluesheet.slides && slidesAndBluesheet.slides.length > 0) {
+      sessionMaterialsContext = `\n\nSession Slides:\n`;
+      slidesAndBluesheet.slides.forEach((slide, index) => {
+        sessionMaterialsContext += `${index + 1}. ${slide.title}: ${slide.url}\n`;
+      });
+      sessionMaterialsContext += `\nWhen referencing specific presentations, use the slide titles and include the link to the slide deck.\n`;
+    }
+
+    // Build bluesheet context with participant names
+    if (slidesAndBluesheet.bluesheet) {
+      const lines = slidesAndBluesheet.bluesheet.split('\n');
+      const participants = new Set();
+      let inAttendeeSection = false;
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!inAttendeeSection) {
+          if (/\battendees\b/i.test(trimmed)) {
+            inAttendeeSection = true;
+          }
+          continue;
+        }
+
+        if (!trimmed || /^[-=]{3,}/.test(trimmed)) {
+          break;
+        }
+
+        // Split by tabs or multiple spaces (typical bluesheet formatting)
+        const parts = trimmed.split(/\t| {2,}/).map(p => p.trim()).filter(Boolean);
+        if (parts.length === 0) continue;
+
+        const name = parts[0];
+        if (name && name.length > 2) {
+          participants.add(name);
+        }
+      }
+
+      if (participants.size > 0) {
+        const participantList = Array.from(participants).slice(0, 100);
+        bluesheetContext = `\n\nMeeting Participants (${participants.size} attendees):\n`;
+        for (let i = 0; i < participantList.length; i += 5) {
+          bluesheetContext += participantList.slice(i, i + 5).join(', ') + '\n';
+        }
+        bluesheetContext += '\nUse these participant names when attributing statements in the minutes.\n';
+      }
+    }
+  }
+
   const prompt = `You are an expert technical writer for the IETF. Convert the following meeting transcript into well-structured meeting minutes in Markdown format. It should contain an account of the discussion including any decisions made.
 
-Session: ${sessionName}
+Session: ${sessionName}${wgDocumentsContext}${sessionMaterialsContext}${bluesheetContext}
 
 Requirements:
 - Start with a # header linking to the WG page: # [${sessionName}](${wgLink})
@@ -75,6 +182,9 @@ Requirements:
 - Be concise but capture all important technical discussions
 - Use proper Markdown formatting
 - Focus on technical content and decisions
+- When drafts or specifications are discussed, include their full draft names (e.g., draft-ietf-foo-bar) in addition to any acronyms used
+- When referencing presentations or slides, use the slide titles provided and include links to the specific slide decks
+- Use participant names from the provided list when attributing statements or discussions; the bluesheet is authoritative for names while the transcript may contain errors, so use the bluesheet to correct any names found in the transcript
 - Remember that IETF participants are individuals, not representatives of companies or other entities
 - Remember that consensus is not judged in IETF meetings; it is established separately. It's OK to say things like "a poll of the room was taken" or "a sense of those present indicates..."
 
