@@ -63,11 +63,13 @@ export function extractDraftsFromTranscript(transcript) {
  * @returns {string} Content with inline draft links
  */
 export function addInlineDraftLinks(content) {
-  // Replace draft-* patterns with markdown links
-  // This regex matches draft-* followed by word boundaries
-  return content.replace(/\bdraft-[a-zA-Z0-9-]+\b/g, (match) => {
-    const draftName = match.toLowerCase();
-    return `[${match}](https://datatracker.ietf.org/doc/${draftName}/)`;
+  // Replace draft-* patterns with markdown links, handling backtick-escaped drafts
+  // This regex matches optional backticks around draft-* followed by word boundaries
+  return content.replace(/`?\bdraft-[a-zA-Z0-9-]+\b`?/g, (match) => {
+    // Remove backticks if present
+    const draftName = match.replace(/`/g, '').toLowerCase();
+    const displayName = match.replace(/`/g, '');
+    return `[${displayName}](https://datatracker.ietf.org/doc/${draftName}/)`;
   });
 }
 
