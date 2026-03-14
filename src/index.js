@@ -52,23 +52,30 @@ function sessionSlugFromId(sessionId) {
 
 /**
  * Fetch slides/bluesheet and WG documents for a session in parallel.
- * Returns null gracefully for interim sessions (no numeric meeting number)
- * or when fetches fail.
- * @param {Object} session - Session object with sessionId property
+ * Supports both regular IETF meetings (numeric ID) and interim meetings
+ * (meetingSlug present on the session object, e.g. "interim-2026-dnssd-01").
+ * Returns null gracefully when fetches fail.
+ * @param {Object} session - Session object with sessionId (and optionally meetingSlug) property
  * @returns {Promise<{slidesAndBluesheet: Object|null, wgDocuments: Array}>}
  */
 async function fetchContextForSession(session) {
+  let meetingIdentifier;
+  let sessionSlug;
+
   const meetingMatch = session.sessionId.match(/^IETF(\d+)-/);
-  if (!meetingMatch) {
-    // Interim sessions (IETF-GROUP-...) have no numeric meeting number
+  if (meetingMatch) {
+    meetingIdentifier = parseInt(meetingMatch[1], 10);
+    sessionSlug = sessionSlugFromId(session.sessionId);
+  } else if (session.meetingSlug) {
+    // Interim session: use the stored meeting slug and derive group from session name
+    meetingIdentifier = session.meetingSlug;
+    sessionSlug = session.sessionName.toLowerCase();
+  } else {
     return { slidesAndBluesheet: null, wgDocuments: [] };
   }
 
-  const meetingNum = parseInt(meetingMatch[1], 10);
-  const sessionSlug = sessionSlugFromId(session.sessionId);
-
   const [slidesResult, docsResult] = await Promise.allSettled([
-    fetchSessionSlidesAndBluesheet(meetingNum, sessionSlug),
+    fetchSessionSlidesAndBluesheet(meetingIdentifier, sessionSlug),
     fetchWorkingGroupDocuments(sessionSlug),
   ]);
 

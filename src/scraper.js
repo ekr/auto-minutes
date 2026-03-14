@@ -501,6 +501,7 @@ export async function fetchInterimSession(date, groupName) {
     sessionName: groupName.toUpperCase(),
     sessionId: result.sessionId,
     recordingUrl: result.recordingUrl,
+    meetingSlug,
   }];
 }
 
@@ -540,6 +541,7 @@ export async function fetchAllInterimSessions(date) {
       sessionName: groupName.toUpperCase(),
       sessionId: result.sessionId,
       recordingUrl: result.recordingUrl,
+      meetingSlug: slug,
     });
   }
 
@@ -598,6 +600,7 @@ export async function fetchInterimSessionsInRange(startDate, endDate = null) {
         sessionName: groupName.toUpperCase(),
         sessionId: scraped.sessionId,
         recordingUrl: scraped.recordingUrl,
+        meetingSlug: slug,
       });
     }
 

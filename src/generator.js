@@ -52,24 +52,16 @@ export function initializeGemini(apiKey) {
 }
 
 /**
- * Generate meeting minutes from a transcript using the configured model
- * @param {string} transcript - The meeting transcript text (JSON format)
+ * Build the context sections to inject into the LLM prompt.
+ * @param {Object|null} context - Pre-fetched session context
  * @param {string} sessionName - Name of the session
- * @param {boolean} verbose - Whether to log verbose status information
- * @param {string} modelName - Full model name to use (e.g., "gemini-3-flash", "claude-sonnet-4-6")
- * @param {Object} context - Pre-fetched session context (optional)
- * @param {Object} context.slidesAndBluesheet - Slides and bluesheet data from fetchSessionSlidesAndBluesheet
- * @param {Array}  context.wgDocuments - Working group documents from fetchWorkingGroupDocuments
- * @returns {Promise<string>} Generated minutes in Markdown format
+ * @returns {string} Concatenated context string ready to embed in the prompt
  */
-export async function generateMinutes(transcript, sessionName, verbose = false, modelName = null, context = null) {
-  const sanitizedName = sanitizeSessionName(sessionName);
-  const wgLink = `../wg/${sanitizedName}.html`;
-
+export function buildContextPrompt(context, sessionName) {
   const { slidesAndBluesheet = null, wgDocuments = [] } = context || {};
+  let result = '';
 
-  // Build working group documents context from pre-fetched data
-  let wgDocumentsContext = '';
+  // Working group documents
   if (wgDocuments.length > 0) {
     // Filter to active drafts only, limit to 10 to keep the prompt manageable
     const activeDrafts = wgDocuments.filter(doc =>
@@ -77,34 +69,30 @@ export async function generateMinutes(transcript, sessionName, verbose = false, 
       (doc['Status in the IETF process'] === 'I-D Exists' ||
        doc['Status in the IETF process'] === 'Active' ||
        doc['Status in the IETF process'].includes('WG'))
-    ).slice(0, 10);
+    ).slice(0, 100);
 
     if (activeDrafts.length > 0) {
-      wgDocumentsContext = `\n\nWorking Group Documents Context:\nThe following active drafts are associated with the ${sessionName} working group:\n`;
+      result += `\n\nWorking Group Documents Context:\nThe following active drafts are associated with the ${sessionName} working group:\n`;
       activeDrafts.forEach(doc => {
         if (doc.Name && doc.Title && doc['Status in the IETF process']) {
-          wgDocumentsContext += `- ${doc.Name}: ${doc.Title} (${doc['Status in the IETF process']})\n`;
+          result += `- ${doc.Name}: ${doc.Title} (${doc['Status in the IETF process']})\n`;
         }
       });
-      wgDocumentsContext += '\nWhen referencing drafts in the minutes, use the exact draft names from this list.\n';
+      result += '\nWhen referencing drafts in the minutes, use the exact draft names from this list.\n';
     }
   }
 
-  // Build slides and bluesheet context from pre-fetched data
-  let sessionMaterialsContext = '';
-  let bluesheetContext = '';
-
   if (slidesAndBluesheet) {
-    // Build slides context
+    // Slides
     if (slidesAndBluesheet.slides && slidesAndBluesheet.slides.length > 0) {
-      sessionMaterialsContext = `\n\nSession Slides:\n`;
+      result += `\n\nSession Slides:\n`;
       slidesAndBluesheet.slides.forEach((slide, index) => {
-        sessionMaterialsContext += `${index + 1}. ${slide.title}: ${slide.url}\n`;
+        result += `${index + 1}. ${slide.title}: ${slide.url}\n`;
       });
-      sessionMaterialsContext += `\nWhen referencing specific presentations, use the slide titles and include the link to the slide deck.\n`;
+      result += `\nWhen referencing specific presentations, use the slide titles and include the link to the slide deck.\n`;
     }
 
-    // Build bluesheet context with participant names.
+    // Bluesheet participant names.
     //
     // Actual bluesheet format (e.g. bluesheets-124-privacypass-*.txt):
     //   Bluesheet for IETF-NNN: <group>  <day-time>
@@ -114,8 +102,9 @@ export async function generateMinutes(transcript, sessionName, verbose = false, 
     //   First Last<TAB>Affiliation
     //   ...
     //
-    // NOTE: names are embedded verbatim in the LLM prompt. They are listed as
-    // a comma-separated data block to limit prompt injection risk.
+    // NOTE: all external inputs (names, slide titles, bluesheet text) are embedded
+    // verbatim in the LLM prompt. Names are listed as a comma-separated data block
+    // to limit prompt injection risk, though the same risk applies to all inputs.
     if (slidesAndBluesheet.bluesheet) {
       const lines = slidesAndBluesheet.bluesheet.split('\n');
       const participants = new Set();
@@ -130,19 +119,39 @@ export async function generateMinutes(transcript, sessionName, verbose = false, 
       }
 
       if (participants.size > 0) {
-        const participantList = Array.from(participants).slice(0, 100);
-        bluesheetContext = `\n\nMeeting Participants (${participants.size} attendees):\n`;
+        const participantList = Array.from(participants).slice(0, 1000);
+        result += `\n\nMeeting Participants (${participants.size} attendees):\n`;
         for (let i = 0; i < participantList.length; i += 5) {
-          bluesheetContext += participantList.slice(i, i + 5).join(', ') + '\n';
+          result += participantList.slice(i, i + 5).join(', ') + '\n';
         }
-        bluesheetContext += '\nUse these participant names when attributing statements in the minutes.\n';
+        result += '\nUse these participant names when attributing statements in the minutes.\n';
       }
     }
   }
 
+  return result;
+}
+
+/**
+ * Generate meeting minutes from a transcript using the configured model
+ * @param {string} transcript - The meeting transcript text (JSON format)
+ * @param {string} sessionName - Name of the session
+ * @param {boolean} verbose - Whether to log verbose status information
+ * @param {string} modelName - Full model name to use (e.g., "gemini-3-flash", "claude-sonnet-4-6")
+ * @param {Object} context - Pre-fetched session context (optional)
+ * @param {Object} context.slidesAndBluesheet - Slides and bluesheet data from fetchSessionSlidesAndBluesheet
+ * @param {Array}  context.wgDocuments - Working group documents from fetchWorkingGroupDocuments
+ * @returns {Promise<string>} Generated minutes in Markdown format
+ */
+export async function generateMinutes(transcript, sessionName, verbose = false, modelName = null, context = null) {
+  const sanitizedName = sanitizeSessionName(sessionName);
+  const wgLink = `../wg/${sanitizedName}.html`;
+
+  const contextBlock = buildContextPrompt(context, sessionName);
+
   const prompt = `You are an expert technical writer for the IETF. Convert the following meeting transcript into well-structured meeting minutes in Markdown format. It should contain an account of the discussion including any decisions made.
 
-Session: ${sessionName}${wgDocumentsContext}${sessionMaterialsContext}${bluesheetContext}
+Session: ${sessionName}${contextBlock}
 
 Requirements:
 - Start with a # header linking to the WG page: # [${sessionName}](${wgLink})
