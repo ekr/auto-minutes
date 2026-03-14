@@ -150,7 +150,7 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.1-pro
         },
       },
       {
-        text: "Please provide a verbatim transcript of the audio in this video.",
+        text: "Please provide a complete verbatim transcript of the ENTIRE audio from start to finish. Do not stop early or summarize — transcribe every word spoken throughout the full recording. Identify speakers and label each speaker change (e.g., 'Speaker 1:', 'Speaker 2:'). If you can identify speakers by name from context, use their names instead.",
       },
     ]);
 
