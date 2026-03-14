@@ -51,9 +51,7 @@ are up.
 
 ### What about interims, etc.?
 
-Not supported yet, because I need to scrape them and then create
-a new directory structure. It's probably something I could work
-out if someone cared enough.
+Interims are available as of 2026-03-13.
 
 ### Can you auto-upload the minutes for me?
 
