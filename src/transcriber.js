@@ -87,7 +87,7 @@ export function downloadAudio(streamUrl, outputPath, verbose = false) {
  * @param {string} apiKey - Gemini API key
  * @param {string} model - Gemini model name
  * @param {boolean} verbose - Whether to log verbose output
- * @returns {Promise<string>} Transcript text
+ * @returns {Promise<{text: string, usage: {inputTokens: number, outputTokens: number, model: string}}>} Transcript text and token usage
  */
 export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.1-pro-preview", verbose = false) {
   const genAI = new GoogleGenerativeAI(apiKey);
@@ -175,10 +175,23 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.1-pro
       }
     }
     const transcript = chunks.join("");
+
+    // Get usage metadata from the aggregated response
+    let usage = { inputTokens: 0, outputTokens: 0, model };
+    const aggregatedResponse = await streamResult.response;
+    const usageMeta = aggregatedResponse.usageMetadata;
+    if (usageMeta) {
+      usage.inputTokens = usageMeta.promptTokenCount || 0;
+      usage.outputTokens = usageMeta.candidatesTokenCount || 0;
+    }
+
     if (verbose) {
       console.log(`\n    [Transcribe] Transcript: ${chunks.length} chunks, ${transcript.length} chars`);
+      if (usageMeta) {
+        console.log(`    [Transcribe] Tokens: ${usage.inputTokens} in, ${usage.outputTokens} out`);
+      }
     }
-    return transcript;
+    return { text: transcript, usage };
   } finally {
     // Clean up remote file
     if (typeof fileName !== "undefined") {
@@ -228,7 +241,7 @@ export function getTranscriptCachePath(sessionId) {
  * @param {Object} session - Session object with sessionId
  * @param {string} apiKey - Gemini API key
  * @param {boolean} verbose - Whether to log verbose output
- * @returns {Promise<string>} Transcript text
+ * @returns {Promise<{text: string, usage: {inputTokens: number, outputTokens: number, model: string}}|string>} Transcript text (with usage when transcription occurs, plain string from cache)
  */
 export async function transcribeSession(session, apiKey, verbose = false) {
   const transcriptCachePath = getTranscriptCachePath(session.sessionId);
@@ -291,9 +304,12 @@ export async function transcribeSession(session, apiKey, verbose = false) {
 
   // Step 2: Transcribe from cached file, with truncation detection
   let transcript;
+  let usage;
   for (let attempt = 1; attempt <= MAX_TRANSCRIPTION_ATTEMPTS; attempt++) {
     console.log(`  Transcribing audio with Gemini${attempt > 1 ? ` (attempt ${attempt})` : ""}...`);
-    transcript = await transcribeAudio(cachePath, apiKey, "gemini-3.1-pro-preview", verbose);
+    const result = await transcribeAudio(cachePath, apiKey, "gemini-3.1-pro-preview", verbose);
+    transcript = result.text;
+    usage = result.usage;
 
     const audioWords = wordCount(transcript);
     if (verbose) {
@@ -322,5 +338,5 @@ export async function transcribeSession(session, apiKey, verbose = false) {
   await fsPromises.writeFile(transcriptCachePath, transcript, "utf-8");
   console.log(`  Cached transcript: ${transcriptCachePath}`);
 
-  return transcript;
+  return { text: transcript, usage };
 }
