@@ -784,4 +784,4 @@ async function copyDir(src, dest, allowedExtensions = null) {
   return copiedFiles;
 }
 
-main();
+main().then(() => process.exit(0));
