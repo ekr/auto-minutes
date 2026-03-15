@@ -164,6 +164,11 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash
       },
     ]);
 
+    // Suppress unhandled rejection from .response if the stream fails —
+    // the SDK internally creates this promise and it rejects when the
+    // stream errors, but we only await it on the happy path below.
+    streamResult.response.catch(() => {});
+
     const chunks = [];
     for await (const chunk of streamResult.stream) {
       const text = chunk.text();

@@ -103,11 +103,16 @@ async function runWithConcurrency(tasks, limit) {
   const results = [];
   const executing = new Set();
   for (const task of tasks) {
-    const p = task().then(r => { executing.delete(p); return r; });
+    const p = task().then(
+      r => { executing.delete(p); return r; },
+      e => { executing.delete(p); throw e; },
+    );
     executing.add(p);
     results.push(p);
     if (executing.size >= limit) {
-      await Promise.race(executing);
+      // Use .catch to prevent unhandled rejections from other in-flight
+      // promises while we await the first to settle.
+      await Promise.race(executing).catch(() => {});
     }
   }
   return Promise.all(results);
