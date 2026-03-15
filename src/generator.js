@@ -182,7 +182,7 @@ Generate the meeting minutes:`;
 
   const startTime = Date.now();
   let generatedText;
-  const resolvedModel = modelName || (currentModel === "claude" ? "claude-sonnet-4-6" : "gemini-2.5-flash");
+  const resolvedModel = modelName || (currentModel === "claude" ? "claude-sonnet-4-6" : "gemini-3-flash-preview");
   let usage = { inputTokens: 0, outputTokens: 0, model: resolvedModel };
 
   if (currentModel === "claude") {

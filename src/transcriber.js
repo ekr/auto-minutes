@@ -89,7 +89,7 @@ export function downloadAudio(streamUrl, outputPath, verbose = false) {
  * @param {boolean} verbose - Whether to log verbose output
  * @returns {Promise<{text: string, usage: {inputTokens: number, outputTokens: number, model: string}}>} Transcript text and token usage
  */
-export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.1-pro-preview", verbose = false) {
+export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash-preview", verbose = false) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const fileManager = new GoogleAIFileManager(apiKey);
   const requestOptions = { timeout: 600000 }; // 10 minutes for long audio
@@ -307,7 +307,7 @@ export async function transcribeSession(session, apiKey, verbose = false) {
   let usage;
   for (let attempt = 1; attempt <= MAX_TRANSCRIPTION_ATTEMPTS; attempt++) {
     console.log(`  Transcribing audio with Gemini${attempt > 1 ? ` (attempt ${attempt})` : ""}...`);
-    const result = await transcribeAudio(cachePath, apiKey, "gemini-3.1-pro-preview", verbose);
+    const result = await transcribeAudio(cachePath, apiKey, "gemini-3-flash-preview", verbose);
     transcript = result.text;
     usage = result.usage;
 
