@@ -141,7 +141,7 @@ export function buildContextPrompt(context, sessionName) {
  * @param {Object} context - Pre-fetched session context (optional)
  * @param {Object} context.slidesAndBluesheet - Slides and bluesheet data from fetchSessionSlidesAndBluesheet
  * @param {Array}  context.wgDocuments - Working group documents from fetchWorkingGroupDocuments
- * @returns {Promise<string>} Generated minutes in Markdown format
+ * @returns {Promise<{text: string, usage: {inputTokens: number, outputTokens: number, model: string}}>} Generated minutes and token usage
  */
 export async function generateMinutes(transcript, sessionName, verbose = false, modelName = null, context = null) {
   const sanitizedName = sanitizeSessionName(sessionName);
@@ -182,6 +182,8 @@ Generate the meeting minutes:`;
 
   const startTime = Date.now();
   let generatedText;
+  const resolvedModel = modelName || (currentModel === "claude" ? "claude-sonnet-4-6" : "gemini-2.5-flash");
+  let usage = { inputTokens: 0, outputTokens: 0, model: resolvedModel };
 
   if (currentModel === "claude") {
     if (!anthropic) {
@@ -192,7 +194,7 @@ Generate the meeting minutes:`;
 
     const message = await withTimeout(
       anthropic.messages.create({
-        model: modelName || "claude-sonnet-4-6",
+        model: resolvedModel,
         max_tokens: 4096,
         messages: [
           {
@@ -205,9 +207,11 @@ Generate the meeting minutes:`;
     );
 
     generatedText = message.content[0].text;
+    usage.inputTokens = message.usage.input_tokens;
+    usage.outputTokens = message.usage.output_tokens;
 
     if (verbose) {
-      console.log(`    [LLM] Tokens: ${message.usage.input_tokens} in, ${message.usage.output_tokens} out`);
+      console.log(`    [LLM] Tokens: ${usage.inputTokens} in, ${usage.outputTokens} out`);
     }
   } else if (currentModel === "gemini") {
     if (!gemini) {
@@ -216,16 +220,19 @@ Generate the meeting minutes:`;
       );
     }
 
-    const model = gemini.getGenerativeModel({ model: modelName || "gemini-3.1-pro-preview" });
+    const model = gemini.getGenerativeModel({ model: resolvedModel });
     const result = await withTimeout(model.generateContent(prompt), sessionName);
     const response = result.response;
     generatedText = response.text();
 
+    const usageMeta = response.usageMetadata;
+    if (usageMeta) {
+      usage.inputTokens = usageMeta.promptTokenCount || 0;
+      usage.outputTokens = usageMeta.candidatesTokenCount || 0;
+    }
+
     if (verbose) {
-      const usage = response.usageMetadata;
-      if (usage) {
-        console.log(`    [LLM] Tokens: ${usage.promptTokenCount || 'N/A'} in, ${usage.candidatesTokenCount || 'N/A'} out`);
-      }
+      console.log(`    [LLM] Tokens: ${usage.inputTokens || 'N/A'} in, ${usage.outputTokens || 'N/A'} out`);
     }
   } else {
     throw new Error(
@@ -239,7 +246,7 @@ Generate the meeting minutes:`;
     console.log(`    [LLM] Completed in ${duration}s, generated ${generatedText.length} chars`);
   }
 
-  return cleanMarkdownCodeFence(generatedText);
+  return { text: cleanMarkdownCodeFence(generatedText), usage };
 }
 
 /**

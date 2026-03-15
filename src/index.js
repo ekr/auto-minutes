@@ -12,6 +12,7 @@ import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout } from "./generator.js";
 import { transcribeSession, getTranscriptCachePath } from "./transcriber.js";
+import { recordUsage, printSummary } from "./accounting.js";
 import {
   saveMinutes,
   generateIndex,
@@ -144,7 +145,13 @@ async function generateSessionMinutes(meetingNumber, session, useAudio = false, 
   try {
     if (useAudio) {
       console.log(`  Transcribing audio: ${session.sessionId}`);
-      transcript = await transcribeSession(session, process.env.GEMINI_API_KEY, verbose);
+      const result = await transcribeSession(session, process.env.GEMINI_API_KEY, verbose);
+      if (typeof result === 'string') {
+        transcript = result;
+      } else {
+        transcript = result.text;
+        recordUsage(result.usage);
+      }
     } else {
       console.log(`  Downloading transcript: ${session.sessionId}`);
       transcript = await downloadTranscript(session);
@@ -176,7 +183,9 @@ async function generateSessionMinutes(meetingNumber, session, useAudio = false, 
   console.log(`  Generating minutes with LLM: ${session.sessionId}`);
   let minutes;
   try {
-    minutes = await generateMinutes(transcript, session.sessionName, verbose, modelName, context);
+    const result = await generateMinutes(transcript, session.sessionName, verbose, modelName, context);
+    minutes = result.text;
+    recordUsage(result.usage);
   } catch (error) {
     console.log(`  Could not generate minutes: ${error.message}`);
     return { minutes: "", wasGenerated: false };
@@ -598,7 +607,13 @@ async function main() {
         try {
           if (useAudio) {
             console.log("  Using audio transcription...");
-            transcript = await transcribeSession(session, process.env.GEMINI_API_KEY, verbose);
+            const result = await transcribeSession(session, process.env.GEMINI_API_KEY, verbose);
+            if (typeof result === 'string') {
+              transcript = result;
+            } else {
+              transcript = result.text;
+              recordUsage(result.usage);
+            }
           } else {
             console.log("  Downloading transcript...");
             transcript = await downloadTranscript(session);
@@ -614,13 +629,14 @@ async function main() {
 
         // Generate minutes using LLM (no cache)
         console.log("  Generating minutes with LLM...");
-        const minutes = await generateMinutes(
+        const { text: minutes, usage: minutesUsage } = await generateMinutes(
           transcript,
           session.sessionName,
           verbose,
           modelName,
           context,
         );
+        recordUsage(minutesUsage);
 
         // Add date/time header
         const { dateTimeHeader } = parseSessionId(session.sessionId);
@@ -636,6 +652,7 @@ async function main() {
       console.log(allMinutes.join("\n\n---\n\n"));
       console.log("\n" + "=".repeat(80));
 
+      printSummary();
       return; // Exit after preview
     }
 
@@ -829,6 +846,7 @@ async function main() {
       console.log("Root index generated at site/index.md");
     }
 
+    printSummary();
     console.log("\nAll done!");
 
     // BUILD STAGE: Build site with 11ty if requested
