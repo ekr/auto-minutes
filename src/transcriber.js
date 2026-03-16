@@ -378,6 +378,9 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
                 languageCodes: ["en-US"],
                 model,
                 autoDecodingConfig: {},
+                features: model === "chirp_3" ? {
+                  diarizationConfig: {},
+                } : undefined,
               },
               files: [{ uri }],
               recognitionOutputConfig: {
@@ -454,7 +457,29 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
       if (transcriptData && transcriptData.results) {
         for (const result of transcriptData.results) {
           if (result.alternatives && result.alternatives.length > 0) {
-            transcriptParts.push(result.alternatives[0].transcript);
+            const alt = result.alternatives[0];
+            // If diarization produced per-word speaker labels, format with speaker changes
+            if (alt.words && alt.words.some(w => w.speakerLabel)) {
+              let currentSpeaker = null;
+              const lines = [];
+              let currentLine = [];
+              for (const word of alt.words) {
+                if (word.speakerLabel && word.speakerLabel !== currentSpeaker) {
+                  if (currentLine.length > 0) {
+                    lines.push(`Speaker ${currentSpeaker}: ${currentLine.join(" ")}`);
+                    currentLine = [];
+                  }
+                  currentSpeaker = word.speakerLabel;
+                }
+                currentLine.push(word.word);
+              }
+              if (currentLine.length > 0) {
+                lines.push(`Speaker ${currentSpeaker}: ${currentLine.join(" ")}`);
+              }
+              transcriptParts.push(lines.join("\n"));
+            } else {
+              transcriptParts.push(alt.transcript);
+            }
           }
         }
       }
@@ -556,7 +581,7 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
   let transcript;
   let usage;
   if (sttModel.startsWith("google")) {
-    const chirpModel = sttModel.includes(":") ? sttModel.split(":")[1] : "chirp_2";
+    const chirpModel = sttModel.includes(":") ? sttModel.split(":")[1] : "chirp_3";
     console.log(`  Transcribing audio with Google Cloud STT (${chirpModel})...`);
     transcript = await transcribeAudioGoogleSTT(audioPath, chirpModel, verbose);
   } else {
