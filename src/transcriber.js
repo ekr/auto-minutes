@@ -94,6 +94,12 @@ export function downloadAudio(streamUrl, outputPath, verbose = false) {
 export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash-preview", verbose = false, context = null) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const fileManager = new GoogleAIFileManager(apiKey);
+  let dotCount = 0;
+  const writeDot = (ch = ".") => {
+    process.stdout.write(ch);
+    dotCount++;
+    if (dotCount % 20 === 0) process.stdout.write("\n");
+  };
   const requestOptions = { timeout: 600000 }; // 10 minutes for long audio
   const genModel = genAI.getGenerativeModel(
     { model, generationConfig: { maxOutputTokens: 65535, thinkingConfig: { thinkingLevel: "minimal" } } },
@@ -131,7 +137,7 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash
           break;
         }
         if (verbose) {
-          process.stdout.write(".");
+          writeDot(".");
         }
       } catch (error) {
         retries++;
@@ -139,7 +145,7 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash
           throw error;
         }
         if (verbose) {
-          process.stdout.write("r");
+          writeDot("r");
         }
       }
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -203,7 +209,7 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash
           if (text) {
             chunks.push(text);
             if (verbose) {
-              process.stdout.write(".");
+              writeDot(".");
             }
           }
           chunkIndex++;
