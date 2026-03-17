@@ -94,7 +94,7 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash
   const fileManager = new GoogleAIFileManager(apiKey);
   const requestOptions = { timeout: 600000 }; // 10 minutes for long audio
   const genModel = genAI.getGenerativeModel(
-    { model, generationConfig: { maxOutputTokens: 65535 } },
+    { model, generationConfig: { maxOutputTokens: 65535, thinkingConfig: { thinkingLevel: "minimal" } } },
     requestOptions,
   );
 
@@ -151,50 +151,107 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash
       console.log("\n    [Transcribe] File ready. Generating transcript...");
     }
 
-    // Use streaming to avoid fetch timeout on long audio
-    const streamResult = await genModel.generateContentStream([
-      {
-        fileData: {
-          mimeType: file.mimeType,
-          fileUri: file.uri,
-        },
-      },
-      {
-        text: "Please provide a complete verbatim transcript of the ENTIRE audio from start to finish. Do not stop early or summarize — transcribe every word spoken throughout the full recording. Identify speakers and label each speaker change (e.g., 'Speaker 1:', 'Speaker 2:'). If you can identify speakers by name from context, use their names instead.",
-      },
-    ]);
+    // Stream transcript with retry on stream errors.
+    // On retry, feed the last 500 words back and ask the model to continue.
+    const INITIAL_PROMPT = "Please provide a complete verbatim transcript of the ENTIRE audio from start to finish. Do not stop early or summarize — transcribe every word spoken throughout the full recording. Identify speakers and label each speaker change (e.g., 'Speaker 1:', 'Speaker 2:'). If you can identify speakers by name from context, use their names instead.";
+    const MAX_STREAM_RETRIES = 3;
+    const allText = [];
+    let totalUsage = { inputTokens: 0, outputTokens: 0, model };
 
-    // Suppress unhandled rejection from .response if the stream fails —
-    // the SDK internally creates this promise and it rejects when the
-    // stream errors, but we only await it on the happy path below.
-    streamResult.response.catch(() => {});
-
-    const chunks = [];
-    for await (const chunk of streamResult.stream) {
-      const text = chunk.text();
-      if (text) {
-        chunks.push(text);
-        if (verbose) {
-          process.stdout.write(".");
-        }
+    for (let attempt = 0; attempt <= MAX_STREAM_RETRIES; attempt++) {
+      let prompt;
+      if (attempt === 0) {
+        prompt = INITIAL_PROMPT;
+      } else {
+        const soFar = allText.join("");
+        prompt = `Continue transcribing from where the previous transcription was cut off. Here is everything that was already transcribed:\n\n${soFar}\n\nContinue the verbatim transcript from exactly this point to the end of the audio. Do not repeat any of the text above — only output new transcript text. Maintain the same speaker labeling format.`;
+        console.log(`    [Transcribe] Retry ${attempt}/${MAX_STREAM_RETRIES}: continuing from ${soFar.length} chars`);
       }
-    }
-    const transcript = chunks.join("");
 
-    // Get usage metadata from the aggregated response
-    let usage = { inputTokens: 0, outputTokens: 0, model };
-    const aggregatedResponse = await streamResult.response;
-    const usageMeta = aggregatedResponse.usageMetadata;
-    if (usageMeta) {
-      usage.inputTokens = usageMeta.promptTokenCount || 0;
-      usage.outputTokens = usageMeta.candidatesTokenCount || 0;
+      const streamResult = await genModel.generateContentStream([
+        {
+          fileData: {
+            mimeType: file.mimeType,
+            fileUri: file.uri,
+          },
+        },
+        { text: prompt },
+      ]);
+
+      // Suppress unhandled rejection from .response if the stream fails
+      streamResult.response.catch(() => {});
+
+      const chunks = [];
+      let chunkIndex = 0;
+      let lastFinishReason = null;
+      let lastChunkRaw = null;
+      let streamFailed = false;
+      try {
+        for await (const chunk of streamResult.stream) {
+          const finishReason = chunk.candidates?.[0]?.finishReason;
+          if (finishReason) lastFinishReason = finishReason;
+          lastChunkRaw = chunk;
+          const safetyRatings = chunk.candidates?.[0]?.safetyRatings;
+          const blocked = safetyRatings?.some(r => r.blocked);
+          if (verbose && blocked) {
+            console.log(`    [Transcribe] Chunk ${chunkIndex} BLOCKED: ${JSON.stringify(safetyRatings)}`);
+          }
+          const text = chunk.text();
+          if (text) {
+            chunks.push(text);
+            if (verbose) {
+              process.stdout.write(".");
+            }
+          }
+          chunkIndex++;
+        }
+      } catch (streamError) {
+        streamFailed = true;
+        const chunkText = chunks.join("");
+        if (verbose) {
+          console.error(`\n    [Transcribe] Stream error after ${chunkIndex} chunks (${chunkText.length} chars): ${streamError.message}`);
+          console.error(`    [Transcribe] Last finishReason: ${lastFinishReason}`);
+          if (lastChunkRaw) {
+            try {
+              console.error(`    [Transcribe] Last chunk raw: ${JSON.stringify(lastChunkRaw)}`);
+            } catch (_) { /* ignore circular refs */ }
+          }
+        }
+        // Keep whatever we got before the error
+        if (chunkText.length > 0) {
+          allText.push(chunkText);
+        }
+        if (attempt === MAX_STREAM_RETRIES) {
+          throw streamError;
+        }
+        continue;
+      }
+
+      // Stream completed successfully
+      allText.push(chunks.join(""));
+
+      // Get usage metadata from the aggregated response
+      try {
+        const aggregatedResponse = await streamResult.response;
+        const usageMeta = aggregatedResponse.usageMetadata;
+        if (usageMeta) {
+          totalUsage.inputTokens += usageMeta.promptTokenCount || 0;
+          totalUsage.outputTokens += usageMeta.candidatesTokenCount || 0;
+        }
+      } catch (_) { /* usage metadata is best-effort */ }
+
+      if (verbose) {
+        console.log(`\n    [Transcribe] Attempt ${attempt}: ${chunks.length} chunks, ${chunks.join("").length} chars, finishReason=${lastFinishReason}`);
+      }
+      break; // success, no more retries
     }
+
+    const transcript = allText.join("");
+    const usage = totalUsage;
 
     if (verbose) {
-      console.log(`\n    [Transcribe] Transcript: ${chunks.length} chunks, ${transcript.length} chars`);
-      if (usageMeta) {
-        console.log(`    [Transcribe] Tokens: ${usage.inputTokens} in, ${usage.outputTokens} out`);
-      }
+      console.log(`    [Transcribe] Final transcript: ${transcript.length} chars (${allText.length} segment(s))`);
+      console.log(`    [Transcribe] Tokens: ${usage.inputTokens} in, ${usage.outputTokens} out`);
     }
     return { text: transcript, usage };
   } finally {
