@@ -833,15 +833,25 @@ async function main() {
           }
           if (allTranscripts.length > 0) {
             const sanitizedName = sanitizeSessionName(group.sessionName);
-            transcriptFile = `${sanitizedName}-transcript.txt`;
+            const transcriptTxtFile = `${sanitizedName}-transcript.txt`;
+            const transcriptMdFile = `${sanitizedName}-transcript.md`;
+            transcriptFile = `${sanitizedName}-transcript.html`;
             const combinedTranscripts = allTranscripts.join("\n\n---\n\n");
             await fs.mkdir(outputDir, { recursive: true });
+            // Write .txt (raw markdown)
             await fs.writeFile(
-              path.join(outputDir, transcriptFile),
+              path.join(outputDir, transcriptTxtFile),
               combinedTranscripts,
               "utf-8",
             );
-            console.log(`  Copied transcript: ${transcriptFile}`);
+            // Write .md with header link (rendered by 11ty to .html)
+            const transcriptWithHeader = `[Markdown Version](${transcriptTxtFile})\n\n${combinedTranscripts}`;
+            await fs.writeFile(
+              path.join(outputDir, transcriptMdFile),
+              transcriptWithHeader,
+              "utf-8",
+            );
+            console.log(`  Copied transcript: ${transcriptMdFile} + ${transcriptTxtFile}`);
           }
 
           // Save to output — draft links are extracted from the generated minutes content

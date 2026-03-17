@@ -102,7 +102,7 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash
   };
   const requestOptions = { timeout: 600000 }; // 10 minutes for long audio
   const genModel = genAI.getGenerativeModel(
-    { model, generationConfig: { maxOutputTokens: 65535, thinkingConfig: { thinkingLevel: "minimal" } } },
+    { model, generationConfig: { maxOutputTokens: 65535, thinkingConfig: { thinkingLevel: "low" } } },
     requestOptions,
   );
 
@@ -162,7 +162,7 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash
     // Stream transcript with retry on stream errors.
     // On retry, feed the last 500 words back and ask the model to continue.
     const contextBlock = buildContextPrompt(context, "");
-    const INITIAL_PROMPT = `${contextBlock}Please provide a complete verbatim transcript of the ENTIRE audio from start to finish. Do not stop early or summarize — transcribe every word spoken throughout the full recording. Identify speakers and label each speaker change, including a timestamp (e.g., '[00:05:23] Speaker 1:', '[00:12:47] Speaker 2:'). If you can identify speakers by name from context, use their names instead.`;
+    const INITIAL_PROMPT = `${contextBlock}Please provide a complete verbatim transcript of the ENTIRE audio from start to finish. Do not stop early or summarize — transcribe every word spoken throughout the full recording. Output the transcript in Markdown format. Identify speakers and label each speaker change with the speaker name in bold (e.g., '**Speaker 1:** ...', '**Jane Smith:** ...'). If you can identify speakers by name from context, use their names instead of generic labels.`;
     const MAX_STREAM_RETRIES = 3;
     const allText = [];
     let totalUsage = { inputTokens: 0, outputTokens: 0, model };
@@ -304,7 +304,7 @@ function audioCacheExists(sessionId) {
  * @returns {string} Path to cached transcript file
  */
 export function getTranscriptCachePath(sessionId) {
-  return path.join(TRANSCRIPT_CACHE_DIR, `${sessionId}.txt`);
+  return path.join(TRANSCRIPT_CACHE_DIR, `${sessionId}.md`);
 }
 
 /**
