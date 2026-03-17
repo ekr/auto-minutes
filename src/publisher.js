@@ -281,6 +281,19 @@ export async function getCachedSessionIds(meetingNumber) {
 }
 
 /**
+ * Delete a cached session's minutes and metadata files
+ * @param {number|string} meetingId - IETF meeting number or date string
+ * @param {string} sessionId - Session ID
+ */
+export async function deleteCachedSession(meetingId, sessionId) {
+  const cachePath = getCacheFile(meetingId, sessionId);
+  const metaPath = getCacheMetaFile(meetingId, sessionId);
+
+  await fs.rm(cachePath, { force: true });
+  await fs.rm(metaPath, { force: true });
+}
+
+/**
  * Save session metadata manifest to cache
  * @param {number} meetingNumber - IETF meeting number
  * @param {Array<Object>} sessionGroups - Array of {sessionName, sessions: [{sessionId, recordingUrl}]}

@@ -29,6 +29,7 @@ import {
   sanitizeSessionName,
   saveCacheMetadata,
   getCachedMetadata,
+  deleteCachedSession,
 } from "./publisher.js";
 
 // Load environment variables
@@ -475,16 +476,27 @@ async function main() {
       type: "string",
       description: "Preview minutes for a specific session (format: meeting:session-name)",
     })
+    .option("uncache", {
+      type: "string",
+      description:
+        "Delete cache entries matching a specifier (same formats as --summarize)",
+    })
     .check((argv) => {
-      if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview) {
+      if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache) {
         throw new Error(
-          "Must specify at least one action: --summarize, --output, --build, --pages, or --preview",
+          "Must specify at least one action: --summarize, --output, --build, --pages, --preview, or --uncache",
         );
       }
       // Ensure --preview is mutually exclusive with other actions
-      if (argv.preview && (argv.summarize || argv.output || argv.build || argv.pages)) {
+      if (argv.preview && (argv.summarize || argv.output || argv.build || argv.pages || argv.uncache)) {
         throw new Error(
-          "--preview cannot be used with other actions (--summarize, --output, --build, --pages)",
+          "--preview cannot be used with other actions (--summarize, --output, --build, --pages, --uncache)",
+        );
+      }
+      // Ensure --uncache is mutually exclusive with other actions
+      if (argv.uncache && (argv.summarize || argv.output || argv.build || argv.pages || argv.preview)) {
+        throw new Error(
+          "--uncache cannot be used with other actions (--summarize, --output, --build, --pages, --preview)",
         );
       }
       return true;
@@ -681,6 +693,59 @@ async function main() {
 
       printSummary();
       return; // Exit after preview
+    }
+
+    // UNCACHE STAGE: Delete cache entries matching specifier
+    if (argv.uncache) {
+      const parsed = parseSummarizeArg(argv.uncache);
+
+      // Resolve meetingId(s) and optional group filter
+      const targets = []; // Array of { meetingId, group? }
+
+      if (parsed.type === 'current') {
+        const meetingId = await fetchCurrentMeetingNumber();
+        targets.push({ meetingId });
+      } else if (parsed.type === 'ietf') {
+        targets.push({ meetingId: parsed.meetingNumber });
+      } else if (parsed.type === 'ietf-group') {
+        targets.push({ meetingId: parsed.meetingNumber, group: parsed.group });
+      } else if (parsed.type === 'interim') {
+        targets.push({ meetingId: parsed.date, group: parsed.group });
+      } else if (parsed.type === 'interim-all') {
+        targets.push({ meetingId: parsed.date });
+      } else if (parsed.type === 'interim-range') {
+        // Find all cached meetings that are dates within the range
+        const allIds = await getCachedMeetingIds();
+        const startDate = parsed.startDate;
+        const endDate = parsed.endDate || new Date().toISOString().slice(0, 10);
+        for (const id of allIds) {
+          if (typeof id === 'string' && id >= startDate && id <= endDate) {
+            targets.push({ meetingId: id, ...(parsed.group && { group: parsed.group }) });
+          }
+        }
+      }
+
+      let totalDeleted = 0;
+      for (const { meetingId, group } of targets) {
+        const cachedIds = await getCachedSessionIds(meetingId);
+        const toDelete = group
+          ? cachedIds.filter(id => sessionSlugFromId(id).toLowerCase() === group.toLowerCase())
+          : cachedIds;
+
+        if (toDelete.length === 0) {
+          console.log(`No cached sessions found for ${group ? `${group} in ` : ''}${meetingId}`);
+          continue;
+        }
+
+        for (const sessionId of toDelete) {
+          await deleteCachedSession(meetingId, sessionId);
+          console.log(`Deleted: ${sessionId}`);
+          totalDeleted++;
+        }
+      }
+
+      console.log(`\nDeleted ${totalDeleted} cached session(s)`);
+      return;
     }
 
     // SUMMARIZE STAGE: Download transcripts and generate LLM summaries
