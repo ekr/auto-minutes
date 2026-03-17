@@ -13,6 +13,7 @@ import os from "os";
 import { randomUUID } from "crypto";
 import fetch from "node-fetch";
 import { downloadTranscript } from "./scraper.js";
+import { buildContextPrompt } from "./generator.js";
 
 const AUDIO_CACHE_DIR = path.join("cache", "audio");
 const TRANSCRIPT_CACHE_DIR = path.join("cache", "transcripts");
@@ -87,9 +88,10 @@ export function downloadAudio(streamUrl, outputPath, verbose = false) {
  * @param {string} apiKey - Gemini API key
  * @param {string} model - Gemini model name
  * @param {boolean} verbose - Whether to log verbose output
+ * @param {Object} context - Pre-fetched session context (optional, used to help identify speakers)
  * @returns {Promise<{text: string, usage: {inputTokens: number, outputTokens: number, model: string}}>} Transcript text and token usage
  */
-export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash-preview", verbose = false) {
+export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash-preview", verbose = false, context = null) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const fileManager = new GoogleAIFileManager(apiKey);
   const requestOptions = { timeout: 600000 }; // 10 minutes for long audio
@@ -153,7 +155,8 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash
 
     // Stream transcript with retry on stream errors.
     // On retry, feed the last 500 words back and ask the model to continue.
-    const INITIAL_PROMPT = "Please provide a complete verbatim transcript of the ENTIRE audio from start to finish. Do not stop early or summarize — transcribe every word spoken throughout the full recording. Identify speakers and label each speaker change (e.g., 'Speaker 1:', 'Speaker 2:'). If you can identify speakers by name from context, use their names instead.";
+    const contextBlock = buildContextPrompt(context, "");
+    const INITIAL_PROMPT = `${contextBlock}Please provide a complete verbatim transcript of the ENTIRE audio from start to finish. Do not stop early or summarize — transcribe every word spoken throughout the full recording. Identify speakers and label each speaker change, including a timestamp (e.g., '[00:05:23] Speaker 1:', '[00:12:47] Speaker 2:'). If you can identify speakers by name from context, use their names instead.`;
     const MAX_STREAM_RETRIES = 3;
     const allText = [];
     let totalUsage = { inputTokens: 0, outputTokens: 0, model };
@@ -620,9 +623,10 @@ async function downloadSessionAudio(session, verbose = false) {
  * @param {string} sttModel - STT model: "gemini" or "google"
  * @param {string} apiKey - Gemini API key (required for sttModel "gemini")
  * @param {boolean} verbose - Whether to log verbose output
+ * @param {Object} context - Pre-fetched session context (optional, passed to Gemini STT)
  * @returns {Promise<string>} Transcript text
  */
-export async function transcribeSession(session, sttModel, apiKey, verbose = false) {
+export async function transcribeSession(session, sttModel, apiKey, verbose = false, context = null) {
   const transcriptCachePath = getTranscriptCachePath(session.sessionId);
 
   // Check transcript cache first
@@ -644,7 +648,7 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
   } else {
     // gemini (default)
     console.log(`  Transcribing audio with Gemini...`);
-    const result = await transcribeAudio(audioPath, apiKey, "gemini-3-flash-preview", verbose);
+    const result = await transcribeAudio(audioPath, apiKey, "gemini-3-flash-preview", verbose, context);
     transcript = result.text;
     usage = result.usage;
   }

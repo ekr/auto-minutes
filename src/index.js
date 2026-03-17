@@ -145,12 +145,17 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
     return { minutes, wasGenerated: false };
   }
 
+  // Fetch slides, bluesheet, and WG documents for LLM context (before transcription
+  // so context can be used by Gemini STT to identify speakers by name)
+  console.log(`  Fetching context (slides, bluesheet, WG docs): ${session.sessionId}`);
+  const context = await fetchContextForSession(session);
+
   // Download transcript - either from audio (via STT) or text
   let transcript;
   try {
     if (sttModel) {
       console.log(`  Transcribing audio (${sttModel}): ${session.sessionId}`);
-      const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose);
+      const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context);
       if (typeof result === 'string') {
         transcript = result;
       } else {
@@ -165,10 +170,6 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
     console.log(`  Could not fetch transcript: ${error.message}`);
     return { minutes: "", wasGenerated: false }; // Return empty minutes if transcript unavailable
   }
-
-  // Fetch slides, bluesheet, and WG documents for LLM context
-  console.log(`  Fetching context (slides, bluesheet, WG docs): ${session.sessionId}`);
-  const context = await fetchContextForSession(session);
 
   if (context.slidesAndBluesheet) {
     await saveCacheMetadata(meetingNumber, session.sessionId, {
@@ -627,12 +628,17 @@ async function main() {
       for (const session of matchingSessions) {
         console.log(`\nProcessing: ${session.sessionId}`);
 
+        // Fetch slides, bluesheet, and WG documents for context (no cache in preview)
+        // Fetched before transcription so context can help Gemini STT identify speakers
+        console.log("  Fetching context (slides, bluesheet, WG docs)...");
+        const context = await fetchContextForSession(session);
+
         // Download transcript (no cache) - either from audio or text
         let transcript;
         try {
           if (sttModel) {
             console.log(`  Using audio transcription (${sttModel})...`);
-            const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose);
+            const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context);
             if (typeof result === 'string') {
               transcript = result;
             } else {
@@ -647,10 +653,6 @@ async function main() {
           console.error(`  Error getting transcript: ${error.message}`);
           continue;
         }
-
-        // Fetch slides, bluesheet, and WG documents for context (no cache in preview)
-        console.log("  Fetching context (slides, bluesheet, WG docs)...");
-        const context = await fetchContextForSession(session);
 
         // Generate minutes using LLM (no cache)
         console.log("  Generating minutes with LLM...");
