@@ -60,13 +60,56 @@ export async function fetchCloudflareVideoId(sessionId) {
 }
 
 /**
- * Get the HLS audio stream URL for a session
+ * Get the lowest-bandwidth HLS variant URL for a session.
+ * Fetches the master playlist and selects the variant with the smallest bandwidth,
+ * so ffmpeg downloads the least video data (the audio is the same across all variants).
  * @param {string} sessionId - Meetecho session ID
- * @returns {Promise<string>} HLS stream URL
+ * @returns {Promise<string>} HLS variant stream URL
  */
 export async function getAudioStreamUrl(sessionId) {
   const videoId = await fetchCloudflareVideoId(sessionId);
-  return `https://videodelivery.net/${videoId}/manifest/video.m3u8`;
+  const masterUrl = `https://videodelivery.net/${videoId}/manifest/video.m3u8`;
+
+  const response = await fetch(masterUrl, {
+    headers: {
+      'User-Agent': 'ietf-auto-minutes/0.1 (+https://github.com/ekr/auto-minutes)',
+    },
+  });
+  if (!response.ok) {
+    // Fall back to master URL if we can't fetch the playlist
+    return masterUrl;
+  }
+
+  const playlist = await response.text();
+
+  // Look for a dedicated audio rendition (EXT-X-MEDIA TYPE=AUDIO with a URI)
+  const audioMedia = playlist.match(/#EXT-X-MEDIA:TYPE=AUDIO[^\n]*URI="([^"]+)"/);
+  if (audioMedia) {
+    return new URL(audioMedia[1], masterUrl).href;
+  }
+
+  // Fallback: select the lowest bandwidth variant (audio is muxed in)
+  let lowestBandwidth = Infinity;
+  let lowestVariantUri = null;
+  const lines = playlist.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(/#EXT-X-STREAM-INF:.*BANDWIDTH=(\d+)/);
+    if (match) {
+      const bandwidth = parseInt(match[1], 10);
+      const uri = lines[i + 1]?.trim();
+      if (uri && bandwidth < lowestBandwidth) {
+        lowestBandwidth = bandwidth;
+        lowestVariantUri = uri;
+      }
+    }
+  }
+
+  if (!lowestVariantUri) {
+    return masterUrl;
+  }
+
+  // Variant URIs may be relative; resolve against the master URL
+  return new URL(lowestVariantUri, masterUrl).href;
 }
 
 /**
