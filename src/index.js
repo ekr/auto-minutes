@@ -11,7 +11,7 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout } from "./generator.js";
-import { transcribeSession, getTranscriptCachePath } from "./transcriber.js";
+import { transcribeSession, getTranscriptCachePath, deleteAudioCache, deleteTranscriptCache } from "./transcriber.js";
 import { recordUsage, printSummary } from "./accounting.js";
 import {
   saveMinutes,
@@ -29,6 +29,8 @@ import {
   sanitizeSessionName,
   saveCacheMetadata,
   getCachedMetadata,
+  deleteCachedSession,
+  deleteCacheManifest,
 } from "./publisher.js";
 
 // Load environment variables
@@ -391,6 +393,66 @@ async function processSummarizeSessions(meetingId, sessions, sttModel = null, mo
   }
 }
 
+/**
+ * Resolve a parsed summarize/uncache specifier into meeting IDs and sessions.
+ * @param {Object} parsed - Parsed specifier from parseSummarizeArg()
+ * @param {string} source - "proceedings" or "agenda"
+ * @returns {Promise<Array<{meetingId: number|string, sessions: Array}>>} Resolved meeting+session pairs
+ */
+async function resolveSessions(parsed, source) {
+  const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
+
+  if (parsed.type === 'interim-range') {
+    const sessionsByDate = await fetchInterimSessionsInRange(parsed.startDate, parsed.endDate);
+    const results = [];
+    for (const [date, sessions] of sessionsByDate) {
+      const filtered = parsed.group
+        ? sessions.filter(s => s.sessionName.toLowerCase() === parsed.group.toLowerCase())
+        : sessions;
+      if (filtered.length > 0) {
+        results.push({ meetingId: date, sessions: filtered });
+      }
+    }
+    return results;
+  }
+
+  if (parsed.type === 'current') {
+    const meetingId = await fetchCurrentMeetingNumber();
+    console.log(`Current IETF meeting: ${meetingId}`);
+    const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
+    return [{ meetingId, sessions: result.validSessions }];
+  }
+
+  if (parsed.type === 'ietf-group') {
+    const meetingId = parsed.meetingNumber;
+    const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
+    const groupLower = parsed.group.toLowerCase();
+    const sessions = result.validSessions.filter(
+      s => s.sessionName.toLowerCase() === groupLower
+    );
+    if (sessions.length === 0) {
+      const available = [...new Set(result.validSessions.map(s => s.sessionName))].sort().join(', ');
+      throw new Error(`No sessions found matching "${parsed.group}" in IETF ${meetingId}.\nAvailable: ${available}`);
+    }
+    return [{ meetingId, sessions }];
+  }
+
+  if (parsed.type === 'interim') {
+    const sessions = await fetchInterimSession(parsed.date, parsed.group);
+    return [{ meetingId: parsed.date, sessions }];
+  }
+
+  if (parsed.type === 'interim-all') {
+    const sessions = await fetchAllInterimSessions(parsed.date);
+    return [{ meetingId: parsed.date, sessions }];
+  }
+
+  // type === 'ietf'
+  const meetingId = parsed.meetingNumber;
+  const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
+  return [{ meetingId, sessions: result.validSessions }];
+}
+
 async function main() {
   const argv = yargs(hideBin(process.argv))
     .usage("Usage: $0 [options]")
@@ -412,6 +474,9 @@ async function main() {
     .example("$0 --preview 123:6LO --audio", "Preview with audio transcription (Google STT)")
     .example("$0 --preview 123:6LO --audio --stt-model gemini", "Preview with Gemini STT")
     .example("$0 --summarize 123 -j 5", "Process 5 sessions in parallel")
+    .example("$0 --uncache 123:6LO", "Delete all cached files for IETF 123 6LO")
+    .example("$0 --uncache 123 --uncache-type minutes", "Delete only cached minutes for IETF 123")
+    .example("$0 --uncache 123:6LO --summarize 123:6LO", "Uncache then regenerate")
     .option("summarize", {
       alias: "s",
       type: "string",
@@ -475,16 +540,26 @@ async function main() {
       type: "string",
       description: "Preview minutes for a specific session (format: meeting:session-name)",
     })
+    .option("uncache", {
+      type: "string",
+      description:
+        "Delete cached entries: number, \"current\", number:group, date:group, date, date+, date-date, or date-date:group",
+    })
+    .option("uncache-type", {
+      type: "string",
+      default: "all",
+      description: "Cache types to delete (comma-separated): minutes, audio, transcripts, or all (default: all)",
+    })
     .check((argv) => {
-      if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview) {
+      if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache) {
         throw new Error(
-          "Must specify at least one action: --summarize, --output, --build, --pages, or --preview",
+          "Must specify at least one action: --summarize, --output, --build, --pages, --preview, or --uncache",
         );
       }
       // Ensure --preview is mutually exclusive with other actions
-      if (argv.preview && (argv.summarize || argv.output || argv.build || argv.pages)) {
+      if (argv.preview && (argv.summarize || argv.output || argv.build || argv.pages || argv.uncache)) {
         throw new Error(
-          "--preview cannot be used with other actions (--summarize, --output, --build, --pages)",
+          "--preview cannot be used with other actions (--summarize, --output, --build, --pages, --uncache)",
         );
       }
       return true;
@@ -503,6 +578,27 @@ async function main() {
   const source = argv.source;
   const sttModel = argv.audio ? (argv.sttModel || "google") : null;
   const parallel = argv.parallel;
+  const doUncache = !!argv.uncache;
+
+  // Parse --uncache-type
+  const VALID_UNCACHE_TYPES = ['minutes', 'audio', 'transcripts'];
+  let uncacheTypes = [];
+  if (doUncache) {
+    const rawTypes = argv.uncacheType.split(',').map(t => t.trim().toLowerCase());
+    for (const t of rawTypes) {
+      if (t === 'all') {
+        uncacheTypes = [...VALID_UNCACHE_TYPES];
+        break;
+      }
+      if (!VALID_UNCACHE_TYPES.includes(t)) {
+        console.error(`Error: Invalid --uncache-type "${t}". Valid types: ${VALID_UNCACHE_TYPES.join(', ')}, all`);
+        process.exit(1);
+      }
+      if (!uncacheTypes.includes(t)) {
+        uncacheTypes.push(t);
+      }
+    }
+  }
 
   // Resolve model shorthand names and determine provider
   let modelName = argv.model;
@@ -683,97 +779,75 @@ async function main() {
       return; // Exit after preview
     }
 
+    // UNCACHE STAGE: Delete cached entries for matched sessions
+    if (doUncache) {
+      const parsed = parseSummarizeArg(argv.uncache);
+      console.log(`\n=== UNCACHE STAGE ===`);
+      console.log(`Cache types to delete: ${uncacheTypes.join(', ')}`);
+
+      const resolved = await resolveSessions(parsed, source);
+      let totalDeleted = 0;
+
+      for (const { meetingId, sessions } of resolved) {
+        const label = typeof meetingId === 'number' ? `IETF ${meetingId}` : meetingId;
+        console.log(`\n--- ${label}: ${sessions.length} session(s) ---`);
+
+        for (const session of sessions) {
+          const deleted = [];
+
+          if (uncacheTypes.includes('minutes')) {
+            const files = await deleteCachedSession(meetingId, session.sessionId);
+            deleted.push(...files.map(f => `  minutes: ${f}`));
+          }
+          if (uncacheTypes.includes('audio')) {
+            if (await deleteAudioCache(session.sessionId)) {
+              deleted.push(`  audio: cache/audio/${session.sessionId}.mp3`);
+            }
+          }
+          if (uncacheTypes.includes('transcripts')) {
+            if (await deleteTranscriptCache(session.sessionId)) {
+              deleted.push(`  transcripts: cache/transcripts/${session.sessionId}.txt`);
+            }
+          }
+
+          if (deleted.length > 0) {
+            console.log(`  ${session.sessionId}:`);
+            for (const d of deleted) {
+              console.log(`    deleted ${d}`);
+            }
+            totalDeleted += deleted.length;
+          } else {
+            console.log(`  ${session.sessionId}: no cached files found`);
+          }
+        }
+
+        // Delete manifest if minutes were uncached
+        if (uncacheTypes.includes('minutes')) {
+          if (await deleteCacheManifest(meetingId)) {
+            console.log(`  Deleted manifest for ${label}`);
+            totalDeleted++;
+          }
+        }
+      }
+
+      console.log(`\nUncache complete: ${totalDeleted} file(s) deleted`);
+    }
+
     // SUMMARIZE STAGE: Download transcripts and generate LLM summaries
     if (doSummarize) {
       const parsed = parseSummarizeArg(argv.summarize);
+      console.log(`\n=== SUMMARIZE STAGE ===`);
+      console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);
 
-      if (parsed.type === 'interim-range') {
-        // Process interims in a date range
-        const rangeLabel = parsed.endDate
-          ? `${parsed.startDate} to ${parsed.endDate}`
-          : `${parsed.startDate}+`;
-        console.log(`\n=== SUMMARIZE STAGE: Interims from ${rangeLabel} ===`);
-        console.log(`Using model: ${modelName}`);
-
-        const sessionsByDate = await fetchInterimSessionsInRange(parsed.startDate, parsed.endDate);
-        console.log(`\nFound sessions across ${sessionsByDate.size} date(s)`);
-
-        for (const [date, sessions] of sessionsByDate) {
-          const filtered = parsed.group
-            ? sessions.filter(s => s.sessionName.toLowerCase() === parsed.group.toLowerCase())
-            : sessions;
-          if (filtered.length === 0) continue;
-          try {
-            console.log(`\n--- Processing interims for ${date} ---`);
-            await processSummarizeSessions(date, filtered, sttModel, modelName, parallel);
-          } catch (error) {
-            console.warn(`Warning: Failed to process interims for ${date}: ${error.message}`);
-          }
+      const resolved = await resolveSessions(parsed, source);
+      for (const { meetingId, sessions } of resolved) {
+        const label = typeof meetingId === 'number' ? `IETF ${meetingId}` : meetingId;
+        console.log(`\n--- Processing ${label}: ${sessions.length} session(s) ---`);
+        try {
+          await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel);
+        } catch (error) {
+          console.warn(`Warning: Failed to process ${label}: ${error.message}`);
         }
-      } else {
-        // Single meetingId case: current, ietf, interim, or interim-all
-        let meetingId;
-        let sessions;
-
-        if (parsed.type === 'current') {
-          console.log("Resolving current IETF meeting number...");
-          meetingId = await fetchCurrentMeetingNumber();
-          console.log(`Current IETF meeting: ${meetingId}`);
-
-          console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
-          console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);
-
-          const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
-          console.log(`Fetching session list from ${source}...`);
-          const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
-          console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
-          sessions = result.validSessions;
-        } else if (parsed.type === 'ietf-group') {
-          meetingId = parsed.meetingNumber;
-          console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} — ${parsed.group} ===`);
-          console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);
-
-          const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
-          console.log(`Fetching session list from ${source}...`);
-          const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
-          console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
-          const groupLower = parsed.group.toLowerCase();
-          sessions = result.validSessions.filter(
-            s => s.sessionName.toLowerCase() === groupLower
-          );
-          if (sessions.length === 0) {
-            const available = [...new Set(result.validSessions.map(s => s.sessionName))].sort().join(', ');
-            throw new Error(`No sessions found matching "${parsed.group}" in IETF ${meetingId}.\nAvailable: ${available}`);
-          }
-          console.log(`Filtered to ${sessions.length} session(s) for ${parsed.group}`);
-        } else if (parsed.type === 'interim') {
-          meetingId = parsed.date;
-          console.log(`\n=== SUMMARIZE STAGE: Interim ${parsed.group} (${parsed.date}) ===`);
-          console.log(`Using model: ${modelName}`);
-
-          console.log(`Looking up interim meeting for ${parsed.group} on ${parsed.date}...`);
-          sessions = await fetchInterimSession(parsed.date, parsed.group);
-          console.log(`Found ${sessions.length} session(s)`);
-        } else if (parsed.type === 'interim-all') {
-          meetingId = parsed.date;
-          console.log(`\n=== SUMMARIZE STAGE: All interims on ${parsed.date} ===`);
-          console.log(`Using model: ${modelName}`);
-
-          sessions = await fetchAllInterimSessions(parsed.date);
-          console.log(`Found ${sessions.length} session(s)`);
-        } else {
-          meetingId = parsed.meetingNumber;
-          console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
-          console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);
-
-          const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
-          console.log(`Fetching session list from ${source}...`);
-          const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
-          console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
-          sessions = result.validSessions;
-        }
-
-        await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel);
       }
     }
 

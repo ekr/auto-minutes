@@ -308,6 +308,45 @@ export function getTranscriptCachePath(sessionId) {
 }
 
 /**
+ * Get the cached audio file path for a session (exported for uncache)
+ * @param {string} sessionId - Session ID
+ * @returns {string} Path to cached audio file
+ */
+export function getAudioCachePathExported(sessionId) {
+  return getAudioCachePath(sessionId);
+}
+
+/**
+ * Delete cached audio file for a session
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<boolean>} True if file was deleted
+ */
+export async function deleteAudioCache(sessionId) {
+  try {
+    await fsPromises.unlink(getAudioCachePath(sessionId));
+    return true;
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    return false;
+  }
+}
+
+/**
+ * Delete cached transcript file for a session
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<boolean>} True if file was deleted
+ */
+export async function deleteTranscriptCache(sessionId) {
+  try {
+    await fsPromises.unlink(getTranscriptCachePath(sessionId));
+    return true;
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    return false;
+  }
+}
+
+/**
  * Get audio duration in seconds using ffprobe
  * @param {string} audioPath - Path to audio file
  * @returns {number} Duration in seconds

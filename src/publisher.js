@@ -118,12 +118,50 @@ function extractDateFromManifest(manifest, meetingId) {
  * @param {number|string} meetingId - IETF meeting number or date string (e.g., "2026-03-03")
  * @returns {string} Cache directory path
  */
-function getCacheDir(meetingId) {
+export function getCacheDir(meetingId) {
   if (typeof meetingId === 'number' || /^\d+$/.test(meetingId)) {
     return path.join("cache", "output", `ietf${meetingId}`);
   }
   // Date string or other identifier
   return path.join("cache", "output", String(meetingId));
+}
+
+/**
+ * Delete cached minutes and metadata for a specific session
+ * @param {number|string} meetingId - IETF meeting number or date string
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<string[]>} Array of deleted file paths
+ */
+export async function deleteCachedSession(meetingId, sessionId) {
+  const deleted = [];
+  const minutesPath = getCacheFile(meetingId, sessionId);
+  const metaPath = getCacheMetaFile(meetingId, sessionId);
+
+  for (const filePath of [minutesPath, metaPath]) {
+    try {
+      await fs.unlink(filePath);
+      deleted.push(filePath);
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw err;
+    }
+  }
+  return deleted;
+}
+
+/**
+ * Delete the cache manifest for a meeting
+ * @param {number|string} meetingId - IETF meeting number or date string
+ * @returns {Promise<boolean>} True if manifest was deleted
+ */
+export async function deleteCacheManifest(meetingId) {
+  const manifestPath = path.join(getCacheDir(meetingId), ".manifest.json");
+  try {
+    await fs.unlink(manifestPath);
+    return true;
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    return false;
+  }
 }
 
 /**
