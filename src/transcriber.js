@@ -285,7 +285,7 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash
  * @param {string} sessionId - Session ID
  * @returns {string} Path to cached audio file
  */
-function getAudioCachePath(sessionId) {
+export function getAudioCachePath(sessionId) {
   return path.join(AUDIO_CACHE_DIR, `${sessionId}.mp3`);
 }
 

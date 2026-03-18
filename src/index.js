@@ -11,7 +11,7 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout } from "./generator.js";
-import { transcribeSession, getTranscriptCachePath } from "./transcriber.js";
+import { transcribeSession, getTranscriptCachePath, getAudioCachePath } from "./transcriber.js";
 import { recordUsage, printSummary } from "./accounting.js";
 import {
   saveMinutes,
@@ -29,6 +29,9 @@ import {
   sanitizeSessionName,
   saveCacheMetadata,
   getCachedMetadata,
+  deleteCachedMinutes,
+  deleteCachedManifest,
+  deleteCacheDir,
 } from "./publisher.js";
 
 // Load environment variables
@@ -391,6 +394,146 @@ async function processSummarizeSessions(meetingId, sessions, sttModel = null, mo
   }
 }
 
+/**
+ * Process --uncache: clear cached data for resolved sessions
+ * @param {Object} parsed - Parsed specifier from parseSummarizeArg()
+ * @param {string} uncacheType - Cache type to clear: "all", "minutes", "transcripts", "audio"
+ */
+async function processUncache(parsed, uncacheType) {
+  // Resolve meetingId(s) and optional group filter
+  let meetingIds = [];
+  let groupFilter = null;
+
+  if (parsed.type === 'current') {
+    const meetingNumber = await fetchCurrentMeetingNumber();
+    console.log(`Current IETF meeting: ${meetingNumber}`);
+    meetingIds = [meetingNumber];
+  } else if (parsed.type === 'ietf') {
+    meetingIds = [parsed.meetingNumber];
+  } else if (parsed.type === 'ietf-group') {
+    meetingIds = [parsed.meetingNumber];
+    groupFilter = parsed.group.toLowerCase();
+  } else if (parsed.type === 'interim') {
+    meetingIds = [parsed.date];
+    groupFilter = parsed.group.toLowerCase();
+  } else if (parsed.type === 'interim-all') {
+    meetingIds = [parsed.date];
+  } else if (parsed.type === 'interim-range') {
+    // Enumerate cached meeting IDs that fall within the date range
+    const allIds = await getCachedMeetingIds();
+    const startDate = parsed.startDate;
+    const endDate = parsed.endDate || new Date().toISOString().slice(0, 10);
+    meetingIds = allIds.filter(id =>
+      typeof id === 'string' && id >= startDate && id <= endDate
+    );
+    if (parsed.group) {
+      groupFilter = parsed.group.toLowerCase();
+    }
+  }
+
+  if (meetingIds.length === 0) {
+    console.log("No matching meetings found in cache.");
+    return;
+  }
+
+  let totalCleared = 0;
+
+  for (const meetingId of meetingIds) {
+    const isPlenary = typeof meetingId === 'number';
+    const label = isPlenary ? `IETF ${meetingId}` : `Interim ${meetingId}`;
+    console.log(`\n=== UNCACHE: ${label} (${uncacheType}) ===`);
+
+    // Resolve session IDs for this meeting
+    let sessionIds;
+    let manifest = null;
+
+    try {
+      const sessionGroups = await loadCacheManifest(meetingId);
+      manifest = sessionGroups;
+
+      if (groupFilter) {
+        // Filter to matching group, then extract session IDs
+        sessionIds = sessionGroups
+          .filter(g => g.sessionName.toLowerCase() === groupFilter)
+          .flatMap(g => g.sessions.map(s => s.sessionId));
+      } else {
+        sessionIds = sessionGroups.flatMap(g => g.sessions.map(s => s.sessionId));
+      }
+    } catch {
+      // No manifest — fall back to directory listing
+      sessionIds = await getCachedSessionIds(meetingId);
+      if (groupFilter) {
+        sessionIds = sessionIds.filter(id => {
+          const slug = sessionSlugFromId(id);
+          return slug === groupFilter;
+        });
+      }
+    }
+
+    if (sessionIds.length === 0) {
+      console.log("  No matching sessions found.");
+      continue;
+    }
+
+    let sessionCount = 0;
+
+    for (const sessionId of sessionIds) {
+      let deleted = false;
+
+      // Delete minutes
+      if (uncacheType === 'all' || uncacheType === 'minutes') {
+        if (await deleteCachedMinutes(meetingId, sessionId)) {
+          console.log(`  Deleted minutes: ${sessionId}`);
+          deleted = true;
+        }
+      }
+
+      // Delete transcript
+      if (uncacheType === 'all' || uncacheType === 'transcripts') {
+        const transcriptPath = getTranscriptCachePath(sessionId);
+        try {
+          await fs.unlink(transcriptPath);
+          console.log(`  Deleted transcript: ${sessionId}`);
+          deleted = true;
+        } catch {
+          // File doesn't exist
+        }
+      }
+
+      // Delete audio
+      if (uncacheType === 'all' || uncacheType === 'audio') {
+        const audioPath = getAudioCachePath(sessionId);
+        try {
+          await fs.unlink(audioPath);
+          console.log(`  Deleted audio: ${sessionId}`);
+          deleted = true;
+        } catch {
+          // File doesn't exist
+        }
+      }
+
+      if (deleted) sessionCount++;
+    }
+
+    // Delete manifest if clearing all or minutes and all sessions were targeted
+    if ((uncacheType === 'all' || uncacheType === 'minutes') && !groupFilter) {
+      await deleteCachedManifest(meetingId);
+    }
+
+    // Try to clean up empty directory
+    if (uncacheType === 'all' && !groupFilter) {
+      await deleteCacheDir(meetingId);
+    }
+
+    totalCleared += sessionCount;
+    console.log(`Cleared ${sessionCount} session(s)`);
+  }
+
+  if (meetingIds.length > 1) {
+    console.log(`\nTotal: cleared ${totalCleared} session(s) across ${meetingIds.length} meeting(s)`);
+  }
+}
+
 async function main() {
   const argv = yargs(hideBin(process.argv))
     .usage("Usage: $0 [options]")
@@ -412,6 +555,8 @@ async function main() {
     .example("$0 --preview 123:6LO --audio", "Preview with audio transcription (Google STT)")
     .example("$0 --preview 123:6LO --audio --stt-model gemini", "Preview with Gemini STT")
     .example("$0 --summarize 123 -j 5", "Process 5 sessions in parallel")
+    .example("$0 --uncache 123", "Clear all cached data for IETF 123")
+    .example("$0 --uncache 123:6LO --uncache-type minutes", "Clear only cached minutes for 6LO")
     .option("summarize", {
       alias: "s",
       type: "string",
@@ -475,16 +620,32 @@ async function main() {
       type: "string",
       description: "Preview minutes for a specific session (format: meeting:session-name)",
     })
+    .option("uncache", {
+      type: "string",
+      description: "Clear cached data: number, \"current\", number:group, date:group, date, date+, date-date, or date-date:group",
+    })
+    .option("uncache-type", {
+      type: "string",
+      choices: ["all", "minutes", "transcripts", "audio"],
+      default: "all",
+      description: "Type of cache to clear (default: all)",
+    })
     .check((argv) => {
-      if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview) {
+      if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache) {
         throw new Error(
-          "Must specify at least one action: --summarize, --output, --build, --pages, or --preview",
+          "Must specify at least one action: --summarize, --output, --build, --pages, --preview, or --uncache",
         );
       }
       // Ensure --preview is mutually exclusive with other actions
-      if (argv.preview && (argv.summarize || argv.output || argv.build || argv.pages)) {
+      if (argv.preview && (argv.summarize || argv.output || argv.build || argv.pages || argv.uncache)) {
         throw new Error(
-          "--preview cannot be used with other actions (--summarize, --output, --build, --pages)",
+          "--preview cannot be used with other actions (--summarize, --output, --build, --pages, --uncache)",
+        );
+      }
+      // Ensure --uncache is mutually exclusive with --summarize and --preview
+      if (argv.uncache && (argv.summarize || argv.preview)) {
+        throw new Error(
+          "--uncache cannot be used with --summarize or --preview",
         );
       }
       return true;
@@ -500,6 +661,8 @@ async function main() {
   const doBuild = argv.build || argv.pages;
   const doPages = argv.pages;
   const doPreview = argv.preview;
+  const doUncache = argv.uncache;
+  const uncacheType = argv.uncacheType || "all";
   const source = argv.source;
   const sttModel = argv.audio ? (argv.sttModel || "google") : null;
   const parallel = argv.parallel;
@@ -569,6 +732,12 @@ async function main() {
   }
 
   try {
+    // UNCACHE STAGE: Clear cached data for specified sessions
+    if (doUncache) {
+      const parsed = parseSummarizeArg(argv.uncache);
+      await processUncache(parsed, uncacheType);
+    }
+
     // PREVIEW MODE: Generate and print minutes for a specific session
     if (doPreview) {
       console.log("\n=== PREVIEW MODE ===");
