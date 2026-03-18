@@ -319,6 +319,67 @@ export async function loadCacheManifest(meetingNumber) {
 }
 
 /**
+ * Delete cached minutes and metadata for a specific session
+ * @param {number|string} meetingId - IETF meeting number or date string
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<boolean>} True if files were deleted
+ */
+export async function deleteCachedMinutes(meetingId, sessionId) {
+  let deleted = false;
+  const cachePath = getCacheFile(meetingId, sessionId);
+  const metaPath = getCacheMetaFile(meetingId, sessionId);
+
+  try {
+    await fs.unlink(cachePath);
+    deleted = true;
+  } catch {
+    // File doesn't exist
+  }
+
+  try {
+    await fs.unlink(metaPath);
+  } catch {
+    // File doesn't exist
+  }
+
+  return deleted;
+}
+
+/**
+ * Delete the cache manifest for a meeting
+ * @param {number|string} meetingId - IETF meeting number or date string
+ * @returns {Promise<boolean>} True if manifest was deleted
+ */
+export async function deleteCachedManifest(meetingId) {
+  const manifestPath = path.join(getCacheDir(meetingId), ".manifest.json");
+  try {
+    await fs.unlink(manifestPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Remove meeting cache directory if empty
+ * @param {number|string} meetingId - IETF meeting number or date string
+ * @returns {Promise<boolean>} True if directory was removed
+ */
+export async function deleteCacheDir(meetingId) {
+  const cacheDir = getCacheDir(meetingId);
+  try {
+    const entries = await fs.readdir(cacheDir);
+    if (entries.length === 0) {
+      await fs.rmdir(cacheDir);
+      return true;
+    }
+  } catch {
+    // Directory doesn't exist
+  }
+  return false;
+}
+
+/**
  * Save minutes to the output directory
  * @param {string} sessionName - Name of the session
  * @param {string} content - The markdown content
