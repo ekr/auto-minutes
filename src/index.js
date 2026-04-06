@@ -153,20 +153,16 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
   console.log(`  Fetching context (slides, bluesheet, WG docs): ${session.sessionId}`);
   const context = await fetchContextForSession(session);
 
-  // Report and persist context results immediately so the user sees them
-  // without waiting for transcription, and so metadata is cached even if
-  // transcription subsequently fails.
+  // Report context results immediately so the user sees them without
+  // waiting for transcription. The metadata is persisted later, only if
+  // transcription succeeds, so we don't leave orphaned cache entries for
+  // sessions that had no transcript.
   if (context.slidesAndBluesheet) {
-    await saveCacheMetadata(meetingNumber, session.sessionId, {
-      slides: context.slidesAndBluesheet.slides || [],
-      bluesheetText: context.slidesAndBluesheet.bluesheet || null,
-    });
-
     if (context.slidesAndBluesheet.slides?.length) {
-      console.log(`  Cached ${context.slidesAndBluesheet.slides.length} slide deck(s)`);
+      console.log(`  Fetched ${context.slidesAndBluesheet.slides.length} slide deck(s)`);
     }
     if (context.slidesAndBluesheet.bluesheet) {
-      console.log(`  Cached bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
+      console.log(`  Fetched bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
     }
   }
 
@@ -189,6 +185,13 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
   } catch (error) {
     console.log(`  Could not fetch transcript: ${error.message}`);
     return { minutes: "", wasGenerated: false }; // Return empty minutes if transcript unavailable
+  }
+
+  if (context.slidesAndBluesheet) {
+    await saveCacheMetadata(meetingNumber, session.sessionId, {
+      slides: context.slidesAndBluesheet.slides || [],
+      bluesheetText: context.slidesAndBluesheet.bluesheet || null,
+    });
   }
 
   // Generate minutes using LLM
