@@ -405,7 +405,7 @@ async function processUncache(parsed, uncacheType) {
   let groupFilter = null;
 
   if (parsed.type === 'current') {
-    const meetingNumber = await fetchCurrentMeetingNumber();
+    const { number: meetingNumber } = await fetchCurrentMeetingNumber();
     console.log(`Current IETF meeting: ${meetingNumber}`);
     meetingIds = [meetingNumber];
   } else if (parsed.type === 'ietf') {
@@ -756,7 +756,7 @@ async function main() {
 
       if (parts[0].toLowerCase() === "current") {
         console.log("Resolving current IETF meeting number...");
-        previewMeetingNumber = await fetchCurrentMeetingNumber();
+        ({ number: previewMeetingNumber } = await fetchCurrentMeetingNumber());
         console.log(`Current IETF meeting: ${previewMeetingNumber}`);
       } else {
         previewMeetingNumber = parseInt(parts[0], 10);
@@ -886,8 +886,14 @@ async function main() {
 
         if (parsed.type === 'current') {
           console.log("Resolving current IETF meeting number...");
-          meetingId = await fetchCurrentMeetingNumber();
+          const current = await fetchCurrentMeetingNumber();
+          meetingId = current.number;
           console.log(`Current IETF meeting: ${meetingId}`);
+
+          if (!current.inProgress) {
+            console.log(`IETF ${meetingId} has not started yet; nothing to summarize.`);
+            return;
+          }
 
           console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
           console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);

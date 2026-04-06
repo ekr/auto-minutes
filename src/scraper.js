@@ -342,7 +342,9 @@ export async function fetchValidSessions(fetchFunction, meetingNumber) {
  * Fetches the current or next upcoming IETF meeting number from the datatracker API.
  * "Current" means a meeting whose date range includes today, or the next future meeting
  * if no meeting is currently in progress.
- * @returns {Promise<number>} The current/upcoming IETF meeting number
+ * @returns {Promise<{number: number, inProgress: boolean}>} The meeting number and
+ *   whether that meeting is currently in progress (false means it's the next upcoming
+ *   meeting and hasn't started yet).
  */
 export async function fetchCurrentMeetingNumber() {
   const url = 'https://datatracker.ietf.org/api/v1/meeting/meeting/?type=ietf&limit=10&order_by=-date&format=json';
@@ -362,7 +364,7 @@ export async function fetchCurrentMeetingNumber() {
     end.setDate(end.getDate() + (meeting.days || 7));
 
     if (today >= start && today <= end) {
-      return parseInt(meeting.number, 10);
+      return { number: parseInt(meeting.number, 10), inProgress: true };
     }
   }
 
@@ -379,7 +381,7 @@ export async function fetchCurrentMeetingNumber() {
   }
 
   if (closest) {
-    return parseInt(closest.number, 10);
+    return { number: parseInt(closest.number, 10), inProgress: false };
   }
 
   throw new Error('Could not determine the current IETF meeting number from the datatracker API');
