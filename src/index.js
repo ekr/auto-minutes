@@ -153,6 +153,23 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
   console.log(`  Fetching context (slides, bluesheet, WG docs): ${session.sessionId}`);
   const context = await fetchContextForSession(session);
 
+  // Report and persist context results immediately so the user sees them
+  // without waiting for transcription, and so metadata is cached even if
+  // transcription subsequently fails.
+  if (context.slidesAndBluesheet) {
+    await saveCacheMetadata(meetingNumber, session.sessionId, {
+      slides: context.slidesAndBluesheet.slides || [],
+      bluesheetText: context.slidesAndBluesheet.bluesheet || null,
+    });
+
+    if (context.slidesAndBluesheet.slides?.length) {
+      console.log(`  Cached ${context.slidesAndBluesheet.slides.length} slide deck(s)`);
+    }
+    if (context.slidesAndBluesheet.bluesheet) {
+      console.log(`  Cached bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
+    }
+  }
+
   // Download transcript - either from audio (via STT) or text
   let transcript;
   try {
@@ -172,20 +189,6 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
   } catch (error) {
     console.log(`  Could not fetch transcript: ${error.message}`);
     return { minutes: "", wasGenerated: false }; // Return empty minutes if transcript unavailable
-  }
-
-  if (context.slidesAndBluesheet) {
-    await saveCacheMetadata(meetingNumber, session.sessionId, {
-      slides: context.slidesAndBluesheet.slides || [],
-      bluesheetText: context.slidesAndBluesheet.bluesheet || null,
-    });
-
-    if (context.slidesAndBluesheet.slides?.length) {
-      console.log(`  Cached ${context.slidesAndBluesheet.slides.length} slide deck(s)`);
-    }
-    if (context.slidesAndBluesheet.bluesheet) {
-      console.log(`  Cached bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
-    }
   }
 
   // Generate minutes using LLM
@@ -801,6 +804,17 @@ async function main() {
         // Fetched before transcription so context can help Gemini STT identify speakers
         console.log("  Fetching context (slides, bluesheet, WG docs)...");
         const context = await fetchContextForSession(session);
+
+        // Report context results immediately so the user sees them before
+        // transcription begins. (Preview mode intentionally does not cache.)
+        if (context.slidesAndBluesheet) {
+          if (context.slidesAndBluesheet.slides?.length) {
+            console.log(`  Fetched ${context.slidesAndBluesheet.slides.length} slide deck(s)`);
+          }
+          if (context.slidesAndBluesheet.bluesheet) {
+            console.log(`  Fetched bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
+          }
+        }
 
         // Download transcript (no cache) - either from audio or text
         let transcript;
