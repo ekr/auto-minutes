@@ -892,17 +892,19 @@ async function main() {
 
           if (!current.inProgress) {
             console.log(`IETF ${meetingId} has not started yet; nothing to summarize.`);
-            return;
+            // Fall through: leave sessions undefined so the summarize call
+            // below is skipped, but allow later stages (--output, --build) to
+            // still run against previously-cached meetings.
+          } else {
+            console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
+            console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);
+
+            const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
+            console.log(`Fetching session list from ${source}...`);
+            const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
+            console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
+            sessions = result.validSessions;
           }
-
-          console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} ===`);
-          console.log(`Using model: ${modelName}${sttModel ? ` (STT: ${sttModel})` : ""}`);
-
-          const baseFetchFunction = source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
-          console.log(`Fetching session list from ${source}...`);
-          const result = await fetchSessionsWithValidation(baseFetchFunction, meetingId);
-          console.log(`Found ${result.stats.total} sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
-          sessions = result.validSessions;
         } else if (parsed.type === 'ietf-group') {
           meetingId = parsed.meetingNumber;
           console.log(`\n=== SUMMARIZE STAGE: IETF ${meetingId} — ${parsed.group} ===`);
@@ -948,7 +950,9 @@ async function main() {
           sessions = result.validSessions;
         }
 
-        await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel);
+        if (sessions !== undefined) {
+          await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel);
+        }
       }
     }
 
