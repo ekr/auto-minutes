@@ -127,7 +127,14 @@ function getCacheDir(meetingId) {
 }
 
 /**
- * Get all cached meeting IDs (numbers for plenary, date strings for interims)
+ * Get all cached meeting IDs (numbers for plenary, date strings for interims).
+ *
+ * A meeting is considered "cached" only if its directory contains a
+ * .manifest.json — the manifest is the source of truth for the cache being
+ * complete and ready to consume. Directories that contain only stray files
+ * (e.g. a leftover .meta.json from a session whose transcript fetch failed
+ * before the manifest was written) are skipped silently.
+ *
  * @returns {Promise<Array<number|string>>} Array of meeting IDs
  */
 export async function getCachedMeetingIds() {
@@ -140,17 +147,25 @@ export async function getCachedMeetingIds() {
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
 
-      // Match ietfNNN format (plenary meetings)
+      let id;
       const ietfMatch = entry.name.match(/^ietf(\d+)$/);
       if (ietfMatch) {
-        meetingIds.push(parseInt(ietfMatch[1], 10));
+        id = parseInt(ietfMatch[1], 10);
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(entry.name)) {
+        id = entry.name;
+      } else {
         continue;
       }
 
-      // Match YYYY-MM-DD format (interim meetings)
-      if (/^\d{4}-\d{2}-\d{2}$/.test(entry.name)) {
-        meetingIds.push(entry.name);
+      // Require a manifest — without it the cache dir is incomplete.
+      const manifestPath = path.join(cacheBase, entry.name, ".manifest.json");
+      try {
+        await fs.access(manifestPath);
+      } catch {
+        continue;
       }
+
+      meetingIds.push(id);
     }
 
     // Sort: numbers descending, then date strings descending
