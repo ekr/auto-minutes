@@ -131,8 +131,8 @@ async function runWithConcurrency(tasks, limit) {
  * @returns {Promise<Object>} Object with {minutes: string, wasGenerated: boolean}
  */
 async function generateSessionMinutes(meetingNumber, session, sttModel = null, modelName = null, localAudioPath = null) {
-  // Check cache first
-  if (await cacheExists(meetingNumber, session.sessionId)) {
+  // Check cache first (skip when a local audio file is provided — re-run must be deterministic)
+  if (!localAudioPath && await cacheExists(meetingNumber, session.sessionId)) {
     console.log(`  Loading from cache: ${session.sessionId}`);
     const minutes = await getCachedMinutes(meetingNumber, session.sessionId);
 

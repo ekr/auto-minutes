@@ -5,7 +5,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
-import { execSync } from "child_process";
+import { execSync, spawnSync } from "child_process";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
@@ -650,12 +650,16 @@ export function prepareLocalAudio(session, localPath, verbose = false) {
   // Ensure cache directory exists
   fs.mkdirSync(AUDIO_CACHE_DIR, { recursive: true });
 
-  // Convert to MP3
+  // Convert to MP3 (use spawnSync to avoid shell injection from user-supplied path)
   console.log(`  Converting local file to MP3: ${localPath}`);
-  execSync(
-    `ffmpeg -hide_banner -loglevel error -i "${localPath}" -vn -acodec libmp3lame -q:a 2 "${audioCachePath}"`,
+  const result = spawnSync(
+    "ffmpeg",
+    ["-hide_banner", "-loglevel", "error", "-i", localPath, "-vn", "-acodec", "libmp3lame", "-q:a", "2", audioCachePath],
     { stdio: verbose ? "inherit" : "ignore" },
   );
+  if (result.status !== 0) {
+    throw new Error(`ffmpeg exited with code ${result.status}`);
+  }
 
   if (verbose) {
     const stats = fs.statSync(audioCachePath);
