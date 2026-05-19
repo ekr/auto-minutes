@@ -560,6 +560,7 @@ async function main() {
     .example("$0 --output --build", "Generate output and build site")
     .example("$0 --pages", "Build and prepare GitHub Pages")
     .example("$0 --preview 123:6LO", "Preview minutes for IETF 123 6LO session")
+    .example("$0 --preview 2026-04-14:AIPREF", "Preview minutes for an interim session")
     .example("$0 --preview 123:6LO --audio", "Preview with audio transcription (Google STT)")
     .example("$0 --preview 123:6LO --audio --stt-model gemini", "Preview with Gemini STT")
     .example("$0 --summarize 123 -j 5", "Process 5 sessions in parallel")
@@ -671,6 +672,7 @@ async function main() {
       }
       return true;
     })
+    .strict()
     .help()
     .alias("help", "h")
     .parse();
@@ -781,35 +783,44 @@ async function main() {
       const parts = doPreview.split(":");
       if (parts.length !== 2) {
         throw new Error(
-          "Invalid --preview format. Use: --preview meeting:session-name (e.g., --preview 123:6LO)",
+          "Invalid --preview format. Use: --preview meeting:session-name (e.g., --preview 123:6LO or 2026-04-14:AIPREF)",
         );
       }
 
-      let previewMeetingNumber;
-      const previewSessionName = parts[1];
+      const [previewLeft, previewSessionName] = parts;
+      let allSessions;
 
-      if (parts[0].toLowerCase() === "current") {
-        console.log("Resolving current IETF meeting number...");
-        ({ number: previewMeetingNumber } = await fetchCurrentMeetingNumber());
-        console.log(`Current IETF meeting: ${previewMeetingNumber}`);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(previewLeft)) {
+        // Interim meeting: YYYY-MM-DD:group
+        console.log(`Previewing: Interim ${previewSessionName} (${previewLeft})`);
+        console.log(`Looking up interim meeting for ${previewSessionName} on ${previewLeft}...`);
+        allSessions = await fetchInterimSession(previewLeft, previewSessionName);
+        console.log(`Found ${allSessions.length} session(s)`);
       } else {
-        previewMeetingNumber = parseInt(parts[0], 10);
-        if (isNaN(previewMeetingNumber)) {
-          throw new Error(`Invalid meeting number: ${parts[0]}`);
+        // IETF meeting: NUMBER:group or current:group
+        let previewMeetingNumber;
+        if (previewLeft.toLowerCase() === "current") {
+          console.log("Resolving current IETF meeting number...");
+          ({ number: previewMeetingNumber } = await fetchCurrentMeetingNumber());
+          console.log(`Current IETF meeting: ${previewMeetingNumber}`);
+        } else {
+          previewMeetingNumber = parseInt(previewLeft, 10);
+          if (isNaN(previewMeetingNumber) || !/^\d+$/.test(previewLeft)) {
+            throw new Error(`Invalid meeting selector: "${previewLeft}" (use NUMBER, "current", or YYYY-MM-DD)`);
+          }
         }
+
+        console.log(
+          `Previewing: IETF ${previewMeetingNumber}, Session: ${previewSessionName}`,
+        );
+
+        const baseFetchFunction =
+          source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
+        console.log(`Fetching session list from ${source}...`);
+        const result = await fetchSessionsWithValidation(baseFetchFunction, previewMeetingNumber);
+        console.log(`Found ${result.stats.total} total sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
+        allSessions = result.validSessions;
       }
-
-      console.log(
-        `Previewing: IETF ${previewMeetingNumber}, Session: ${previewSessionName}`,
-      );
-
-      // Fetch all sessions for the meeting
-      const baseFetchFunction =
-        source === "agenda" ? fetchSessionsFromAgenda : fetchSessionsFromProceedings;
-      console.log(`Fetching session list from ${source}...`);
-      const result = await fetchSessionsWithValidation(baseFetchFunction, previewMeetingNumber);
-      console.log(`Found ${result.stats.total} total sessions (${result.stats.valid} valid, ${result.stats.invalid} invalid)`);
-      const allSessions = result.validSessions;
 
       // Filter to matching sessions (case-insensitive)
       const matchingSessions = allSessions.filter(
