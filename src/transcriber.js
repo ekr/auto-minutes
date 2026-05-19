@@ -624,6 +624,48 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
 }
 
 /**
+ * Prepare a local audio/video file for use in the pipeline.
+ * Converts the file to MP3 via ffmpeg and places it in the audio cache slot for the session.
+ * Clears any existing cached audio and transcript for the session first so that each
+ * --audio-file run is deterministic (no stale Cloudflare-derived data can shadow it).
+ * @param {Object} session - Session object with sessionId
+ * @param {string} localPath - Path to local audio/video file
+ * @param {boolean} verbose - Whether to show ffmpeg output
+ * @returns {string} Path to the cached MP3 file
+ */
+export function prepareLocalAudio(session, localPath, verbose = false) {
+  const audioCachePath = getAudioCachePath(session.sessionId);
+  const transcriptCachePath = getTranscriptCachePath(session.sessionId);
+
+  // Clear existing cached audio and transcript
+  if (fs.existsSync(audioCachePath)) {
+    fs.unlinkSync(audioCachePath);
+    if (verbose) console.log(`    [LocalAudio] Cleared cached audio: ${audioCachePath}`);
+  }
+  if (fs.existsSync(transcriptCachePath)) {
+    fs.unlinkSync(transcriptCachePath);
+    if (verbose) console.log(`    [LocalAudio] Cleared cached transcript: ${transcriptCachePath}`);
+  }
+
+  // Ensure cache directory exists
+  fs.mkdirSync(AUDIO_CACHE_DIR, { recursive: true });
+
+  // Convert to MP3
+  console.log(`  Converting local file to MP3: ${localPath}`);
+  execSync(
+    `ffmpeg -hide_banner -loglevel error -i "${localPath}" -vn -acodec libmp3lame -q:a 2 "${audioCachePath}"`,
+    { stdio: verbose ? "inherit" : "ignore" },
+  );
+
+  if (verbose) {
+    const stats = fs.statSync(audioCachePath);
+    console.log(`    [LocalAudio] Converted: ${(stats.size / 1024 / 1024).toFixed(1)} MB → ${audioCachePath}`);
+  }
+
+  return audioCachePath;
+}
+
+/**
  * Download audio for a session (with caching)
  * @param {Object} session - Session object with sessionId
  * @param {boolean} verbose - Whether to log verbose output
@@ -673,19 +715,26 @@ async function downloadSessionAudio(session, verbose = false) {
  * @param {string} apiKey - Gemini API key (required for sttModel "gemini")
  * @param {boolean} verbose - Whether to log verbose output
  * @param {Object} context - Pre-fetched session context (optional, passed to Gemini STT)
+ * @param {string|null} localAudioPath - Path to a local audio/video file to use instead of Meetecho (optional)
  * @returns {Promise<string>} Transcript text
  */
-export async function transcribeSession(session, sttModel, apiKey, verbose = false, context = null) {
+export async function transcribeSession(session, sttModel, apiKey, verbose = false, context = null, localAudioPath = null) {
   const transcriptCachePath = getTranscriptCachePath(session.sessionId);
 
-  // Check transcript cache first
-  if (fs.existsSync(transcriptCachePath)) {
-    console.log(`  Using cached transcript: ${transcriptCachePath}`);
-    return await fsPromises.readFile(transcriptCachePath, "utf-8");
+  // Step 1: Get audio — either convert a local file or download from Meetecho
+  let audioPath;
+  if (localAudioPath) {
+    // prepareLocalAudio clears both audio and transcript caches before converting,
+    // so the transcript cache check below will always miss when a local file is given.
+    audioPath = prepareLocalAudio(session, localAudioPath, verbose);
+  } else {
+    // Check transcript cache first (only relevant when not overriding with a local file)
+    if (fs.existsSync(transcriptCachePath)) {
+      console.log(`  Using cached transcript: ${transcriptCachePath}`);
+      return await fsPromises.readFile(transcriptCachePath, "utf-8");
+    }
+    audioPath = await downloadSessionAudio(session, verbose);
   }
-
-  // Step 1: Download audio
-  const audioPath = await downloadSessionAudio(session, verbose);
 
   // Step 2: Transcribe with chosen backend
   let transcript;

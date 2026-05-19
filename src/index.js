@@ -37,6 +37,8 @@ import {
 // Load environment variables
 dotenv.config();
 
+const SUPPORTED_MEDIA_EXTENSIONS = new Set([".mp4", ".mov", ".mkv", ".webm", ".mp3", ".wav", ".m4a", ".aac", ".ogg"]);
+
 // Global verbose flag
 let verbose = false;
 
@@ -128,7 +130,7 @@ async function runWithConcurrency(tasks, limit) {
  * @param {string} modelName - Full model name to use
  * @returns {Promise<Object>} Object with {minutes: string, wasGenerated: boolean}
  */
-async function generateSessionMinutes(meetingNumber, session, sttModel = null, modelName = null) {
+async function generateSessionMinutes(meetingNumber, session, sttModel = null, modelName = null, localAudioPath = null) {
   // Check cache first
   if (await cacheExists(meetingNumber, session.sessionId)) {
     console.log(`  Loading from cache: ${session.sessionId}`);
@@ -171,7 +173,7 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
   try {
     if (sttModel) {
       console.log(`  Transcribing audio (${sttModel}): ${session.sessionId}`);
-      const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context);
+      const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context, localAudioPath);
       if (typeof result === 'string') {
         transcript = result;
       } else {
@@ -323,7 +325,7 @@ function parseSummarizeArg(value) {
  * @param {Array} sessions - Array of session objects
  * @param {string|null} sttModel - STT model to use, or null for text transcripts
  */
-async function processSummarizeSessions(meetingId, sessions, sttModel = null, modelName = null, parallel = 1) {
+async function processSummarizeSessions(meetingId, sessions, sttModel = null, modelName = null, parallel = 1, localAudioPath = null) {
   if (verbose) {
     console.log("\n=== Session List Structure (JSON) ===");
     console.log(JSON.stringify(sessions, null, 2));
@@ -355,7 +357,7 @@ async function processSummarizeSessions(meetingId, sessions, sttModel = null, mo
   const results = await runWithConcurrency(
     allTasks.map(({ sessionName, session }) => async () => {
       console.log(`  Processing ${sessionName} [${session.sessionId}]...`);
-      const result = await generateSessionMinutes(meetingId, session, sttModel, modelName);
+      const result = await generateSessionMinutes(meetingId, session, sttModel, modelName, localAudioPath);
       if (!result.minutes) {
         console.log(`  Skipping ${sessionName} [${session.sessionId}] - no transcript`);
       } else {
@@ -636,6 +638,10 @@ async function main() {
       default: "all",
       description: "Type of cache to clear (default: all)",
     })
+    .option("audio-file", {
+      type: "string",
+      description: "Use a local audio/video file instead of fetching from Meetecho (requires single-session selector: NUMBER:GROUP or YYYY-MM-DD:GROUP)",
+    })
     .check((argv) => {
       if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache) {
         throw new Error(
@@ -654,6 +660,15 @@ async function main() {
           "--uncache cannot be used with --summarize or --preview",
         );
       }
+      // Validate --audio-file usage
+      if (argv.audioFile) {
+        if (!argv.preview && !argv.summarize) {
+          throw new Error("--audio-file requires --preview or --summarize");
+        }
+        if (argv.output || argv.build || argv.pages || argv.uncache) {
+          throw new Error("--audio-file cannot be used with --output, --build, --pages, or --uncache");
+        }
+      }
       return true;
     })
     .help()
@@ -670,7 +685,7 @@ async function main() {
   const doUncache = argv.uncache;
   const uncacheType = argv.uncacheType || "all";
   const source = argv.source;
-  const sttModel = argv.audio ? (argv.sttModel || "google") : null;
+  const sttModel = (argv.audio || argv.audioFile) ? (argv.sttModel || "google") : null;
   const parallel = argv.parallel;
 
   // Resolve model shorthand names and determine provider
@@ -737,6 +752,19 @@ async function main() {
     }
   }
 
+  // Validate --audio-file path and extension before any network calls
+  if (argv.audioFile) {
+    if (!existsSync(argv.audioFile)) {
+      console.error(`Error: --audio-file '${argv.audioFile}' does not exist`);
+      process.exit(1);
+    }
+    const ext = path.extname(argv.audioFile).toLowerCase();
+    if (!SUPPORTED_MEDIA_EXTENSIONS.has(ext)) {
+      console.error(`Error: Unsupported file extension '${ext}'. Supported: ${[...SUPPORTED_MEDIA_EXTENSIONS].join(", ")}`);
+      process.exit(1);
+    }
+  }
+
   try {
     // UNCACHE STAGE: Clear cached data for specified sessions
     if (doUncache) {
@@ -794,6 +822,13 @@ async function main() {
         );
       }
 
+      if (argv.audioFile && matchingSessions.length !== 1) {
+        const sessionIds = matchingSessions.map(s => s.sessionId).join(", ");
+        throw new Error(
+          `--audio-file requires exactly one session; resolved ${matchingSessions.length}: ${sessionIds}. Pass one as the selector or remove --audio-file.`,
+        );
+      }
+
       console.log(
         `Found ${matchingSessions.length} session(s) matching "${previewSessionName}"`,
       );
@@ -824,7 +859,7 @@ async function main() {
         try {
           if (sttModel) {
             console.log(`  Using audio transcription (${sttModel})...`);
-            const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context);
+            const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context, argv.audioFile || null);
             if (typeof result === 'string') {
               transcript = result;
             } else {
@@ -872,6 +907,12 @@ async function main() {
     // SUMMARIZE STAGE: Download transcripts and generate LLM summaries
     if (doSummarize) {
       const parsed = parseSummarizeArg(argv.summarize);
+
+      if (argv.audioFile && !['ietf-group', 'interim'].includes(parsed.type)) {
+        throw new Error(
+          `--audio-file requires a single-session selector (NUMBER:GROUP or YYYY-MM-DD:GROUP), got ${parsed.type}.`,
+        );
+      }
 
       if (parsed.type === 'interim-range') {
         // Process interims in a date range
@@ -940,6 +981,12 @@ async function main() {
             throw new Error(`No sessions found matching "${parsed.group}" in IETF ${meetingId}.\nAvailable: ${available}`);
           }
           console.log(`Filtered to ${sessions.length} session(s) for ${parsed.group}`);
+          if (argv.audioFile && sessions.length !== 1) {
+            const sessionIds = sessions.map(s => s.sessionId).join(", ");
+            throw new Error(
+              `--audio-file requires exactly one session; resolved ${sessions.length}: ${sessionIds}. Pass one as the selector or remove --audio-file.`,
+            );
+          }
         } else if (parsed.type === 'interim') {
           meetingId = parsed.date;
           console.log(`\n=== SUMMARIZE STAGE: Interim ${parsed.group} (${parsed.date}) ===`);
@@ -948,6 +995,12 @@ async function main() {
           console.log(`Looking up interim meeting for ${parsed.group} on ${parsed.date}...`);
           sessions = await fetchInterimSession(parsed.date, parsed.group);
           console.log(`Found ${sessions.length} session(s)`);
+          if (argv.audioFile && sessions.length !== 1) {
+            const sessionIds = sessions.map(s => s.sessionId).join(", ");
+            throw new Error(
+              `--audio-file requires exactly one session; resolved ${sessions.length}: ${sessionIds}. Pass one as the selector or remove --audio-file.`,
+            );
+          }
         } else if (parsed.type === 'interim-all') {
           meetingId = parsed.date;
           console.log(`\n=== SUMMARIZE STAGE: All interims on ${parsed.date} ===`);
@@ -968,7 +1021,7 @@ async function main() {
         }
 
         if (sessions !== undefined) {
-          await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel);
+          await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel, argv.audioFile || null);
         }
       }
     }
