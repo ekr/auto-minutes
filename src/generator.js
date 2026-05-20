@@ -137,7 +137,7 @@ export function buildContextPrompt(context, sessionName) {
  * @param {string} transcript - The meeting transcript text (JSON format)
  * @param {string} sessionName - Name of the session
  * @param {boolean} verbose - Whether to log verbose status information
- * @param {string} modelName - Full model name to use (e.g., "gemini-3-flash", "claude-sonnet-4-6")
+ * @param {string} modelName - Full model name to use (e.g., "gemini-3.5-flash", "claude-sonnet-4-6")
  * @param {Object} context - Pre-fetched session context (optional)
  * @param {Object} context.slidesAndBluesheet - Slides and bluesheet data from fetchSessionSlidesAndBluesheet
  * @param {Array}  context.wgDocuments - Working group documents from fetchWorkingGroupDocuments
@@ -182,7 +182,7 @@ Generate the meeting minutes:`;
 
   const startTime = Date.now();
   let generatedText;
-  const resolvedModel = modelName || (currentModel === "claude" ? "claude-sonnet-4-6" : "gemini-3-flash-preview");
+  const resolvedModel = modelName || (currentModel === "claude" ? "claude-sonnet-4-6" : "gemini-3.5-flash");
   let usage = { inputTokens: 0, outputTokens: 0, model: resolvedModel };
 
   if (currentModel === "claude") {
