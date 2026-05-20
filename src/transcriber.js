@@ -134,7 +134,7 @@ export function downloadAudio(streamUrl, outputPath, verbose = false) {
  * @param {Object} context - Pre-fetched session context (optional, used to help identify speakers)
  * @returns {Promise<{text: string, usage: {inputTokens: number, outputTokens: number, model: string}}>} Transcript text and token usage
  */
-export async function transcribeAudio(audioPath, apiKey, model = "gemini-3-flash-preview", verbose = false, context = null) {
+export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.5-flash", verbose = false, context = null) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const fileManager = new GoogleAIFileManager(apiKey);
   let dotCount = 0;
@@ -467,58 +467,66 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
     const restHost = apiEndpoint || "speech.googleapis.com";
     const recognizer = `projects/${projectId}/locations/${location}/recognizers/_`;
 
+    // Launch a single batchRecognize call for a given GCS URI; returns the LRO name
+    async function launchBatchRecognize(uri) {
+      const launchToken = await auth.getAccessToken();
+      const res = await fetch(
+        `https://${restHost}/v2/${recognizer}:batchRecognize`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${launchToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            config: {
+              languageCodes: ["en-US"],
+              model,
+              autoDecodingConfig: {},
+              features: model === "chirp_3" ? {
+                diarizationConfig: {},
+              } : undefined,
+            },
+            files: [{ uri }],
+            recognitionOutputConfig: {
+              inlineResponseConfig: {},
+            },
+          }),
+        },
+      );
+      const data = await res.json();
+      if (data.error) {
+        throw new Error(`BatchRecognize failed: ${data.error.message}`);
+      }
+      return data.name;
+    }
+
     // Launch parallel batch recognize calls via REST
     if (verbose) {
       console.log(`    [GoogleSTT] Starting ${gcsUris.length} batch recognition(s)...`);
     }
-    const token = await auth.getAccessToken();
-    const opNames = await Promise.all(
-      gcsUris.map(async (uri) => {
-        const res = await fetch(
-          `https://${restHost}/v2/${recognizer}:batchRecognize`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              config: {
-                languageCodes: ["en-US"],
-                model,
-                autoDecodingConfig: {},
-                features: model === "chirp_3" ? {
-                  diarizationConfig: {},
-                } : undefined,
-              },
-              files: [{ uri }],
-              recognitionOutputConfig: {
-                inlineResponseConfig: {},
-              },
-            }),
-          },
-        );
-        const data = await res.json();
-        if (data.error) {
-          throw new Error(`BatchRecognize failed: ${data.error.message}`);
-        }
-        return data.name;
-      }),
-    );
+    const opNames = await Promise.all(gcsUris.map(uri => launchBatchRecognize(uri)));
 
     for (let i = 0; i < opNames.length; i++) {
       console.log(`    [GoogleSTT] Segment ${i}: operation ${opNames[i]}`);
     }
 
-    // Poll until all complete
+    // Poll until all complete. Detect stalls (no progress for STALL_THRESHOLD_MS)
+    // and restart the segment up to MAX_RETRIES_PER_SEGMENT times.
+    const STALL_THRESHOLD_MS = 5 * 60 * 1000;
+    const MAX_RETRIES_PER_SEGMENT = 2;
     console.log(`    [GoogleSTT] Waiting for ${opNames.length} transcription(s) to complete...`);
     const startTime = Date.now();
     const completed = new Array(opNames.length).fill(false);
     const opResults = new Array(opNames.length).fill(null);
+    const lastProgressPct = new Array(opNames.length).fill(0);
+    const lastProgressTime = new Array(opNames.length).fill(startTime);
+    const retryCount = new Array(opNames.length).fill(0);
 
     while (completed.some(c => !c)) {
       await new Promise(resolve => setTimeout(resolve, 30000));
-      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      const now = Date.now();
+      const elapsed = Math.round((now - startTime) / 1000);
       const pollToken = await auth.getAccessToken();
       const statuses = [];
       for (let i = 0; i < opNames.length; i++) {
@@ -535,8 +543,40 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
             completed[i] = true;
             opResults[i] = data.response;
             statuses.push(`seg${i}: done`);
+            continue;
+          }
+          const pct = data.metadata?.progressPercent || 0;
+          if (pct > lastProgressPct[i]) {
+            lastProgressPct[i] = pct;
+            lastProgressTime[i] = now;
+          }
+          const stalledMs = now - lastProgressTime[i];
+          if (stalledMs >= STALL_THRESHOLD_MS) {
+            if (retryCount[i] >= MAX_RETRIES_PER_SEGMENT) {
+              throw new Error(
+                `Segment ${i} stalled at ${pct}% after ${retryCount[i]} retries; giving up.`,
+              );
+            }
+            retryCount[i]++;
+            const stalledSec = Math.round(stalledMs / 1000);
+            console.log(
+              `    [GoogleSTT] Segment ${i} stalled at ${pct}% for ${stalledSec}s — cancelling and retrying (${retryCount[i]}/${MAX_RETRIES_PER_SEGMENT})`,
+            );
+            // Best-effort cancel of the stuck operation
+            try {
+              await fetch(`https://${restHost}/v2/${opNames[i]}:cancel`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${pollToken}` },
+              });
+            } catch (_) { /* best-effort */ }
+            // Re-launch for the same GCS URI
+            const newOpName = await launchBatchRecognize(gcsUris[i]);
+            opNames[i] = newOpName;
+            lastProgressPct[i] = 0;
+            lastProgressTime[i] = now;
+            console.log(`    [GoogleSTT] Segment ${i}: new operation ${newOpName}`);
+            statuses.push(`seg${i}: restarted`);
           } else {
-            const pct = data.metadata?.progressPercent || 0;
             statuses.push(`seg${i}: ${pct}%`);
           }
         } catch (e) {
@@ -626,8 +666,12 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
 /**
  * Prepare a local audio/video file for use in the pipeline.
  * Converts the file to MP3 via ffmpeg and places it in the audio cache slot for the session.
- * Clears any existing cached audio and transcript for the session first so that each
- * --audio-file run is deterministic (no stale Cloudflare-derived data can shadow it).
+ *
+ * Caches the conversion via a sidecar fingerprint (absolute path + size + mtime).
+ * If the sidecar matches the current input, reuses the cached MP3 and leaves the
+ * transcript cache intact. If the input differs (or no sidecar exists), clears both
+ * the cached MP3 and the cached transcript before re-converting.
+ *
  * @param {Object} session - Session object with sessionId
  * @param {string} localPath - Path to local audio/video file
  * @param {boolean} verbose - Whether to show ffmpeg output
@@ -636,8 +680,35 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
 export function prepareLocalAudio(session, localPath, verbose = false) {
   const audioCachePath = getAudioCachePath(session.sessionId);
   const transcriptCachePath = getTranscriptCachePath(session.sessionId);
+  const sidecarPath = `${audioCachePath}.source.json`;
 
-  // Clear existing cached audio and transcript
+  const absPath = path.resolve(localPath);
+  const inputStats = fs.statSync(absPath);
+  const currentFingerprint = {
+    path: absPath,
+    size: inputStats.size,
+    mtimeMs: inputStats.mtimeMs,
+  };
+
+  // Reuse cached MP3 if the input file is unchanged since the last conversion
+  if (fs.existsSync(audioCachePath) && fs.existsSync(sidecarPath)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(sidecarPath, "utf-8"));
+      if (cached.path === currentFingerprint.path
+          && cached.size === currentFingerprint.size
+          && cached.mtimeMs === currentFingerprint.mtimeMs) {
+        console.log(`  Using cached MP3 conversion: ${audioCachePath}`);
+        return audioCachePath;
+      }
+      if (verbose) {
+        console.log(`    [LocalAudio] Input changed since cached conversion; re-converting`);
+      }
+    } catch (_) {
+      // Corrupt sidecar — fall through and re-convert
+    }
+  }
+
+  // Source changed or first run — clear stale audio + transcript before re-converting
   if (fs.existsSync(audioCachePath)) {
     fs.unlinkSync(audioCachePath);
     if (verbose) console.log(`    [LocalAudio] Cleared cached audio: ${audioCachePath}`);
@@ -646,8 +717,10 @@ export function prepareLocalAudio(session, localPath, verbose = false) {
     fs.unlinkSync(transcriptCachePath);
     if (verbose) console.log(`    [LocalAudio] Cleared cached transcript: ${transcriptCachePath}`);
   }
+  if (fs.existsSync(sidecarPath)) {
+    fs.unlinkSync(sidecarPath);
+  }
 
-  // Ensure cache directory exists
   fs.mkdirSync(AUDIO_CACHE_DIR, { recursive: true });
 
   // Convert to MP3 (use spawnSync to avoid shell injection from user-supplied path)
@@ -660,6 +733,8 @@ export function prepareLocalAudio(session, localPath, verbose = false) {
   if (result.status !== 0) {
     throw new Error(`ffmpeg exited with code ${result.status}`);
   }
+
+  fs.writeFileSync(sidecarPath, JSON.stringify(currentFingerprint));
 
   if (verbose) {
     const stats = fs.statSync(audioCachePath);
@@ -720,23 +795,28 @@ async function downloadSessionAudio(session, verbose = false) {
  * @param {boolean} verbose - Whether to log verbose output
  * @param {Object} context - Pre-fetched session context (optional, passed to Gemini STT)
  * @param {string|null} localAudioPath - Path to a local audio/video file to use instead of Meetecho (optional)
+ * @param {number|null} geminiSegmentSeconds - If set and sttModel is "gemini", split audio into segments of this duration before uploading (optional)
  * @returns {Promise<string>} Transcript text
  */
-export async function transcribeSession(session, sttModel, apiKey, verbose = false, context = null, localAudioPath = null) {
+export async function transcribeSession(session, sttModel, apiKey, verbose = false, context = null, localAudioPath = null, geminiSegmentSeconds = null) {
   const transcriptCachePath = getTranscriptCachePath(session.sessionId);
 
-  // Step 1: Get audio — either convert a local file or download from Meetecho
+  // Step 1: Get audio — either convert a local file or download from Meetecho.
+  // For local files we run prepareLocalAudio first; it preserves the cached
+  // transcript when the input fingerprint matches the previous conversion.
   let audioPath;
   if (localAudioPath) {
-    // prepareLocalAudio clears both audio and transcript caches before converting,
-    // so the transcript cache check below will always miss when a local file is given.
     audioPath = prepareLocalAudio(session, localAudioPath, verbose);
-  } else {
-    // Check transcript cache first (only relevant when not overriding with a local file)
-    if (fs.existsSync(transcriptCachePath)) {
-      console.log(`  Using cached transcript: ${transcriptCachePath}`);
-      return await fsPromises.readFile(transcriptCachePath, "utf-8");
-    }
+  }
+
+  // Check transcript cache (valid in both branches: when localAudioPath was given,
+  // prepareLocalAudio leaves the transcript intact iff it reused the cached MP3)
+  if (fs.existsSync(transcriptCachePath)) {
+    console.log(`  Using cached transcript: ${transcriptCachePath}`);
+    return await fsPromises.readFile(transcriptCachePath, "utf-8");
+  }
+
+  if (!localAudioPath) {
     audioPath = await downloadSessionAudio(session, verbose);
   }
 
@@ -749,10 +829,43 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
     transcript = await transcribeAudioGoogleSTT(audioPath, chirpModel, verbose);
   } else {
     // gemini (default)
-    console.log(`  Transcribing audio with Gemini...`);
-    const result = await transcribeAudio(audioPath, apiKey, "gemini-3-flash-preview", verbose, context);
-    transcript = result.text;
-    usage = result.usage;
+    if (geminiSegmentSeconds && geminiSegmentSeconds > 0) {
+      const duration = getAudioDuration(audioPath);
+      if (duration > geminiSegmentSeconds) {
+        console.log(
+          `  Transcribing audio with Gemini in ${geminiSegmentSeconds}s segments (total ${Math.round(duration)}s)...`,
+        );
+        const segments = await splitAudio(audioPath, geminiSegmentSeconds, verbose);
+        const segmentDir = path.dirname(segments[0]);
+        try {
+          const parts = [];
+          const totalUsage = { inputTokens: 0, outputTokens: 0, model: "gemini-3.5-flash" };
+          for (let i = 0; i < segments.length; i++) {
+            console.log(`  Gemini STT segment ${i + 1}/${segments.length}: ${path.basename(segments[i])}`);
+            const result = await transcribeAudio(segments[i], apiKey, "gemini-3.5-flash", verbose, context);
+            parts.push(result.text);
+            totalUsage.inputTokens += result.usage.inputTokens;
+            totalUsage.outputTokens += result.usage.outputTokens;
+          }
+          transcript = parts.join("\n\n");
+          usage = totalUsage;
+        } finally {
+          await fsPromises.rm(segmentDir, { recursive: true, force: true });
+        }
+      } else {
+        console.log(
+          `  Audio is ${Math.round(duration)}s (<= ${geminiSegmentSeconds}s segment); transcribing as a single piece...`,
+        );
+        const result = await transcribeAudio(audioPath, apiKey, "gemini-3.5-flash", verbose, context);
+        transcript = result.text;
+        usage = result.usage;
+      }
+    } else {
+      console.log(`  Transcribing audio with Gemini...`);
+      const result = await transcribeAudio(audioPath, apiKey, "gemini-3.5-flash", verbose, context);
+      transcript = result.text;
+      usage = result.usage;
+    }
   }
 
   // For Gemini STT, apply truncation detection with retry

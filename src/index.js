@@ -130,7 +130,7 @@ async function runWithConcurrency(tasks, limit) {
  * @param {string} modelName - Full model name to use
  * @returns {Promise<Object>} Object with {minutes: string, wasGenerated: boolean}
  */
-async function generateSessionMinutes(meetingNumber, session, sttModel = null, modelName = null, localAudioPath = null) {
+async function generateSessionMinutes(meetingNumber, session, sttModel = null, modelName = null, localAudioPath = null, geminiSegmentSeconds = null) {
   // Check cache first (skip when a local audio file is provided — re-run must be deterministic)
   if (!localAudioPath && await cacheExists(meetingNumber, session.sessionId)) {
     console.log(`  Loading from cache: ${session.sessionId}`);
@@ -173,7 +173,7 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
   try {
     if (sttModel) {
       console.log(`  Transcribing audio (${sttModel}): ${session.sessionId}`);
-      const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context, localAudioPath);
+      const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context, localAudioPath, geminiSegmentSeconds);
       if (typeof result === 'string') {
         transcript = result;
       } else {
@@ -325,7 +325,7 @@ function parseSummarizeArg(value) {
  * @param {Array} sessions - Array of session objects
  * @param {string|null} sttModel - STT model to use, or null for text transcripts
  */
-async function processSummarizeSessions(meetingId, sessions, sttModel = null, modelName = null, parallel = 1, localAudioPath = null) {
+async function processSummarizeSessions(meetingId, sessions, sttModel = null, modelName = null, parallel = 1, localAudioPath = null, geminiSegmentSeconds = null) {
   if (verbose) {
     console.log("\n=== Session List Structure (JSON) ===");
     console.log(JSON.stringify(sessions, null, 2));
@@ -357,7 +357,7 @@ async function processSummarizeSessions(meetingId, sessions, sttModel = null, mo
   const results = await runWithConcurrency(
     allTasks.map(({ sessionName, session }) => async () => {
       console.log(`  Processing ${sessionName} [${session.sessionId}]...`);
-      const result = await generateSessionMinutes(meetingId, session, sttModel, modelName, localAudioPath);
+      const result = await generateSessionMinutes(meetingId, session, sttModel, modelName, localAudioPath, geminiSegmentSeconds);
       if (!result.minutes) {
         console.log(`  Skipping ${sessionName} [${session.sessionId}] - no transcript`);
       } else {
@@ -590,8 +590,8 @@ async function main() {
     .option("model", {
       alias: "m",
       type: "string",
-      default: "gemini-3-flash-preview",
-      description: "LLM model to use (e.g., gemini-3-flash, claude-sonnet-4-6, or shorthand: gemini, claude)",
+      default: "gemini-3.5-flash",
+      description: "LLM model to use (e.g., gemini-3.5-flash, claude-sonnet-4-6, or shorthand: gemini, claude)",
     })
     .option("verbose", {
       alias: "v",
@@ -613,6 +613,10 @@ async function main() {
       type: "string",
       default: "google",
       description: "STT backend when --audio is used: \"google\", \"google:chirp_2\", \"google:chirp_3\" (default), or \"gemini\"",
+    })
+    .option("gemini-segment-seconds", {
+      type: "number",
+      description: "When using --stt-model gemini, split audio into segments of this many seconds and transcribe each independently",
     })
     .option("timeout", {
       type: "number",
@@ -670,6 +674,15 @@ async function main() {
           throw new Error("--audio-file cannot be used with --output, --build, --pages, or --uncache");
         }
       }
+      // Validate --gemini-segment-seconds usage
+      if (argv.geminiSegmentSeconds !== undefined) {
+        if (!Number.isFinite(argv.geminiSegmentSeconds) || argv.geminiSegmentSeconds <= 0) {
+          throw new Error("--gemini-segment-seconds must be a positive number");
+        }
+        if (argv.sttModel !== "gemini") {
+          throw new Error("--gemini-segment-seconds requires --stt-model gemini");
+        }
+      }
       return true;
     })
     .strict()
@@ -693,7 +706,7 @@ async function main() {
   // Resolve model shorthand names and determine provider
   let modelName = argv.model;
   if (modelName === "gemini") {
-    modelName = "gemini-3-flash-preview";
+    modelName = "gemini-3.5-flash";
   } else if (modelName === "claude") {
     modelName = "claude-sonnet-4-6";
   }
@@ -870,7 +883,7 @@ async function main() {
         try {
           if (sttModel) {
             console.log(`  Using audio transcription (${sttModel})...`);
-            const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context, argv.audioFile || null);
+            const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context, argv.audioFile || null, argv.geminiSegmentSeconds || null);
             if (typeof result === 'string') {
               transcript = result;
             } else {
@@ -943,7 +956,7 @@ async function main() {
           if (filtered.length === 0) continue;
           try {
             console.log(`\n--- Processing interims for ${date} ---`);
-            await processSummarizeSessions(date, filtered, sttModel, modelName, parallel);
+            await processSummarizeSessions(date, filtered, sttModel, modelName, parallel, null, argv.geminiSegmentSeconds || null);
           } catch (error) {
             console.warn(`Warning: Failed to process interims for ${date}: ${error.message}`);
           }
@@ -1032,7 +1045,7 @@ async function main() {
         }
 
         if (sessions !== undefined) {
-          await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel, argv.audioFile || null);
+          await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel, argv.audioFile || null, argv.geminiSegmentSeconds || null);
         }
       }
     }
