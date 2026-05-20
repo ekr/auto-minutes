@@ -11,7 +11,7 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout } from "./generator.js";
-import { transcribeSession, getTranscriptCachePath, getAudioCachePath } from "./transcriber.js";
+import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript } from "./transcriber.js";
 import { recordUsage, printSummary } from "./accounting.js";
 import {
   saveMinutes,
@@ -130,9 +130,9 @@ async function runWithConcurrency(tasks, limit) {
  * @param {string} modelName - Full model name to use
  * @returns {Promise<Object>} Object with {minutes: string, wasGenerated: boolean}
  */
-async function generateSessionMinutes(meetingNumber, session, sttModel = null, modelName = null, localAudioPath = null, geminiSegmentSeconds = null) {
-  // Check cache first (skip when a local audio file is provided — re-run must be deterministic)
-  if (!localAudioPath && await cacheExists(meetingNumber, session.sessionId)) {
+async function generateSessionMinutes(meetingNumber, session, sttModel = null, modelName = null, localAudioPath = null, geminiSegmentSeconds = null, localTranscriptPath = null) {
+  // Check cache first (skip when a local audio/transcript file is provided — re-run must be deterministic)
+  if (!localAudioPath && !localTranscriptPath && await cacheExists(meetingNumber, session.sessionId)) {
     console.log(`  Loading from cache: ${session.sessionId}`);
     const minutes = await getCachedMinutes(meetingNumber, session.sessionId);
 
@@ -168,10 +168,13 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
     }
   }
 
-  // Download transcript - either from audio (via STT) or text
+  // Download transcript - from local file, audio (via STT), or text
   let transcript;
   try {
-    if (sttModel) {
+    if (localTranscriptPath) {
+      console.log(`  Using local transcript: ${localTranscriptPath}`);
+      transcript = prepareLocalTranscript(session, localTranscriptPath, verbose);
+    } else if (sttModel) {
       console.log(`  Transcribing audio (${sttModel}): ${session.sessionId}`);
       const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context, localAudioPath, geminiSegmentSeconds);
       if (typeof result === 'string') {
@@ -325,7 +328,7 @@ function parseSummarizeArg(value) {
  * @param {Array} sessions - Array of session objects
  * @param {string|null} sttModel - STT model to use, or null for text transcripts
  */
-async function processSummarizeSessions(meetingId, sessions, sttModel = null, modelName = null, parallel = 1, localAudioPath = null, geminiSegmentSeconds = null) {
+async function processSummarizeSessions(meetingId, sessions, sttModel = null, modelName = null, parallel = 1, localAudioPath = null, geminiSegmentSeconds = null, localTranscriptPath = null) {
   if (verbose) {
     console.log("\n=== Session List Structure (JSON) ===");
     console.log(JSON.stringify(sessions, null, 2));
@@ -357,7 +360,7 @@ async function processSummarizeSessions(meetingId, sessions, sttModel = null, mo
   const results = await runWithConcurrency(
     allTasks.map(({ sessionName, session }) => async () => {
       console.log(`  Processing ${sessionName} [${session.sessionId}]...`);
-      const result = await generateSessionMinutes(meetingId, session, sttModel, modelName, localAudioPath, geminiSegmentSeconds);
+      const result = await generateSessionMinutes(meetingId, session, sttModel, modelName, localAudioPath, geminiSegmentSeconds, localTranscriptPath);
       if (!result.minutes) {
         console.log(`  Skipping ${sessionName} [${session.sessionId}] - no transcript`);
       } else {
@@ -647,6 +650,10 @@ async function main() {
       type: "string",
       description: "Use a local audio/video file instead of fetching from Meetecho (requires single-session selector: NUMBER:GROUP or YYYY-MM-DD:GROUP)",
     })
+    .option("transcript-file", {
+      type: "string",
+      description: "Use a local transcript file instead of fetching/transcribing audio (requires single-session selector: NUMBER:GROUP or YYYY-MM-DD:GROUP)",
+    })
     .check((argv) => {
       if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache) {
         throw new Error(
@@ -672,6 +679,21 @@ async function main() {
         }
         if (argv.output || argv.build || argv.pages || argv.uncache) {
           throw new Error("--audio-file cannot be used with --output, --build, --pages, or --uncache");
+        }
+      }
+      // Validate --transcript-file usage
+      if (argv.transcriptFile) {
+        if (!argv.preview && !argv.summarize) {
+          throw new Error("--transcript-file requires --preview or --summarize");
+        }
+        if (argv.output || argv.build || argv.pages || argv.uncache) {
+          throw new Error("--transcript-file cannot be used with --output, --build, --pages, or --uncache");
+        }
+        if (argv.audioFile) {
+          throw new Error("--transcript-file cannot be used with --audio-file");
+        }
+        if (argv.audio) {
+          throw new Error("--transcript-file cannot be used with --audio");
         }
       }
       // Validate --gemini-segment-seconds usage
@@ -780,6 +802,14 @@ async function main() {
     }
   }
 
+  // Validate --transcript-file path before any network calls
+  if (argv.transcriptFile) {
+    if (!existsSync(argv.transcriptFile)) {
+      console.error(`Error: --transcript-file '${argv.transcriptFile}' does not exist`);
+      process.exit(1);
+    }
+  }
+
   try {
     // UNCACHE STAGE: Clear cached data for specified sessions
     if (doUncache) {
@@ -852,6 +882,12 @@ async function main() {
           `--audio-file requires exactly one session; resolved ${matchingSessions.length}: ${sessionIds}. Pass one as the selector or remove --audio-file.`,
         );
       }
+      if (argv.transcriptFile && matchingSessions.length !== 1) {
+        const sessionIds = matchingSessions.map(s => s.sessionId).join(", ");
+        throw new Error(
+          `--transcript-file requires exactly one session; resolved ${matchingSessions.length}: ${sessionIds}. Pass one as the selector or remove --transcript-file.`,
+        );
+      }
 
       console.log(
         `Found ${matchingSessions.length} session(s) matching "${previewSessionName}"`,
@@ -878,10 +914,13 @@ async function main() {
           }
         }
 
-        // Download transcript (no cache) - either from audio or text
+        // Download transcript (no cache) - from local file, audio, or text
         let transcript;
         try {
-          if (sttModel) {
+          if (argv.transcriptFile) {
+            console.log(`  Using local transcript: ${argv.transcriptFile}`);
+            transcript = prepareLocalTranscript(session, argv.transcriptFile, verbose);
+          } else if (sttModel) {
             console.log(`  Using audio transcription (${sttModel})...`);
             const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context, argv.audioFile || null, argv.geminiSegmentSeconds || null);
             if (typeof result === 'string') {
@@ -935,6 +974,11 @@ async function main() {
       if (argv.audioFile && !['ietf-group', 'interim'].includes(parsed.type)) {
         throw new Error(
           `--audio-file requires a single-session selector (NUMBER:GROUP or YYYY-MM-DD:GROUP), got ${parsed.type}.`,
+        );
+      }
+      if (argv.transcriptFile && !['ietf-group', 'interim'].includes(parsed.type)) {
+        throw new Error(
+          `--transcript-file requires a single-session selector (NUMBER:GROUP or YYYY-MM-DD:GROUP), got ${parsed.type}.`,
         );
       }
 
@@ -1011,6 +1055,12 @@ async function main() {
               `--audio-file requires exactly one session; resolved ${sessions.length}: ${sessionIds}. Pass one as the selector or remove --audio-file.`,
             );
           }
+          if (argv.transcriptFile && sessions.length !== 1) {
+            const sessionIds = sessions.map(s => s.sessionId).join(", ");
+            throw new Error(
+              `--transcript-file requires exactly one session; resolved ${sessions.length}: ${sessionIds}. Pass one as the selector or remove --transcript-file.`,
+            );
+          }
         } else if (parsed.type === 'interim') {
           meetingId = parsed.date;
           console.log(`\n=== SUMMARIZE STAGE: Interim ${parsed.group} (${parsed.date}) ===`);
@@ -1023,6 +1073,12 @@ async function main() {
             const sessionIds = sessions.map(s => s.sessionId).join(", ");
             throw new Error(
               `--audio-file requires exactly one session; resolved ${sessions.length}: ${sessionIds}. Pass one as the selector or remove --audio-file.`,
+            );
+          }
+          if (argv.transcriptFile && sessions.length !== 1) {
+            const sessionIds = sessions.map(s => s.sessionId).join(", ");
+            throw new Error(
+              `--transcript-file requires exactly one session; resolved ${sessions.length}: ${sessionIds}. Pass one as the selector or remove --transcript-file.`,
             );
           }
         } else if (parsed.type === 'interim-all') {
@@ -1045,7 +1101,7 @@ async function main() {
         }
 
         if (sessions !== undefined) {
-          await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel, argv.audioFile || null, argv.geminiSegmentSeconds || null);
+          await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel, argv.audioFile || null, argv.geminiSegmentSeconds || null, argv.transcriptFile || null);
         }
       }
     }

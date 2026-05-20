@@ -745,6 +745,42 @@ export function prepareLocalAudio(session, localPath, verbose = false) {
 }
 
 /**
+ * Prepare a local transcript file for use in the pipeline.
+ * Copies the local file into the transcript cache slot so downstream stages
+ * (output, build) pick it up. Clears any existing cached audio and transcript
+ * for the session first so that each --transcript-file run is deterministic
+ * (no stale Meetecho-derived data can shadow it).
+ * @param {Object} session - Session object with sessionId
+ * @param {string} localPath - Path to local transcript file
+ * @param {boolean} verbose - Whether to log verbose output
+ * @returns {string} The transcript text
+ */
+export function prepareLocalTranscript(session, localPath, verbose = false) {
+  const audioCachePath = getAudioCachePath(session.sessionId);
+  const transcriptCachePath = getTranscriptCachePath(session.sessionId);
+
+  if (fs.existsSync(audioCachePath)) {
+    fs.unlinkSync(audioCachePath);
+    if (verbose) console.log(`    [LocalTranscript] Cleared cached audio: ${audioCachePath}`);
+  }
+  if (fs.existsSync(transcriptCachePath)) {
+    fs.unlinkSync(transcriptCachePath);
+    if (verbose) console.log(`    [LocalTranscript] Cleared cached transcript: ${transcriptCachePath}`);
+  }
+
+  const transcript = fs.readFileSync(localPath, "utf-8");
+
+  fs.mkdirSync(TRANSCRIPT_CACHE_DIR, { recursive: true });
+  fs.writeFileSync(transcriptCachePath, transcript);
+
+  if (verbose) {
+    console.log(`    [LocalTranscript] Wrote ${transcript.length} chars → ${transcriptCachePath}`);
+  }
+
+  return transcript;
+}
+
+/**
  * Download audio for a session (with caching)
  * @param {Object} session - Session object with sessionId
  * @param {boolean} verbose - Whether to log verbose output
