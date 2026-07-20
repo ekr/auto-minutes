@@ -7,6 +7,7 @@ import fs from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import fetch from "node-fetch";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
@@ -551,6 +552,66 @@ async function processUncache(parsed, uncacheType) {
   }
 }
 
+/**
+ * Resolve a GitHub token for the API: prefer an explicit env var, otherwise
+ * fall back to the token the `gh` CLI is already logged in with.
+ * @returns {Promise<string>}
+ */
+async function resolveGitHubToken() {
+  if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
+  if (process.env.GH_TOKEN) return process.env.GH_TOKEN;
+  try {
+    const { execFileSync } = await import("child_process");
+    const token = execFileSync("gh", ["auth", "token"], { encoding: "utf8" }).trim();
+    if (token) return token;
+  } catch {
+    // gh not installed or not logged in — fall through to the error below.
+  }
+  throw new Error(
+    "No GitHub token found. Set GITHUB_TOKEN (or GH_TOKEN), or run `gh auth login`.",
+  );
+}
+
+/**
+ * Process --uncache-remote: dispatch the remote repo's sync workflow so it
+ * deletes the cached artifacts for these sessions and regenerates them
+ * server-side. Nothing is read or written locally.
+ * @param {string[]} selectors - Selector strings (already validated)
+ * @param {string} uncacheType - "minutes" or "all"
+ * @param {{repo: string, workflow: string, ref: string}} opts
+ */
+async function dispatchRemoteUncache(selectors, uncacheType, { repo, workflow, ref }) {
+  // The workflow reads one "<selector> <type>" per line of the selectors input.
+  const selectorsInput = selectors.map((s) => `${s} ${uncacheType}`).join("\n");
+
+  const token = await resolveGitHubToken();
+  const url = `https://api.github.com/repos/${repo}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "auto-minutes",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ref, inputs: { selectors: selectorsInput } }),
+  });
+
+  // A successful workflow dispatch returns 204 No Content.
+  if (response.status !== 204) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(
+      `Workflow dispatch failed (HTTP ${response.status}) for ${repo} ${workflow}@${ref}` +
+        (detail ? `: ${detail}` : ""),
+    );
+  }
+
+  console.log(`Dispatched ${workflow} on ${repo}@${ref} to uncache (${uncacheType}) and regenerate:`);
+  for (const s of selectors) console.log(`  ${s}`);
+  console.log(`Watch: https://github.com/${repo}/actions/workflows/${workflow}`);
+}
+
 async function main() {
   const argv = yargs(hideBin(process.argv))
     .usage("Usage: $0 [options]")
@@ -575,6 +636,8 @@ async function main() {
     .example("$0 --summarize 123 -j 5", "Process 5 sessions in parallel")
     .example("$0 --uncache 123", "Clear all cached data for IETF 123")
     .example("$0 --uncache 123:6LO --uncache-type minutes", "Clear only cached minutes for 6LO")
+    .example("$0 --uncache-remote 123:6LO", "Uncache & regenerate 6LO on the remote (server-side; nothing local)")
+    .example("$0 --uncache-remote 2026-07-08:CBOR --uncache-type all", "Also re-download & re-transcribe, on the remote")
     .option("summarize", {
       alias: "s",
       type: "string",
@@ -652,6 +715,25 @@ async function main() {
       default: "all",
       description: "Type of cache to clear (default: all)",
     })
+    .option("uncache-remote", {
+      type: "array",
+      description: "Uncache and regenerate sessions on the remote repo by dispatching its sync workflow (does nothing locally). Same selector grammar as --uncache; repeat the flag for several. Honors --uncache-type minutes|all (default minutes).",
+    })
+    .option("repo", {
+      type: "string",
+      default: "ietf-minutes/ietf-minutes-data",
+      description: "owner/repo to dispatch --uncache-remote against",
+    })
+    .option("workflow", {
+      type: "string",
+      default: "sync.yaml",
+      description: "Workflow file to dispatch for --uncache-remote",
+    })
+    .option("ref", {
+      type: "string",
+      default: "main",
+      description: "Git ref the dispatched --uncache-remote workflow runs from",
+    })
     .option("audio-file", {
       type: "string",
       description: "Use a local audio/video file instead of fetching from Meetecho (requires single-session selector: NUMBER:GROUP or YYYY-MM-DD:GROUP)",
@@ -666,10 +748,30 @@ async function main() {
       description: "Skip the minimum-word-count check on transcripts (for legitimately short sessions)",
     })
     .check((argv) => {
-      if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache) {
+      if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache && !argv.uncacheRemote) {
         throw new Error(
-          "Must specify at least one action: --summarize, --output, --build, --pages, --preview, or --uncache",
+          "Must specify at least one action: --summarize, --output, --build, --pages, --preview, --uncache, or --uncache-remote",
         );
+      }
+      // --uncache-remote is a standalone action: it dispatches a remote
+      // workflow and touches nothing locally, so it can't be mixed with the
+      // local pipeline stages.
+      if (argv.uncacheRemote) {
+        if (argv.summarize || argv.output || argv.build || argv.pages || argv.preview || argv.uncache) {
+          throw new Error("--uncache-remote cannot be combined with other actions");
+        }
+        // The remote workflow only knows how to drop minutes (re-run the LLM)
+        // or all (also re-download and re-transcribe).
+        if (argv.uncacheType && !["minutes", "all"].includes(argv.uncacheType)) {
+          throw new Error("--uncache-remote supports only --uncache-type minutes or all");
+        }
+        for (const sel of argv.uncacheRemote) {
+          try {
+            parseSummarizeArg(String(sel));
+          } catch (e) {
+            throw new Error(`Invalid --uncache-remote selector "${sel}": ${e.message}`);
+          }
+        }
       }
       // Ensure --preview is mutually exclusive with other actions
       if (argv.preview && (argv.summarize || argv.output || argv.build || argv.pages || argv.uncache)) {
@@ -736,6 +838,23 @@ async function main() {
   const source = argv.source;
   const sttModel = (argv.audio || argv.audioFile) ? (argv.sttModel || "google") : null;
   const parallel = argv.parallel;
+
+  // REMOTE UNCACHE: dispatch the sync workflow to delete and regenerate the
+  // given sessions on the remote repo. Terminal action; nothing runs locally.
+  if (argv.uncacheRemote) {
+    const selectors = argv.uncacheRemote.map(String);
+    // --uncache-type defaults to "all" for the local path; for the remote it
+    // defaults to the cheaper minutes-only. Distinguish an explicit flag from
+    // the yargs default rather than inheriting "all".
+    const typed = process.argv.some((a) => a === "--uncache-type" || a.startsWith("--uncache-type="));
+    const remoteType = typed ? argv.uncacheType : "minutes";
+    await dispatchRemoteUncache(selectors, remoteType, {
+      repo: argv.repo,
+      workflow: argv.workflow,
+      ref: argv.ref,
+    });
+    return;
+  }
 
   // Resolve model shorthand names and determine provider
   let modelName = argv.model;
