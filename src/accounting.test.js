@@ -60,6 +60,19 @@ describe('computeCostSummary', () => {
     expect(summary.allKnown).toBe(true);
   });
 
+  test('classifies a non-finite audioSeconds (e.g. ffprobe failure) as a token record, not audio', () => {
+    const summary = computeCostSummary([
+      { model: 'deepgram:nova-3', audioSeconds: NaN, inputTokens: 0, outputTokens: 0 },
+    ]);
+
+    expect(summary.rows).toHaveLength(1);
+    const [row] = summary.rows;
+    expect(row.kind).toBe('tokens');
+    expect(row.model).toBe('deepgram:nova-3');
+    expect(row.inputTokens).toBe(0);
+    expect(row.outputTokens).toBe(0);
+  });
+
   test('returns no rows and no cost for an empty record set', () => {
     const summary = computeCostSummary([]);
     expect(summary.rows).toEqual([]);
