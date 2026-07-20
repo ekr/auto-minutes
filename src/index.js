@@ -14,6 +14,7 @@ import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscri
 import { initializeClaude, generateMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
 import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript } from "./transcriber.js";
 import { recordUsage, printSummary } from "./accounting.js";
+import { isRecordingUnavailable, shouldExitNonZero } from "./skip-classifier.js";
 import {
   saveMinutes,
   generateIndex,
@@ -187,7 +188,8 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
     assertTranscriptSubstantial(transcript, session.sessionName, { allowShort: allowShortTranscript });
   } catch (error) {
     console.log(`  Skipping ${session.sessionId} — ${error.message}`);
-    return { minutes: "", wasGenerated: false, reason: error.message }; // Return empty minutes if transcript unavailable/invalid
+    // Return empty minutes if transcript unavailable/invalid
+    return { minutes: "", wasGenerated: false, reason: error.message, recordingUnavailable: isRecordingUnavailable(error.message) };
   }
 
   if (context.slidesAndBluesheet) {
@@ -206,7 +208,9 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
     recordUsage(result.usage);
   } catch (error) {
     console.log(`  Could not generate minutes: ${error.message}`);
-    return { minutes: "", wasGenerated: false, reason: error.message };
+    // Minutes-generation failures (LLM/API errors) are never benign, even
+    // if the transcript itself was fine.
+    return { minutes: "", wasGenerated: false, reason: error.message, recordingUnavailable: false };
   }
 
   // Save to cache
@@ -390,6 +394,7 @@ async function processSummarizeSessions(meetingId, sessions, sttModel = null, mo
           sessionName,
           sessionId: session.sessionId,
           reason: result.reason || "no transcript",
+          recordingUnavailable: result.recordingUnavailable === true,
         });
       }
     }
@@ -1387,7 +1392,7 @@ async function main() {
       await buildSite(doPages);
     }
 
-    if (allSkipped.length > 0) {
+    if (shouldExitNonZero(allSkipped)) {
       process.exitCode = 1;
     }
   } catch (error) {
