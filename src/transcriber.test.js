@@ -524,6 +524,52 @@ describe('applyNameHybrid', () => {
     expect(result.usage).toEqual({ inputTokens: 120, outputTokens: 30, model: 'gemini-3.5-flash' });
   });
 
+  test('feeds bluesheet participant names from context into the Gemini naming prompt', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify({ 'Speaker 1': 'Jane Smith' }),
+        usageMetadata: { promptTokenCount: 50, candidatesTokenCount: 10 },
+      },
+    });
+
+    const context = {
+      slidesAndBluesheet: {
+        bluesheet: [
+          'Bluesheet for IETF-124: privacypass  Monday 09:30',
+          '================================================================',
+          '2 attendees.',
+          '',
+          'Jane Smith\tExample Corp',
+          'John Doe\tAcme Inc',
+        ].join('\n'),
+      },
+    };
+
+    const chirpTranscript = '[00:14:32] Speaker 1: Hello everyone.';
+    const result = await applyNameHybrid(chirpTranscript, 'fake-key', context, false);
+
+    const contents = mockGenerateContent.mock.calls[0][0];
+    const promptText = contents.map(c => c.text).join('\n');
+    expect(promptText).toContain('Jane Smith');
+    expect(promptText).toContain('John Doe');
+    expect(result.text).toContain('[00:14:32] **Jane Smith**: Hello everyone.');
+  });
+
+  test('passes null participantsList when context has no bluesheet', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify({ 'Speaker 1': 'Jane Smith' }),
+        usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+      },
+    });
+
+    await applyNameHybrid('Speaker 1: hi', 'fake-key', {}, false);
+
+    const contents = mockGenerateContent.mock.calls[0][0];
+    const promptText = contents.map(c => c.text).join('\n');
+    expect(promptText).not.toContain('A list of expected participants');
+  });
+
   test('is text-only: never sends audio fileData to Gemini', async () => {
     mockGenerateContent.mockResolvedValue({
       response: {
