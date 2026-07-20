@@ -14,7 +14,7 @@ src/
   transcriber.js    — Audio download, STT transcription (Gemini / Google Cloud STT / Deepgram)
   speaker-names.js  — Gemini speaker-label→name mapping (shared by transcriber.js and transcribe-diarize.js)
   publisher.js      — File system output, cache management, index generation
-  accounting.js     — Token usage tracking and summary
+  accounting.js     — Token and audio (STT) usage tracking and cost summary
 ```
 
 ## Data Flow
@@ -63,6 +63,10 @@ Controlled via `--stt-model`:
 - `gemini` — Gemini File API (streaming with retry). Produces inline speaker names but no reliable timestamps (an LLM has no frame clock); fragile on very long (2h+) sessions due to `streamGenerateContent` drops.
 - `deepgram` / `deepgram:nova-2` / `deepgram:nova-3` (default) — Deepgram prerecorded/batch API (`transcribeAudioDeepgram`, a single `POST` of the raw audio, no GCS bucket or chunking). The body is streamed from disk via `fs.createReadStream` (with an explicit `Content-Length`, recreated fresh on every retry attempt since a stream can't be resent) rather than buffered into memory, so concurrent uploads under `-j` don't accumulate large in-memory buffers and starve the event loop into GC pauses. Returns word-level timestamps and diarization in one response, formatted into the same `[HH:MM:SS] Speaker N:` shape as chirp. Keyterm boosting (`buildDeepgramKeyterms`) seeds the request with the session's bluesheet participant names and active draft names (`generator.js`'s `activeDraftNames`), deduped and capped at 100; nova-3 uses the `keyterm` query param, earlier models use `keywords`.
 - `google+names` / `google:chirp_3+names` / `deepgram+names` / `deepgram:nova-3+names` — hybrid: runs the diarizing batch path above (chirp_3 or Deepgram), then makes one **text-only** Gemini call (`applyNameHybrid` in `transcriber.js`, wrapping `speaker-names.js`, no audio re-upload) to map `Speaker N` → real names using the session's bluesheet participants as context. Combines the batch backend's real timestamps/robustness with Gemini's name identification. Fails soft: if the name-mapping call errors, the session falls back to the plain `Speaker N` transcript with a warning, rather than failing. `google:chirp_2+names` is rejected at validation time — chirp_2 emits no `Speaker N:` labels, so the name-mapping step would never have anything to rename.
+
+### Cost accounting (tokens and audio minutes)
+
+`accounting.js` prices two kinds of usage records: token records (`{model, inputTokens, outputTokens}`, priced per-1M-token via `PRICING`) and audio records (`{model, audioSeconds}`, priced per-minute via `AUDIO_PRICING`) — the latter for STT backends billed by audio duration rather than tokens (currently Deepgram; chirp is a documented extension point but not priced). `computeCostSummary(records)` is the pure aggregation/pricing core; `printSummary()` is a thin console formatter over it. For a `deepgram:*+names` hybrid, `transcribeSession` records the Deepgram audio usage and the Gemini name-mapping token usage as two separate `recordUsage` calls (not merged into one object), so the summary shows both as distinct lines with independent costs.
 
 ### Concurrency: no blocking child processes on the transcription path
 

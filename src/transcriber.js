@@ -15,6 +15,7 @@ import fetch from "node-fetch";
 import { downloadTranscript } from "./scraper.js";
 import { buildContextPrompt, assertTranscriptPresent, transcriptWordCount, extractParticipantNames, activeDraftNames } from "./generator.js";
 import { getSpeakerMapFromGemini, normalizeSpeakerMap, applySpeakerMap, formatOffset, parseOffset } from "./speaker-names.js";
+import { recordUsage } from "./accounting.js";
 
 const AUDIO_CACHE_DIR = path.join("cache", "audio");
 const TRANSCRIPT_CACHE_DIR = path.join("cache", "transcripts");
@@ -1338,16 +1339,18 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
     }
     console.log(`  Transcribing audio with Deepgram (${deepgramModel})...`);
     transcript = await transcribeAudioDeepgram(audioPath, deepgramModel, verbose, keyterms);
-    usage = { inputTokens: 0, outputTokens: 0, model: `deepgram:${deepgramModel}` };
+    const audioSeconds = await getAudioDuration(audioPath);
+    usage = { model: `deepgram:${deepgramModel}`, audioSeconds, inputTokens: 0, outputTokens: 0 };
 
     if (hybridNames) {
       console.log(`  Identifying speakers with Gemini (text-only, no audio upload)...`);
       const result = await applyNameHybrid(transcript, apiKey, context, verbose);
       transcript = result.text;
+      // Recorded separately (rather than merged into `usage`) so the Deepgram
+      // audio cost and the Gemini name-mapping token cost show as distinct
+      // lines in the accounting summary instead of one clobbering the other's model.
       if (result.usage) {
-        usage.inputTokens += result.usage.inputTokens;
-        usage.outputTokens += result.usage.outputTokens;
-        usage.model = result.usage.model;
+        recordUsage(result.usage);
       }
     }
   } else {
