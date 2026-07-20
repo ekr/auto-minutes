@@ -10,7 +10,7 @@ import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
-import { initializeClaude, generateMinutes, setGenerationTimeout } from "./generator.js";
+import { initializeClaude, generateMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
 import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript } from "./transcriber.js";
 import { recordUsage, printSummary } from "./accounting.js";
 import {
@@ -130,7 +130,7 @@ async function runWithConcurrency(tasks, limit) {
  * @param {string} modelName - Full model name to use
  * @returns {Promise<Object>} Object with {minutes: string, wasGenerated: boolean}
  */
-async function generateSessionMinutes(meetingNumber, session, sttModel = null, modelName = null, localAudioPath = null, geminiSegmentSeconds = null, localTranscriptPath = null) {
+async function generateSessionMinutes(meetingNumber, session, sttModel = null, modelName = null, localAudioPath = null, geminiSegmentSeconds = null, localTranscriptPath = null, allowShortTranscript = false) {
   // Check cache first (skip when a local audio/transcript file is provided — re-run must be deterministic)
   if (!localAudioPath && !localTranscriptPath && await cacheExists(meetingNumber, session.sessionId)) {
     console.log(`  Loading from cache: ${session.sessionId}`);
@@ -177,19 +177,16 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
     } else if (sttModel) {
       console.log(`  Transcribing audio (${sttModel}): ${session.sessionId}`);
       const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context, localAudioPath, geminiSegmentSeconds);
-      if (typeof result === 'string') {
-        transcript = result;
-      } else {
-        transcript = result.text;
-        recordUsage(result.usage);
-      }
+      transcript = result.text;
+      recordUsage(result.usage);
     } else {
       console.log(`  Downloading transcript: ${session.sessionId}`);
       transcript = await downloadTranscript(session);
     }
+    assertTranscriptSubstantial(transcript, session.sessionName, { allowShort: allowShortTranscript });
   } catch (error) {
-    console.log(`  Could not fetch transcript: ${error.message}`);
-    return { minutes: "", wasGenerated: false }; // Return empty minutes if transcript unavailable
+    console.log(`  Skipping ${session.sessionId} — ${error.message}`);
+    return { minutes: "", wasGenerated: false, reason: error.message }; // Return empty minutes if transcript unavailable/invalid
   }
 
   if (context.slidesAndBluesheet) {
@@ -208,7 +205,7 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
     recordUsage(result.usage);
   } catch (error) {
     console.log(`  Could not generate minutes: ${error.message}`);
-    return { minutes: "", wasGenerated: false };
+    return { minutes: "", wasGenerated: false, reason: error.message };
   }
 
   // Save to cache
@@ -328,7 +325,7 @@ function parseSummarizeArg(value) {
  * @param {Array} sessions - Array of session objects
  * @param {string|null} sttModel - STT model to use, or null for text transcripts
  */
-async function processSummarizeSessions(meetingId, sessions, sttModel = null, modelName = null, parallel = 1, localAudioPath = null, geminiSegmentSeconds = null, localTranscriptPath = null) {
+async function processSummarizeSessions(meetingId, sessions, sttModel = null, modelName = null, parallel = 1, localAudioPath = null, geminiSegmentSeconds = null, localTranscriptPath = null, allowShortTranscript = false) {
   if (verbose) {
     console.log("\n=== Session List Structure (JSON) ===");
     console.log(JSON.stringify(sessions, null, 2));
@@ -360,7 +357,7 @@ async function processSummarizeSessions(meetingId, sessions, sttModel = null, mo
   const results = await runWithConcurrency(
     allTasks.map(({ sessionName, session }) => async () => {
       console.log(`  Processing ${sessionName} [${session.sessionId}]...`);
-      const result = await generateSessionMinutes(meetingId, session, sttModel, modelName, localAudioPath, geminiSegmentSeconds, localTranscriptPath);
+      const result = await generateSessionMinutes(meetingId, session, sttModel, modelName, localAudioPath, geminiSegmentSeconds, localTranscriptPath, allowShortTranscript);
       if (!result.minutes) {
         console.log(`  Skipping ${sessionName} [${session.sessionId}] - no transcript`);
       } else {
@@ -373,6 +370,7 @@ async function processSummarizeSessions(meetingId, sessions, sttModel = null, mo
 
   // Collect results into session groups (preserving original group order)
   const sessionGroups = [];
+  const skippedSessions = [];
   let anyNewMinutes = false;
   for (const [sessionName] of sessionsByName) {
     const groupResults = results.filter(r => r.sessionName === sessionName);
@@ -385,6 +383,12 @@ async function processSummarizeSessions(meetingId, sessions, sttModel = null, mo
         processedSessions.push({
           sessionId: session.sessionId,
           recordingUrl: session.recordingUrl,
+        });
+      } else {
+        skippedSessions.push({
+          sessionName,
+          sessionId: session.sessionId,
+          reason: result.reason || "no transcript",
         });
       }
     }
@@ -403,6 +407,8 @@ async function processSummarizeSessions(meetingId, sessions, sttModel = null, mo
   } else {
     console.log("\nNo new minutes generated, skipping manifest update");
   }
+
+  return skippedSessions;
 }
 
 /**
@@ -654,6 +660,11 @@ async function main() {
       type: "string",
       description: "Use a local transcript file instead of fetching/transcribing audio (requires single-session selector: NUMBER:GROUP or YYYY-MM-DD:GROUP)",
     })
+    .option("allow-short-transcript", {
+      type: "boolean",
+      default: false,
+      description: "Skip the minimum-word-count check on transcripts (for legitimately short sessions)",
+    })
     .check((argv) => {
       if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache) {
         throw new Error(
@@ -714,6 +725,7 @@ async function main() {
 
   verbose = argv.verbose;
   setGenerationTimeout(argv.timeout * 1000);
+  const allSkipped = [];
   const doSummarize = !!argv.summarize;
   const doOutput = argv.output;
   const doBuild = argv.build || argv.pages;
@@ -923,12 +935,8 @@ async function main() {
           } else if (sttModel) {
             console.log(`  Using audio transcription (${sttModel})...`);
             const result = await transcribeSession(session, sttModel, process.env.GEMINI_API_KEY, verbose, context, argv.audioFile || null, argv.geminiSegmentSeconds || null);
-            if (typeof result === 'string') {
-              transcript = result;
-            } else {
-              transcript = result.text;
-              recordUsage(result.usage);
-            }
+            transcript = result.text;
+            recordUsage(result.usage);
           } else {
             console.log("  Downloading transcript...");
             transcript = await downloadTranscript(session);
@@ -940,13 +948,15 @@ async function main() {
 
         // Generate minutes using LLM (no cache)
         console.log("  Generating minutes with LLM...");
-        const { text: minutes, usage: minutesUsage } = await generateMinutes(
-          transcript,
-          session.sessionName,
-          verbose,
-          modelName,
-          context,
-        );
+        let minutes, minutesUsage;
+        try {
+          const result = await generateMinutes(transcript, session.sessionName, verbose, modelName, context);
+          minutes = result.text;
+          minutesUsage = result.usage;
+        } catch (error) {
+          console.error(`  Error generating minutes: ${error.message}`);
+          continue;
+        }
         recordUsage(minutesUsage);
 
         // Add date/time header
@@ -1000,7 +1010,8 @@ async function main() {
           if (filtered.length === 0) continue;
           try {
             console.log(`\n--- Processing interims for ${date} ---`);
-            await processSummarizeSessions(date, filtered, sttModel, modelName, parallel, null, argv.geminiSegmentSeconds || null);
+            const skipped = await processSummarizeSessions(date, filtered, sttModel, modelName, parallel, null, argv.geminiSegmentSeconds || null, null, argv.allowShortTranscript);
+            allSkipped.push(...skipped);
           } catch (error) {
             console.warn(`Warning: Failed to process interims for ${date}: ${error.message}`);
           }
@@ -1101,7 +1112,8 @@ async function main() {
         }
 
         if (sessions !== undefined) {
-          await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel, argv.audioFile || null, argv.geminiSegmentSeconds || null, argv.transcriptFile || null);
+          const skipped = await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel, argv.audioFile || null, argv.geminiSegmentSeconds || null, argv.transcriptFile || null, argv.allowShortTranscript);
+          allSkipped.push(...skipped);
         }
       }
     }
@@ -1155,8 +1167,13 @@ async function main() {
           for (const session of group.sessions) {
             const transcriptPath = getTranscriptCachePath(session.sessionId);
             if (existsSync(transcriptPath)) {
-              const { dateTimeHeader } = parseSessionId(session.sessionId);
               const transcript = await fs.readFile(transcriptPath, "utf-8");
+              try {
+                assertTranscriptPresent(transcript, session.sessionId);
+              } catch {
+                continue; // Cached transcript is empty/invalid — don't publish it
+              }
+              const { dateTimeHeader } = parseSessionId(session.sessionId);
               allTranscripts.push(`${dateTimeHeader}${transcript}`);
             }
           }
@@ -1212,6 +1229,13 @@ async function main() {
       console.log("Root index generated at site/index.md");
     }
 
+    if (allSkipped.length > 0) {
+      console.log(`\n=== SKIPPED SESSIONS (${allSkipped.length}) ===`);
+      for (const s of allSkipped) {
+        console.log(`  ${s.sessionName} [${s.sessionId}]: ${s.reason}`);
+      }
+    }
+
     printSummary();
     console.log("\nAll done!");
 
@@ -1219,6 +1243,10 @@ async function main() {
     if (doBuild) {
       console.log("\n=== BUILD STAGE ===");
       await buildSite(doPages);
+    }
+
+    if (allSkipped.length > 0) {
+      process.exitCode = 1;
     }
   } catch (error) {
     console.error("Error:", error.message);
@@ -1361,4 +1389,4 @@ async function copyDir(src, dest, allowedExtensions = null) {
   return copiedFiles;
 }
 
-main().then(() => process.exit(0));
+main().then(() => process.exit(process.exitCode || 0));

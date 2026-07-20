@@ -6,6 +6,7 @@
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 import fs from 'fs/promises';
+import { assertTranscriptPresent, transcriptWordCount } from './generator.js';
 
 const USER_AGENT = 'ietf-agenda/0.1 (+https://github.com/ekr/ietf-agenda)';
 
@@ -252,7 +253,21 @@ export async function downloadTranscript(session) {
   const transcriptUrl = `https://meetecho-player.ietf.org/playout/transcripts/${session.sessionId}`;
 
   const response = await ietfFetch(transcriptUrl);
-  return await response.text();
+  const contentType = response.headers.get('content-type') || '';
+  const text = await response.text();
+
+  // Meetecho serves HTTP 200 with an HTML error page (or a JSON `[]`) when the
+  // transcript hasn't been generated yet, instead of a non-2xx status.
+  if (contentType.includes('text/html') || text.trimStart().startsWith('<')) {
+    throw new Error(`Transcript for ${session.sessionId} is not available yet (received HTML instead of a transcript)`);
+  }
+
+  assertTranscriptPresent(text, session.sessionId);
+  if (transcriptWordCount(text) === 0) {
+    throw new Error(`Transcript for ${session.sessionId} is empty (no words in any entry)`);
+  }
+
+  return text;
 }
 
 /**
