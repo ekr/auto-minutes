@@ -86,5 +86,7 @@ describe('printSummary', () => {
 
     expect(output).toContain('Audio Transcription (STT)');
     expect(output).toMatch(/deepgram:nova-3\s+20\.0\s+\$0\.10/);
+    expect(output).not.toContain('Token Usage & Cost');
+    expect(output).toMatch(/Total\s+20\.0\s+\$0\.10/);
   });
 });

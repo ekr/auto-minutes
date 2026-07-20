@@ -48,7 +48,7 @@ export function computeCostSummary(records) {
 
   for (const rec of records) {
     const key = rec.model || "unknown";
-    if (rec.audioSeconds > 0) {
+    if (Number.isFinite(rec.audioSeconds) && rec.audioSeconds > 0) {
       if (!audioByModel.has(key)) {
         audioByModel.set(key, { audioSeconds: 0 });
       }
@@ -148,11 +148,22 @@ export function printSummary() {
     }
   }
 
-  console.log(
-    `${"".padEnd(28)} ${"───────".padStart(14)} ${"───────".padStart(14)} ${"──────".padStart(10)}`,
-  );
   const totalCostStr = allKnown ? `$${totalCost.toFixed(2)}` : `~$${totalCost.toFixed(2)}`;
-  console.log(
-    `${"Total".padEnd(28)} ${fmt(totalInput).padStart(14)} ${fmt(totalOutput).padStart(14)} ${totalCostStr.padStart(10)}`,
-  );
+
+  if (tokenRows.length > 0) {
+    console.log(
+      `${"".padEnd(28)} ${"───────".padStart(14)} ${"───────".padStart(14)} ${"──────".padStart(10)}`,
+    );
+    console.log(
+      `${"Total".padEnd(28)} ${fmt(totalInput).padStart(14)} ${fmt(totalOutput).padStart(14)} ${totalCostStr.padStart(10)}`,
+    );
+  } else if (audioRows.length > 0) {
+    const totalAudioMinutes = audioRows.reduce((sum, row) => sum + row.audioMinutes, 0);
+    console.log(
+      `${"".padEnd(28)} ${"───────".padStart(14)} ${"──────".padStart(10)}`,
+    );
+    console.log(
+      `${"Total".padEnd(28)} ${totalAudioMinutes.toFixed(1).padStart(14)} ${totalCostStr.padStart(10)}`,
+    );
+  }
 }
