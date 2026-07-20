@@ -94,6 +94,22 @@ describe('printSummary', () => {
     logSpy.mockRestore();
   });
 
+  test('renders a token-only run (e.g. Gemini, no Deepgram) unchanged, with no audio or grand-total sections', async () => {
+    jest.resetModules();
+    const { printSummary, recordUsage } = await import('./accounting.js');
+    recordUsage({ model: 'gemini-3.5-flash', inputTokens: 2000, outputTokens: 500 });
+
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    printSummary();
+    const output = logSpy.mock.calls.map((args) => args.join(' ')).join('\n');
+    logSpy.mockRestore();
+
+    expect(output).toContain('Token Usage & Cost');
+    expect(output).not.toContain('Audio Transcription (STT)');
+    expect(output).not.toContain('Grand Total');
+    expect(output).toMatch(/Total\s+2,000\s+500\s+\$0\.01/);
+  });
+
   test('prints a Deepgram line with audio minutes and an estimated cost', async () => {
     jest.resetModules();
     const { printSummary, recordUsage } = await import('./accounting.js');
