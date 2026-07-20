@@ -441,7 +441,9 @@ export async function saveMinutes(
 
   // Add session materials link if meeting ID is available
   if (meetingId && typeof meetingId === 'number') {
-    const materialsUrl = `https://datatracker.ietf.org/meeting/${meetingId}/materials/agenda-${meetingId}-${sanitizedName}`;
+    // Link to the session page rather than guessing the agenda document slug,
+    // which can carry a per-session suffix (e.g. agenda-126-hackathon-sessa).
+    const materialsUrl = `https://datatracker.ietf.org/meeting/${meetingId}/session/${sanitizedName}`;
     header += ` | [Session Materials](${materialsUrl})`;
   }
 
