@@ -1,8 +1,25 @@
 import { isRecordingUnavailable, shouldExitNonZero } from './skip-classifier.js';
+import { assertTranscriptSubstantial } from './generator.js';
 
 describe('isRecordingUnavailable', () => {
   test('classifies a session-info 404 as benign', () => {
     expect(isRecordingUnavailable('Failed to fetch session info: 404 Not Found')).toBe(true);
+  });
+
+  // Feeds assertTranscriptSubstantial's *real* thrown error.message into
+  // isRecordingUnavailable, rather than a hand-copied literal (see the
+  // 'classifies an insufficient transcript as benign' test below), so a
+  // future edit to that message template can't silently break classification
+  // without a test catching it.
+  test("classifies assertTranscriptSubstantial's real thrown message as benign", () => {
+    let thrown;
+    try {
+      assertTranscriptSubstantial('only a few words here', 'Test WG');
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeDefined();
+    expect(isRecordingUnavailable(thrown.message)).toBe(true);
   });
 
   test('classifies a missing Cloudflare video as benign', () => {
