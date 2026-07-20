@@ -13,7 +13,7 @@ import os from "os";
 import { randomUUID } from "crypto";
 import fetch from "node-fetch";
 import { downloadTranscript } from "./scraper.js";
-import { buildContextPrompt, assertTranscriptPresent, transcriptWordCount, extractParticipantNames } from "./generator.js";
+import { buildContextPrompt, assertTranscriptPresent, transcriptWordCount, extractParticipantNames, activeDraftNames } from "./generator.js";
 import { getSpeakerMapFromGemini, normalizeSpeakerMap, applySpeakerMap, formatOffset, parseOffset } from "./speaker-names.js";
 
 const AUDIO_CACHE_DIR = path.join("cache", "audio");
@@ -894,6 +894,135 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
   }
 }
 
+const DEEPGRAM_LISTEN_URL = "https://api.deepgram.com/v1/listen";
+
+// Cap on total keyterms sent to Deepgram, to keep the request URL a sane size.
+const MAX_DEEPGRAM_KEYTERMS = 100;
+
+/**
+ * Build a deduped (case-insensitive), capped list of domain keyterms for
+ * Deepgram keyterm boosting, seeded from the session's bluesheet participant
+ * names and active draft names.
+ * @param {Object|null} context - Pre-fetched session context
+ * @returns {string[]} Keyterms, capped to MAX_DEEPGRAM_KEYTERMS
+ */
+export function buildDeepgramKeyterms(context) {
+  const participantNames = extractParticipantNames(context?.slidesAndBluesheet?.bluesheet);
+  const draftNames = activeDraftNames(context?.wgDocuments || []).map(doc => doc.Name);
+
+  const seen = new Set();
+  const keyterms = [];
+  for (const term of [...participantNames, ...draftNames]) {
+    const key = term.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    keyterms.push(term);
+    if (keyterms.length >= MAX_DEEPGRAM_KEYTERMS) break;
+  }
+  return keyterms;
+}
+
+/**
+ * Format Deepgram diarized words into "[HH:MM:SS] Speaker N: ..." turns,
+ * breaking a new line each time the (0-based) speaker index changes.
+ * @param {Array<{word: string, punctuated_word?: string, start?: number, speaker?: number}>} words
+ * @returns {string} Formatted transcript text
+ */
+export function formatDeepgramTranscript(words) {
+  let currentSpeaker = null;
+  let turnStartOffset = null;
+  const lines = [];
+  let currentLine = [];
+
+  const flushLine = () => {
+    if (currentLine.length > 0) {
+      lines.push(`${formatTimestampPrefix(turnStartOffset)}Speaker ${currentSpeaker}: ${currentLine.join(" ")}`);
+      currentLine = [];
+    }
+  };
+
+  for (const word of words) {
+    if (typeof word.speaker === "number" && word.speaker !== currentSpeaker) {
+      flushLine();
+      currentSpeaker = word.speaker;
+      turnStartOffset = word.start;
+    }
+    currentLine.push(word.punctuated_word || word.word);
+  }
+  flushLine();
+
+  return lines.join("\n");
+}
+
+/**
+ * Transcribe an audio file using Deepgram's prerecorded (batch) API.
+ * Sends the whole file as the request body in a single call (no chunking,
+ * no GCS bucket); Deepgram returns word-level timestamps and diarization
+ * together, which are formatted into the same "[HH:MM:SS] Speaker N: ..."
+ * shape produced by the chirp backend.
+ * @param {string} audioPath - Path to the local audio file
+ * @param {string} model - Deepgram model name (e.g. "nova-3", "nova-2")
+ * @param {boolean} verbose - Whether to log verbose output
+ * @param {string[]} keyterms - Domain keyterms to boost (participant names, active drafts)
+ * @returns {Promise<string>} Transcript text
+ */
+export async function transcribeAudioDeepgram(audioPath, model = "nova-3", verbose = false, keyterms = []) {
+  const apiKey = process.env.DEEPGRAM_API_KEY;
+  if (!apiKey) {
+    throw new Error("DEEPGRAM_API_KEY is required for --stt-model deepgram");
+  }
+
+  const audioBuffer = await fsPromises.readFile(audioPath);
+
+  const params = new URLSearchParams();
+  params.set("model", model);
+  params.set("diarize", "true");
+  params.set("punctuate", "true");
+  params.set("smart_format", "true");
+  // nova-3 introduced the `keyterm` param; earlier models use `keywords`.
+  const keytermParam = model.startsWith("nova-3") ? "keyterm" : "keywords";
+  for (const term of keyterms) {
+    params.append(keytermParam, term);
+  }
+
+  if (verbose) {
+    console.log(`    [Deepgram] POST ${DEEPGRAM_LISTEN_URL} model=${model}, ${keyterms.length} keyterm(s)`);
+  }
+
+  const data = await withUploadRetry(async () => {
+    const response = await fetch(`${DEEPGRAM_LISTEN_URL}?${params.toString()}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${apiKey}`,
+        "Content-Type": "audio/mpeg",
+      },
+      body: audioBuffer,
+    });
+
+    if (!response.ok) {
+      throw uploadHttpError(response, await response.text().catch(() => ""));
+    }
+
+    return response.json();
+  }, "Deepgram transcription");
+
+  const alt = data?.results?.channels?.[0]?.alternatives?.[0];
+  if (!alt) {
+    throw new Error("Deepgram response did not include a transcript");
+  }
+
+  const hasDiarizedWords = Array.isArray(alt.words) && alt.words.some(w => typeof w.speaker === "number");
+  if (hasDiarizedWords) {
+    const transcript = formatDeepgramTranscript(alt.words);
+    if (verbose) {
+      console.log(`    [Deepgram] Transcript: ${alt.words.length} words, ${transcript.length} chars`);
+    }
+    return transcript;
+  }
+
+  return alt.transcript || "";
+}
+
 /**
  * Prepare a local audio/video file for use in the pipeline.
  * Converts the file to MP3 via ffmpeg and places it in the audio cache slot for the session.
@@ -1096,7 +1225,7 @@ export async function applyNameHybrid(chirpTranscript, apiKey, context, verbose 
 /**
  * Full pipeline: fetch audio stream, download (with cache), transcribe (with cache)
  * @param {Object} session - Session object with sessionId
- * @param {string} sttModel - STT model: "gemini", "google", "google:chirp_2", "google:chirp_3", or a "+names" hybrid of "google"/"google:chirp_3" (e.g. "google:chirp_3+names"); chirp_2 has no diarization, so "+names" is not meaningful with it
+ * @param {string} sttModel - STT model: "gemini", "google", "google:chirp_2", "google:chirp_3", "deepgram", "deepgram:nova-2", "deepgram:nova-3", or a "+names" hybrid of a diarizing backend (e.g. "google:chirp_3+names", "deepgram:nova-3+names"); chirp_2 has no diarization, so "+names" is not meaningful with it
  * @param {string} apiKey - Gemini API key (required for sttModel "gemini" or a "+names" hybrid)
  * @param {boolean} verbose - Whether to log verbose output
  * @param {Object} context - Pre-fetched session context (optional, passed to Gemini STT and the "+names" hybrid)
@@ -1148,6 +1277,27 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
       transcript = result.text;
       usage = result.usage;
     }
+  } else if (sttModel.startsWith("deepgram")) {
+    const { baseSttModel, hybridNames } = parseSttModel(sttModel);
+    const deepgramModel = baseSttModel.includes(":") ? baseSttModel.split(":")[1] : "nova-3";
+    const keyterms = buildDeepgramKeyterms(context);
+    if (verbose) {
+      console.log(`    [Transcribe] Deepgram keyterms: ${keyterms.length}`);
+    }
+    console.log(`  Transcribing audio with Deepgram (${deepgramModel})...`);
+    transcript = await transcribeAudioDeepgram(audioPath, deepgramModel, verbose, keyterms);
+    usage = { inputTokens: 0, outputTokens: 0, model: `deepgram:${deepgramModel}` };
+
+    if (hybridNames) {
+      console.log(`  Identifying speakers with Gemini (text-only, no audio upload)...`);
+      const result = await applyNameHybrid(transcript, apiKey, context, verbose);
+      transcript = result.text;
+      if (result.usage) {
+        usage.inputTokens += result.usage.inputTokens;
+        usage.outputTokens += result.usage.outputTokens;
+        usage.model = result.usage.model;
+      }
+    }
   } else {
     // gemini (default)
     if (geminiSegmentSeconds && geminiSegmentSeconds > 0) {
@@ -1196,7 +1346,7 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
   // produces at least MIN_WORDS_PER_MINUTE words per minute of audio. This
   // runs unconditionally (unlike the official-transcript ratio check below,
   // which is skipped whenever Meetecho hasn't published a transcript yet).
-  if (!sttModel.startsWith("google")) {
+  if (!sttModel.startsWith("google") && !sttModel.startsWith("deepgram")) {
     const durationMinutes = getAudioDuration(audioPath) / 60;
     const audioWords = transcriptWordCount(transcript);
     const minExpectedWords = durationMinutes * MIN_WORDS_PER_MINUTE;

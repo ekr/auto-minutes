@@ -118,6 +118,9 @@ const {
   parseSttModel,
   formatDiarizedTranscript,
   applyNameHybrid,
+  transcribeAudioDeepgram,
+  formatDeepgramTranscript,
+  buildDeepgramKeyterms,
 } = await import('./transcriber.js');
 
 function makeStreamResult(chunkTexts, finishReason = 'STOP') {
@@ -470,6 +473,15 @@ describe('parseSttModel', () => {
     expect(parseSttModel('google:chirp_2+names')).toEqual({ baseSttModel: 'google:chirp_2', hybridNames: true });
     expect(parseSttModel('google+names')).toEqual({ baseSttModel: 'google', hybridNames: true });
   });
+
+  test('strips "+names" and keeps the deepgram variant intact', () => {
+    expect(parseSttModel('deepgram:nova-3+names')).toEqual({ baseSttModel: 'deepgram:nova-3', hybridNames: true });
+    expect(parseSttModel('deepgram+names')).toEqual({ baseSttModel: 'deepgram', hybridNames: true });
+  });
+
+  test('plain deepgram model has no hybrid suffix', () => {
+    expect(parseSttModel('deepgram:nova-3')).toEqual({ baseSttModel: 'deepgram:nova-3', hybridNames: false });
+  });
 });
 
 describe('formatDiarizedTranscript', () => {
@@ -603,4 +615,262 @@ describe('applyNameHybrid', () => {
     errorSpy.mockRestore();
     jest.useRealTimers();
   }, 15000);
+});
+
+function makeDeepgramResponse({ ok = true, status = 200, statusText = 'OK', body = {} } = {}) {
+  return {
+    ok,
+    status,
+    statusText,
+    text: async () => (ok ? '' : JSON.stringify(body)),
+    json: async () => body,
+  };
+}
+
+const DEEPGRAM_TRANSCRIPT_BODY = {
+  results: {
+    channels: [
+      {
+        alternatives: [
+          {
+            transcript: 'Hello there, Hi',
+            words: [
+              { word: 'hello', punctuated_word: 'Hello', start: 0.0, end: 0.4, speaker: 0 },
+              { word: 'there', punctuated_word: 'there,', start: 0.4, end: 0.8, speaker: 0 },
+              { word: 'hi', punctuated_word: 'Hi', start: 5.0, end: 5.3, speaker: 1 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+};
+
+describe('formatDeepgramTranscript', () => {
+  test('formats turns with "[HH:MM:SS] Speaker N: ..." and breaks on speaker changes', () => {
+    const words = [
+      { word: 'hello', punctuated_word: 'Hello', start: 0, speaker: 0 },
+      { word: 'world', punctuated_word: 'world.', start: 0.3, speaker: 0 },
+      { word: 'hi', punctuated_word: 'Hi', start: 65, speaker: 1 },
+    ];
+    expect(formatDeepgramTranscript(words)).toBe('[00:00:00] Speaker 0: Hello world.\n[00:01:05] Speaker 1: Hi');
+  });
+
+  test('falls back to the raw word when punctuated_word is absent', () => {
+    const words = [{ word: 'hello', start: 0, speaker: 0 }];
+    expect(formatDeepgramTranscript(words)).toBe('[00:00:00] Speaker 0: hello');
+  });
+});
+
+describe('buildDeepgramKeyterms', () => {
+  test('seeds keyterms from bluesheet participants and active drafts, filtering non-WG drafts', () => {
+    const context = {
+      slidesAndBluesheet: {
+        bluesheet: [
+          'Bluesheet for IETF-124: privacypass  Monday 09:30',
+          '================================================================',
+          '2 attendees.',
+          '',
+          'Jane Smith\tExample Corp',
+          'John Doe\tAcme Inc',
+        ].join('\n'),
+      },
+      wgDocuments: [
+        { Name: 'draft-ietf-foo-bar', Title: 'Foo Bar', 'Status in the IETF process': 'Active' },
+        { Name: 'draft-individual-baz', Title: 'Not a WG draft', 'Status in the IETF process': 'Active' },
+      ],
+    };
+
+    expect(buildDeepgramKeyterms(context)).toEqual(['Jane Smith', 'John Doe', 'draft-ietf-foo-bar']);
+  });
+
+  test('dedupes participant names case-insensitively, keeping the first-seen casing', () => {
+    const bluesheet = [
+      'Bluesheet for IETF-124: test',
+      '====',
+      '2 attendees.',
+      '',
+      'Jane Smith\tExample Corp',
+      'JANE SMITH\tExample Corp',
+    ].join('\n');
+
+    expect(buildDeepgramKeyterms({ slidesAndBluesheet: { bluesheet } })).toEqual(['Jane Smith']);
+  });
+
+  test('caps the combined list at 100 terms', () => {
+    const bluesheetLines = [
+      'Bluesheet for IETF-124: test',
+      '====',
+      '150 attendees.',
+      '',
+      ...Array.from({ length: 150 }, (_, i) => `Person ${i}\tAffiliation`),
+    ];
+
+    const keyterms = buildDeepgramKeyterms({ slidesAndBluesheet: { bluesheet: bluesheetLines.join('\n') } });
+
+    expect(keyterms).toHaveLength(100);
+  });
+
+  test('returns an empty list when context is null', () => {
+    expect(buildDeepgramKeyterms(null)).toEqual([]);
+  });
+});
+
+describe('transcribeAudioDeepgram', () => {
+  const ORIGINAL_KEY = process.env.DEEPGRAM_API_KEY;
+
+  beforeEach(() => {
+    process.env.DEEPGRAM_API_KEY = 'fake-deepgram-key';
+    mockReadFile.mockReset().mockResolvedValue(Buffer.from('fake audio bytes'));
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    if (ORIGINAL_KEY === undefined) {
+      delete process.env.DEEPGRAM_API_KEY;
+    } else {
+      process.env.DEEPGRAM_API_KEY = ORIGINAL_KEY;
+    }
+    jest.useRealTimers();
+  });
+
+  test('throws a clear error when DEEPGRAM_API_KEY is missing', async () => {
+    delete process.env.DEEPGRAM_API_KEY;
+
+    await expect(transcribeAudioDeepgram('/tmp/fake.mp3')).rejects.toThrow(
+      /DEEPGRAM_API_KEY is required for --stt-model deepgram/,
+    );
+  });
+
+  test('formats diarized words into "[HH:MM:SS] Speaker N: ..." turns, preferring punctuated_word', async () => {
+    mockFetch.mockReset().mockImplementation(async () => makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY }));
+
+    const transcript = await transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, []);
+
+    expect(transcript).toBe('[00:00:00] Speaker 0: Hello there,\n[00:00:05] Speaker 1: Hi');
+  });
+
+  test('falls back to alternatives[0].transcript when no diarized words are present', async () => {
+    mockFetch.mockReset().mockImplementation(async () => makeDeepgramResponse({
+      body: { results: { channels: [{ alternatives: [{ transcript: 'plain transcript, no diarization' }] }] } },
+    }));
+
+    const transcript = await transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, []);
+
+    expect(transcript).toBe('plain transcript, no diarization');
+  });
+
+  test('sends "keyterm" query params for nova-3 and "keywords" for nova-2', async () => {
+    mockFetch.mockReset().mockImplementation(async () => makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY }));
+
+    await transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, ['Jane Smith', 'draft-ietf-foo-bar']);
+    const nova3Url = mockFetch.mock.calls[0][0];
+    expect(nova3Url).toContain('keyterm=Jane+Smith');
+    expect(nova3Url).toContain('keyterm=draft-ietf-foo-bar');
+    expect(nova3Url).not.toContain('keywords=');
+
+    mockFetch.mockClear();
+    await transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-2', false, ['Jane Smith']);
+    const nova2Url = mockFetch.mock.calls[0][0];
+    expect(nova2Url).toContain('keywords=Jane+Smith');
+    expect(nova2Url).not.toContain('keyterm=');
+  });
+
+  test('transient retry: a 503 is retried and a subsequent 200 succeeds', async () => {
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeDeepgramResponse({ ok: false, status: 503, statusText: 'Service Unavailable' }))
+      .mockImplementationOnce(async () => makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY }));
+
+    const promise = transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, []);
+    await jest.runAllTimersAsync();
+    const transcript = await promise;
+
+    expect(transcript).toContain('Speaker 0');
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  test('permanent error: a 401 fails on the first attempt without retry', async () => {
+    mockFetch.mockReset().mockImplementation(async () => makeDeepgramResponse({ ok: false, status: 401, statusText: 'Unauthorized' }));
+
+    const promise = transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, []);
+    const assertion = expect(promise).rejects.toThrow('[401 Unauthorized]');
+    await jest.runAllTimersAsync();
+    await assertion;
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('transcribeSession deepgram dispatch', () => {
+  const sessionId = 'IETF126-DISPATCH-20260720-0700';
+  const session = { sessionId };
+  const ORIGINAL_KEY = process.env.DEEPGRAM_API_KEY;
+
+  beforeEach(() => {
+    process.env.DEEPGRAM_API_KEY = 'fake-deepgram-key';
+    mockReadFile.mockReset().mockResolvedValue(Buffer.from('fake audio bytes'));
+  });
+
+  afterEach(() => {
+    if (ORIGINAL_KEY === undefined) {
+      delete process.env.DEEPGRAM_API_KEY;
+    } else {
+      process.env.DEEPGRAM_API_KEY = ORIGINAL_KEY;
+    }
+  });
+
+  test('calls transcribeAudioDeepgram and, for a "+names" hybrid, applyNameHybrid, aggregating usage', async () => {
+    mockExistsSync.mockImplementation((p) => p === getAudioCachePath(sessionId));
+    mockFetch.mockReset().mockImplementation(async (url) => {
+      if (typeof url === 'string' && url.startsWith('https://api.deepgram.com/')) {
+        return makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY });
+      }
+      return makeChunkResponse();
+    });
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify({ 'Speaker 0': 'Jane Smith', 'Speaker 1': 'John Doe' }),
+        usageMetadata: { promptTokenCount: 40, candidatesTokenCount: 8 },
+      },
+    });
+
+    const result = await transcribeSession(session, 'deepgram:nova-3+names', 'fake-gemini-key');
+
+    expect(result.text).toContain('**Jane Smith**');
+    expect(result.text).toContain('**John Doe**');
+    expect(result.usage).toEqual({ inputTokens: 40, outputTokens: 8, model: 'gemini-3.5-flash' });
+    expect(mockWriteFile).toHaveBeenCalled();
+  });
+
+  test('deepgram without "+names" produces "Speaker N" labels and zero usage', async () => {
+    mockExistsSync.mockImplementation((p) => p === getAudioCachePath(sessionId));
+    mockFetch.mockReset().mockImplementation(async (url) => {
+      if (typeof url === 'string' && url.startsWith('https://api.deepgram.com/')) {
+        return makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY });
+      }
+      return makeChunkResponse();
+    });
+
+    const result = await transcribeSession(session, 'deepgram:nova-3', 'fake-gemini-key');
+
+    expect(result.text).toContain('Speaker 0');
+    expect(result.usage).toEqual({ inputTokens: 0, outputTokens: 0, model: 'deepgram:nova-3' });
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+
+  test('"deepgram" alone (no model suffix) defaults to nova-3', async () => {
+    mockExistsSync.mockImplementation((p) => p === getAudioCachePath(sessionId));
+    mockFetch.mockReset().mockImplementation(async (url) => {
+      if (typeof url === 'string' && url.startsWith('https://api.deepgram.com/')) {
+        return makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY });
+      }
+      return makeChunkResponse();
+    });
+
+    const result = await transcribeSession(session, 'deepgram', 'fake-gemini-key');
+
+    expect(result.usage.model).toBe('deepgram:nova-3');
+    expect(mockFetch.mock.calls[0][0]).toContain('model=nova-3');
+  });
 });
