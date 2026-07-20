@@ -31,6 +31,11 @@ const MAX_UPLOAD_ATTEMPTS = 4;
 const UPLOAD_RETRY_BASE_MS = 2000;
 const UPLOAD_RETRY_CAP_MS = 15000;
 
+// Resumable upload: send the file in bounded chunks so no single request is large
+// enough to hit a transport-level timeout (see the 408s that motivated this).
+const UPLOAD_CHUNK_SIZE = 8 * 1024 * 1024;
+const GEMINI_FILES_UPLOAD_URL = "https://generativelanguage.googleapis.com/upload/v1beta/files";
+
 /**
  * Determine whether an error from the Gemini File API upload is worth retrying.
  * Transient: HTTP 408/429/500/502/503/504, common Node network error codes, or
@@ -166,6 +171,138 @@ export function downloadAudio(streamUrl, outputPath, verbose = false) {
 }
 
 /**
+ * Run a single upload request with retry/backoff, reusing the same transient-error
+ * classification as the rest of the upload path. Retries the given async operation
+ * in place (e.g. re-sending one chunk at its offset), not the whole upload.
+ * @param {() => Promise<T>} attemptFn
+ * @param {string} label - short description used in retry log lines
+ * @returns {Promise<T>}
+ * @template T
+ */
+async function withUploadRetry(attemptFn, label) {
+  let lastError;
+  for (let attempt = 1; attempt <= MAX_UPLOAD_ATTEMPTS; attempt++) {
+    try {
+      return await attemptFn();
+    } catch (error) {
+      lastError = error;
+      if (attempt === MAX_UPLOAD_ATTEMPTS || !isTransientError(error)) {
+        throw error;
+      }
+      const delay = Math.min(UPLOAD_RETRY_BASE_MS * 2 ** (attempt - 1), UPLOAD_RETRY_CAP_MS);
+      console.log(
+        `    [Transcribe] ${label} attempt ${attempt}/${MAX_UPLOAD_ATTEMPTS} failed (${error.message}); retrying in ${delay}ms`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * Build an Error from a failed upload HTTP response, shaped like the SDK's own
+ * errors (status on the error object, "[<status> <statusText>] ..." message) so
+ * isTransientError classifies it correctly.
+ * @param {import('node-fetch').Response} response
+ * @param {string} bodySnippet
+ * @returns {Error}
+ */
+function uploadHttpError(response, bodySnippet) {
+  const error = new Error(`[${response.status} ${response.statusText}] ${bodySnippet.slice(0, 500)}`);
+  error.status = response.status;
+  return error;
+}
+
+/**
+ * Upload a file to the Gemini Files API using the resumable upload protocol
+ * (X-Goog-Upload-Protocol: resumable), sending the file in bounded chunks rather
+ * than a single multipart request. This avoids transport-level timeouts on large
+ * (48-83 MB) session audio files. Returns a response shaped like the SDK's
+ * fileManager.uploadFile: { file: { name, uri, mimeType, state, ... } }.
+ * @param {string} audioPath - Path to the local file to upload
+ * @param {string} apiKey - Gemini API key
+ * @param {{mimeType?: string, displayName?: string, verbose?: boolean}} [options]
+ * @returns {Promise<{file: {name: string, uri: string, mimeType: string, state: string}}>}
+ */
+export async function uploadFileResumable(audioPath, apiKey, { mimeType = "audio/mpeg", displayName, verbose = false } = {}) {
+  const { size: fileSize } = fs.statSync(audioPath);
+  const name = displayName || path.basename(audioPath);
+
+  if (verbose) {
+    console.log(`    [Transcribe] Starting resumable upload (${fileSize} bytes)`);
+  }
+
+  const uploadUrl = await withUploadRetry(async () => {
+    const response = await fetch(`${GEMINI_FILES_UPLOAD_URL}?key=${apiKey}`, {
+      method: "POST",
+      headers: {
+        "X-Goog-Upload-Protocol": "resumable",
+        "X-Goog-Upload-Command": "start",
+        "X-Goog-Upload-Header-Content-Length": String(fileSize),
+        "X-Goog-Upload-Header-Content-Type": mimeType,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ file: { display_name: name } }),
+    });
+
+    if (!response.ok) {
+      throw uploadHttpError(response, await response.text().catch(() => ""));
+    }
+
+    const url = response.headers.get("x-goog-upload-url");
+    if (!url) {
+      throw new Error("Gemini resumable upload start response did not include an X-Goog-Upload-URL header");
+    }
+    return url;
+  }, "Upload start");
+
+  const handle = await fsPromises.open(audioPath, "r");
+  try {
+    let offset = 0;
+    let finalizeBody = null;
+
+    do {
+      const chunkSize = Math.min(UPLOAD_CHUNK_SIZE, fileSize - offset);
+      const buffer = Buffer.alloc(chunkSize);
+      if (chunkSize > 0) {
+        await handle.read(buffer, 0, chunkSize, offset);
+      }
+      const chunkOffset = offset;
+      offset += chunkSize;
+      const isLast = offset >= fileSize;
+
+      finalizeBody = await withUploadRetry(async () => {
+        const response = await fetch(uploadUrl, {
+          method: "POST",
+          headers: {
+            "Content-Length": String(buffer.length),
+            "X-Goog-Upload-Offset": String(chunkOffset),
+            "X-Goog-Upload-Command": isLast ? "upload, finalize" : "upload",
+          },
+          body: buffer,
+        });
+
+        if (!response.ok) {
+          throw uploadHttpError(response, await response.text().catch(() => ""));
+        }
+
+        return isLast ? await response.json() : null;
+      }, `Upload chunk at offset ${chunkOffset}`);
+    } while (offset < fileSize);
+
+    if (!finalizeBody?.file) {
+      throw new Error("Gemini resumable upload finalize response did not include a file");
+    }
+    if (verbose) {
+      console.log(`    [Transcribe] Resumable upload finalized: ${finalizeBody.file.name}`);
+    }
+    return finalizeBody;
+  } finally {
+    await handle.close();
+  }
+}
+
+/**
  * Transcribe an audio file using Gemini File API
  * @param {string} audioPath - Path to the audio file
  * @param {string} apiKey - Gemini API key
@@ -196,30 +333,16 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.5-fla
       console.log(`    [Transcribe] Uploading file: ${audioPath}`);
     }
 
-    let uploadResponse;
-    for (let attempt = 1; attempt <= MAX_UPLOAD_ATTEMPTS; attempt++) {
-      try {
-        uploadResponse = await fileManager.uploadFile(audioPath, {
-          mimeType: "audio/mpeg",
-          displayName: path.basename(audioPath),
-        });
-        break;
-      } catch (error) {
-        // Re-throwing here (rather than swallowing) is intentional and safe: every
-        // caller of transcribeAudio/transcribeSession (generateSessionMinutes and the
-        // preview loop in src/index.js) already wraps the call in a try/catch that
-        // logs and skips just this session, so an exhausted-retries or permanent
-        // error here drops one session's minutes without aborting the batch run.
-        if (attempt === MAX_UPLOAD_ATTEMPTS || !isTransientError(error)) {
-          throw error;
-        }
-        const delay = Math.min(UPLOAD_RETRY_BASE_MS * 2 ** (attempt - 1), UPLOAD_RETRY_CAP_MS);
-        console.log(
-          `    [Transcribe] Upload attempt ${attempt}/${MAX_UPLOAD_ATTEMPTS} failed (${error.message}); retrying in ${delay}ms`,
-        );
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
+    // Re-throwing an exhausted-retries or permanent error here (rather than swallowing
+    // it) is intentional and safe: every caller of transcribeAudio/transcribeSession
+    // (generateSessionMinutes and the preview loop in src/index.js) already wraps the
+    // call in a try/catch that logs and skips just this session, so this drops one
+    // session's minutes without aborting the batch run.
+    const uploadResponse = await uploadFileResumable(audioPath, apiKey, {
+      mimeType: "audio/mpeg",
+      displayName: path.basename(audioPath),
+      verbose,
+    });
 
     fileName = uploadResponse.file.name;
 
