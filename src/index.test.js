@@ -48,3 +48,20 @@ test.each(['google:chirp_3+names', 'google+names'])(
     expect(result.status).toBe(1);
   }
 );
+
+test.each(['deepgram', 'deepgram:nova-2', 'deepgram:nova-3', 'deepgram:nova-3+names', 'deepgram+names'])(
+  'accepts %s past CLI validation',
+  (sttModel) => {
+    const result = runCli(['--preview', '123:6LO', '--audio', '--stt-model', sttModel]);
+
+    expect(result.stderr).not.toMatch(/--stt-model ".*" is invalid/);
+    expect(result.status).toBe(1);
+  }
+);
+
+test('rejects a bogus deepgram variant', () => {
+  const result = runCli(['--preview', '123:6LO', '--audio', '--stt-model', 'deepgram:foo+bar']);
+
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('--stt-model "deepgram:foo+bar" is invalid');
+});

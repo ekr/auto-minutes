@@ -153,6 +153,22 @@ export function extractParticipantNames(bluesheet) {
 }
 
 /**
+ * Filter working group documents down to active drafts (draft-ietf-* with an
+ * in-progress IETF process status), capped to keep prompts/keyterm lists
+ * manageable.
+ * @param {Array} wgDocuments - Working group documents from fetchWorkingGroupDocuments
+ * @returns {Array} Filtered, capped array of active draft document objects
+ */
+export function activeDraftNames(wgDocuments = []) {
+  return wgDocuments.filter(doc =>
+    doc.Name && doc.Name.startsWith('draft-ietf-') &&
+    (doc['Status in the IETF process'] === 'I-D Exists' ||
+     doc['Status in the IETF process'] === 'Active' ||
+     doc['Status in the IETF process'].includes('WG'))
+  ).slice(0, 100);
+}
+
+/**
  * Build the context sections to inject into the LLM prompt.
  * @param {Object|null} context - Pre-fetched session context
  * @param {string} sessionName - Name of the session
@@ -164,13 +180,7 @@ export function buildContextPrompt(context, sessionName) {
 
   // Working group documents
   if (wgDocuments.length > 0) {
-    // Filter to active drafts only, limit to 10 to keep the prompt manageable
-    const activeDrafts = wgDocuments.filter(doc =>
-      doc.Name && doc.Name.startsWith('draft-ietf-') &&
-      (doc['Status in the IETF process'] === 'I-D Exists' ||
-       doc['Status in the IETF process'] === 'Active' ||
-       doc['Status in the IETF process'].includes('WG'))
-    ).slice(0, 100);
+    const activeDrafts = activeDraftNames(wgDocuments);
 
     if (activeDrafts.length > 0) {
       result += `\n\nWorking Group Documents Context:\nThe following active drafts are associated with the ${sessionName} working group:\n`;
