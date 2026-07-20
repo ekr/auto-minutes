@@ -10,6 +10,7 @@ import { jest } from '@jest/globals';
 
 const mockExistsSync = jest.fn();
 const mockStatSync = jest.fn(() => ({ size: 1000, mtimeMs: 0 }));
+const mockCreateReadStream = jest.fn(() => ({ __isMockReadStream: true }));
 const mockFs = {
   existsSync: mockExistsSync,
   mkdirSync: jest.fn(),
@@ -17,6 +18,7 @@ const mockFs = {
   unlinkSync: jest.fn(),
   statSync: mockStatSync,
   readFileSync: jest.fn(),
+  createReadStream: mockCreateReadStream,
 };
 jest.unstable_mockModule('fs', () => ({
   default: mockFs,
@@ -721,7 +723,8 @@ describe('transcribeAudioDeepgram', () => {
 
   beforeEach(() => {
     process.env.DEEPGRAM_API_KEY = 'fake-deepgram-key';
-    mockReadFile.mockReset().mockResolvedValue(Buffer.from('fake audio bytes'));
+    mockStatSync.mockReset().mockReturnValue({ size: 1000, mtimeMs: 0 });
+    mockCreateReadStream.mockReset().mockImplementation(() => ({ __isMockReadStream: true }));
     jest.useFakeTimers();
   });
 
@@ -748,6 +751,34 @@ describe('transcribeAudioDeepgram', () => {
     const transcript = await transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, []);
 
     expect(transcript).toBe('[00:00:00] Speaker 0: Hello there,\n[00:00:05] Speaker 1: Hi');
+  });
+
+  test('streams the file body from disk with a Content-Length header instead of buffering it', async () => {
+    mockFetch.mockReset().mockImplementation(async () => makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY }));
+    mockStatSync.mockReturnValue({ size: 424242, mtimeMs: 0 });
+
+    await transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, []);
+
+    expect(mockCreateReadStream).toHaveBeenCalledWith('/tmp/fake.mp3');
+    const [, options] = mockFetch.mock.calls[0];
+    expect(options.body).toBe(mockCreateReadStream.mock.results[0].value);
+    expect(options.headers['Content-Length']).toBe('424242');
+  });
+
+  test('constructs a fresh read stream for each retry attempt rather than resending one', async () => {
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeDeepgramResponse({ ok: false, status: 503, statusText: 'Service Unavailable' }))
+      .mockImplementationOnce(async () => makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY }));
+
+    const promise = transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, []);
+    await jest.runAllTimersAsync();
+    const transcript = await promise;
+
+    expect(transcript).toContain('Speaker 0');
+    expect(mockCreateReadStream).toHaveBeenCalledTimes(2);
+    const bodies = mockFetch.mock.calls.map(([, options]) => options.body);
+    expect(bodies[0]).not.toBe(bodies[1]);
   });
 
   test('falls back to alternatives[0].transcript when no diarized words are present', async () => {
@@ -788,6 +819,40 @@ describe('transcribeAudioDeepgram', () => {
 
     expect(transcript).toContain('Speaker 0');
     expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  test('applies equal-jitter to the retry backoff, bounded within [exp/2, exp]', async () => {
+    const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeDeepgramResponse({ ok: false, status: 503, statusText: 'Service Unavailable' }))
+      .mockImplementationOnce(async () => makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY }));
+
+    const lowPromise = transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, []);
+    await jest.runAllTimersAsync();
+    await lowPromise;
+    // First attempt's exp is UPLOAD_RETRY_BASE_MS (2000ms); with Math.random() = 0
+    // the equal-jitter formula floor(exp/2 + rand*exp/2) collapses to exactly exp/2.
+    const lowDelay = setTimeoutSpy.mock.calls.map(([, ms]) => ms).find((ms) => ms > 0);
+    expect(lowDelay).toBe(1000);
+
+    setTimeoutSpy.mockClear();
+    randomSpy.mockReturnValue(1);
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeDeepgramResponse({ ok: false, status: 503, statusText: 'Service Unavailable' }))
+      .mockImplementationOnce(async () => makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY }));
+
+    const highPromise = transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, []);
+    await jest.runAllTimersAsync();
+    await highPromise;
+    // With Math.random() = 1 the formula collapses to exactly exp.
+    const highDelay = setTimeoutSpy.mock.calls.map(([, ms]) => ms).find((ms) => ms > 0);
+    expect(highDelay).toBe(2000);
+
+    randomSpy.mockRestore();
+    setTimeoutSpy.mockRestore();
   });
 
   test('permanent error: a 401 fails on the first attempt without retry', async () => {

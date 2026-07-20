@@ -190,7 +190,11 @@ async function withUploadRetry(attemptFn, label) {
       if (attempt === MAX_UPLOAD_ATTEMPTS || !isTransientError(error)) {
         throw error;
       }
-      const delay = Math.min(UPLOAD_RETRY_BASE_MS * 2 ** (attempt - 1), UPLOAD_RETRY_CAP_MS);
+      // Equal-jitter: half the exponential backoff is fixed, half is randomized, so
+      // concurrent uploads that fail together (e.g. simultaneous event-loop-stall
+      // timeouts under -j concurrency) don't all retry at the exact same instant.
+      const exp = Math.min(UPLOAD_RETRY_BASE_MS * 2 ** (attempt - 1), UPLOAD_RETRY_CAP_MS);
+      const delay = Math.floor(exp / 2 + Math.random() * (exp / 2));
       console.log(
         `    [Transcribe] ${label} attempt ${attempt}/${MAX_UPLOAD_ATTEMPTS} failed (${error.message}); retrying in ${delay}ms`,
       );
@@ -972,7 +976,7 @@ export async function transcribeAudioDeepgram(audioPath, model = "nova-3", verbo
     throw new Error("DEEPGRAM_API_KEY is required for --stt-model deepgram");
   }
 
-  const audioBuffer = await fsPromises.readFile(audioPath);
+  const { size: fileSize } = fs.statSync(audioPath);
 
   const params = new URLSearchParams();
   params.set("model", model);
@@ -990,13 +994,18 @@ export async function transcribeAudioDeepgram(audioPath, model = "nova-3", verbo
   }
 
   const data = await withUploadRetry(async () => {
+    // Stream the file from disk rather than buffering it in memory: a Readable is
+    // single-use, so it must be created fresh on every retry attempt (a re-sent
+    // stream from a prior attempt would be empty/consumed).
+    const body = fs.createReadStream(audioPath);
     const response = await fetch(`${DEEPGRAM_LISTEN_URL}?${params.toString()}`, {
       method: "POST",
       headers: {
         Authorization: `Token ${apiKey}`,
         "Content-Type": "audio/mpeg",
+        "Content-Length": String(fileSize),
       },
-      body: audioBuffer,
+      body,
     });
 
     if (!response.ok) {
