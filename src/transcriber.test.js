@@ -7,6 +7,7 @@
  */
 
 import { jest } from '@jest/globals';
+import { EventEmitter } from 'node:events';
 
 const mockExistsSync = jest.fn();
 const mockStatSync = jest.fn(() => ({ size: 1000, mtimeMs: 0 }));
@@ -48,10 +49,28 @@ jest.unstable_mockModule('fs/promises', () => ({
   ...mockFsPromises,
 }));
 
-const mockExecSync = jest.fn();
+// Fake child process: an EventEmitter with stdout/stderr EventEmitters, matching
+// the shape runProcess() (src/transcriber.js) consumes from child_process.spawn.
+function makeMockChild({ stdout = '', code = 0, spawnError = null } = {}) {
+  const child = new EventEmitter();
+  child.stdout = new EventEmitter();
+  child.stdout.pipe = jest.fn();
+  child.stderr = new EventEmitter();
+  child.stderr.pipe = jest.fn();
+  process.nextTick(() => {
+    if (spawnError) {
+      child.emit('error', spawnError);
+      return;
+    }
+    if (stdout) child.stdout.emit('data', Buffer.from(stdout));
+    child.emit('close', code);
+  });
+  return child;
+}
+
+const mockSpawn = jest.fn();
 jest.unstable_mockModule('child_process', () => ({
-  execSync: mockExecSync,
-  spawnSync: jest.fn(),
+  spawn: mockSpawn,
 }));
 
 const mockGenerateContentStream = jest.fn();
@@ -113,6 +132,8 @@ jest.unstable_mockModule('node-fetch', () => ({
 const {
   transcribeAudio,
   transcribeSession,
+  downloadAudio,
+  prepareLocalAudio,
   getAudioCachePath,
   getTranscriptCachePath,
   isTransientError,
@@ -160,7 +181,7 @@ beforeEach(() => {
   mockReadFile.mockReset();
   mockWriteFile.mockClear();
   mockUnlink.mockClear();
-  mockExecSync.mockReset();
+  mockSpawn.mockReset().mockImplementation(() => makeMockChild());
   mockGenerateContentStream.mockReset();
   mockGenerateContent.mockReset();
   mockGetFile.mockReset().mockResolvedValue({ state: 'ACTIVE', mimeType: 'audio/mpeg', uri: 'files/abc' });
@@ -235,7 +256,7 @@ describe('transcribeSession', () => {
       (p) => p === getAudioCachePath(sessionId) || p === getTranscriptCachePath(sessionId),
     );
     mockReadFile.mockResolvedValue('');
-    mockExecSync.mockReturnValue('1.0'); // 1 second of audio — trivially satisfies the word floor
+    mockSpawn.mockImplementation(() => makeMockChild({ stdout: '1.0' })); // 1 second of audio — trivially satisfies the word floor
     mockGenerateContentStream.mockImplementation(() =>
       Promise.resolve(makeStreamResult(['**Speaker:** This is a real transcript with real words.'], 'STOP')),
     );
@@ -261,7 +282,7 @@ describe('transcribeSession', () => {
 
   test('duration check throws when word count is far below what the audio length implies', async () => {
     mockExistsSync.mockImplementation((p) => p === getAudioCachePath(sessionId));
-    mockExecSync.mockReturnValue('6300'); // 105 minutes
+    mockSpawn.mockImplementation(() => makeMockChild({ stdout: '6300' })); // 105 minutes
     mockGenerateContentStream.mockImplementation(() => Promise.resolve(makeStreamResult(['hi'], 'STOP')));
 
     await expect(transcribeSession(session, 'gemini', 'fake-key')).rejects.toThrow(
@@ -272,13 +293,82 @@ describe('transcribeSession', () => {
 
   test('duration check passes when word count meets the floor for the audio length', async () => {
     mockExistsSync.mockImplementation((p) => p === getAudioCachePath(sessionId));
-    mockExecSync.mockReturnValue('6300'); // 105 minutes
+    mockSpawn.mockImplementation(() => makeMockChild({ stdout: '6300' })); // 105 minutes
     const words = new Array(11000).fill('word').join(' ');
     mockGenerateContentStream.mockImplementation(() => Promise.resolve(makeStreamResult([words], 'STOP')));
 
     const result = await transcribeSession(session, 'gemini', 'fake-key');
     expect(result.text.trim().split(/\s+/).length).toBe(11000);
     expect(mockWriteFile).toHaveBeenCalled();
+  });
+});
+
+// These exercise runProcess (the async spawn-based child_process runner) indirectly
+// through its two exported callers, since runProcess itself isn't exported.
+describe('downloadAudio (async spawn-based ffmpeg runner)', () => {
+  test('resolves when ffmpeg exits 0 and spawns with an argv array (no shell)', async () => {
+    await expect(
+      downloadAudio('https://stream.example/audio.m3u8', '/tmp/out.mp3', false),
+    ).resolves.toBeUndefined();
+
+    expect(mockSpawn).toHaveBeenCalledWith('ffmpeg', [
+      '-hide_banner', '-loglevel', 'error',
+      '-i', 'https://stream.example/audio.m3u8',
+      '-vn', '-acodec', 'libmp3lame', '-q:a', '2',
+      '/tmp/out.mp3',
+    ]);
+  });
+
+  test('rejects with a clear error when ffmpeg exits non-zero', async () => {
+    mockSpawn.mockImplementation(() => makeMockChild({ code: 1 }));
+
+    await expect(
+      downloadAudio('https://stream.example/audio.m3u8', '/tmp/out.mp3'),
+    ).rejects.toThrow(/exited with code 1/);
+  });
+
+  test('rejects when the child process fails to spawn', async () => {
+    mockSpawn.mockImplementation(() => makeMockChild({ spawnError: new Error('ENOENT') }));
+
+    await expect(
+      downloadAudio('https://stream.example/audio.m3u8', '/tmp/out.mp3'),
+    ).rejects.toThrow(/failed to start/);
+  });
+});
+
+describe('prepareLocalAudio', () => {
+  const session = { sessionId: 'IETF126-TEST-0001' };
+  const localPath = '/tmp/input.mp4'; // already absolute, so path.resolve(localPath) === localPath
+
+  test('reuses the cached MP3 (no ffmpeg spawn) when the source fingerprint is unchanged', async () => {
+    const audioCachePath = getAudioCachePath(session.sessionId);
+    const sidecarPath = `${audioCachePath}.source.json`;
+    mockStatSync.mockReturnValue({ size: 1000, mtimeMs: 0 });
+    mockExistsSync.mockImplementation((p) => p === audioCachePath || p === sidecarPath);
+    mockFs.readFileSync
+      .mockReset()
+      .mockReturnValue(JSON.stringify({ path: localPath, size: 1000, mtimeMs: 0 }));
+
+    const result = await prepareLocalAudio(session, localPath, false);
+
+    expect(result).toBe(audioCachePath);
+    expect(mockSpawn).not.toHaveBeenCalled();
+  });
+
+  test('converts via ffmpeg (async spawn) when no cached conversion exists', async () => {
+    mockExistsSync.mockReturnValue(false);
+
+    const result = await prepareLocalAudio(session, localPath, false);
+
+    expect(result).toBe(getAudioCachePath(session.sessionId));
+    expect(mockSpawn).toHaveBeenCalledWith('ffmpeg', expect.arrayContaining(['-i', localPath]));
+  });
+
+  test('rejects when the ffmpeg conversion exits non-zero', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockSpawn.mockImplementation(() => makeMockChild({ code: 1 }));
+
+    await expect(prepareLocalAudio(session, localPath, false)).rejects.toThrow(/exited with code 1/);
   });
 });
 
