@@ -97,6 +97,11 @@ jest.unstable_mockModule('./scraper.js', () => ({
   downloadTranscript: jest.fn().mockRejectedValue(new Error('official transcript not available')),
 }));
 
+const mockRecordUsage = jest.fn();
+jest.unstable_mockModule('./accounting.js', () => ({
+  recordUsage: mockRecordUsage,
+}));
+
 // Gemini Files API resumable upload protocol: a "start" POST to the well-known
 // upload endpoint returns a session URL via the X-Goog-Upload-URL header; chunk
 // POSTs then go to that session URL.
@@ -182,6 +187,7 @@ beforeEach(() => {
   mockWriteFile.mockClear();
   mockUnlink.mockClear();
   mockSpawn.mockReset().mockImplementation(() => makeMockChild());
+  mockRecordUsage.mockReset();
   mockGenerateContentStream.mockReset();
   mockGenerateContent.mockReset();
   mockGetFile.mockReset().mockResolvedValue({ state: 'ACTIVE', mimeType: 'audio/mpeg', uri: 'files/abc' });
@@ -975,8 +981,9 @@ describe('transcribeSession deepgram dispatch', () => {
     }
   });
 
-  test('calls transcribeAudioDeepgram and, for a "+names" hybrid, applyNameHybrid, aggregating usage', async () => {
+  test('calls transcribeAudioDeepgram and, for a "+names" hybrid, applyNameHybrid, recording usage separately', async () => {
     mockExistsSync.mockImplementation((p) => p === getAudioCachePath(sessionId));
+    mockSpawn.mockImplementation(() => makeMockChild({ stdout: '1800' })); // 30 minutes of audio
     mockFetch.mockReset().mockImplementation(async (url) => {
       if (typeof url === 'string' && url.startsWith('https://api.deepgram.com/')) {
         return makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY });
@@ -994,12 +1001,14 @@ describe('transcribeSession deepgram dispatch', () => {
 
     expect(result.text).toContain('**Jane Smith**');
     expect(result.text).toContain('**John Doe**');
-    expect(result.usage).toEqual({ inputTokens: 40, outputTokens: 8, model: 'gemini-3.5-flash' });
+    expect(result.usage).toEqual({ model: 'deepgram:nova-3', audioSeconds: 1800, inputTokens: 0, outputTokens: 0 });
+    expect(mockRecordUsage).toHaveBeenCalledWith({ inputTokens: 40, outputTokens: 8, model: 'gemini-3.5-flash' });
     expect(mockWriteFile).toHaveBeenCalled();
   });
 
-  test('deepgram without "+names" produces "Speaker N" labels and zero usage', async () => {
+  test('deepgram without "+names" produces "Speaker N" labels and zero token usage', async () => {
     mockExistsSync.mockImplementation((p) => p === getAudioCachePath(sessionId));
+    mockSpawn.mockImplementation(() => makeMockChild({ stdout: '900' })); // 15 minutes of audio
     mockFetch.mockReset().mockImplementation(async (url) => {
       if (typeof url === 'string' && url.startsWith('https://api.deepgram.com/')) {
         return makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY });
@@ -1010,8 +1019,9 @@ describe('transcribeSession deepgram dispatch', () => {
     const result = await transcribeSession(session, 'deepgram:nova-3', 'fake-gemini-key');
 
     expect(result.text).toContain('Speaker 0');
-    expect(result.usage).toEqual({ inputTokens: 0, outputTokens: 0, model: 'deepgram:nova-3' });
+    expect(result.usage).toEqual({ model: 'deepgram:nova-3', audioSeconds: 900, inputTokens: 0, outputTokens: 0 });
     expect(mockGenerateContent).not.toHaveBeenCalled();
+    expect(mockRecordUsage).not.toHaveBeenCalled();
   });
 
   test('"deepgram" alone (no model suffix) defaults to nova-3', async () => {
