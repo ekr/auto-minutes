@@ -34,6 +34,75 @@ let gemini = null;
 let currentModel = null;
 
 /**
+ * Throw if a transcript has no usable content: empty/whitespace, or a JSON
+ * array with no entries. Non-JSON plain text (the normal shape for STT
+ * Markdown output) is accepted without attempting to parse it as JSON.
+ * @param {string} transcript - The transcript text
+ * @param {string} sessionName - Name of the session (for the error message)
+ */
+export function assertTranscriptPresent(transcript, sessionName) {
+  if (typeof transcript !== "string" || transcript.trim() === "") {
+    throw new Error(`Cannot generate minutes for ${sessionName}: transcript is empty`);
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(transcript);
+  } catch (_) {
+    // Not JSON — this is the normal shape for Gemini STT Markdown output.
+    return;
+  }
+
+  if (Array.isArray(parsed) && parsed.length === 0) {
+    throw new Error(`Cannot generate minutes for ${sessionName}: transcript has no entries`);
+  }
+}
+
+/**
+ * Count words in a transcript. Handles Meetecho's JSON array format
+ * ({startTime, text} entries) and plain-text/Markdown STT output.
+ * @param {string} transcript - The transcript text
+ * @returns {number} Word count
+ */
+export function transcriptWordCount(transcript) {
+  if (typeof transcript !== "string") {
+    return 0;
+  }
+
+  try {
+    const parsed = JSON.parse(transcript);
+    if (Array.isArray(parsed)) {
+      return parsed.reduce((sum, entry) => {
+        const text = entry && typeof entry.text === "string" ? entry.text : "";
+        return sum + text.split(/\s+/).filter(Boolean).length;
+      }, 0);
+    }
+  } catch (_) {
+    // Not JSON — fall through to plain-text word counting.
+  }
+
+  return transcript.split(/\s+/).filter(Boolean).length;
+}
+
+/**
+ * Throw if a transcript is too short to be a real meeting recording.
+ * @param {string} transcript - The transcript text
+ * @param {string} sessionName - Name of the session (for the error message)
+ * @param {Object} options
+ * @param {number} options.minWords - Minimum word count (default 100)
+ * @param {boolean} options.allowShort - Skip the check entirely (default false)
+ */
+export function assertTranscriptSubstantial(transcript, sessionName, { minWords = 100, allowShort = false } = {}) {
+  if (allowShort) {
+    return;
+  }
+  const words = transcriptWordCount(transcript);
+  if (words < minWords) {
+    throw new Error(`Transcript for ${sessionName} is only ${words} words (minimum ${minWords}); pass --allow-short-transcript to override`);
+  }
+}
+
+/**
  * Initialize the Claude API client
  * @param {string} apiKey - Anthropic API key
  */
@@ -144,6 +213,8 @@ export function buildContextPrompt(context, sessionName) {
  * @returns {Promise<{text: string, usage: {inputTokens: number, outputTokens: number, model: string}}>} Generated minutes and token usage
  */
 export async function generateMinutes(transcript, sessionName, verbose = false, modelName = null, context = null) {
+  assertTranscriptPresent(transcript, sessionName);
+
   const sanitizedName = sanitizeSessionName(sessionName);
   const wgLink = `../wg/${sanitizedName}.html`;
 
@@ -167,6 +238,9 @@ Requirements:
 - Use participant names from the provided list when attributing statements or discussions; the bluesheet is authoritative for names while the transcript may contain errors, so use the bluesheet to correct any names found in the transcript
 - Remember that IETF participants are individuals, not representatives of companies or other entities
 - Remember that consensus is not judged in IETF meetings; it is established separately. It's OK to say things like "a poll of the room was taken" or "a sense of those present indicates..."
+- The transcript below is the ONLY source of fact. The slide list, participant list, and draft list above are reference data for correcting names and spellings — they are NOT evidence that anything was presented or discussed.
+- Never describe a presentation, statement, position, or decision that does not appear in the transcript. If a listed slide deck is not discussed in the transcript, omit it entirely.
+- Do not infer session content, chairs, participants, or meeting location from the slide titles or from your own knowledge of the working group.
 
 The transcript is in JSON format with timestamps and text. Here is the transcript:
 

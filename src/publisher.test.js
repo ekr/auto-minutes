@@ -2,7 +2,10 @@
  * Tests for publisher utilities
  */
 
-import { extractDraftsFromTranscript, addInlineDraftLinks } from './publisher.js';
+import { extractDraftsFromTranscript, addInlineDraftLinks, saveMinutes } from './publisher.js';
+import fs from 'fs/promises';
+import os from 'os';
+import path from 'path';
 
 describe('extractDraftsFromTranscript', () => {
   test('extracts draft names from JSON transcript', () => {
@@ -94,5 +97,42 @@ describe('addInlineDraftLinks', () => {
     const result = addInlineDraftLinks('draft-ietf-aaa and draft-ietf-bbb were both discussed.');
     expect(result).toContain('[draft-ietf-aaa](https://datatracker.ietf.org/doc/draft-ietf-aaa/)');
     expect(result).toContain('[draft-ietf-bbb](https://datatracker.ietf.org/doc/draft-ietf-bbb/)');
+  });
+});
+
+describe('saveMinutes', () => {
+  let outputDir;
+
+  beforeEach(async () => {
+    outputDir = await fs.mkdtemp(path.join(os.tmpdir(), 'auto-minutes-test-'));
+  });
+
+  afterEach(async () => {
+    await fs.rm(outputDir, { recursive: true, force: true });
+  });
+
+  test('throws when content is empty', async () => {
+    await expect(saveMinutes('Test Session', '', outputDir)).rejects.toThrow(
+      'Cannot save minutes for Test Session: content is empty or contains only a title header',
+    );
+  });
+
+  test('throws when content is whitespace-only', async () => {
+    await expect(saveMinutes('Test Session', '   \n\n  ', outputDir)).rejects.toThrow(
+      'content is empty or contains only a title header',
+    );
+  });
+
+  test('throws when content contains only a title header', async () => {
+    await expect(
+      saveMinutes('Test Session', '# [Test Session](../wg/test-session.html)', outputDir),
+    ).rejects.toThrow('content is empty or contains only a title header');
+  });
+
+  test('writes files when content has a real body', async () => {
+    const content = '# [Test Session](../wg/test-session.html)\n\n## Summary\n\nThe group discussed things.';
+    await saveMinutes('Test Session', content, outputDir);
+    const mdContent = await fs.readFile(path.join(outputDir, 'test-session.md'), 'utf-8');
+    expect(mdContent).toContain('Summary');
   });
 });

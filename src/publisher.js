@@ -411,6 +411,13 @@ export async function saveMinutes(
   transcriptFile = null,
   meetingId = null,
 ) {
+  // A body that's empty or just the title header means nothing usable was
+  // generated (e.g. from an unvalidated empty transcript) — never publish it.
+  const trimmedContent = content.trim();
+  if (!trimmedContent || /^#[^\n]*$/.test(trimmedContent)) {
+    throw new Error(`Cannot save minutes for ${sessionName}: content is empty or contains only a title header`);
+  }
+
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
 

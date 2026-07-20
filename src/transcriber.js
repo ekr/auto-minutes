@@ -13,7 +13,7 @@ import os from "os";
 import { randomUUID } from "crypto";
 import fetch from "node-fetch";
 import { downloadTranscript } from "./scraper.js";
-import { buildContextPrompt } from "./generator.js";
+import { buildContextPrompt, assertTranscriptPresent, transcriptWordCount } from "./generator.js";
 
 const AUDIO_CACHE_DIR = path.join("cache", "audio");
 const TRANSCRIPT_CACHE_DIR = path.join("cache", "transcripts");
@@ -21,11 +21,10 @@ const TRANSCRIPT_CACHE_DIR = path.join("cache", "transcripts");
 // Audio transcripts are typically ~88% of official transcript word count (based on TLS/IETF124).
 // If below this ratio, the transcription was likely truncated.
 const TRUNCATION_RATIO_THRESHOLD = 0.6;
-const MAX_TRANSCRIPTION_ATTEMPTS = 3;
 
-function wordCount(text) {
-  return text.split(/\s+/).filter(Boolean).length;
-}
+// Conversational speech runs 120-150 wpm; this is a floor that only catches gross failure
+// (e.g. a session that transcribed to near-zero words), not genuinely slow-paced sessions.
+const MIN_WORDS_PER_MINUTE = 30;
 
 /**
  * Fetch the Cloudflare video ID for a session from the Meetecho sessions API
@@ -211,11 +210,16 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.5-fla
     let totalUsage = { inputTokens: 0, outputTokens: 0, model };
 
     for (let attempt = 0; attempt <= MAX_STREAM_RETRIES; attempt++) {
+      const soFar = allText.join("");
       let prompt;
-      if (attempt === 0) {
+      if (attempt === 0 || !soFar.trim()) {
+        // Nothing usable transcribed yet — start over rather than feeding a
+        // "continue from here" prompt with an empty "here".
         prompt = INITIAL_PROMPT;
+        if (attempt > 0) {
+          console.log(`    [Transcribe] Retry ${attempt}/${MAX_STREAM_RETRIES}: no transcript produced yet, restarting from the beginning`);
+        }
       } else {
-        const soFar = allText.join("");
         prompt = `Continue transcribing from where the previous transcription was cut off. Here is everything that was already transcribed:\n\n${soFar}\n\nContinue the verbatim transcript from exactly this point to the end of the audio. Do not repeat any of the text above — only output new transcript text. Maintain the same speaker labeling format.`;
         console.log(`    [Transcribe] Retry ${attempt}/${MAX_STREAM_RETRIES}: continuing from ${soFar.length} chars`);
       }
@@ -237,7 +241,6 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.5-fla
       let chunkIndex = 0;
       let lastFinishReason = null;
       let lastChunkRaw = null;
-      let streamFailed = false;
       try {
         for await (const chunk of streamResult.stream) {
           const finishReason = chunk.candidates?.[0]?.finishReason;
@@ -258,7 +261,6 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.5-fla
           chunkIndex++;
         }
       } catch (streamError) {
-        streamFailed = true;
         const chunkText = chunks.join("");
         if (verbose) {
           console.error(`\n    [Transcribe] Stream error after ${chunkIndex} chunks (${chunkText.length} chars): ${streamError.message}`);
@@ -279,8 +281,23 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.5-fla
         continue;
       }
 
-      // Stream completed successfully
-      allText.push(chunks.join(""));
+      // Stream completed without a transport error — but an empty result is
+      // still a failure. This is exactly how the DISPATCH-20260720 session was
+      // silently lost: a zero-chunk stream was previously treated as success.
+      const chunkText = chunks.join("");
+      if (!chunkText.trim()) {
+        console.warn(`    [Transcribe] Attempt ${attempt} produced no transcript text (finishReason=${lastFinishReason}, chunks=${chunkIndex})`);
+        const safetyRatings = lastChunkRaw?.candidates?.[0]?.safetyRatings;
+        if (safetyRatings) {
+          console.warn(`    [Transcribe] Last safety ratings: ${JSON.stringify(safetyRatings)}`);
+        }
+        if (attempt === MAX_STREAM_RETRIES) {
+          throw new Error(`Gemini STT returned no transcript text for ${path.basename(audioPath)} after ${MAX_STREAM_RETRIES + 1} attempts (last finishReason: ${lastFinishReason})`);
+        }
+        continue;
+      }
+
+      allText.push(chunkText);
 
       // Get usage metadata from the aggregated response
       try {
@@ -293,7 +310,7 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.5-fla
       } catch (_) { /* usage metadata is best-effort */ }
 
       if (verbose) {
-        console.log(`\n    [Transcribe] Attempt ${attempt}: ${chunks.length} chunks, ${chunks.join("").length} chars, finishReason=${lastFinishReason}`);
+        console.log(`\n    [Transcribe] Attempt ${attempt}: ${chunks.length} chunks, ${chunkText.length} chars, finishReason=${lastFinishReason}`);
       }
       break; // success, no more retries
     }
@@ -769,6 +786,7 @@ export function prepareLocalTranscript(session, localPath, verbose = false) {
   }
 
   const transcript = fs.readFileSync(localPath, "utf-8");
+  assertTranscriptPresent(transcript, session.sessionId);
 
   fs.mkdirSync(TRANSCRIPT_CACHE_DIR, { recursive: true });
   fs.writeFileSync(transcriptCachePath, transcript);
@@ -848,8 +866,15 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
   // Check transcript cache (valid in both branches: when localAudioPath was given,
   // prepareLocalAudio leaves the transcript intact iff it reused the cached MP3)
   if (fs.existsSync(transcriptCachePath)) {
-    console.log(`  Using cached transcript: ${transcriptCachePath}`);
-    return await fsPromises.readFile(transcriptCachePath, "utf-8");
+    const cachedTranscript = await fsPromises.readFile(transcriptCachePath, "utf-8");
+    try {
+      assertTranscriptPresent(cachedTranscript, session.sessionId);
+      console.log(`  Using cached transcript: ${transcriptCachePath}`);
+      return { text: cachedTranscript, usage: { inputTokens: 0, outputTokens: 0, model: null } };
+    } catch (error) {
+      console.warn(`  Cached transcript for ${session.sessionId} is invalid (${error.message}); deleting and re-transcribing`);
+      await fsPromises.unlink(transcriptCachePath);
+    }
   }
 
   if (!localAudioPath) {
@@ -879,6 +904,9 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
           for (let i = 0; i < segments.length; i++) {
             console.log(`  Gemini STT segment ${i + 1}/${segments.length}: ${path.basename(segments[i])}`);
             const result = await transcribeAudio(segments[i], apiKey, "gemini-3.5-flash", verbose, context);
+            if (!result.text || !result.text.trim()) {
+              throw new Error(`Gemini STT returned no transcript text for segment ${i + 1}/${segments.length} (${path.basename(segments[i])})`);
+            }
             parts.push(result.text);
             totalUsage.inputTokens += result.usage.inputTokens;
             totalUsage.outputTokens += result.usage.outputTokens;
@@ -904,13 +932,27 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
     }
   }
 
-  // For Gemini STT, apply truncation detection with retry
+  // For Gemini STT, apply a duration-based sanity check: a real recording
+  // produces at least MIN_WORDS_PER_MINUTE words per minute of audio. This
+  // runs unconditionally (unlike the official-transcript ratio check below,
+  // which is skipped whenever Meetecho hasn't published a transcript yet).
   if (!sttModel.startsWith("google")) {
-    // Fetch official transcript for length comparison
+    const durationMinutes = getAudioDuration(audioPath) / 60;
+    const audioWords = transcriptWordCount(transcript);
+    const minExpectedWords = durationMinutes * MIN_WORDS_PER_MINUTE;
+    if (verbose) {
+      console.log(`    [Transcribe] Audio duration: ${durationMinutes.toFixed(1)} min, transcript: ${audioWords} words (minimum expected: ${Math.round(minExpectedWords)})`);
+    }
+    if (audioWords < minExpectedWords) {
+      throw new Error(`Transcript for ${session.sessionId} has only ${audioWords} words for ${durationMinutes.toFixed(1)} minutes of audio (minimum ${Math.round(minExpectedWords)} words expected at ${MIN_WORDS_PER_MINUTE} wpm)`);
+    }
+
+    // Additional warning against the official transcript, when available.
+    // Not authoritative — Meetecho may not have published it yet.
     let officialWordCount = 0;
     try {
       const officialTranscript = await downloadTranscript(session);
-      officialWordCount = wordCount(officialTranscript);
+      officialWordCount = transcriptWordCount(officialTranscript);
       if (verbose) {
         console.log(`    [Transcribe] Official transcript: ${officialWordCount} words`);
       }
@@ -921,10 +963,6 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
     }
 
     if (officialWordCount > 0) {
-      const audioWords = wordCount(transcript);
-      if (verbose) {
-        console.log(`    [Transcribe] Audio transcript: ${audioWords} words`);
-      }
       const ratio = audioWords / officialWordCount;
       if (verbose) {
         console.log(`    [Transcribe] Word count ratio: ${ratio.toFixed(2)} (threshold: ${TRUNCATION_RATIO_THRESHOLD})`);
@@ -934,6 +972,9 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
       }
     }
   }
+
+  // Validate before caching so a failed/empty transcription can never poison the cache.
+  assertTranscriptPresent(transcript, session.sessionId);
 
   // Save transcript to cache
   await fsPromises.mkdir(TRANSCRIPT_CACHE_DIR, { recursive: true });

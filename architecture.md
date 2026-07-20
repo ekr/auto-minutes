@@ -65,6 +65,21 @@ Controlled via `--stt-model`:
 
 Supports Gemini and Claude models, selected via `--model`. Context (slides, bluesheet, WG documents) is fetched before transcription so it can be used by Gemini STT for speaker identification.
 
+### Transcript validation (defense in depth)
+
+An empty or near-empty transcript must never reach LLM generation or publication — the LLM will otherwise confabulate minutes from context (slide titles, participant lists) with no way to tell fact from invention. Three validators live in `generator.js` (despite the name, they're the shared contract used by `scraper.js` and `transcriber.js` too, to avoid a circular import):
+- `assertTranscriptPresent(transcript, sessionName)` — throws on empty/whitespace or a JSON transcript that parses to `[]`. Non-JSON (STT Markdown) is accepted without attempting to parse it.
+- `transcriptWordCount(transcript)` — counts words across Meetecho JSON `{text}` entries, or falls back to plain-text splitting for STT Markdown.
+- `assertTranscriptSubstantial(transcript, sessionName, {minWords, allowShort})` — word-count floor; overridable via `--allow-short-transcript` for legitimately brief sessions.
+
+Each of the four ways a transcript can enter the pipeline validates independently, and `generateMinutes()` itself calls `assertTranscriptPresent` first (before any API call), so no caller can bypass it:
+1. Gemini STT (`transcriber.js`): a stream that yields zero text is treated as a failure and retried (not silently accepted as `""`); a duration-based check (`MIN_WORDS_PER_MINUTE`) catches STT output that's non-empty but far too short for the audio length; the transcript cache is validated before every write and self-heals (deletes + re-transcribes) if a poisoned entry is found on read.
+2. Meetecho text download (`scraper.js`): `downloadTranscript` rejects HTML bodies (Meetecho's not-yet-available response) and empty/all-blank JSON.
+3. `--transcript-file`: validated in `prepareLocalTranscript` before it's cached.
+4. Cached minutes: unaffected (already-generated text, not a transcript).
+
+`saveMinutes()` (`publisher.js`) and the `--output` stage's transcript-copy step are additional backstops that reject empty content even if something upstream slipped through. A session that fails validation is skipped (not aborted) — `processSummarizeSessions` collects skips and the CLI exits non-zero with a `SKIPPED SESSIONS` summary so automation notices instead of silently publishing a partial run.
+
 ### Session resolution
 
 Sessions are resolved from the IETF datatracker proceedings or Meetecho agenda. Selector formats:
