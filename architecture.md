@@ -8,12 +8,13 @@ auto-minutes generates IETF meeting minutes from session transcripts using an LL
 
 ```
 src/
-  index.js        — CLI entry point, orchestration, session resolution
-  scraper.js      — IETF datatracker / Meetecho fetching
-  generator.js    — LLM minutes generation (Gemini / Claude)
-  transcriber.js  — Audio download, STT transcription (Gemini / Google Cloud STT)
-  publisher.js    — File system output, cache management, index generation
-  accounting.js   — Token usage tracking and summary
+  index.js          — CLI entry point, orchestration, session resolution
+  scraper.js        — IETF datatracker / Meetecho fetching
+  generator.js      — LLM minutes generation (Gemini / Claude)
+  transcriber.js    — Audio download, STT transcription (Gemini / Google Cloud STT)
+  speaker-names.js  — Gemini speaker-label→name mapping (shared by transcriber.js and transcribe-diarize.js)
+  publisher.js      — File system output, cache management, index generation
+  accounting.js     — Token usage tracking and summary
 ```
 
 ## Data Flow
@@ -58,8 +59,9 @@ This override requires a single-session selector (`NUMBER:GROUP` or `YYYY-MM-DD:
 ### STT backends
 
 Controlled via `--stt-model`:
-- `google` / `google:chirp_2` / `google:chirp_3` — Google Cloud Speech-to-Text (batch, via GCS)
-- `gemini` — Gemini File API (streaming with retry)
+- `google` / `google:chirp_2` / `google:chirp_3` — Google Cloud Speech-to-Text (batch, via GCS). Chirp diarization produces `[HH:MM:SS] Speaker N:` turns with real per-word timestamps, but only generic speaker labels.
+- `gemini` — Gemini File API (streaming with retry). Produces inline speaker names but no reliable timestamps (an LLM has no frame clock); fragile on very long (2h+) sessions due to `streamGenerateContent` drops.
+- `google[:chirp_2|:chirp_3]+names` — hybrid: runs the chirp batch path above, then makes one **text-only** Gemini call (`speaker-names.js`, no audio re-upload) to map `Speaker N` → real names using the session's bluesheet participants as context. Combines chirp's real timestamps/batch-call robustness with Gemini's name identification. Fails soft: if the name-mapping call errors, the session falls back to the plain chirp `Speaker N` transcript with a warning, rather than failing.
 
 ### Minutes generation
 

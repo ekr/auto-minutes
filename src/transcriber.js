@@ -13,7 +13,8 @@ import os from "os";
 import { randomUUID } from "crypto";
 import fetch from "node-fetch";
 import { downloadTranscript } from "./scraper.js";
-import { buildContextPrompt, assertTranscriptPresent, transcriptWordCount } from "./generator.js";
+import { buildContextPrompt, assertTranscriptPresent, transcriptWordCount, extractParticipantNames } from "./generator.js";
+import { getSpeakerMapFromGemini, normalizeSpeakerMap, applySpeakerMap, formatOffset, parseOffset } from "./speaker-names.js";
 
 const AUDIO_CACHE_DIR = path.join("cache", "audio");
 const TRANSCRIPT_CACHE_DIR = path.join("cache", "transcripts");
@@ -598,6 +599,50 @@ async function splitAudio(audioPath, segmentSeconds, verbose = false) {
 }
 
 /**
+ * Format a "[HH:MM:SS] " timestamp prefix for a turn's first word offset.
+ * Falls back to no prefix (never "[NaN:NaN:NaN]") if the offset is missing/unparseable.
+ * @param {string|number|Object|undefined} rawOffset - Google STT v2 REST offset value
+ * @returns {string} Timestamp prefix, or empty string
+ */
+function formatTimestampPrefix(rawOffset) {
+  const seconds = parseOffset(rawOffset);
+  if (seconds === null) return "";
+  return `[${formatOffset(seconds)}] `;
+}
+
+/**
+ * Format Google STT diarized words into "[HH:MM:SS] Speaker N: ..." turns,
+ * breaking a new line each time the speaker label changes.
+ * @param {Array<{word: string, speakerLabel?: string, startOffset?: *}>} words
+ * @returns {string} Formatted transcript text
+ */
+export function formatDiarizedTranscript(words) {
+  let currentSpeaker = null;
+  let turnStartOffset = null;
+  const lines = [];
+  let currentLine = [];
+
+  const flushLine = () => {
+    if (currentLine.length > 0) {
+      lines.push(`${formatTimestampPrefix(turnStartOffset)}Speaker ${currentSpeaker}: ${currentLine.join(" ")}`);
+      currentLine = [];
+    }
+  };
+
+  for (const word of words) {
+    if (word.speakerLabel && word.speakerLabel !== currentSpeaker) {
+      flushLine();
+      currentSpeaker = word.speakerLabel;
+      turnStartOffset = word.startOffset;
+    }
+    currentLine.push(word.word);
+  }
+  flushLine();
+
+  return lines.join("\n");
+}
+
+/**
  * Transcribe an audio file using Google Cloud Speech-to-Text (batch recognition)
  * Splits files longer than 30 minutes into segments and recognizes them all in one batch call.
  * @param {string} audioPath - Path to the local audio file
@@ -686,6 +731,7 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
               autoDecodingConfig: {},
               features: model === "chirp_3" ? {
                 diarizationConfig: {},
+                enableWordTimeOffsets: true,
               } : undefined,
             },
             files: [{ uri }],
@@ -810,23 +856,7 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
             const alt = result.alternatives[0];
             // If diarization produced per-word speaker labels, format with speaker changes
             if (alt.words && alt.words.some(w => w.speakerLabel)) {
-              let currentSpeaker = null;
-              const lines = [];
-              let currentLine = [];
-              for (const word of alt.words) {
-                if (word.speakerLabel && word.speakerLabel !== currentSpeaker) {
-                  if (currentLine.length > 0) {
-                    lines.push(`Speaker ${currentSpeaker}: ${currentLine.join(" ")}`);
-                    currentLine = [];
-                  }
-                  currentSpeaker = word.speakerLabel;
-                }
-                currentLine.push(word.word);
-              }
-              if (currentLine.length > 0) {
-                lines.push(`Speaker ${currentSpeaker}: ${currentLine.join(" ")}`);
-              }
-              transcriptParts.push(lines.join("\n"));
+              transcriptParts.push(formatDiarizedTranscript(alt.words));
             } else {
               transcriptParts.push(alt.transcript);
             }
@@ -1026,12 +1056,50 @@ async function downloadSessionAudio(session, verbose = false) {
 }
 
 /**
+ * Parse a "+names" hybrid suffix off an --stt-model string.
+ * @param {string} sttModel - e.g. "google:chirp_3+names", "google", "gemini"
+ * @returns {{baseSttModel: string, hybridNames: boolean}}
+ */
+export function parseSttModel(sttModel) {
+  const hybridNames = sttModel.endsWith("+names");
+  const baseSttModel = hybridNames ? sttModel.slice(0, -"+names".length) : sttModel;
+  return { baseSttModel, hybridNames };
+}
+
+/**
+ * Map generic "Speaker N" labels in a chirp transcript to real names using Gemini,
+ * text-only (no audio re-upload). Fails soft: on any error, returns the transcript
+ * unchanged with a warning logged, rather than failing the session.
+ * @param {string} chirpTranscript - Timestamped "[HH:MM:SS] Speaker N: ..." transcript
+ * @param {string} apiKey - Gemini API key
+ * @param {Object|null} context - Pre-fetched session context (bluesheet used for participant names)
+ * @param {boolean} verbose - Whether to log verbose output
+ * @returns {Promise<{text: string, usage: {inputTokens: number, outputTokens: number, model: string}|undefined}>}
+ */
+export async function applyNameHybrid(chirpTranscript, apiKey, context, verbose = false) {
+  try {
+    const participantNames = extractParticipantNames(context?.slidesAndBluesheet?.bluesheet);
+    const participantsList = participantNames.length > 0 ? participantNames.join("\n") : null;
+    const usage = { inputTokens: 0, outputTokens: 0, model: "gemini-3.5-flash" };
+
+    const rawMap = await getSpeakerMapFromGemini(apiKey, "gemini-3.5-flash", null, chirpTranscript, participantsList, verbose, usage);
+    const speakerMap = normalizeSpeakerMap(rawMap);
+    const text = applySpeakerMap(chirpTranscript, speakerMap);
+
+    return { text, usage };
+  } catch (error) {
+    console.warn(`  Warning: speaker name mapping failed (${error.message}); keeping generic speaker labels`);
+    return { text: chirpTranscript, usage: undefined };
+  }
+}
+
+/**
  * Full pipeline: fetch audio stream, download (with cache), transcribe (with cache)
  * @param {Object} session - Session object with sessionId
- * @param {string} sttModel - STT model: "gemini" or "google"
- * @param {string} apiKey - Gemini API key (required for sttModel "gemini")
+ * @param {string} sttModel - STT model: "gemini", "google", "google:chirp_2", "google:chirp_3", or a "+names" hybrid variant of the google models (e.g. "google:chirp_3+names")
+ * @param {string} apiKey - Gemini API key (required for sttModel "gemini" or a "+names" hybrid)
  * @param {boolean} verbose - Whether to log verbose output
- * @param {Object} context - Pre-fetched session context (optional, passed to Gemini STT)
+ * @param {Object} context - Pre-fetched session context (optional, passed to Gemini STT and the "+names" hybrid)
  * @param {string|null} localAudioPath - Path to a local audio/video file to use instead of Meetecho (optional)
  * @param {number|null} geminiSegmentSeconds - If set and sttModel is "gemini", split audio into segments of this duration before uploading (optional)
  * @returns {Promise<string>} Transcript text
@@ -1069,9 +1137,17 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
   let transcript;
   let usage;
   if (sttModel.startsWith("google")) {
-    const chirpModel = sttModel.includes(":") ? sttModel.split(":")[1] : "chirp_3";
+    const { baseSttModel, hybridNames } = parseSttModel(sttModel);
+    const chirpModel = baseSttModel.includes(":") ? baseSttModel.split(":")[1] : "chirp_3";
     console.log(`  Transcribing audio with Google Cloud STT (${chirpModel})...`);
     transcript = await transcribeAudioGoogleSTT(audioPath, chirpModel, verbose);
+
+    if (hybridNames) {
+      console.log(`  Identifying speakers with Gemini (text-only, no audio upload)...`);
+      const result = await applyNameHybrid(transcript, apiKey, context, verbose);
+      transcript = result.text;
+      usage = result.usage;
+    }
   } else {
     // gemini (default)
     if (geminiSegmentSeconds && geminiSegmentSeconds > 0) {

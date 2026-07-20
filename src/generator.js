@@ -121,6 +121,38 @@ export function initializeGemini(apiKey) {
 }
 
 /**
+ * Extract attendee names from a bluesheet's raw text.
+ *
+ * Actual bluesheet format (e.g. bluesheets-124-privacypass-*.txt):
+ *   Bluesheet for IETF-NNN: <group>  <day-time>
+ *   ================================================================
+ *   N attendees.     ← "attendees" keyword triggers name collection
+ *
+ *   First Last<TAB>Affiliation
+ *   ...
+ *
+ * @param {string|null} bluesheet - Raw bluesheet text
+ * @returns {string[]} Deduplicated participant names
+ */
+export function extractParticipantNames(bluesheet) {
+  if (!bluesheet) return [];
+
+  const lines = bluesheet.split('\n');
+  const participants = new Set();
+  const startIdx = lines.findIndex(l => /\battendees\b/i.test(l));
+
+  for (const line of startIdx >= 0 ? lines.slice(startIdx + 1) : []) {
+    const trimmed = line.trim();
+    if (/^[-=]{3,}/.test(trimmed)) break; // safety net for variant formats
+    if (!trimmed) continue;
+    const name = trimmed.split(/\t| {2,}/)[0].trim();
+    if (name.length > 2) participants.add(name);
+  }
+
+  return Array.from(participants);
+}
+
+/**
  * Build the context sections to inject into the LLM prompt.
  * @param {Object|null} context - Pre-fetched session context
  * @param {string} sessionName - Name of the session
@@ -163,33 +195,15 @@ export function buildContextPrompt(context, sessionName) {
 
     // Bluesheet participant names.
     //
-    // Actual bluesheet format (e.g. bluesheets-124-privacypass-*.txt):
-    //   Bluesheet for IETF-NNN: <group>  <day-time>
-    //   ================================================================
-    //   N attendees.     ← "attendees" keyword triggers name collection
-    //
-    //   First Last<TAB>Affiliation
-    //   ...
-    //
     // NOTE: all external inputs (names, slide titles, bluesheet text) are embedded
     // verbatim in the LLM prompt. Names are listed as a comma-separated data block
     // to limit prompt injection risk, though the same risk applies to all inputs.
     if (slidesAndBluesheet.bluesheet) {
-      const lines = slidesAndBluesheet.bluesheet.split('\n');
-      const participants = new Set();
-      const startIdx = lines.findIndex(l => /\battendees\b/i.test(l));
+      const participants = extractParticipantNames(slidesAndBluesheet.bluesheet);
 
-      for (const line of startIdx >= 0 ? lines.slice(startIdx + 1) : []) {
-        const trimmed = line.trim();
-        if (/^[-=]{3,}/.test(trimmed)) break; // safety net for variant formats
-        if (!trimmed) continue;
-        const name = trimmed.split(/\t| {2,}/)[0].trim();
-        if (name.length > 2) participants.add(name);
-      }
-
-      if (participants.size > 0) {
-        const participantList = Array.from(participants).slice(0, 1000);
-        result += `\n\nMeeting Participants (${participants.size} attendees):\n`;
+      if (participants.length > 0) {
+        const participantList = participants.slice(0, 1000);
+        result += `\n\nMeeting Participants (${participants.length} attendees):\n`;
         for (let i = 0; i < participantList.length; i += 5) {
           result += participantList.slice(i, i + 5).join(', ') + '\n';
         }
