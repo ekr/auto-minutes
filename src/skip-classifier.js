@@ -17,7 +17,9 @@ export function isRecordingUnavailable(message) {
   return (
     /^Failed to fetch session info: 404/.test(message) ||
     /^No Cloudflare video found for session/.test(message) ||
-    /is only \d+ words \(minimum \d+\)/.test(message)
+    /is only \d+ words \(minimum \d+\)/.test(message) ||
+    /^Transcript for .* is not available yet/.test(message) ||
+    /^Transcript for .* is empty \(no words/.test(message)
   );
 }
 

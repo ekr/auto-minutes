@@ -262,7 +262,15 @@ export async function downloadTranscript(session) {
     throw new Error(`Transcript for ${session.sessionId} is not available yet (received HTML instead of a transcript)`);
   }
 
-  assertTranscriptPresent(text, session.sessionId);
+  // Wrap assertTranscriptPresent's generic message in a scraper-specific one so
+  // callers can tell "Meetecho hasn't published a transcript yet" (benign) apart
+  // from assertTranscriptPresent failures elsewhere, e.g. an empty user-supplied
+  // --transcript-file (a genuine input error, not a benign no-op).
+  try {
+    assertTranscriptPresent(text, session.sessionId);
+  } catch (error) {
+    throw new Error(`Transcript for ${session.sessionId} is not available yet (${error.message})`);
+  }
   if (transcriptWordCount(text) === 0) {
     throw new Error(`Transcript for ${session.sessionId} is empty (no words in any entry)`);
   }

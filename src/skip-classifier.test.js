@@ -17,6 +17,45 @@ describe('isRecordingUnavailable', () => {
     ).toBe(true);
   });
 
+  test('classifies downloadTranscript\'s "received HTML instead" error as benign', () => {
+    expect(
+      isRecordingUnavailable(
+        'Transcript for IETF124-TEST-20251103-1300 is not available yet (received HTML instead of a transcript)'
+      )
+    ).toBe(true);
+  });
+
+  test('classifies downloadTranscript\'s "empty (no words)" error as benign', () => {
+    expect(
+      isRecordingUnavailable('Transcript for IETF124-TEST-20251103-1300 is empty (no words in any entry)')
+    ).toBe(true);
+  });
+
+  test('classifies downloadTranscript\'s wrapped "assertTranscriptPresent: transcript is empty" error as benign', () => {
+    expect(
+      isRecordingUnavailable(
+        'Transcript for IETF124-TEST-20251103-1300 is not available yet (Cannot generate minutes for IETF124-TEST-20251103-1300: transcript is empty)'
+      )
+    ).toBe(true);
+  });
+
+  test('classifies downloadTranscript\'s wrapped "assertTranscriptPresent: transcript has no entries" error as benign', () => {
+    expect(
+      isRecordingUnavailable(
+        'Transcript for IETF124-TEST-20251103-1300 is not available yet (Cannot generate minutes for IETF124-TEST-20251103-1300: transcript has no entries)'
+      )
+    ).toBe(true);
+  });
+
+  test('does not classify a raw assertTranscriptPresent failure (e.g. an empty --transcript-file) as benign', () => {
+    // prepareLocalTranscript (the --transcript-file path) lets assertTranscriptPresent's
+    // message through unwrapped — an empty user-supplied file is a genuine input error,
+    // not "recording unavailable", so it must NOT match despite sharing wording with the
+    // (wrapped) downloadTranscript case above.
+    expect(isRecordingUnavailable('Cannot generate minutes for Test WG: transcript is empty')).toBe(false);
+    expect(isRecordingUnavailable('Cannot generate minutes for Test WG: transcript has no entries')).toBe(false);
+  });
+
   test('does not classify a session-info auth failure as benign', () => {
     expect(isRecordingUnavailable('Failed to fetch session info: 401 Unauthorized')).toBe(false);
   });
