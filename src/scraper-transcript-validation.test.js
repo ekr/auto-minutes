@@ -152,6 +152,12 @@ describe('fetchCloudflareVideoId classification', () => {
     expect(isRecordingUnavailable(message)).toBe(true);
   });
 
+  test('a session-info response with no videos array classifies as recording-unavailable', async () => {
+    mockFetch.mockResolvedValue(makeJsonResponse({ body: {} }));
+    const message = await rejectionMessage(fetchCloudflareVideoId('IETF126-DISPATCH-20260720-0700'));
+    expect(isRecordingUnavailable(message)).toBe(true);
+  });
+
   test('a 401 session-info response does NOT classify as recording-unavailable', async () => {
     mockFetch.mockResolvedValue(makeJsonResponse({ ok: false, status: 401, statusText: 'Unauthorized' }));
     const message = await rejectionMessage(fetchCloudflareVideoId('IETF126-DISPATCH-20260720-0700'));
