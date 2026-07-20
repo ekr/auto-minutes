@@ -839,7 +839,7 @@ describe('transcribeSession deepgram dispatch', () => {
 
     expect(result.text).toContain('**Jane Smith**');
     expect(result.text).toContain('**John Doe**');
-    expect(result.usage).toEqual({ inputTokens: 40, outputTokens: 8, model: 'deepgram:nova-3' });
+    expect(result.usage).toEqual({ inputTokens: 40, outputTokens: 8, model: 'gemini-3.5-flash' });
     expect(mockWriteFile).toHaveBeenCalled();
   });
 

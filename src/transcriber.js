@@ -1295,6 +1295,7 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
       if (result.usage) {
         usage.inputTokens += result.usage.inputTokens;
         usage.outputTokens += result.usage.outputTokens;
+        usage.model = result.usage.model;
       }
     }
   } else {
