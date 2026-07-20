@@ -115,23 +115,35 @@ export function printSummary() {
 
   const fmt = (n) => n.toLocaleString("en-US");
 
-  let totalInput = 0;
-  let totalOutput = 0;
-
   if (tokenRows.length > 0) {
     console.log("\n=== Token Usage & Cost ===");
     console.log(
       `${"Model".padEnd(28)} ${"Input Tokens".padStart(14)} ${"Output Tokens".padStart(14)} ${"Est. Cost".padStart(10)}`,
     );
 
+    let totalInput = 0;
+    let totalOutput = 0;
+    let tokenCost = 0;
+    let tokenAllKnown = true;
+
     for (const row of tokenRows) {
       totalInput += row.inputTokens;
       totalOutput += row.outputTokens;
+      tokenCost += row.cost;
+      if (!row.costKnown) tokenAllKnown = false;
       const costStr = row.costKnown ? `$${row.cost.toFixed(2)}` : "unknown";
       console.log(
         `${row.model.padEnd(28)} ${fmt(row.inputTokens).padStart(14)} ${fmt(row.outputTokens).padStart(14)} ${costStr.padStart(10)}`,
       );
     }
+
+    const tokenCostStr = tokenAllKnown ? `$${tokenCost.toFixed(2)}` : `~$${tokenCost.toFixed(2)}`;
+    console.log(
+      `${"".padEnd(28)} ${"───────".padStart(14)} ${"───────".padStart(14)} ${"──────".padStart(10)}`,
+    );
+    console.log(
+      `${"Total".padEnd(28)} ${fmt(totalInput).padStart(14)} ${fmt(totalOutput).padStart(14)} ${tokenCostStr.padStart(10)}`,
+    );
   }
 
   if (audioRows.length > 0) {
@@ -140,30 +152,31 @@ export function printSummary() {
       `${"Model".padEnd(28)} ${"Audio (min)".padStart(14)} ${"Est. Cost".padStart(10)}`,
     );
 
+    let totalAudioMinutes = 0;
+    let audioCost = 0;
+    let audioAllKnown = true;
+
     for (const row of audioRows) {
+      totalAudioMinutes += row.audioMinutes;
+      audioCost += row.cost;
+      if (!row.costKnown) audioAllKnown = false;
       const costStr = row.costKnown ? `$${row.cost.toFixed(2)}` : "unknown";
       console.log(
         `${row.model.padEnd(28)} ${row.audioMinutes.toFixed(1).padStart(14)} ${costStr.padStart(10)}`,
       );
     }
-  }
 
-  const totalCostStr = allKnown ? `$${totalCost.toFixed(2)}` : `~$${totalCost.toFixed(2)}`;
-
-  if (tokenRows.length > 0) {
-    console.log(
-      `${"".padEnd(28)} ${"───────".padStart(14)} ${"───────".padStart(14)} ${"──────".padStart(10)}`,
-    );
-    console.log(
-      `${"Total".padEnd(28)} ${fmt(totalInput).padStart(14)} ${fmt(totalOutput).padStart(14)} ${totalCostStr.padStart(10)}`,
-    );
-  } else if (audioRows.length > 0) {
-    const totalAudioMinutes = audioRows.reduce((sum, row) => sum + row.audioMinutes, 0);
+    const audioCostStr = audioAllKnown ? `$${audioCost.toFixed(2)}` : `~$${audioCost.toFixed(2)}`;
     console.log(
       `${"".padEnd(28)} ${"───────".padStart(14)} ${"──────".padStart(10)}`,
     );
     console.log(
-      `${"Total".padEnd(28)} ${totalAudioMinutes.toFixed(1).padStart(14)} ${totalCostStr.padStart(10)}`,
+      `${"Total".padEnd(28)} ${totalAudioMinutes.toFixed(1).padStart(14)} ${audioCostStr.padStart(10)}`,
     );
+  }
+
+  if (tokenRows.length > 0 && audioRows.length > 0) {
+    const totalCostStr = allKnown ? `$${totalCost.toFixed(2)}` : `~$${totalCost.toFixed(2)}`;
+    console.log(`\nGrand Total (tokens + audio): ${totalCostStr}`);
   }
 }

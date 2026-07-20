@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { computeCostSummary, recordUsage, printSummary } from './accounting.js';
+import { computeCostSummary } from './accounting.js';
 
 describe('computeCostSummary', () => {
   test('prices a Deepgram audio record per minute of audio', () => {
@@ -68,15 +68,22 @@ describe('computeCostSummary', () => {
   });
 });
 
+// usageRecords is module-level singleton state accumulated by recordUsage(), so
+// each test gets a fresh module instance via jest.resetModules() + dynamic import.
 describe('printSummary', () => {
-  test('does not log anything when no usage has been recorded', () => {
+  test('does not log anything when no usage has been recorded', async () => {
+    jest.resetModules();
+    const { printSummary } = await import('./accounting.js');
+
     const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     expect(() => printSummary()).not.toThrow();
     expect(logSpy).not.toHaveBeenCalled();
     logSpy.mockRestore();
   });
 
-  test('prints a Deepgram line with audio minutes and an estimated cost', () => {
+  test('prints a Deepgram line with audio minutes and an estimated cost', async () => {
+    jest.resetModules();
+    const { printSummary, recordUsage } = await import('./accounting.js');
     recordUsage({ model: 'deepgram:nova-3', audioSeconds: 1200, inputTokens: 0, outputTokens: 0 });
 
     const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -88,5 +95,31 @@ describe('printSummary', () => {
     expect(output).toMatch(/deepgram:nova-3\s+20\.0\s+\$0\.10/);
     expect(output).not.toContain('Token Usage & Cost');
     expect(output).toMatch(/Total\s+20\.0\s+\$0\.10/);
+  });
+
+  test('renders a deepgram:nova-3+names mixed run with unambiguous token, audio, and grand totals', async () => {
+    jest.resetModules();
+    const { printSummary, recordUsage } = await import('./accounting.js');
+    recordUsage({ model: 'gemini-3.5-flash', inputTokens: 2000, outputTokens: 500 });
+    recordUsage({ model: 'deepgram:nova-3', audioSeconds: 3600, inputTokens: 0, outputTokens: 0 });
+
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    printSummary();
+    const output = logSpy.mock.calls.map((args) => args.join(' ')).join('\n');
+    logSpy.mockRestore();
+
+    expect(output).toContain('Token Usage & Cost');
+    expect(output).toContain('Audio Transcription (STT)');
+
+    // The token table's own Total row must show the token-only cost ($0.0075 → $0.01),
+    // not a total inflated by the Deepgram audio spend.
+    expect(output).toMatch(/Total\s+2,000\s+500\s+\$0\.01/);
+
+    // The audio table's own Total row must show the audio minutes and audio-only cost,
+    // not folded under token headers.
+    expect(output).toMatch(/Total\s+60\.0\s+\$0\.31/);
+
+    // A combined grand total sums both, so the reader can see the true overall spend.
+    expect(output).toMatch(/Grand Total.*\$0\.32/);
   });
 });
