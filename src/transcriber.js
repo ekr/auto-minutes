@@ -205,6 +205,11 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.5-fla
         });
         break;
       } catch (error) {
+        // Re-throwing here (rather than swallowing) is intentional and safe: every
+        // caller of transcribeAudio/transcribeSession (generateSessionMinutes and the
+        // preview loop in src/index.js) already wraps the call in a try/catch that
+        // logs and skips just this session, so an exhausted-retries or permanent
+        // error here drops one session's minutes without aborting the batch run.
         if (attempt === MAX_UPLOAD_ATTEMPTS || !isTransientError(error)) {
           throw error;
         }
