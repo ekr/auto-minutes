@@ -26,6 +26,47 @@ const TRUNCATION_RATIO_THRESHOLD = 0.6;
 // (e.g. a session that transcribed to near-zero words), not genuinely slow-paced sessions.
 const MIN_WORDS_PER_MINUTE = 30;
 
+// Upload retry: initial attempt + 3 retries, exponential backoff capped at 15s.
+const MAX_UPLOAD_ATTEMPTS = 4;
+const UPLOAD_RETRY_BASE_MS = 2000;
+const UPLOAD_RETRY_CAP_MS = 15000;
+
+/**
+ * Determine whether an error from the Gemini File API upload is worth retrying.
+ * Transient: HTTP 408/429/500/502/503/504, common Node network error codes, or
+ * a "socket hang up"/network/fetch-failed message. A 429 whose message indicates
+ * depleted billing credits is treated as permanent since it will not self-resolve.
+ * @param {Error} error
+ * @returns {boolean}
+ */
+export function isTransientError(error) {
+  if (!error) return false;
+
+  const message = typeof error.message === "string" ? error.message : "";
+
+  if (/credits are depleted|billing/i.test(message)) {
+    return false;
+  }
+
+  const TRANSIENT_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+  const statusMatch = message.match(/\[(\d{3})\b/);
+  const status = error.status ?? (statusMatch ? parseInt(statusMatch[1], 10) : null);
+  if (status !== null && TRANSIENT_STATUSES.has(status)) {
+    return true;
+  }
+
+  const TRANSIENT_CODES = new Set(["ECONNRESET", "ETIMEDOUT", "EAI_AGAIN", "EPIPE", "ENOTFOUND"]);
+  if (error.code && TRANSIENT_CODES.has(error.code)) {
+    return true;
+  }
+
+  if (/socket hang up|network|fetch failed/i.test(message)) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Fetch the Cloudflare video ID for a session from the Meetecho sessions API
  * @param {string} sessionId - Meetecho session ID (e.g., IETF124-PLENARY-20250723-0730)
@@ -155,10 +196,25 @@ export async function transcribeAudio(audioPath, apiKey, model = "gemini-3.5-fla
       console.log(`    [Transcribe] Uploading file: ${audioPath}`);
     }
 
-    const uploadResponse = await fileManager.uploadFile(audioPath, {
-      mimeType: "audio/mpeg",
-      displayName: path.basename(audioPath),
-    });
+    let uploadResponse;
+    for (let attempt = 1; attempt <= MAX_UPLOAD_ATTEMPTS; attempt++) {
+      try {
+        uploadResponse = await fileManager.uploadFile(audioPath, {
+          mimeType: "audio/mpeg",
+          displayName: path.basename(audioPath),
+        });
+        break;
+      } catch (error) {
+        if (attempt === MAX_UPLOAD_ATTEMPTS || !isTransientError(error)) {
+          throw error;
+        }
+        const delay = Math.min(UPLOAD_RETRY_BASE_MS * 2 ** (attempt - 1), UPLOAD_RETRY_CAP_MS);
+        console.log(
+          `    [Transcribe] Upload attempt ${attempt}/${MAX_UPLOAD_ATTEMPTS} failed (${error.message}); retrying in ${delay}ms`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
 
     fileName = uploadResponse.file.name;
 
