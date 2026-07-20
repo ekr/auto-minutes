@@ -85,7 +85,11 @@ Each of the four ways a transcript can enter the pipeline validates independentl
 3. `--transcript-file`: validated in `prepareLocalTranscript` before it's cached.
 4. Cached minutes: unaffected (already-generated text, not a transcript).
 
-`saveMinutes()` (`publisher.js`) and the `--output` stage's transcript-copy step are additional backstops that reject empty content even if something upstream slipped through. A session that fails validation is skipped (not aborted) — `processSummarizeSessions` collects skips and the CLI exits non-zero with a `SKIPPED SESSIONS` summary so automation notices instead of silently publishing a partial run.
+`saveMinutes()` (`publisher.js`) and the `--output` stage's transcript-copy step are additional backstops that reject empty content even if something upstream slipped through. A session that fails validation is skipped (not aborted) — `processSummarizeSessions` collects skips and prints a `SKIPPED SESSIONS` summary so automation notices instead of silently publishing a partial run.
+
+Skips are further classified in `skip-classifier.js` (`isRecordingUnavailable`) as benign — the recording/transcript simply isn't available yet (session-info 404, no Cloudflare video, transcript below the word-count floor, or `downloadTranscript` finding no transcript published yet) — or genuine (auth/API errors, crashes, etc). `main()` (`index.js`) only sets a non-zero exit code (`shouldExitNonZero`) if at least one skip is non-benign; a run where every session was skipped for a benign reason is a legitimate no-op (e.g. the `*/15` interim-sync cron hitting a window with no recordings ready yet) and exits 0.
+
+`isRecordingUnavailable` matches on message shape, so `downloadTranscript` (`scraper.js`) wraps failures from the shared `assertTranscriptPresent` check in its own `Transcript for X is not available yet (...)` message before they reach the classifier. This disambiguates them from the identically-worded `assertTranscriptPresent` failure that `prepareLocalTranscript` (`transcriber.js`, the `--transcript-file` path) lets through unwrapped — an empty user-supplied local file is a genuine input error, not "recording unavailable," so it must stay classified as non-benign despite sharing wording with the Meetecho case.
 
 ### Session resolution
 
