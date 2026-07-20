@@ -1,7 +1,7 @@
 /**
- * Tests for the audio transcription pipeline, focused on the DISPATCH-20260720
- * regression: a Gemini STT stream that returns zero text chunks must never be
- * treated as a successful transcription.
+ * Tests for the audio transcription pipeline: the DISPATCH-20260720 regression
+ * (a Gemini STT stream that returns zero text chunks must never be treated as
+ * a successful transcription) and upload retry behaviour (transcribeAudio).
  */
 
 import { jest } from '@jest/globals';
@@ -74,6 +74,7 @@ const {
   transcribeSession,
   getAudioCachePath,
   getTranscriptCachePath,
+  isTransientError,
 } = await import('./transcriber.js');
 
 function makeStreamResult(chunkTexts, finishReason = 'STOP') {
@@ -87,6 +88,21 @@ function makeStreamResult(chunkTexts, finishReason = 'STOP') {
       }
     })(),
     response: Promise.resolve({ usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 } }),
+  };
+}
+
+// A fake successful stream: one chunk of text, then a resolved aggregated response.
+function makeSuccessfulStreamResult(text = 'hello world') {
+  return {
+    stream: (async function* () {
+      yield {
+        candidates: [{ finishReason: 'STOP', safetyRatings: [] }],
+        text: () => text,
+      };
+    })(),
+    response: Promise.resolve({
+      usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+    }),
   };
 }
 
@@ -203,5 +219,115 @@ describe('transcribeSession', () => {
     const result = await transcribeSession(session, 'gemini', 'fake-key');
     expect(result.text.trim().split(/\s+/).length).toBe(11000);
     expect(mockWriteFile).toHaveBeenCalled();
+  });
+});
+
+describe('isTransientError', () => {
+  test('returns true for 408/429/500/502/503/504 status codes in message', () => {
+    for (const code of [408, 429, 500, 502, 503, 504]) {
+      expect(isTransientError(new Error(`[${code} Some Status]`))).toBe(true);
+    }
+  });
+
+  test('returns true for common Node network error codes', () => {
+    for (const code of ['ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'EPIPE', 'ENOTFOUND']) {
+      const error = new Error('network blip');
+      error.code = code;
+      expect(isTransientError(error)).toBe(true);
+    }
+  });
+
+  test('returns true for socket hang up / network / fetch failed messages', () => {
+    expect(isTransientError(new Error('socket hang up'))).toBe(true);
+    expect(isTransientError(new Error('fetch failed'))).toBe(true);
+  });
+
+  test('returns false for permanent 400/401/403/404 errors', () => {
+    for (const code of [400, 401, 403, 404]) {
+      expect(isTransientError(new Error(`[${code} Bad Request]`))).toBe(false);
+    }
+  });
+
+  test('returns false for credit-depletion 429 errors', () => {
+    expect(
+      isTransientError(new Error('[429 Too Many Requests] Your prepayment credits are depleted')),
+    ).toBe(false);
+  });
+
+  test('returns false for null/undefined', () => {
+    expect(isTransientError(null)).toBe(false);
+    expect(isTransientError(undefined)).toBe(false);
+  });
+});
+
+describe('transcribeAudio upload retry', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    mockUploadFile.mockReset();
+    mockGetFile.mockReset();
+    mockDeleteFile.mockReset();
+    mockGenerateContentStream.mockReset();
+
+    mockGetFile.mockResolvedValue({ state: 'ACTIVE', mimeType: 'audio/mpeg', uri: 'file://fake' });
+    mockDeleteFile.mockResolvedValue(undefined);
+    mockGenerateContentStream.mockResolvedValue(makeSuccessfulStreamResult());
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test('retries a transient upload failure then succeeds', async () => {
+    mockUploadFile
+      .mockRejectedValueOnce(new Error('[408 Request Timeout]'))
+      .mockResolvedValueOnce({ file: { name: 'files/abc' } });
+
+    const promise = transcribeAudio('/tmp/fake.mp3', 'fake-key', 'gemini-3.5-flash', false, null);
+    await jest.runAllTimersAsync();
+    const result = await promise;
+
+    expect(mockUploadFile).toHaveBeenCalledTimes(2);
+    expect(result.text).toBe('hello world');
+    expect(mockDeleteFile).toHaveBeenCalledWith('files/abc');
+  });
+
+  test('exhausts retries and propagates the final error', async () => {
+    mockUploadFile.mockRejectedValue(new Error('[503 Service Unavailable]'));
+
+    const promise = transcribeAudio('/tmp/fake.mp3', 'fake-key', 'gemini-3.5-flash', false, null);
+    // Attach a catch handler immediately so the eventual rejection isn't
+    // reported as unhandled while we advance timers below.
+    const assertion = expect(promise).rejects.toThrow('[503 Service Unavailable]');
+    await jest.runAllTimersAsync();
+    await assertion;
+
+    expect(mockUploadFile).toHaveBeenCalledTimes(4);
+    expect(mockDeleteFile).not.toHaveBeenCalled();
+  });
+
+  test('does not retry a permanent error', async () => {
+    mockUploadFile.mockRejectedValue(new Error('[401 Unauthorized]'));
+
+    const promise = transcribeAudio('/tmp/fake.mp3', 'fake-key', 'gemini-3.5-flash', false, null);
+    const assertion = expect(promise).rejects.toThrow('[401 Unauthorized]');
+    await jest.runAllTimersAsync();
+    await assertion;
+
+    expect(mockUploadFile).toHaveBeenCalledTimes(1);
+    expect(mockDeleteFile).not.toHaveBeenCalled();
+  });
+
+  test('does not retry a credit-depletion 429 error', async () => {
+    mockUploadFile.mockRejectedValue(
+      new Error('[429 Too Many Requests] Your prepayment credits are depleted'),
+    );
+
+    const promise = transcribeAudio('/tmp/fake.mp3', 'fake-key', 'gemini-3.5-flash', false, null);
+    const assertion = expect(promise).rejects.toThrow('credits are depleted');
+    await jest.runAllTimersAsync();
+    await assertion;
+
+    expect(mockUploadFile).toHaveBeenCalledTimes(1);
+    expect(mockDeleteFile).not.toHaveBeenCalled();
   });
 });
