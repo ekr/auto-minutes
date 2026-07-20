@@ -404,7 +404,7 @@ async function splitAudio(audioPath, segmentSeconds, verbose = false) {
  * @param {boolean} verbose - Whether to log verbose output
  * @returns {Promise<{text: string, usage: {inputTokens: number, outputTokens: number, model: string}}|string>} Transcript text (with usage when transcription occurs, plain string from cache)
  */
-export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", verbose = false) {
+export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", verbose = false, segmentSeconds = 1800) {
   const { Storage } = await import("@google-cloud/storage");
 
   const bucketName = process.env.GCS_BUCKET;
@@ -423,7 +423,7 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
 
   // Check duration and split if needed
   const duration = getAudioDuration(audioPath);
-  const SEGMENT_SECONDS = 1800; // 30 minutes
+  const SEGMENT_SECONDS = segmentSeconds; // Use passed chunk size
   let audioFiles;
   let tempSegmentDir = null;
 
