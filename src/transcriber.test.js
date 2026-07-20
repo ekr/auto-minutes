@@ -7,12 +7,13 @@
 import { jest } from '@jest/globals';
 
 const mockExistsSync = jest.fn();
+const mockStatSync = jest.fn(() => ({ size: 1000, mtimeMs: 0 }));
 const mockFs = {
   existsSync: mockExistsSync,
   mkdirSync: jest.fn(),
   writeFileSync: jest.fn(),
   unlinkSync: jest.fn(),
-  statSync: jest.fn(() => ({ size: 1000, mtimeMs: 0 })),
+  statSync: mockStatSync,
   readFileSync: jest.fn(),
 };
 jest.unstable_mockModule('fs', () => ({
@@ -26,6 +27,9 @@ const mockReadFile = jest.fn();
 const mockUnlink = jest.fn().mockResolvedValue(undefined);
 const mockRm = jest.fn().mockResolvedValue(undefined);
 const mockCopyFile = jest.fn().mockResolvedValue(undefined);
+const mockFileHandleRead = jest.fn(async (buffer, _offset, length) => ({ bytesRead: length, buffer }));
+const mockFileHandleClose = jest.fn().mockResolvedValue(undefined);
+const mockOpen = jest.fn().mockResolvedValue({ read: mockFileHandleRead, close: mockFileHandleClose });
 const mockFsPromises = {
   mkdir: mockMkdir,
   writeFile: mockWriteFile,
@@ -33,6 +37,7 @@ const mockFsPromises = {
   unlink: mockUnlink,
   rm: mockRm,
   copyFile: mockCopyFile,
+  open: mockOpen,
 };
 jest.unstable_mockModule('fs/promises', () => ({
   default: mockFsPromises,
@@ -54,12 +59,10 @@ jest.unstable_mockModule('@google/generative-ai', () => ({
   })),
 }));
 
-const mockUploadFile = jest.fn();
 const mockGetFile = jest.fn();
 const mockDeleteFile = jest.fn();
 jest.unstable_mockModule('@google/generative-ai/server', () => ({
   GoogleAIFileManager: jest.fn().mockImplementation(() => ({
-    uploadFile: mockUploadFile,
     getFile: mockGetFile,
     deleteFile: mockDeleteFile,
   })),
@@ -69,12 +72,45 @@ jest.unstable_mockModule('./scraper.js', () => ({
   downloadTranscript: jest.fn().mockRejectedValue(new Error('official transcript not available')),
 }));
 
+// Gemini Files API resumable upload protocol: a "start" POST to the well-known
+// upload endpoint returns a session URL via the X-Goog-Upload-URL header; chunk
+// POSTs then go to that session URL.
+const UPLOAD_START_URL_SUBSTRING = '/upload/v1beta/files?';
+const UPLOAD_CHUNK_SIZE = 8 * 1024 * 1024;
+const UPLOAD_SESSION_URL = 'https://upload.example/session-abc';
+
+function makeStartResponse({ ok = true, status = 200, statusText = 'OK', uploadUrl = UPLOAD_SESSION_URL } = {}) {
+  return {
+    ok,
+    status,
+    statusText,
+    headers: { get: (name) => (ok && name.toLowerCase() === 'x-goog-upload-url' ? uploadUrl : null) },
+    text: async () => (ok ? '' : 'start failed'),
+  };
+}
+
+function makeChunkResponse({ ok = true, status = 200, statusText = 'OK', fileName = 'files/abc' } = {}) {
+  return {
+    ok,
+    status,
+    statusText,
+    text: async () => (ok ? '' : 'chunk failed'),
+    json: async () => ({ file: { name: fileName, uri: 'file://fake', mimeType: 'audio/mpeg', state: 'ACTIVE' } }),
+  };
+}
+
+const mockFetch = jest.fn();
+jest.unstable_mockModule('node-fetch', () => ({
+  default: mockFetch,
+}));
+
 const {
   transcribeAudio,
   transcribeSession,
   getAudioCachePath,
   getTranscriptCachePath,
   isTransientError,
+  uploadFileResumable,
 } = await import('./transcriber.js');
 
 function makeStreamResult(chunkTexts, finishReason = 'STOP') {
@@ -108,14 +144,25 @@ function makeSuccessfulStreamResult(text = 'hello world') {
 
 beforeEach(() => {
   mockExistsSync.mockReset();
+  mockStatSync.mockReset().mockReturnValue({ size: 1000, mtimeMs: 0 });
   mockReadFile.mockReset();
   mockWriteFile.mockClear();
   mockUnlink.mockClear();
   mockExecSync.mockReset();
   mockGenerateContentStream.mockReset();
-  mockUploadFile.mockReset().mockResolvedValue({ file: { name: 'files/abc' } });
   mockGetFile.mockReset().mockResolvedValue({ state: 'ACTIVE', mimeType: 'audio/mpeg', uri: 'files/abc' });
   mockDeleteFile.mockReset().mockResolvedValue({});
+  mockOpen.mockReset().mockResolvedValue({ read: mockFileHandleRead, close: mockFileHandleClose });
+  mockFileHandleRead.mockReset().mockImplementation(async (buffer, _offset, length) => ({ bytesRead: length, buffer }));
+  mockFileHandleClose.mockReset().mockResolvedValue(undefined);
+  // Default: a single-chunk resumable upload that always succeeds, so tests that
+  // don't care about upload mechanics (streaming/caching tests) get a working upload.
+  mockFetch.mockReset().mockImplementation(async (url) => {
+    if (typeof url === 'string' && url.includes(UPLOAD_START_URL_SUBSTRING)) {
+      return makeStartResponse();
+    }
+    return makeChunkResponse();
+  });
 });
 
 describe('transcribeAudio', () => {
@@ -260,74 +307,143 @@ describe('isTransientError', () => {
   });
 });
 
-describe('transcribeAudio upload retry', () => {
+describe('uploadFileResumable', () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    mockUploadFile.mockReset();
-    mockGetFile.mockReset();
-    mockDeleteFile.mockReset();
-    mockGenerateContentStream.mockReset();
-
-    mockGetFile.mockResolvedValue({ state: 'ACTIVE', mimeType: 'audio/mpeg', uri: 'file://fake' });
-    mockDeleteFile.mockResolvedValue(undefined);
-    mockGenerateContentStream.mockResolvedValue(makeSuccessfulStreamResult());
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
 
-  test('retries a transient upload failure then succeeds', async () => {
-    mockUploadFile
-      .mockRejectedValueOnce(new Error('[408 Request Timeout]'))
-      .mockResolvedValueOnce({ file: { name: 'files/abc' } });
+  function chunkCalls() {
+    return mockFetch.mock.calls.filter(([url]) => url === UPLOAD_SESSION_URL);
+  }
 
-    const promise = transcribeAudio('/tmp/fake.mp3', 'fake-key', 'gemini-3.5-flash', false, null);
+  test('happy path: file smaller than one chunk uploads in a single "upload, finalize" request', async () => {
+    mockStatSync.mockReturnValue({ size: 1000, mtimeMs: 0 });
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeStartResponse())
+      .mockImplementationOnce(async () => makeChunkResponse({ fileName: 'files/abc' }));
+
+    const result = await uploadFileResumable('/tmp/fake.mp3', 'fake-key');
+
+    expect(result).toEqual({ file: { name: 'files/abc', uri: 'file://fake', mimeType: 'audio/mpeg', state: 'ACTIVE' } });
+    expect(chunkCalls()).toHaveLength(1);
+    expect(chunkCalls()[0][1].headers['X-Goog-Upload-Offset']).toBe('0');
+    expect(chunkCalls()[0][1].headers['X-Goog-Upload-Command']).toBe('upload, finalize');
+  });
+
+  test('multi-chunk: a file spanning 3 chunks sends 3 chunk POSTs at increasing offsets, finalize only on the last', async () => {
+    mockStatSync.mockReturnValue({ size: UPLOAD_CHUNK_SIZE * 2 + 100, mtimeMs: 0 });
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeStartResponse())
+      .mockImplementationOnce(async () => makeChunkResponse())
+      .mockImplementationOnce(async () => makeChunkResponse())
+      .mockImplementationOnce(async () => makeChunkResponse());
+
+    await uploadFileResumable('/tmp/fake.mp3', 'fake-key');
+
+    const calls = chunkCalls();
+    expect(calls).toHaveLength(3);
+    expect(calls[0][1].headers['X-Goog-Upload-Offset']).toBe('0');
+    expect(calls[0][1].headers['X-Goog-Upload-Command']).toBe('upload');
+    expect(calls[1][1].headers['X-Goog-Upload-Offset']).toBe(String(UPLOAD_CHUNK_SIZE));
+    expect(calls[1][1].headers['X-Goog-Upload-Command']).toBe('upload');
+    expect(calls[2][1].headers['X-Goog-Upload-Offset']).toBe(String(UPLOAD_CHUNK_SIZE * 2));
+    expect(calls[2][1].headers['X-Goog-Upload-Command']).toBe('upload, finalize');
+  });
+
+  test('transient chunk retry: a chunk that 408s once is re-sent at the same offset and the upload completes', async () => {
+    mockStatSync.mockReturnValue({ size: UPLOAD_CHUNK_SIZE + 100, mtimeMs: 0 });
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeStartResponse())
+      .mockImplementationOnce(async () => makeChunkResponse()) // chunk 1 (offset 0)
+      .mockImplementationOnce(async () => makeChunkResponse({ ok: false, status: 408, statusText: 'Request Timeout' })) // chunk 2 attempt 1
+      .mockImplementationOnce(async () => makeChunkResponse()); // chunk 2 attempt 2
+
+    const promise = uploadFileResumable('/tmp/fake.mp3', 'fake-key');
     await jest.runAllTimersAsync();
-    const result = await promise;
+    await promise;
 
-    expect(mockUploadFile).toHaveBeenCalledTimes(2);
+    const calls = chunkCalls();
+    // chunk 1 (offset 0) + chunk 2 attempt 1 (408, offset CHUNK_SIZE) + chunk 2 attempt 2 (retry, same offset)
+    expect(calls).toHaveLength(3);
+    expect(calls[1][1].headers['X-Goog-Upload-Offset']).toBe(String(UPLOAD_CHUNK_SIZE));
+    expect(calls[2][1].headers['X-Goog-Upload-Offset']).toBe(String(UPLOAD_CHUNK_SIZE));
+  });
+
+  test('exhausts retries: a chunk that always 408s is attempted MAX_UPLOAD_ATTEMPTS times and the error propagates', async () => {
+    mockStatSync.mockReturnValue({ size: 1000, mtimeMs: 0 });
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeStartResponse())
+      .mockImplementation(async () => makeChunkResponse({ ok: false, status: 408, statusText: 'Request Timeout' }));
+
+    const promise = uploadFileResumable('/tmp/fake.mp3', 'fake-key');
+    const assertion = expect(promise).rejects.toThrow('[408 Request Timeout]');
+    await jest.runAllTimersAsync();
+    await assertion;
+
+    expect(chunkCalls()).toHaveLength(4); // MAX_UPLOAD_ATTEMPTS
+  });
+
+  test('permanent error fast-fail: start returns 400 and the error propagates without retry', async () => {
+    mockFetch.mockReset().mockImplementation(async () => makeStartResponse({ ok: false, status: 400, statusText: 'Bad Request' }));
+
+    await expect(uploadFileResumable('/tmp/fake.mp3', 'fake-key')).rejects.toThrow('[400 Bad Request]');
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test('missing upload URL: start returns 200 with no X-Goog-Upload-URL header throws a clear error', async () => {
+    mockFetch.mockReset().mockImplementation(async () => makeStartResponse({ uploadUrl: null }));
+
+    await expect(uploadFileResumable('/tmp/fake.mp3', 'fake-key')).rejects.toThrow(/X-Goog-Upload-URL/);
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('transcribeAudio upload wiring', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    mockGetFile.mockReset().mockResolvedValue({ state: 'ACTIVE', mimeType: 'audio/mpeg', uri: 'file://fake' });
+    mockDeleteFile.mockReset().mockResolvedValue(undefined);
+    mockGenerateContentStream.mockReset().mockResolvedValue(makeSuccessfulStreamResult());
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test('uploads via the resumable helper and cleans up the remote file on success', async () => {
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeStartResponse())
+      .mockImplementationOnce(async () => makeChunkResponse({ fileName: 'files/abc' }));
+
+    const result = await transcribeAudio('/tmp/fake.mp3', 'fake-key', 'gemini-3.5-flash', false, null);
+
     expect(result.text).toBe('hello world');
     expect(mockDeleteFile).toHaveBeenCalledWith('files/abc');
   });
 
-  test('exhausts retries and propagates the final error', async () => {
-    mockUploadFile.mockRejectedValue(new Error('[503 Service Unavailable]'));
+  test('propagates an exhausted-retry upload error without calling Gemini or deleting a remote file', async () => {
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeStartResponse())
+      .mockImplementation(async () => makeChunkResponse({ ok: false, status: 503, statusText: 'Service Unavailable' }));
 
     const promise = transcribeAudio('/tmp/fake.mp3', 'fake-key', 'gemini-3.5-flash', false, null);
-    // Attach a catch handler immediately so the eventual rejection isn't
-    // reported as unhandled while we advance timers below.
     const assertion = expect(promise).rejects.toThrow('[503 Service Unavailable]');
     await jest.runAllTimersAsync();
     await assertion;
 
-    expect(mockUploadFile).toHaveBeenCalledTimes(4);
-    expect(mockDeleteFile).not.toHaveBeenCalled();
-  });
-
-  test('does not retry a permanent error', async () => {
-    mockUploadFile.mockRejectedValue(new Error('[401 Unauthorized]'));
-
-    const promise = transcribeAudio('/tmp/fake.mp3', 'fake-key', 'gemini-3.5-flash', false, null);
-    const assertion = expect(promise).rejects.toThrow('[401 Unauthorized]');
-    await jest.runAllTimersAsync();
-    await assertion;
-
-    expect(mockUploadFile).toHaveBeenCalledTimes(1);
-    expect(mockDeleteFile).not.toHaveBeenCalled();
-  });
-
-  test('does not retry a credit-depletion 429 error', async () => {
-    mockUploadFile.mockRejectedValue(
-      new Error('[429 Too Many Requests] Your prepayment credits are depleted'),
-    );
-
-    const promise = transcribeAudio('/tmp/fake.mp3', 'fake-key', 'gemini-3.5-flash', false, null);
-    const assertion = expect(promise).rejects.toThrow('credits are depleted');
-    await jest.runAllTimersAsync();
-    await assertion;
-
-    expect(mockUploadFile).toHaveBeenCalledTimes(1);
+    expect(mockGenerateContentStream).not.toHaveBeenCalled();
     expect(mockDeleteFile).not.toHaveBeenCalled();
   });
 });
