@@ -5,7 +5,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
-import { execSync, spawnSync } from "child_process";
+import { spawn } from "child_process";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
@@ -159,15 +159,59 @@ export async function getAudioStreamUrl(sessionId) {
 }
 
 /**
+ * Run a child process asynchronously (via spawn, no shell) without blocking the
+ * event loop, unlike execSync/spawnSync. Resolves on exit code 0, rejects with an
+ * Error including the command label and captured stderr otherwise.
+ * @param {string} command - Executable to run (e.g. "ffmpeg", "ffprobe")
+ * @param {string[]} args - Argument array (no shell involved, so no quoting/injection concerns)
+ * @param {{verbose?: boolean, captureStdout?: boolean, label?: string}} [opts]
+ * @returns {Promise<string|undefined>} Captured stdout (utf-8) when captureStdout is true, otherwise undefined
+ */
+function runProcess(command, args, { verbose = false, captureStdout = false, label = command } = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args);
+    const stdoutChunks = [];
+    const stderrChunks = [];
+
+    if (captureStdout) {
+      child.stdout.on("data", (chunk) => stdoutChunks.push(chunk));
+    } else if (verbose) {
+      child.stdout.pipe(process.stdout);
+    }
+
+    if (verbose) {
+      child.stderr.pipe(process.stderr);
+    } else {
+      child.stderr.on("data", (chunk) => stderrChunks.push(chunk));
+    }
+
+    child.on("error", (error) => {
+      reject(new Error(`${label} failed to start: ${error.message}`));
+    });
+
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve(captureStdout ? Buffer.concat(stdoutChunks).toString("utf-8") : undefined);
+      } else {
+        const stderr = Buffer.concat(stderrChunks).toString("utf-8").trim();
+        reject(new Error(`${label} exited with code ${code}${stderr ? `: ${stderr}` : ""}`));
+      }
+    });
+  });
+}
+
+/**
  * Download audio from an HLS stream to a local MP3 file using ffmpeg
  * @param {string} streamUrl - HLS stream URL
  * @param {string} outputPath - Local file path for the MP3
  * @param {boolean} verbose - Whether to show ffmpeg output
+ * @returns {Promise<void>}
  */
-export function downloadAudio(streamUrl, outputPath, verbose = false) {
-  execSync(
-    `ffmpeg -hide_banner -loglevel error -i "${streamUrl}" -vn -acodec libmp3lame -q:a 2 "${outputPath}"`,
-    { stdio: verbose ? "inherit" : "ignore" },
+export async function downloadAudio(streamUrl, outputPath, verbose = false) {
+  await runProcess(
+    "ffmpeg",
+    ["-hide_banner", "-loglevel", "error", "-i", streamUrl, "-vn", "-acodec", "libmp3lame", "-q:a", "2", outputPath],
+    { verbose, label: "ffmpeg download" },
   );
 }
 
@@ -559,12 +603,13 @@ export function getTranscriptCachePath(sessionId) {
 /**
  * Get audio duration in seconds using ffprobe
  * @param {string} audioPath - Path to audio file
- * @returns {number} Duration in seconds
+ * @returns {Promise<number>} Duration in seconds
  */
-function getAudioDuration(audioPath) {
-  const output = execSync(
-    `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${audioPath}"`,
-    { encoding: "utf-8" },
+async function getAudioDuration(audioPath) {
+  const output = await runProcess(
+    "ffprobe",
+    ["-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", audioPath],
+    { captureStdout: true, label: "ffprobe" },
   );
   return parseFloat(output.trim());
 }
@@ -586,9 +631,10 @@ async function splitAudio(audioPath, segmentSeconds, verbose = false) {
   if (verbose) {
     console.log(`    [GoogleSTT] Splitting audio into ${segmentSeconds}s segments...`);
   }
-  execSync(
-    `ffmpeg -hide_banner -loglevel error -i "${audioPath}" -f segment -segment_time ${segmentSeconds} -c copy "${pattern}"`,
-    { stdio: verbose ? "inherit" : "ignore" },
+  await runProcess(
+    "ffmpeg",
+    ["-hide_banner", "-loglevel", "error", "-i", audioPath, "-f", "segment", "-segment_time", String(segmentSeconds), "-c", "copy", pattern],
+    { verbose, label: "ffmpeg split" },
   );
 
   const files = (await fsPromises.readdir(tempDir))
@@ -672,7 +718,7 @@ export async function transcribeAudioGoogleSTT(audioPath, model = "chirp_3", ver
   }
 
   // Check duration and split if needed
-  const duration = getAudioDuration(audioPath);
+  const duration = await getAudioDuration(audioPath);
   const SEGMENT_SECONDS = segmentSeconds; // Use passed chunk size
   let audioFiles;
   let tempSegmentDir = null;
@@ -1044,9 +1090,9 @@ export async function transcribeAudioDeepgram(audioPath, model = "nova-3", verbo
  * @param {Object} session - Session object with sessionId
  * @param {string} localPath - Path to local audio/video file
  * @param {boolean} verbose - Whether to show ffmpeg output
- * @returns {string} Path to the cached MP3 file
+ * @returns {Promise<string>} Path to the cached MP3 file
  */
-export function prepareLocalAudio(session, localPath, verbose = false) {
+export async function prepareLocalAudio(session, localPath, verbose = false) {
   const audioCachePath = getAudioCachePath(session.sessionId);
   const transcriptCachePath = getTranscriptCachePath(session.sessionId);
   const sidecarPath = `${audioCachePath}.source.json`;
@@ -1092,16 +1138,13 @@ export function prepareLocalAudio(session, localPath, verbose = false) {
 
   fs.mkdirSync(AUDIO_CACHE_DIR, { recursive: true });
 
-  // Convert to MP3 (use spawnSync to avoid shell injection from user-supplied path)
+  // Convert to MP3 (arg array avoids shell injection from user-supplied path)
   console.log(`  Converting local file to MP3: ${localPath}`);
-  const result = spawnSync(
+  await runProcess(
     "ffmpeg",
     ["-hide_banner", "-loglevel", "error", "-i", localPath, "-vn", "-acodec", "libmp3lame", "-q:a", "2", audioCachePath],
-    { stdio: verbose ? "inherit" : "ignore" },
+    { verbose, label: "ffmpeg convert" },
   );
-  if (result.status !== 0) {
-    throw new Error(`ffmpeg exited with code ${result.status}`);
-  }
 
   fs.writeFileSync(sidecarPath, JSON.stringify(currentFingerprint));
 
@@ -1175,7 +1218,7 @@ async function downloadSessionAudio(session, verbose = false) {
   const tempPath = path.join(os.tmpdir(), `auto-minutes-${randomUUID()}.mp3`);
   try {
     console.log(`  Downloading audio...`);
-    downloadAudio(streamUrl, tempPath, verbose);
+    await downloadAudio(streamUrl, tempPath, verbose);
 
     await fsPromises.mkdir(AUDIO_CACHE_DIR, { recursive: true });
     await fsPromises.copyFile(tempPath, cachePath);
@@ -1250,7 +1293,7 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
   // transcript when the input fingerprint matches the previous conversion.
   let audioPath;
   if (localAudioPath) {
-    audioPath = prepareLocalAudio(session, localAudioPath, verbose);
+    audioPath = await prepareLocalAudio(session, localAudioPath, verbose);
   }
 
   // Check transcript cache (valid in both branches: when localAudioPath was given,
@@ -1310,7 +1353,7 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
   } else {
     // gemini (default)
     if (geminiSegmentSeconds && geminiSegmentSeconds > 0) {
-      const duration = getAudioDuration(audioPath);
+      const duration = await getAudioDuration(audioPath);
       if (duration > geminiSegmentSeconds) {
         console.log(
           `  Transcribing audio with Gemini in ${geminiSegmentSeconds}s segments (total ${Math.round(duration)}s)...`,
@@ -1356,7 +1399,7 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
   // runs unconditionally (unlike the official-transcript ratio check below,
   // which is skipped whenever Meetecho hasn't published a transcript yet).
   if (!sttModel.startsWith("google") && !sttModel.startsWith("deepgram")) {
-    const durationMinutes = getAudioDuration(audioPath) / 60;
+    const durationMinutes = (await getAudioDuration(audioPath)) / 60;
     const audioWords = transcriptWordCount(transcript);
     const minExpectedWords = durationMinutes * MIN_WORDS_PER_MINUTE;
     if (verbose) {
