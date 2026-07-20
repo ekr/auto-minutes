@@ -18,7 +18,7 @@ jest.unstable_mockModule('node-fetch', () => ({
 }));
 
 const { downloadTranscript } = await import('./scraper.js');
-const { prepareLocalTranscript } = await import('./transcriber.js');
+const { prepareLocalTranscript, fetchCloudflareVideoId } = await import('./transcriber.js');
 const { isRecordingUnavailable } = await import('./skip-classifier.js');
 
 function makeResponse({ ok = true, status = 200, statusText = 'OK', contentType = 'application/json', body = '' } = {}) {
@@ -107,6 +107,55 @@ describe('downloadTranscript', () => {
       const message = await rejectionMessage(downloadTranscript(session));
       expect(isRecordingUnavailable(message)).toBe(true);
     });
+  });
+});
+
+describe('fetchCloudflareVideoId classification', () => {
+  // Same rationale as the downloadTranscript block above: fetchCloudflareVideoId's
+  // "404" and "no Cloudflare video" messages are thrown unwrapped and propagate
+  // straight to the catch site that calls isRecordingUnavailable(error.message).
+  // Feeding its real thrown message in (rather than a hand-copied literal) catches
+  // drift between the throw-site wording and the classifier's regexes.
+  function makeJsonResponse({ ok = true, status = 200, statusText = 'OK', body } = {}) {
+    return {
+      ok,
+      status,
+      statusText,
+      json: async () => body,
+    };
+  }
+
+  async function rejectionMessage(promise) {
+    try {
+      await promise;
+    } catch (error) {
+      return error.message;
+    }
+    throw new Error('expected promise to reject');
+  }
+
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  test('a 404 session-info response classifies as recording-unavailable', async () => {
+    mockFetch.mockResolvedValue(makeJsonResponse({ ok: false, status: 404, statusText: 'Not Found' }));
+    const message = await rejectionMessage(fetchCloudflareVideoId('IETF126-DISPATCH-20260720-0700'));
+    expect(isRecordingUnavailable(message)).toBe(true);
+  });
+
+  test('a videos list with no type-3 entry classifies as recording-unavailable', async () => {
+    mockFetch.mockResolvedValue(
+      makeJsonResponse({ body: { videos: [{ type: 1, src: 'a' }, { type: 2, src: 'b' }] } }),
+    );
+    const message = await rejectionMessage(fetchCloudflareVideoId('IETF126-DISPATCH-20260720-0700'));
+    expect(isRecordingUnavailable(message)).toBe(true);
+  });
+
+  test('a 401 session-info response does NOT classify as recording-unavailable', async () => {
+    mockFetch.mockResolvedValue(makeJsonResponse({ ok: false, status: 401, statusText: 'Unauthorized' }));
+    const message = await rejectionMessage(fetchCloudflareVideoId('IETF126-DISPATCH-20260720-0700'));
+    expect(isRecordingUnavailable(message)).toBe(false);
   });
 });
 
