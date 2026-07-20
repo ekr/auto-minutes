@@ -633,6 +633,7 @@ async function main() {
     .example("$0 --preview 2026-04-14:AIPREF", "Preview minutes for an interim session")
     .example("$0 --preview 123:6LO --audio", "Preview with audio transcription (Google STT)")
     .example("$0 --preview 123:6LO --audio --stt-model gemini", "Preview with Gemini STT")
+    .example("$0 --preview 123:6LO --audio --stt-model google:chirp_3+names", "Preview with chirp+Gemini name-fill hybrid (real timestamps + names)")
     .example("$0 --summarize 123 -j 5", "Process 5 sessions in parallel")
     .example("$0 --uncache 123", "Clear all cached data for IETF 123")
     .example("$0 --uncache 123:6LO --uncache-type minutes", "Clear only cached minutes for 6LO")
@@ -684,7 +685,7 @@ async function main() {
     .option("stt-model", {
       type: "string",
       default: "google",
-      description: "STT backend when --audio is used: \"google\", \"google:chirp_2\", \"google:chirp_3\" (default), or \"gemini\"",
+      description: "STT backend when --audio is used: \"google\", \"google:chirp_2\", \"google:chirp_3\" (default), \"gemini\", or a chirp+Gemini name-fill hybrid (\"google+names\", \"google:chirp_3+names\") that keeps chirp's real timestamps and diarization but fills in speaker names via a text-only Gemini call; the hybrid requires chirp_3 diarization, so \"google:chirp_2+names\" is not supported",
     })
     .option("gemini-segment-seconds", {
       type: "number",
@@ -818,6 +819,19 @@ async function main() {
           throw new Error("--gemini-segment-seconds requires --stt-model gemini");
         }
       }
+      // Validate --stt-model
+      {
+        const hasNames = argv.sttModel.endsWith("+names");
+        const base = hasNames ? argv.sttModel.slice(0, -"+names".length) : argv.sttModel;
+        const validBases = new Set(["google", "google:chirp_2", "google:chirp_3", "gemini"]);
+        const namesCapableBases = new Set(["google", "google:chirp_3"]);
+        if (hasNames && !namesCapableBases.has(base)) {
+          throw new Error(`--stt-model "${argv.sttModel}" is invalid: the "+names" hybrid requires chirp_3 diarization and is only supported with "google" or "google:chirp_3" (e.g. "google:chirp_3+names"); chirp_2 does not produce speaker labels to map`);
+        }
+        if (!validBases.has(base)) {
+          throw new Error(`--stt-model "${argv.sttModel}" is invalid; must be one of: google, google:chirp_2, google:chirp_3, gemini, or "google"/"google:chirp_3" suffixed with "+names"`);
+        }
+      }
       return true;
     })
     .strict()
@@ -895,11 +909,12 @@ async function main() {
       initializeGemini(apiKey);
     }
 
-    // --stt-model gemini requires GEMINI_API_KEY for STT, even when using claude for minutes
-    if (sttModel === "gemini" && provider === "claude") {
+    // --stt-model gemini (or a "+names" hybrid, which uses Gemini for speaker
+    // name mapping) requires GEMINI_API_KEY, even when using claude for minutes
+    if ((sttModel === "gemini" || (sttModel && sttModel.endsWith("+names"))) && provider === "claude") {
       const geminiKey = process.env.GEMINI_API_KEY;
       if (!geminiKey) {
-        console.error("Error: GEMINI_API_KEY is required for --stt-model gemini");
+        console.error(`Error: GEMINI_API_KEY is required for --stt-model ${sttModel}`);
         console.error("Please add GEMINI_API_KEY to your .env file");
         process.exit(1);
       }

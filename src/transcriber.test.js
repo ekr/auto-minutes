@@ -1,7 +1,9 @@
 /**
  * Tests for the audio transcription pipeline: the DISPATCH-20260720 regression
  * (a Gemini STT stream that returns zero text chunks must never be treated as
- * a successful transcription) and upload retry behaviour (transcribeAudio).
+ * a successful transcription), upload retry behaviour (transcribeAudio),
+ * --stt-model parsing, chirp diarization formatting with timestamps, and the
+ * chirp+Gemini name-fill hybrid.
  */
 
 import { jest } from '@jest/globals';
@@ -51,10 +53,12 @@ jest.unstable_mockModule('child_process', () => ({
 }));
 
 const mockGenerateContentStream = jest.fn();
+const mockGenerateContent = jest.fn();
 jest.unstable_mockModule('@google/generative-ai', () => ({
   GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
     getGenerativeModel: jest.fn().mockImplementation(() => ({
       generateContentStream: mockGenerateContentStream,
+      generateContent: mockGenerateContent,
     })),
   })),
 }));
@@ -111,6 +115,9 @@ const {
   getTranscriptCachePath,
   isTransientError,
   uploadFileResumable,
+  parseSttModel,
+  formatDiarizedTranscript,
+  applyNameHybrid,
 } = await import('./transcriber.js');
 
 function makeStreamResult(chunkTexts, finishReason = 'STOP') {
@@ -150,6 +157,7 @@ beforeEach(() => {
   mockUnlink.mockClear();
   mockExecSync.mockReset();
   mockGenerateContentStream.mockReset();
+  mockGenerateContent.mockReset();
   mockGetFile.mockReset().mockResolvedValue({ state: 'ACTIVE', mimeType: 'audio/mpeg', uri: 'files/abc' });
   mockDeleteFile.mockReset().mockResolvedValue({});
   mockOpen.mockReset().mockResolvedValue({ read: mockFileHandleRead, close: mockFileHandleClose });
@@ -446,4 +454,153 @@ describe('transcribeAudio upload wiring', () => {
     expect(mockGenerateContentStream).not.toHaveBeenCalled();
     expect(mockDeleteFile).not.toHaveBeenCalled();
   });
+});
+
+describe('parseSttModel', () => {
+  test('plain google model has no hybrid suffix', () => {
+    expect(parseSttModel('google')).toEqual({ baseSttModel: 'google', hybridNames: false });
+  });
+
+  test('gemini model has no hybrid suffix', () => {
+    expect(parseSttModel('gemini')).toEqual({ baseSttModel: 'gemini', hybridNames: false });
+  });
+
+  test('strips "+names" and keeps the chirp variant intact', () => {
+    expect(parseSttModel('google:chirp_3+names')).toEqual({ baseSttModel: 'google:chirp_3', hybridNames: true });
+    expect(parseSttModel('google:chirp_2+names')).toEqual({ baseSttModel: 'google:chirp_2', hybridNames: true });
+    expect(parseSttModel('google+names')).toEqual({ baseSttModel: 'google', hybridNames: true });
+  });
+});
+
+describe('formatDiarizedTranscript', () => {
+  test('formats turns with "[HH:MM:SS] Speaker N: ..." and breaks on speaker changes', () => {
+    const words = [
+      { word: 'Hello', speakerLabel: '1', startOffset: '0s' },
+      { word: 'everyone.', speakerLabel: '1', startOffset: '0.5s' },
+      { word: 'Hi', speakerLabel: '2', startOffset: '12.340s' },
+      { word: 'there.', speakerLabel: '2', startOffset: '12.8s' },
+      { word: 'Thanks.', speakerLabel: '1', startOffset: '3723s' },
+    ];
+
+    const result = formatDiarizedTranscript(words);
+
+    expect(result).toBe(
+      '[00:00:00] Speaker 1: Hello everyone.\n' +
+      '[00:00:12] Speaker 2: Hi there.\n' +
+      '[01:02:03] Speaker 1: Thanks.'
+    );
+  });
+
+  test('degrades gracefully (no prefix, never "[NaN:NaN:NaN]") when offsets are missing', () => {
+    const words = [
+      { word: 'Hello', speakerLabel: '1' },
+      { word: 'world.', speakerLabel: '1' },
+    ];
+
+    const result = formatDiarizedTranscript(words);
+
+    expect(result).toBe('Speaker 1: Hello world.');
+    expect(result).not.toContain('NaN');
+  });
+});
+
+describe('applyNameHybrid', () => {
+  beforeEach(() => {
+    mockGenerateContent.mockReset();
+  });
+
+  test('maps generic speaker labels to real names, preserves timestamps, and records usage', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify({ 'Speaker 1': 'Jane Smith' }),
+        usageMetadata: { promptTokenCount: 120, candidatesTokenCount: 30 },
+      },
+    });
+
+    const chirpTranscript = '[00:14:32] Speaker 1: Hello everyone.';
+    const result = await applyNameHybrid(chirpTranscript, 'fake-key', null, false);
+
+    expect(result.text).toContain('[00:14:32] **Jane Smith**: Hello everyone.');
+    expect(result.usage).toEqual({ inputTokens: 120, outputTokens: 30, model: 'gemini-3.5-flash' });
+  });
+
+  test('feeds bluesheet participant names from context into the Gemini naming prompt', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify({ 'Speaker 1': 'Jane Smith' }),
+        usageMetadata: { promptTokenCount: 50, candidatesTokenCount: 10 },
+      },
+    });
+
+    const context = {
+      slidesAndBluesheet: {
+        bluesheet: [
+          'Bluesheet for IETF-124: privacypass  Monday 09:30',
+          '================================================================',
+          '2 attendees.',
+          '',
+          'Jane Smith\tExample Corp',
+          'John Doe\tAcme Inc',
+        ].join('\n'),
+      },
+    };
+
+    const chirpTranscript = '[00:14:32] Speaker 1: Hello everyone.';
+    const result = await applyNameHybrid(chirpTranscript, 'fake-key', context, false);
+
+    const contents = mockGenerateContent.mock.calls[0][0];
+    const promptText = contents.map(c => c.text).join('\n');
+    expect(promptText).toContain('Jane Smith');
+    expect(promptText).toContain('John Doe');
+    expect(result.text).toContain('[00:14:32] **Jane Smith**: Hello everyone.');
+  });
+
+  test('passes null participantsList when context has no bluesheet', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify({ 'Speaker 1': 'Jane Smith' }),
+        usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+      },
+    });
+
+    await applyNameHybrid('Speaker 1: hi', 'fake-key', {}, false);
+
+    const contents = mockGenerateContent.mock.calls[0][0];
+    const promptText = contents.map(c => c.text).join('\n');
+    expect(promptText).not.toContain('A list of expected participants');
+  });
+
+  test('is text-only: never sends audio fileData to Gemini', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify({ 'Speaker 1': 'Jane Smith' }),
+        usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+      },
+    });
+
+    await applyNameHybrid('Speaker 1: hi', 'fake-key', null, false);
+
+    const contents = mockGenerateContent.mock.calls[0][0];
+    expect(contents.some(c => c.fileData)).toBe(false);
+  });
+
+  test('fails soft: falls back to the unmodified chirp transcript when name mapping errors', async () => {
+    jest.useFakeTimers();
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockGenerateContent.mockRejectedValue(new Error('gemini unavailable'));
+
+    const chirpTranscript = '[00:14:32] Speaker 1: Hello everyone.';
+    const resultPromise = applyNameHybrid(chirpTranscript, 'fake-key', null, false);
+    await jest.advanceTimersByTimeAsync(20000);
+    const result = await resultPromise;
+
+    expect(result.text).toBe(chirpTranscript);
+    expect(result.usage).toBeUndefined();
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+    errorSpy.mockRestore();
+    jest.useRealTimers();
+  }, 15000);
 });

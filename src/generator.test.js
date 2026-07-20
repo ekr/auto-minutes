@@ -1,5 +1,6 @@
 /**
- * Tests for the minutes generator's transcript validation and generation guards
+ * Tests for the minutes generator's transcript validation and generation guards,
+ * and bluesheet participant-name extraction.
  */
 
 import { jest } from '@jest/globals';
@@ -27,6 +28,7 @@ const {
   assertTranscriptSubstantial,
   generateMinutes,
   initializeGemini,
+  extractParticipantNames,
 } = await import('./generator.js');
 
 describe('assertTranscriptPresent', () => {
@@ -156,5 +158,74 @@ describe('generateMinutes', () => {
     );
     expect(mockGenerateContent).not.toHaveBeenCalled();
     expect(mockCreate).not.toHaveBeenCalled();
+  });
+});
+
+describe('extractParticipantNames', () => {
+  test('returns an empty array when bluesheet is null/undefined/empty', () => {
+    expect(extractParticipantNames(null)).toEqual([]);
+    expect(extractParticipantNames(undefined)).toEqual([]);
+    expect(extractParticipantNames('')).toEqual([]);
+  });
+
+  test('parses tab-separated attendee names after the "attendees" header', () => {
+    const bluesheet = [
+      'Bluesheet for IETF-124: privacypass  Monday 09:30',
+      '================================================================',
+      '3 attendees.',
+      '',
+      'Jane Smith\tExample Corp',
+      'John Doe\tAcme Inc',
+      'Alex Lee\tOther Org',
+    ].join('\n');
+
+    expect(extractParticipantNames(bluesheet)).toEqual(['Jane Smith', 'John Doe', 'Alex Lee']);
+  });
+
+  test('parses names separated by two-or-more spaces instead of a tab', () => {
+    const bluesheet = [
+      '2 attendees.',
+      'Jane Smith    Example Corp',
+      'John Doe    Acme Inc',
+    ].join('\n');
+
+    expect(extractParticipantNames(bluesheet)).toEqual(['Jane Smith', 'John Doe']);
+  });
+
+  test('deduplicates repeated names', () => {
+    const bluesheet = [
+      'attendees.',
+      'Jane Smith\tExample Corp',
+      'Jane Smith\tExample Corp (second sign-in)',
+    ].join('\n');
+
+    expect(extractParticipantNames(bluesheet)).toEqual(['Jane Smith']);
+  });
+
+  test('stops collecting at a "===" or "---" separator line (variant formats)', () => {
+    const bluesheet = [
+      'attendees.',
+      'Jane Smith\tExample Corp',
+      '----------------------------------------',
+      'This is not a name, it is trailing text.',
+    ].join('\n');
+
+    expect(extractParticipantNames(bluesheet)).toEqual(['Jane Smith']);
+  });
+
+  test('returns an empty array when there is no "attendees" header', () => {
+    const bluesheet = 'Jane Smith\tExample Corp\nJohn Doe\tAcme Inc';
+    expect(extractParticipantNames(bluesheet)).toEqual([]);
+  });
+
+  test('ignores blank lines and names too short to be real (<= 2 chars)', () => {
+    const bluesheet = [
+      'attendees.',
+      '',
+      'Jo\tShort Corp',
+      'Jane Smith\tExample Corp',
+    ].join('\n');
+
+    expect(extractParticipantNames(bluesheet)).toEqual(['Jane Smith']);
   });
 });

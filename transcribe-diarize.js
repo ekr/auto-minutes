@@ -8,10 +8,10 @@ import { spawnSync } from "child_process";
 import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { GoogleAuth } from "google-auth-library";
 import { transcribeAudioGoogleSTT } from "./src/transcriber.js";
+import { getSpeakerMapFromGemini, normalizeSpeakerMap, applySpeakerMap } from "./src/speaker-names.js";
 
 // Load environment variables from .env
 dotenv.config();
@@ -114,151 +114,6 @@ async function parseParticipants(input) {
     .map(name => name.trim())
     .filter(name => name.length > 0)
     .join("\n");
-}
-
-/**
- * Extract JSON block from a string
- */
-function extractJSON(text) {
-  // Try markdown block first
-  const mdJsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/i);
-  if (mdJsonMatch) {
-    return JSON.parse(mdJsonMatch[1].trim());
-  }
-
-  const mdMatch = text.match(/```\s*([\s\S]*?)\s*```/);
-  if (mdMatch) {
-    return JSON.parse(mdMatch[1].trim());
-  }
-
-  // Find braces
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1 || end < start) {
-    throw new Error("Could not find any JSON braces in LLM response");
-  }
-  const jsonText = text.substring(start, end + 1);
-  return JSON.parse(jsonText);
-}
-
-/**
- * Query Gemini to map generic speaker labels to actual names
- */
-async function getSpeakerMapFromGemini(apiKey, modelName, file, transcript, participantsList, verbose = false) {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  // We use low thinking level for deterministic schema-based outputs
-  const genModel = genAI.getGenerativeModel({
-    model: modelName,
-    generationConfig: {
-      responseMimeType: "application/json",
-      thinkingConfig: { thinkingLevel: "low" }
-    }
-  });
-
-  let prompt = `You are an expert meeting transcription assistant. You are provided with:
-1. A transcription of a meeting containing generic speaker labels like "Speaker 1", "Speaker 2", etc.
-`;
-
-  if (participantsList) {
-    prompt += `
-2. A list of expected participants in the meeting:
-${participantsList}
-`;
-  }
-
-  prompt += `
-Your task is to identify the actual name of each speaker (e.g. mapping "Speaker 1" to "John Doe").
-- Analyze the speaker introductions, how people refer to each other, the topics discussed, and cross-reference them with the list of expected participants (if provided).
-- Output ONLY a JSON object mapping each generic speaker label (exactly as written in the transcript, like "Speaker 1") to their identified real name.
-- If a speaker's name cannot be identified, map them to a descriptive role (e.g. "Presenter", "Chairperson") or leave them as the original speaker label.
-- Return ONLY the JSON object.
-
-Example output format:
-{
-  "Speaker 1": "John Doe",
-  "Speaker 2": "Jane Smith"
-}
-`;
-
-  return retryWithBackoff(async () => {
-    const contents = [];
-    if (file) {
-      contents.push({
-        fileData: {
-          mimeType: file.mimeType,
-          fileUri: file.uri,
-        },
-      });
-    }
-    contents.push({ text: prompt + `\n\nHere is the transcript:\n${transcript}` });
-
-    if (verbose) console.log(`Sending content generation request to Gemini (${modelName})...`);
-    const result = await genModel.generateContent(contents);
-    const responseText = result.response.text();
-
-    if (verbose) console.log("Gemini raw response:\n", responseText);
-
-    try {
-      return extractJSON(responseText);
-    } catch (parseError) {
-      console.warn(`JSON Parse failed on primary attempt: ${parseError.message}`);
-      
-      // Fallback: request without JSON config constraint or with shepherding
-      const fallbackModel = genAI.getGenerativeModel({ model: modelName });
-      const correctionPrompt = `The previous response was not valid JSON. Extract the speaker mapping to a clean JSON object. Do not output anything but the JSON block. Here is the transcript:\n${transcript}`;
-      
-      const contentsFallback = [];
-      if (file) {
-        contentsFallback.push({
-          fileData: {
-            mimeType: file.mimeType,
-            fileUri: file.uri,
-          },
-        });
-      }
-      contentsFallback.push({ text: correctionPrompt });
-      
-      const resultFallback = await fallbackModel.generateContent(contentsFallback);
-      const responseTextFallback = resultFallback.response.text();
-      return extractJSON(responseTextFallback);
-    }
-  }, 3, 5000);
-}
-
-/**
- * Normalizes speaker map keys to ensure matchability (e.g. "1" -> "Speaker 1")
- */
-function normalizeSpeakerMap(speakerMap) {
-  const normalized = {};
-  for (const [key, value] of Object.entries(speakerMap)) {
-    let normalizedKey = key.trim();
-    if (/^\d+$/.test(normalizedKey)) {
-      normalizedKey = `Speaker ${normalizedKey}`;
-    }
-    normalizedKey = normalizedKey.replace(/\*\*/g, '');
-    normalized[normalizedKey] = value.trim();
-  }
-  return normalized;
-}
-
-/**
- * Replace generic speaker labels in the transcript with their names
- */
-function applySpeakerMap(rawTranscript, speakerMap) {
-  let processed = rawTranscript;
-  for (const [label, name] of Object.entries(speakerMap)) {
-    const escapedLabel = label.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    
-    // Matches "**Speaker 1**:", "**Speaker 1** :", "Speaker 1:", "Speaker 1 :"
-    const regex = new RegExp(`(?:\\*\\*)?${escapedLabel}(?:\\*\\*)?\\s*:`, 'g');
-    processed = processed.replace(regex, `**${name}**:`);
-  }
-  
-  return processed
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
-    .join('\n\n') + '\n';
 }
 
 async function main() {
