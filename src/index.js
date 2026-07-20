@@ -685,7 +685,7 @@ async function main() {
     .option("stt-model", {
       type: "string",
       default: "google",
-      description: "STT backend when --audio is used: \"google\", \"google:chirp_2\", \"google:chirp_3\" (default), \"gemini\", or a chirp+Gemini name-fill hybrid (\"google+names\", \"google:chirp_2+names\", \"google:chirp_3+names\") that keeps chirp's real timestamps and diarization but fills in speaker names via a text-only Gemini call",
+      description: "STT backend when --audio is used: \"google\", \"google:chirp_2\", \"google:chirp_3\" (default), \"gemini\", or a chirp+Gemini name-fill hybrid (\"google+names\", \"google:chirp_3+names\") that keeps chirp's real timestamps and diarization but fills in speaker names via a text-only Gemini call; the hybrid requires chirp_3 diarization, so \"google:chirp_2+names\" is not supported",
     })
     .option("gemini-segment-seconds", {
       type: "number",
@@ -824,11 +824,12 @@ async function main() {
         const hasNames = argv.sttModel.endsWith("+names");
         const base = hasNames ? argv.sttModel.slice(0, -"+names".length) : argv.sttModel;
         const validBases = new Set(["google", "google:chirp_2", "google:chirp_3", "gemini"]);
-        if (hasNames && !base.startsWith("google")) {
-          throw new Error(`--stt-model "${argv.sttModel}" is invalid: the "+names" hybrid is only supported with google STT models (e.g. "google:chirp_3+names")`);
+        const namesCapableBases = new Set(["google", "google:chirp_3"]);
+        if (hasNames && !namesCapableBases.has(base)) {
+          throw new Error(`--stt-model "${argv.sttModel}" is invalid: the "+names" hybrid requires chirp_3 diarization and is only supported with "google" or "google:chirp_3" (e.g. "google:chirp_3+names"); chirp_2 does not produce speaker labels to map`);
         }
         if (!validBases.has(base)) {
-          throw new Error(`--stt-model "${argv.sttModel}" is invalid; must be one of: google, google:chirp_2, google:chirp_3, gemini, or a google variant suffixed with "+names"`);
+          throw new Error(`--stt-model "${argv.sttModel}" is invalid; must be one of: google, google:chirp_2, google:chirp_3, gemini, or "google"/"google:chirp_3" suffixed with "+names"`);
         }
       }
       return true;

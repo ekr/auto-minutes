@@ -1096,7 +1096,7 @@ export async function applyNameHybrid(chirpTranscript, apiKey, context, verbose 
 /**
  * Full pipeline: fetch audio stream, download (with cache), transcribe (with cache)
  * @param {Object} session - Session object with sessionId
- * @param {string} sttModel - STT model: "gemini", "google", "google:chirp_2", "google:chirp_3", or a "+names" hybrid variant of the google models (e.g. "google:chirp_3+names")
+ * @param {string} sttModel - STT model: "gemini", "google", "google:chirp_2", "google:chirp_3", or a "+names" hybrid of "google"/"google:chirp_3" (e.g. "google:chirp_3+names"); chirp_2 has no diarization, so "+names" is not meaningful with it
  * @param {string} apiKey - Gemini API key (required for sttModel "gemini" or a "+names" hybrid)
  * @param {boolean} verbose - Whether to log verbose output
  * @param {Object} context - Pre-fetched session context (optional, passed to Gemini STT and the "+names" hybrid)
