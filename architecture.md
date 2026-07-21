@@ -78,6 +78,8 @@ Under `-j` concurrency, multiple sessions run "concurrently" on a single JS thre
 
 Supports Gemini and Claude models, selected via `--model`. Context is fetched before transcription: slides, bluesheets, and WG documents provide reference data, while datatracker poll JSON provides authoritative poll results and normalized chat JSON supplements the transcript as session record. Chat prompt rendering is capped at 800 messages / 40,000 characters. Material lookup first uses the session-derived document name, then falls back to the newest datatracker API prefix match.
 
+The material prefix fallback runs only after the exact session-derived URL returns HTTP 404. Valid empty materials, malformed responses, and other fetch failures remain empty rather than risking attribution of another session's polls or chat.
+
 Cached minutes can also be revised with `--amend NUMBER:GROUP --comments FILE` (or a date-based interim selector). This path resolves sessions exclusively from the cache manifest, sends each session's raw cached minutes, reviewer comments, and cached slide/bluesheet/poll/chat context to the selected LLM, and overwrites only the raw minutes file. It does not fetch session data, use transcripts, or modify cache manifests and metadata; working-group documents are not part of the cached amend context. The normal output and build stages consume the revision unchanged.
 
 ### Transcript validation (defense in depth)

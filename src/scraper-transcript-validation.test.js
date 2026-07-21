@@ -84,6 +84,20 @@ describe('session poll and chat materials', () => {
     expect(mockFetch.mock.calls[1][0]).toContain('name__startswith=polls-124-cbor');
     expect(mockFetch.mock.calls[2][0]).toContain('/materials/polls-124-cbor-202511070945');
   });
+
+  test('does not run the prefix fallback for a valid empty material', async () => {
+    mockFetch.mockResolvedValue(makeResponse({ body: '[]' }));
+
+    await expect(fetchSessionPolls(124, 'IETF124-CBOR-20251107-0930')).resolves.toEqual([]);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not run the prefix fallback for a non-404 fetch failure', async () => {
+    mockFetch.mockResolvedValue(makeResponse({ ok: false, status: 503, statusText: 'Service Unavailable' }));
+
+    await expect(fetchSessionPolls(124, 'IETF124-CBOR-20251107-0930')).resolves.toEqual([]);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('downloadTranscript', () => {

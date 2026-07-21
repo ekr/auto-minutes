@@ -25,7 +25,9 @@ async function ietfFetch(url) {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+    const error = new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+    error.status = response.status;
+    throw error;
   }
 
   return response;
@@ -52,23 +54,27 @@ export function buildMaterialDocName(kind, sessionId, meetingSlug) {
   return null;
 }
 
-/** Fetch and parse a JSON-array meeting material, failing soft. */
-export async function fetchSessionMaterialJson(meetingIdentifier, docName) {
-  if (!meetingIdentifier || !docName) return [];
+async function fetchSessionMaterialJsonResult(meetingIdentifier, docName) {
+  if (!meetingIdentifier || !docName) return { data: [], notFound: false };
   try {
     const response = await ietfFetch(`https://datatracker.ietf.org/meeting/${meetingIdentifier}/materials/${docName}`);
     const parsed = JSON.parse(await response.text());
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+    return { data: Array.isArray(parsed) ? parsed : [], notFound: false };
+  } catch (error) {
+    return { data: [], notFound: error?.status === 404 };
   }
+}
+
+/** Fetch and parse a JSON-array meeting material, failing soft. */
+export async function fetchSessionMaterialJson(meetingIdentifier, docName) {
+  return (await fetchSessionMaterialJsonResult(meetingIdentifier, docName)).data;
 }
 
 async function fetchSessionMaterialWithFallback(kind, meetingIdentifier, sessionId, meetingSlug) {
   const docName = buildMaterialDocName(kind, sessionId, meetingSlug);
   if (!docName) return [];
-  const exact = await fetchSessionMaterialJson(meetingIdentifier, docName);
-  if (exact.length > 0) return exact;
+  const exact = await fetchSessionMaterialJsonResult(meetingIdentifier, docName);
+  if (!exact.notFound) return exact.data;
 
   const prefix = docName.replace(/-\d{12}$/, '');
   try {
