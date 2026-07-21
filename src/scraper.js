@@ -32,6 +32,144 @@ async function ietfFetch(url) {
 }
 
 /**
+ * Fetches raw JSON material document from datatracker.
+ * Returns an array if valid JSON array; [] on 404, HTML, non-array, or error.
+ * @param {string|number} meetingIdentifier - Meeting number or slug (e.g. 124 or "interim-2024-netmod-02")
+ * @param {string} docName - Document name (e.g. "polls-124-cbor-202511070930")
+ * @returns {Promise<Array>} Array of material items or []
+ */
+export async function fetchSessionMaterialJson(meetingIdentifier, docName) {
+  if (!meetingIdentifier || !docName) return [];
+  const url = `https://datatracker.ietf.org/meeting/${meetingIdentifier}/materials/${docName}`;
+  try {
+    const response = await ietfFetch(url);
+    const text = await response.text();
+    const data = JSON.parse(text);
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Derive datatracker material document name for polls or chatlog.
+ * @param {'polls'|'chatlog'} kind - Material kind
+ * @param {string} sessionId - Session ID (e.g., "IETF124-CBOR-20251107-0930")
+ * @param {string} [meetingSlug] - Meeting slug for interim sessions (e.g., "interim-2024-netmod-02")
+ * @returns {string|null} Document name or null
+ */
+export function buildMaterialDocName(kind, sessionId, meetingSlug) {
+  if (!sessionId) return null;
+
+  const ietfMatch = sessionId.match(/^IETF(\d+)-(.+)-(\d{8})-(\d{4})$/i);
+  if (ietfMatch) {
+    const [, num, slug, date, time] = ietfMatch;
+    return `${kind}-${num}-${slug.toLowerCase()}-${date}${time}`;
+  }
+
+  // Interim session (no numeric IETF meeting number):
+  const dtMatch = sessionId.match(/[-_]?(\d{8})[-_]?(\d{4})$/);
+  if (dtMatch && meetingSlug) {
+    const [, date, time] = dtMatch;
+    return `${kind}-${meetingSlug}-${date}${time}`;
+  }
+
+  if (meetingSlug) {
+    return `${kind}-${meetingSlug}`;
+  }
+
+  return null;
+}
+
+/**
+ * Fetch session poll results from datatracker materials.
+ * @param {string|number} meetingIdentifier - Meeting identifier (e.g., 124 or "interim-2024-netmod-02")
+ * @param {string} sessionId - Session ID
+ * @param {string} [meetingSlug] - Optional meeting slug
+ * @returns {Promise<Array>} Array of poll objects or []
+ */
+export async function fetchSessionPolls(meetingIdentifier, sessionId, meetingSlug) {
+  const docName = buildMaterialDocName('polls', sessionId, meetingSlug);
+  let polls = docName ? await fetchSessionMaterialJson(meetingIdentifier, docName) : [];
+
+  if (!Array.isArray(polls) || polls.length === 0) {
+    try {
+      const ietfMatch = sessionId ? sessionId.match(/^IETF(\d+)-(.+)-(\d{8})-(\d{4})$/i) : null;
+      let prefix = null;
+      if (ietfMatch) {
+        prefix = `polls-${ietfMatch[1]}-${ietfMatch[2].toLowerCase()}`;
+      } else if (meetingSlug) {
+        prefix = `polls-${meetingSlug}`;
+      }
+
+      if (prefix) {
+        const url = `https://datatracker.ietf.org/api/v1/doc/document/?type=polls&name__startswith=${prefix}&format=json`;
+        const response = await ietfFetch(url);
+        const data = await response.json();
+        if (data && Array.isArray(data.objects) && data.objects.length > 0) {
+          const sorted = [...data.objects].sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+          const newestName = sorted[0].name;
+          if (newestName) {
+            polls = await fetchSessionMaterialJson(meetingIdentifier, newestName);
+          }
+        }
+      }
+    } catch (e) {
+      // Fallback soft failure
+    }
+  }
+
+  return Array.isArray(polls) ? polls : [];
+}
+
+/**
+ * Fetch session chat log from datatracker materials and strip HTML from messages.
+ * @param {string|number} meetingIdentifier - Meeting identifier (e.g., 124 or "interim-2024-netmod-02")
+ * @param {string} sessionId - Session ID
+ * @param {string} [meetingSlug] - Optional meeting slug
+ * @returns {Promise<Array>} Array of chat message objects {author, time, text} or []
+ */
+export async function fetchSessionChatlog(meetingIdentifier, sessionId, meetingSlug) {
+  const docName = buildMaterialDocName('chatlog', sessionId, meetingSlug);
+  let rawChat = docName ? await fetchSessionMaterialJson(meetingIdentifier, docName) : [];
+
+  if (!Array.isArray(rawChat) || rawChat.length === 0) {
+    try {
+      const ietfMatch = sessionId ? sessionId.match(/^IETF(\d+)-(.+)-(\d{8})-(\d{4})$/i) : null;
+      let prefix = null;
+      if (ietfMatch) {
+        prefix = `chatlog-${ietfMatch[1]}-${ietfMatch[2].toLowerCase()}`;
+      } else if (meetingSlug) {
+        prefix = `chatlog-${meetingSlug}`;
+      }
+
+      if (prefix) {
+        const url = `https://datatracker.ietf.org/api/v1/doc/document/?type=chatlog&name__startswith=${prefix}&format=json`;
+        const response = await ietfFetch(url);
+        const data = await response.json();
+        if (data && Array.isArray(data.objects) && data.objects.length > 0) {
+          const sorted = [...data.objects].sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+          const newestName = sorted[0].name;
+          if (newestName) {
+            rawChat = await fetchSessionMaterialJson(meetingIdentifier, newestName);
+          }
+        }
+      }
+    } catch (e) {
+      // Fallback soft failure
+    }
+  }
+
+  if (!Array.isArray(rawChat)) return [];
+
+  return rawChat.map(msg => ({
+    author: msg.author || '',
+    time: msg.time || '',
+    text: cheerio.load(msg.text || '').text().trim(),
+  }));
+}
+
+/**
  * Parse a single CSV line with RFC 4180 quoting support.
  * Handles quoted fields that may contain commas or embedded double-quotes ("").
  * @param {string} line - A single CSV line

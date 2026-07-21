@@ -13,7 +13,7 @@ src/
   generator.js      — LLM minutes generation (Gemini / Claude)
   transcriber.js    — Audio download, STT transcription (Gemini / Google Cloud STT / Deepgram)
   speaker-names.js  — Gemini speaker-label→name mapping (shared by transcriber.js and transcribe-diarize.js)
-  session-context.js — Shared live slides, bluesheet, and WG-document context fetching
+  session-context.js — Shared live slides, bluesheet, WG-document, polls, and chatlog context fetching
   publisher.js      — File system output, cache management, index generation
   accounting.js     — Token and audio (STT) usage tracking and cost summary
 ```
@@ -24,7 +24,7 @@ src/
 CLI args
   → session resolution (scraper.js: datatracker / Meetecho agenda)
   → per-session pipeline (index.js: generateSessionMinutes)
-      → context fetch: slides, bluesheet, WG docs (scraper.js)
+      → context fetch: slides, bluesheet, WG docs, polls, chat (scraper.js)
       → audio acquisition (transcriber.js):
           - default: download HLS stream from Meetecho via ffmpeg → cache/audio/<id>.mp3
           - --audio-file: convert local file via ffmpeg → cache/audio/<id>.mp3
@@ -43,6 +43,7 @@ All intermediate artifacts are cached by `sessionId`:
 - `cache/audio/<sessionId>.mp3` — downloaded/converted audio
 - `cache/transcripts/<sessionId>.md` — STT transcript
 - `cache/minutes/<meetingId>/<sessionId>.md` — generated minutes
+- `cache/minutes/<meetingId>/<sessionId>.meta.json` — auxiliary metadata (slides, bluesheet, polls, chat)
 
 Session IDs are stable IETF identifiers (e.g. `IETF124-AIPREF-20251103-1300`).
 
@@ -76,9 +77,9 @@ Under `-j` concurrency, multiple sessions run "concurrently" on a single JS thre
 
 ### Minutes generation
 
-Supports Gemini and Claude models, selected via `--model`. Context (slides, bluesheet, WG documents) is fetched before transcription so it can be used by Gemini STT for speaker identification.
+Supports Gemini and Claude models, selected via `--model`. Context (slides, bluesheet, WG documents, polls, chatlog) is fetched before transcription so it can be used by Gemini STT for speaker identification and injected into minutes prompts. Datatracker polls provide authoritative recorded poll questions and vote tallies, while session chatlogs provide supplementary record of typed discussion.
 
-Cached minutes can also be revised with `--amend NUMBER:GROUP --comments FILE` (or a date-based interim selector). This path resolves sessions exclusively from the cache manifest, then uses the shared live context fetch to send each session's slides, bluesheet, and active working-group documents to the selected LLM alongside the raw cached minutes and reviewer comments. If live context is empty or unavailable, amend falls back to cached slide/bluesheet metadata. Interim cache manifests do not retain the datatracker meeting slug, so interim amendments use that fallback. Amend overwrites only the raw minutes file and does not use transcripts or modify cache manifests and metadata; the normal output and build stages consume the revision unchanged.
+Cached minutes can also be revised with `--amend NUMBER:GROUP --comments FILE` (or a date-based interim selector). This path resolves sessions exclusively from the cache manifest, then uses the shared live context fetch to send each session's slides, bluesheet, active working-group documents, polls, and chat to the selected LLM alongside the raw cached minutes and reviewer comments. If live context is empty or unavailable, amend falls back to cached metadata (`meta.json`). Interim cache manifests do not retain the datatracker meeting slug, so interim amendments use that fallback. Amend overwrites only the raw minutes file and does not use transcripts or modify cache manifests and metadata; the normal output and build stages consume the revision unchanged.
 
 ### Transcript validation (defense in depth)
 

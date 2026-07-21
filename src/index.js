@@ -115,6 +115,12 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
       console.log(`  Fetched bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
     }
   }
+  if (context.polls?.length) {
+    console.log(`  Fetched ${context.polls.length} poll(s)`);
+  }
+  if (context.chat?.length) {
+    console.log(`  Fetched ${context.chat.length} chat message(s)`);
+  }
 
   // Download transcript - from local file, audio (via STT), or text
   let transcript;
@@ -138,12 +144,12 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
     return { minutes: "", wasGenerated: false, reason: error.message, recordingUnavailable: isRecordingUnavailable(error.message) };
   }
 
-  if (context.slidesAndBluesheet) {
-    await saveCacheMetadata(meetingNumber, session.sessionId, {
-      slides: context.slidesAndBluesheet.slides || [],
-      bluesheetText: context.slidesAndBluesheet.bluesheet || null,
-    });
-  }
+  await saveCacheMetadata(meetingNumber, session.sessionId, {
+    slides: context.slidesAndBluesheet?.slides || [],
+    bluesheetText: context.slidesAndBluesheet?.bluesheet || null,
+    polls: context.polls || [],
+    chat: context.chat || [],
+  });
 
   // Generate minutes using LLM
   console.log(`  Generating minutes with LLM: ${session.sessionId}`);
@@ -1070,6 +1076,12 @@ async function main() {
           if (context.slidesAndBluesheet.bluesheet) {
             console.log(`  Fetched bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
           }
+        }
+        if (context.polls?.length) {
+          console.log(`  Fetched ${context.polls.length} poll(s)`);
+        }
+        if (context.chat?.length) {
+          console.log(`  Fetched ${context.chat.length} chat message(s)`);
         }
 
         // Download transcript (no cache) - from local file, audio, or text

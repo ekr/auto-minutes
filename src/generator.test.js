@@ -31,6 +31,7 @@ const {
   initializeClaude,
   initializeGemini,
   extractParticipantNames,
+  buildContextPrompt,
 } = await import('./generator.js');
 
 describe('assertTranscriptPresent', () => {
@@ -160,6 +161,84 @@ describe('generateMinutes', () => {
     );
     expect(mockGenerateContent).not.toHaveBeenCalled();
     expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  test('uses updated poll guardrail instruction and omits old "a poll of the room was taken" phrasing', async () => {
+    initializeGemini('fake-api-key');
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => '# Minutes',
+        usageMetadata: {},
+      },
+    });
+
+    const transcript = JSON.stringify([{ startTime: '00:00:00', text: 'Discussion about the proposal.' }]);
+    await generateMinutes(transcript, 'CBOR');
+
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+    const prompt = mockGenerateContent.mock.calls[0][0];
+    expect(prompt).not.toContain('a poll of the room was taken');
+    expect(prompt).toContain(
+      'When polls were taken, report them using the authoritative Session Polls data above (exact question + counts); if no poll data is provided, do not state specific poll outcomes or vote counts.'
+    );
+  });
+});
+
+describe('buildContextPrompt', () => {
+  test('includes Session Polls with question text, counts, and authoritative guardrail instruction', () => {
+    const context = {
+      polls: [
+        {
+          text: 'Adopt draft-ietf-foo?',
+          yes: 15,
+          no: 2,
+          no_opinion: 4,
+          present_when_poll_closed: 30,
+        },
+      ],
+    };
+    const prompt = buildContextPrompt(context, 'CBOR');
+
+    expect(prompt).toContain('Session Polls:');
+    expect(prompt).toContain('Question: Adopt draft-ietf-foo?');
+    expect(prompt).toContain('Yes: 15, No: 2, No Opinion: 4, Present when poll closed: 30');
+    expect(prompt).toContain('These are the authoritative recorded results of polls taken in this session.');
+    expect(prompt).toContain('Never state a poll result or vote count that does not appear here, and do not invent polls.');
+  });
+
+  test('includes Session Chat Log with author: text lines and chat instruction', () => {
+    const context = {
+      chat: [
+        { author: 'Alice', time: '2025-11-07T09:30:00Z', text: 'Does this draft cover IPv6?' },
+        { author: 'Bob', time: '2025-11-07T09:31:00Z', text: 'Yes, section 4 details that.' },
+      ],
+    };
+    const prompt = buildContextPrompt(context, 'CBOR');
+
+    expect(prompt).toContain('Session Chat Log:');
+    expect(prompt).toContain('Alice: Does this draft cover IPv6?');
+    expect(prompt).toContain('Bob: Yes, section 4 details that.');
+    expect(prompt).toContain('The chat log is part of the session record (messages participants actually typed).');
+  });
+
+  test('omits Session Polls and Session Chat Log when context has neither', () => {
+    const prompt = buildContextPrompt(null, 'CBOR');
+
+    expect(prompt).not.toContain('Session Polls');
+    expect(prompt).not.toContain('Session Chat Log');
+  });
+
+  test('truncates chat when message count exceeds limit and logs truncation marker', () => {
+    const chat = [];
+    for (let i = 0; i < 900; i++) {
+      chat.push({ author: `User${i}`, text: `Message line ${i}` });
+    }
+    const prompt = buildContextPrompt({ chat }, 'CBOR');
+
+    expect(prompt).toContain('Session Chat Log:');
+    expect(prompt).toContain('… (chat truncated)');
+    expect(prompt).toContain('User799: Message line 799');
+    expect(prompt).not.toContain('User805: Message line 805');
   });
 });
 

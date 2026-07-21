@@ -17,7 +17,7 @@ jest.unstable_mockModule('node-fetch', () => ({
   default: mockFetch,
 }));
 
-const { downloadTranscript } = await import('./scraper.js');
+const { downloadTranscript, fetchSessionMaterialJson, fetchSessionChatlog } = await import('./scraper.js');
 const { prepareLocalTranscript, fetchCloudflareVideoId } = await import('./transcriber.js');
 const { isRecordingUnavailable } = await import('./skip-classifier.js');
 
@@ -186,5 +186,42 @@ describe('prepareLocalTranscript vs downloadTranscript classification', () => {
     } finally {
       fs.unlinkSync(tmpFile);
     }
+  });
+});
+
+describe('fetchSessionMaterialJson and fetchSessionChatlog unit tests', () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  test('fetchSessionMaterialJson returns parsed array on JSON response', async () => {
+    mockFetch.mockResolvedValue(makeResponse({ body: JSON.stringify([{ text: 'Question 1', yes: 5, no: 1 }]) }));
+
+    const result = await fetchSessionMaterialJson(124, 'polls-124-cbor-202511070930');
+    expect(result).toEqual([{ text: 'Question 1', yes: 5, no: 1 }]);
+  });
+
+  test('fetchSessionMaterialJson returns [] on HTML 404 response', async () => {
+    mockFetch.mockResolvedValue(makeResponse({ ok: false, status: 404, statusText: 'Not Found', body: '<html>404 Not Found</html>' }));
+
+    const result = await fetchSessionMaterialJson(124, 'polls-124-cbor-202511070930');
+    expect(result).toEqual([]);
+  });
+
+  test('fetchSessionChatlog strips HTML tags from chat message text', async () => {
+    mockFetch.mockResolvedValue(
+      makeResponse({
+        body: JSON.stringify([
+          { author: 'Alice', text: '<p>hi</p>', time: '2025-11-07T09:30:00Z' },
+          { author: 'Bob', text: '<div>Hello <b>world</b></div>', time: '2025-11-07T09:31:00Z' },
+        ]),
+      })
+    );
+
+    const chat = await fetchSessionChatlog(124, 'IETF124-CBOR-20251107-0930');
+    expect(chat).toEqual([
+      { author: 'Alice', text: 'hi', time: '2025-11-07T09:30:00Z' },
+      { author: 'Bob', text: 'Hello world', time: '2025-11-07T09:31:00Z' },
+    ]);
   });
 });

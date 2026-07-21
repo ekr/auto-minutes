@@ -66,13 +66,24 @@ export async function amendCachedSessions({
           // Cached metadata is optional and must never prevent an amendment.
         }
         if (metadata) {
-          context = {
+          const fallbackContext = {
             slidesAndBluesheet: {
               slides: metadata.slides || [],
               bluesheet: metadata.bluesheetText || null,
             },
             wgDocuments: context?.wgDocuments || [],
           };
+          if (metadata.polls) {
+            fallbackContext.polls = metadata.polls;
+          } else if (context?.polls) {
+            fallbackContext.polls = context.polls;
+          }
+          if (metadata.chat) {
+            fallbackContext.chat = metadata.chat;
+          } else if (context?.chat) {
+            fallbackContext.chat = context.chat;
+          }
+          context = fallbackContext;
         }
       }
       const result = await reviseMinutes(existingMinutes, comments, group.sessionName, verbose, modelName, context);

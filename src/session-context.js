@@ -1,4 +1,4 @@
-import { fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
+import { fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments, fetchSessionPolls, fetchSessionChatlog } from "./scraper.js";
 
 /**
  * Extract the session slug from a session ID.
@@ -15,14 +15,14 @@ export function sessionSlugFromId(sessionId) {
 }
 
 /**
- * Fetch slides/bluesheet and WG documents for a session in parallel.
+ * Fetch slides/bluesheet, WG documents, polls, and chatlog for a session in parallel.
  * Supports both regular IETF meetings (numeric ID) and interim meetings
  * (meetingSlug present on the session object, e.g. "interim-2026-dnssd-01").
  * Returns empty context gracefully when the session cannot be resolved and
  * fails each individual fetch soft.
  * @param {Object} session - Session object with sessionId (and optionally meetingSlug) property
  * @param {boolean} verbose - Whether to log individual context fetch failures
- * @returns {Promise<{slidesAndBluesheet: Object|null, wgDocuments: Array}>}
+ * @returns {Promise<{slidesAndBluesheet: Object|null, wgDocuments: Array, polls: Array, chat: Array}>}
  */
 export async function fetchContextForSession(session, verbose = false) {
   let meetingIdentifier;
@@ -37,12 +37,14 @@ export async function fetchContextForSession(session, verbose = false) {
     meetingIdentifier = session.meetingSlug;
     sessionSlug = session.sessionName.toLowerCase();
   } else {
-    return { slidesAndBluesheet: null, wgDocuments: [] };
+    return { slidesAndBluesheet: null, wgDocuments: [], polls: [], chat: [] };
   }
 
-  const [slidesResult, docsResult] = await Promise.allSettled([
+  const [slidesResult, docsResult, pollsResult, chatResult] = await Promise.allSettled([
     fetchSessionSlidesAndBluesheet(meetingIdentifier, sessionSlug),
     fetchWorkingGroupDocuments(sessionSlug),
+    fetchSessionPolls(meetingIdentifier, session.sessionId, session.meetingSlug),
+    fetchSessionChatlog(meetingIdentifier, session.sessionId, session.meetingSlug),
   ]);
 
   if (verbose && slidesResult.status === 'rejected') {
@@ -51,9 +53,17 @@ export async function fetchContextForSession(session, verbose = false) {
   if (verbose && docsResult.status === 'rejected') {
     console.log(`    [context] Could not fetch WG documents: ${docsResult.reason?.message}`);
   }
+  if (verbose && pollsResult.status === 'rejected') {
+    console.log(`    [context] Could not fetch polls: ${pollsResult.reason?.message}`);
+  }
+  if (verbose && chatResult.status === 'rejected') {
+    console.log(`    [context] Could not fetch chat: ${chatResult.reason?.message}`);
+  }
 
   return {
     slidesAndBluesheet: slidesResult.status === 'fulfilled' ? slidesResult.value : null,
     wgDocuments: docsResult.status === 'fulfilled' ? docsResult.value : [],
+    polls: pollsResult.status === 'fulfilled' && Array.isArray(pollsResult.value) ? pollsResult.value : [],
+    chat: chatResult.status === 'fulfilled' && Array.isArray(chatResult.value) ? chatResult.value : [],
   };
 }

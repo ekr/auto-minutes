@@ -175,7 +175,7 @@ export function activeDraftNames(wgDocuments = []) {
  * @returns {string} Concatenated context string ready to embed in the prompt
  */
 export function buildContextPrompt(context, sessionName) {
-  const { slidesAndBluesheet = null, wgDocuments = [] } = context || {};
+  const { slidesAndBluesheet = null, wgDocuments = [], polls = [], chat = [] } = context || {};
   let result = '';
 
   // Working group documents
@@ -222,6 +222,55 @@ export function buildContextPrompt(context, sessionName) {
     }
   }
 
+  // Session Polls
+  if (polls.length > 0) {
+    result += `\n\nSession Polls:\n`;
+    polls.forEach((poll, index) => {
+      result += `${index + 1}. Question: ${poll.text}\n`;
+      const tallies = [];
+      if (poll.yes !== undefined) tallies.push(`Yes: ${poll.yes}`);
+      if (poll.no !== undefined) tallies.push(`No: ${poll.no}`);
+      if (poll.no_opinion !== undefined) tallies.push(`No Opinion: ${poll.no_opinion}`);
+      if (poll.present_when_poll_closed !== undefined) tallies.push(`Present when poll closed: ${poll.present_when_poll_closed}`);
+      if (tallies.length > 0) {
+        result += `   Results: ${tallies.join(', ')}\n`;
+      }
+    });
+    result += `\nThese are the authoritative recorded results of polls taken in this session. When the minutes describe a poll, use these exact questions and vote counts. Never state a poll result or vote count that does not appear here, and do not invent polls.\n`;
+  }
+
+  // Session Chat Log
+  if (chat.length > 0) {
+    result += `\n\nSession Chat Log:\n`;
+    let count = 0;
+    let charCount = 0;
+    let truncated = false;
+    const maxMessages = 800;
+    const maxChars = 40000;
+
+    for (const msg of chat) {
+      if (count >= maxMessages) {
+        truncated = true;
+        break;
+      }
+      const line = `${msg.author}: ${msg.text}\n`;
+      if (charCount + line.length > maxChars && count > 0) {
+        truncated = true;
+        break;
+      }
+      result += line;
+      charCount += line.length;
+      count++;
+    }
+
+    if (truncated) {
+      result += `… (chat truncated)\n`;
+      console.log(`    [context] Chat log truncated for prompt (${count} of ${chat.length} messages, ${charCount} chars)`);
+    }
+
+    result += `\nThe chat log is part of the session record (messages participants actually typed). You may use it to capture points, questions, links, and corrections raised in chat, attributing them to the named author. It is still not a license to invent content beyond what appears in the transcript or chat.\n`;
+  }
+
   return result;
 }
 
@@ -261,7 +310,7 @@ Requirements:
 - When referencing presentations or slides, use the slide titles provided and include links to the specific slide decks
 - Use participant names from the provided list when attributing statements or discussions; the bluesheet is authoritative for names while the transcript may contain errors, so use the bluesheet to correct any names found in the transcript
 - Remember that IETF participants are individuals, not representatives of companies or other entities
-- Remember that consensus is not judged in IETF meetings; it is established separately. It's OK to say things like "a poll of the room was taken" or "a sense of those present indicates..."
+- Remember that consensus is not judged in IETF meetings; it is established separately. When polls were taken, report them using the authoritative Session Polls data above (exact question + counts); if no poll data is provided, do not state specific poll outcomes or vote counts.
 - The transcript below is the ONLY source of fact. The slide list, participant list, and draft list above are reference data for correcting names and spellings — they are NOT evidence that anything was presented or discussed.
 - Never describe a presentation, statement, position, or decision that does not appear in the transcript. If a listed slide deck is not discussed in the transcript, omit it entirely.
 - Do not infer session content, chairs, participants, or meeting location from the slide titles or from your own knowledge of the working group.

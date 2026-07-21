@@ -2,7 +2,65 @@
  * Tests for IETF scraper
  */
 
-import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, isValidSessionId, fetchSessionsWithValidation, fetchValidSessions, parseCSVLine } from './scraper.js';
+import {
+  fetchSessionsFromProceedings,
+  fetchSessionsFromAgenda,
+  downloadTranscript,
+  isValidSessionId,
+  fetchSessionsWithValidation,
+  fetchValidSessions,
+  parseCSVLine,
+  buildMaterialDocName,
+  fetchSessionMaterialJson,
+  fetchSessionPolls,
+  fetchSessionChatlog,
+} from './scraper.js';
+
+describe('buildMaterialDocName', () => {
+  test('builds poll and chatlog doc names for standard plenary sessions', () => {
+    expect(buildMaterialDocName('polls', 'IETF124-CBOR-20251107-0930')).toBe('polls-124-cbor-202511070930');
+    expect(buildMaterialDocName('chatlog', 'IETF124-CBOR-20251107-0930')).toBe('chatlog-124-cbor-202511070930');
+  });
+
+  test('handles hyphenated group slugs properly', () => {
+    expect(buildMaterialDocName('polls', 'IETF112-RTG-AREA-20211108-1600')).toBe('polls-112-rtg-area-202111081600');
+  });
+
+  test('handles interim meetingSlug properly', () => {
+    expect(
+      buildMaterialDocName('polls', 'interim-2024-netmod-02-20240206-0900', 'interim-2024-netmod-02')
+    ).toBe('polls-interim-2024-netmod-02-202402060900');
+  });
+
+  test('returns null for empty sessionId', () => {
+    expect(buildMaterialDocName('polls', '')).toBeNull();
+  });
+});
+
+describe('Session Material Fetching (Polls & Chatlog)', () => {
+  test('fetchSessionPolls fetches polls for a session that has polls', async () => {
+    const polls = await fetchSessionPolls(124, 'IETF124-CBOR-20251107-0930');
+    expect(Array.isArray(polls)).toBe(true);
+    expect(polls.length).toBeGreaterThan(0);
+    expect(polls[0]).toHaveProperty('text');
+  }, 30000);
+
+  test('fetchSessionChatlog fetches chat messages with HTML stripped from text', async () => {
+    const chat = await fetchSessionChatlog(124, 'IETF124-CBOR-20251107-0930');
+    expect(Array.isArray(chat)).toBe(true);
+    expect(chat.length).toBeGreaterThan(0);
+    expect(chat[0]).toHaveProperty('author');
+    expect(chat[0]).toHaveProperty('text');
+    expect(chat[0]).toHaveProperty('time');
+    // Ensure HTML tags are stripped from text
+    expect(chat[0].text).not.toMatch(/<[^>]+>/);
+  }, 30000);
+
+  test('fetchSessionMaterialJson returns [] for non-existent session/404 material', async () => {
+    const result = await fetchSessionMaterialJson(124, 'polls-124-nonexistent-202511070930');
+    expect(result).toEqual([]);
+  }, 30000);
+});
 
 describe('parseCSVLine (RFC 4180)', () => {
   test('parses simple unquoted fields', () => {

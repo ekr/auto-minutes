@@ -238,6 +238,49 @@ test('falls back to cached context when live slides and bluesheet are empty', as
   );
 });
 
+test('carries cached polls and chat metadata in amend context fallback', async () => {
+  const metadata = {
+    slides: [],
+    bluesheetText: null,
+    polls: [{ text: 'Adopt draft?', yes: 10, no: 1 }],
+    chat: [{ author: 'Alice', text: 'Hello', time: '2025-11-07T09:30:00Z' }],
+  };
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: 'IETF126-6LO-20250721-0900' }],
+    }]),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing'),
+    fetchContextForSession: jest.fn().mockResolvedValue({ slidesAndBluesheet: null, wgDocuments: [] }),
+    getCachedMetadata: jest.fn().mockResolvedValue(metadata),
+    amendMinutes: jest.fn().mockResolvedValue({
+      text: '# Revised',
+      usage: { model: 'gemini-test', inputTokens: 10, outputTokens: 5 },
+    }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 126,
+    groupName: '6LO',
+    comments: 'Fix it',
+    dependencies,
+  });
+
+  expect(dependencies.amendMinutes).toHaveBeenCalledWith(
+    '# Existing',
+    'Fix it',
+    '6LO',
+    false,
+    null,
+    {
+      slidesAndBluesheet: { slides: [], bluesheet: null },
+      wgDocuments: [],
+      polls: metadata.polls,
+      chat: metadata.chat,
+    },
+  );
+});
+
 test('combines cached slides and bluesheet with live WG documents', async () => {
   const metadata = {
     slides: [{ title: 'Cached slides', url: 'https://example.test/cached' }],
