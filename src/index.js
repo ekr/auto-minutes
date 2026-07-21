@@ -11,7 +11,7 @@ import fetch from "node-fetch";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
-import { initializeClaude, generateMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
+import { initializeClaude, generateMinutes, amendMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
 import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript } from "./transcriber.js";
 import { recordUsage, printSummary } from "./accounting.js";
 import { isRecordingUnavailable, shouldExitNonZero } from "./skip-classifier.js";
@@ -631,6 +631,8 @@ async function main() {
     .example("$0 --summarize 123 --source agenda", "Fetch sessions from Meetecho agenda")
     .example("$0 --output", "Generate output markdown files from cache")
     .example("$0 --summarize 123 --output", "Generate summaries and output")
+    .example("$0 --amend 123:6LO --comments corrections.txt", "Amend cached minutes for an IETF WG")
+    .example("$0 --amend 2026-04-14:AIPREF --comments corrections.txt --output", "Amend cached interim minutes and regenerate output")
     .example("$0 --build", "Build site with 11ty (outputs to _site/)")
     .example("$0 --output --build", "Generate output and build site")
     .example("$0 --pages", "Build and prepare GitHub Pages")
@@ -655,6 +657,14 @@ async function main() {
       alias: "o",
       type: "boolean",
       description: "Generate output markdown files from cache",
+    })
+    .option("amend", {
+      type: "string",
+      description: "Amend cached minutes for a WG (NUMBER:GROUP or YYYY-MM-DD:GROUP)",
+    })
+    .option("comments", {
+      type: "string",
+      description: "Path to reviewer comments file (required with --amend)",
     })
     .option("build", {
       alias: "b",
@@ -760,16 +770,34 @@ async function main() {
       description: "Exit 0 even when sessions are skipped due to genuine failures (transcription/API errors); skipped sessions are still reported",
     })
     .check((argv) => {
-      if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache && !argv.uncacheRemote) {
+      if (!argv.summarize && !argv.amend && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache && !argv.uncacheRemote) {
         throw new Error(
-          "Must specify at least one action: --summarize, --output, --build, --pages, --preview, --uncache, or --uncache-remote",
+          "Must specify at least one action: --summarize, --amend, --output, --build, --pages, --preview, --uncache, or --uncache-remote",
         );
+      }
+      if (argv.amend && !argv.comments) {
+        throw new Error("--amend requires --comments <file>");
+      }
+      if (argv.comments && !argv.amend) {
+        throw new Error("--comments requires --amend <selector>");
+      }
+      if (argv.amend) {
+        if (argv.summarize || argv.preview || argv.uncache || argv.uncacheRemote) {
+          throw new Error("--amend cannot be combined with --summarize, --preview, --uncache, or --uncache-remote");
+        }
+        const parsed = parseSummarizeArg(argv.amend);
+        if (!['ietf-group', 'interim'].includes(parsed.type)) {
+          throw new Error("--amend requires a WG selector (NUMBER:GROUP or YYYY-MM-DD:GROUP)");
+        }
+        if (argv.audio || argv.audioFile || argv.transcriptFile) {
+          throw new Error("--amend cannot be used with --audio, --audio-file, or --transcript-file");
+        }
       }
       // --uncache-remote is a standalone action: it dispatches a remote
       // workflow and touches nothing locally, so it can't be mixed with the
       // local pipeline stages.
       if (argv.uncacheRemote) {
-        if (argv.summarize || argv.output || argv.build || argv.pages || argv.preview || argv.uncache) {
+        if (argv.summarize || argv.amend || argv.output || argv.build || argv.pages || argv.preview || argv.uncache) {
           throw new Error("--uncache-remote cannot be combined with other actions");
         }
         // The remote workflow only knows how to drop minutes (re-run the LLM)
@@ -854,6 +882,7 @@ async function main() {
   setGenerationTimeout(argv.timeout * 1000);
   const allSkipped = [];
   const doSummarize = !!argv.summarize;
+  const doAmend = !!argv.amend;
   const doOutput = argv.output;
   const doBuild = argv.build || argv.pages;
   const doPages = argv.pages;
@@ -899,8 +928,22 @@ async function main() {
     process.exit(1);
   }
 
-  // Check for appropriate API key based on provider (only needed for summarize or preview)
-  if (doSummarize || doPreview) {
+  // Validate and read --comments once before any LLM initialization or work
+  let amendComments = null;
+  if (argv.comments && !existsSync(argv.comments)) {
+    console.error(`Error: --comments '${argv.comments}' does not exist`);
+    process.exit(1);
+  }
+  if (argv.comments) {
+    amendComments = await fs.readFile(argv.comments, "utf-8");
+    if (amendComments.trim() === "") {
+      console.error("Error: Cannot amend minutes: comments are empty");
+      process.exit(1);
+    }
+  }
+
+  // Check for appropriate API key based on provider (only needed for LLM actions)
+  if (doSummarize || doPreview || doAmend) {
     if (provider === "claude") {
       const apiKey = process.env.ANTHROPIC_API_KEY;
       if (!apiKey) {
@@ -1266,6 +1309,41 @@ async function main() {
         if (sessions !== undefined) {
           const skipped = await processSummarizeSessions(meetingId, sessions, sttModel, modelName, parallel, argv.audioFile || null, argv.geminiSegmentSeconds || null, argv.transcriptFile || null, argv.allowShortTranscript);
           allSkipped.push(...skipped);
+        }
+      }
+    }
+
+    // AMEND STAGE: Revise raw cached minutes using reviewer comments
+    if (doAmend) {
+      const parsed = parseSummarizeArg(argv.amend);
+      const meetingId = parsed.meetingNumber ?? parsed.date;
+
+      let sessionGroups;
+      try {
+        sessionGroups = await loadCacheManifest(meetingId);
+      } catch {
+        throw new Error(`No cached minutes for ${meetingId}; run --summarize first`);
+      }
+
+      const group = sessionGroups.find(
+        candidate => candidate.sessionName.toLowerCase() === parsed.group.toLowerCase(),
+      );
+      if (!group) {
+        const available = sessionGroups.map(candidate => candidate.sessionName).sort().join(", ");
+        throw new Error(`No cached minutes for ${parsed.group} in ${meetingId}; run --summarize first. Available: ${available || "none"}`);
+      }
+
+      console.log(`\n=== AMEND STAGE: ${parsed.group} (${meetingId}) ===`);
+      console.log(`Using model: ${modelName}`);
+      for (const session of group.sessions) {
+        try {
+          const existingMinutes = await getCachedMinutes(meetingId, session.sessionId);
+          const result = await amendMinutes(existingMinutes, amendComments, group.sessionName, verbose, modelName);
+          await saveCachedMinutes(meetingId, session.sessionId, result.text);
+          recordUsage(result.usage);
+          console.log(`Amended: ${session.sessionId}`);
+        } catch (error) {
+          console.error(`Could not amend ${session.sessionId}: ${error.message}`);
         }
       }
     }

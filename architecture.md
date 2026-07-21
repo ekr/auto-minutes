@@ -76,6 +76,8 @@ Under `-j` concurrency, multiple sessions run "concurrently" on a single JS thre
 
 Supports Gemini and Claude models, selected via `--model`. Context (slides, bluesheet, WG documents) is fetched before transcription so it can be used by Gemini STT for speaker identification.
 
+Cached minutes can also be revised with `--amend NUMBER:GROUP --comments FILE` (or a date-based interim selector). This path resolves sessions exclusively from the cache manifest, sends each session's raw cached minutes and the same reviewer comments to the selected LLM, and overwrites only the raw minutes file. It does not fetch session data, use transcripts, or modify cache manifests and metadata, so the normal output and build stages consume the revision unchanged.
+
 ### Transcript validation (defense in depth)
 
 An empty or near-empty transcript must never reach LLM generation or publication — the LLM will otherwise confabulate minutes from context (slide titles, participant lists) with no way to tell fact from invention. Three validators live in `generator.js` (despite the name, they're the shared contract used by `scraper.js` and `transcriber.js` too, to avoid a circular import):

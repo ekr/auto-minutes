@@ -65,3 +65,34 @@ test('rejects a bogus deepgram variant', () => {
   expect(result.status).toBe(1);
   expect(result.stderr).toContain('--stt-model "deepgram:foo+bar" is invalid');
 });
+
+test('--amend requires --comments', () => {
+  const result = runCli(['--amend', '123:6LO']);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('--amend requires --comments <file>');
+});
+
+test('--comments requires --amend', () => {
+  const result = runCli(['--comments', 'comments.txt', '--output']);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('--comments requires --amend <selector>');
+});
+
+test('--amend requires a WG-scoped selector', () => {
+  const result = runCli(['--amend', '123', '--comments', 'comments.txt']);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('--amend requires a WG selector (NUMBER:GROUP or YYYY-MM-DD:GROUP)');
+});
+
+test('--amend cannot be combined with --summarize', () => {
+  const result = runCli(['--amend', '123:6LO', '--comments', 'comments.txt', '--summarize', '123']);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('--amend cannot be combined with --summarize');
+});
+
+test('--amend rejects a nonexistent comments file before API initialization', () => {
+  const missingPath = 'definitely-does-not-exist-comments.txt';
+  const result = runCli(['--amend', '123:6LO', '--comments', missingPath]);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain(`--comments '${missingPath}' does not exist`);
+});

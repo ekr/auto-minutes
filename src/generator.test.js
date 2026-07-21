@@ -27,6 +27,7 @@ const {
   transcriptWordCount,
   assertTranscriptSubstantial,
   generateMinutes,
+  amendMinutes,
   initializeGemini,
   extractParticipantNames,
 } = await import('./generator.js');
@@ -158,6 +159,63 @@ describe('generateMinutes', () => {
     );
     expect(mockGenerateContent).not.toHaveBeenCalled();
     expect(mockCreate).not.toHaveBeenCalled();
+  });
+});
+
+describe('amendMinutes', () => {
+  beforeEach(() => {
+    mockGenerateContent.mockReset();
+    mockCreate.mockReset();
+    initializeGemini('fake-api-key');
+  });
+
+  test('sends both existing minutes and reviewer comments to the model', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => '# Revised minutes',
+        usageMetadata: { promptTokenCount: 42, candidatesTokenCount: 7 },
+      },
+    });
+
+    await amendMinutes('# Existing minutes\n\n## Summary\nOld text', 'Correct the decision to Foo.', '6LO');
+
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+    const prompt = mockGenerateContent.mock.calls[0][0];
+    expect(prompt).toContain('# Existing minutes');
+    expect(prompt).toContain('Correct the decision to Foo.');
+    expect(prompt).toContain('Output only the revised minutes.');
+  });
+
+  test.each([
+    ['', 'a comment', 'existing minutes are empty'],
+    ['# Minutes', '  \n', 'comments are empty'],
+  ])('rejects empty inputs before calling the API', async (minutes, comments, message) => {
+    await expect(amendMinutes(minutes, comments, '6LO')).rejects.toThrow(message);
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+
+  test('strips a surrounding Markdown code fence', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => '```markdown\n# Revised minutes\n```',
+        usageMetadata: {},
+      },
+    });
+
+    const result = await amendMinutes('# Minutes', 'Fix typo', '6LO');
+    expect(result.text).toBe('# Revised minutes');
+  });
+
+  test('returns populated token usage', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => '# Revised minutes',
+        usageMetadata: { promptTokenCount: 123, candidatesTokenCount: 45 },
+      },
+    });
+
+    const result = await amendMinutes('# Minutes', 'Fix typo', '6LO', false, 'gemini-test');
+    expect(result.usage).toEqual({ model: 'gemini-test', inputTokens: 123, outputTokens: 45 });
   });
 });
 
