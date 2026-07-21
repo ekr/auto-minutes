@@ -406,7 +406,11 @@ export async function deleteCacheDir(meetingId) {
 export function buildAmendIssueUrl(meetingId, sessionName) {
   if (meetingId == null || !sessionName) return null;
   const selector = `${meetingId}:${sessionName}`;
-  const params = new URLSearchParams({ template: AMEND_ISSUE_TEMPLATE, session_selector: selector });
+  const params = new URLSearchParams({
+    template: AMEND_ISSUE_TEMPLATE,
+    title: `[Amendment]: ${selector}`,
+    session_selector: selector,
+  });
   return `https://github.com/${AMEND_ISSUE_REPO}/issues/new?${params.toString()}`;
 }
 

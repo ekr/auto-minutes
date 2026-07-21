@@ -104,14 +104,14 @@ describe('buildAmendIssueUrl', () => {
   test('returns prefilled issue URL for numeric meetingId', () => {
     const url = buildAmendIssueUrl(126, 'CURRENT');
     expect(url).toBe(
-      'https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&session_selector=126%3ACURRENT'
+      'https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+126%3ACURRENT&session_selector=126%3ACURRENT'
     );
   });
 
   test('returns prefilled issue URL for date-string meetingId', () => {
     const url = buildAmendIssueUrl('2026-07-08', 'CBOR');
     expect(url).toBe(
-      'https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&session_selector=2026-07-08%3ACBOR'
+      'https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+2026-07-08%3ACBOR&session_selector=2026-07-08%3ACBOR'
     );
   });
 
@@ -167,7 +167,7 @@ describe('saveMinutes', () => {
     await saveMinutes('CURRENT', content, outputDir, [], null, 126);
     const mdContent = await fs.readFile(path.join(outputDir, 'current.md'), 'utf-8');
     expect(mdContent).toContain(
-      '[Suggest a correction](https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&session_selector=126%3ACURRENT)'
+      '[Suggest a correction](https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+126%3ACURRENT&session_selector=126%3ACURRENT)'
     );
   });
 
@@ -176,7 +176,7 @@ describe('saveMinutes', () => {
     await saveMinutes('CBOR', content, outputDir, [], null, '2026-07-08');
     const mdContent = await fs.readFile(path.join(outputDir, 'cbor.md'), 'utf-8');
     expect(mdContent).toContain(
-      '[Suggest a correction](https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&session_selector=2026-07-08%3ACBOR)'
+      '[Suggest a correction](https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+2026-07-08%3ACBOR&session_selector=2026-07-08%3ACBOR)'
     );
   });
 
