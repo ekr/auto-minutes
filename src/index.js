@@ -11,7 +11,7 @@ import fetch from "node-fetch";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange } from "./scraper.js";
-import { fetchContextForSession, saveContextMetadata } from "./session-context.js";
+import { fetchContextForSession, saveContextMetadata, sessionSlugFromId } from "./session-context.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
 import { amendCachedSessions } from "./amend-workflow.js";
 import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript, parseSttModel } from "./transcriber.js";
@@ -100,7 +100,7 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
   // Fetch slides, bluesheet, and WG documents for LLM context (before transcription
   // so context can be used by Gemini STT to identify speakers by name)
   console.log(`  Fetching context (slides, bluesheet, WG docs): ${session.sessionId}`);
-  const context = await fetchContextForSession(session, { verbose });
+  const context = await fetchContextForSession(session, verbose);
 
   // Report context results immediately so the user sees them without
   // waiting for transcription. The metadata is persisted later, only if
@@ -1055,7 +1055,7 @@ async function main() {
         // Fetch slides, bluesheet, and WG documents for context (no cache in preview)
         // Fetched before transcription so context can help Gemini STT identify speakers
         console.log("  Fetching context (slides, bluesheet, WG docs)...");
-        const context = await fetchContextForSession(session, { verbose });
+        const context = await fetchContextForSession(session, verbose);
 
         // Report context results immediately so the user sees them before
         // transcription begins. (Preview mode intentionally does not cache.)

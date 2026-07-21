@@ -17,7 +17,7 @@ jest.unstable_mockModule('./publisher.js', () => ({
   saveCacheMetadata: mockSaveCacheMetadata,
 }));
 
-const { fetchContextForSession, saveContextMetadata } = await import('./session-context.js');
+const { fetchContextForSession, saveContextMetadata, sessionSlugFromId } = await import('./session-context.js');
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -58,4 +58,11 @@ test('soft-fails rejected context fetches to their empty defaults', async () => 
     sessionId: 'IETF124-CBOR-20251107-0930',
     sessionName: 'CBOR',
   })).resolves.toEqual({ slidesAndBluesheet: null, wgDocuments: [], polls: [], chat: [] });
+});
+
+test.each([
+  ['IETF126-6LO-20250721-0900', '6lo'],
+  ['IETF112-RTG-AREA-20211108-1200', 'rtg-area'],
+])('extracts %s as session slug %s', (sessionId, expected) => {
+  expect(sessionSlugFromId(sessionId)).toBe(expected);
 });

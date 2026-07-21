@@ -1,6 +1,7 @@
 import { amendMinutes } from "./generator.js";
 import { recordUsage } from "./accounting.js";
 import { getCachedMetadata, getCachedMinutes, loadCacheManifest, saveCachedMinutes } from "./publisher.js";
+import { fetchContextForSession } from "./session-context.js";
 
 /**
  * Amend every cached session belonging to one WG.
@@ -19,6 +20,7 @@ export async function amendCachedSessions({
   const loadManifest = dependencies.loadCacheManifest ?? loadCacheManifest;
   const loadMinutes = dependencies.getCachedMinutes ?? getCachedMinutes;
   const loadMetadata = dependencies.getCachedMetadata ?? getCachedMetadata;
+  const fetchContext = dependencies.fetchContextForSession ?? fetchContextForSession;
   const reviseMinutes = dependencies.amendMinutes ?? amendMinutes;
   const saveMinutes = dependencies.saveCachedMinutes ?? saveCachedMinutes;
   const addUsage = dependencies.recordUsage ?? recordUsage;
@@ -43,23 +45,38 @@ export async function amendCachedSessions({
   for (const session of group.sessions) {
     try {
       const existingMinutes = await loadMinutes(meetingId, session.sessionId);
-      let metadata = null;
+      let context = null;
       try {
-        metadata = await loadMetadata(meetingId, session.sessionId);
+        context = await fetchContext(
+          { sessionId: session.sessionId, sessionName: group.sessionName },
+          verbose,
+        );
       } catch {
-        // Cached metadata is optional and must never prevent an amendment.
+        // Live context is optional and must never prevent an amendment.
       }
-      const context = metadata
-        ? {
+      const liveHasSlidesAndBluesheet = context && (
+        context.slidesAndBluesheet?.slides?.length > 0
+        || context.slidesAndBluesheet?.bluesheet
+      );
+      if (!liveHasSlidesAndBluesheet) {
+        let metadata = null;
+        try {
+          metadata = await loadMetadata(meetingId, session.sessionId);
+        } catch {
+          // Cached metadata is optional and must never prevent an amendment.
+        }
+        if (metadata) {
+          context = {
             slidesAndBluesheet: {
               slides: metadata.slides || [],
               bluesheet: metadata.bluesheetText || null,
             },
-            wgDocuments: [],
+            wgDocuments: context?.wgDocuments || [],
             polls: metadata.polls || [],
             chat: metadata.chat || [],
-          }
-        : null;
+          };
+        }
+      }
       const result = await reviseMinutes(existingMinutes, comments, group.sessionName, verbose, modelName, context);
       await saveMinutes(meetingId, session.sessionId, result.text);
       addUsage(result.usage);
