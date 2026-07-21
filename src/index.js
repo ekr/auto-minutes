@@ -13,7 +13,7 @@ import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
 import { amendCachedSessions } from "./amend-workflow.js";
-import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript } from "./transcriber.js";
+import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript, parseSttModel } from "./transcriber.js";
 import { recordUsage, printSummary } from "./accounting.js";
 import { isRecordingUnavailable, shouldExitNonZero } from "./skip-classifier.js";
 import {
@@ -643,6 +643,9 @@ async function main() {
     .example("$0 --preview 123:6LO --audio --stt-model gemini", "Preview with Gemini STT")
     .example("$0 --preview 123:6LO --audio --stt-model google:chirp_3+names", "Preview with chirp+Gemini name-fill hybrid (real timestamps + names)")
     .example("$0 --preview 123:6LO --audio --stt-model deepgram:nova-3+names", "Preview with Deepgram+Gemini name-fill hybrid (real timestamps + names)")
+    .example("$0 --preview 123:6LO --audio --stt-model deepgram:nova-3+cleanup", "Preview with high-confidence transcript cleanup")
+    .example("$0 --preview 123:6LO --audio --stt-model deepgram:nova-3+names+cleanup", "Preview with speaker names and transcript cleanup")
+    .example("$0 --preview 123:6LO --audio --stt-model gemini+cleanup", "Preview with Gemini STT and transcript cleanup")
     .example("$0 --summarize 123 -j 5", "Process 5 sessions in parallel")
     .example("$0 --uncache 123", "Clear all cached data for IETF 123")
     .example("$0 --uncache 123:6LO --uncache-type minutes", "Clear only cached minutes for 6LO")
@@ -702,7 +705,7 @@ async function main() {
     .option("stt-model", {
       type: "string",
       default: "google",
-      description: "STT backend when --audio is used: \"google\", \"google:chirp_2\", \"google:chirp_3\" (default), \"gemini\", \"deepgram\", \"deepgram:nova-2\", \"deepgram:nova-3\" (default deepgram model), or a name-fill hybrid (\"google+names\", \"google:chirp_3+names\", \"deepgram+names\", \"deepgram:nova-3+names\") that keeps the backend's real timestamps and diarization but fills in speaker names via a text-only Gemini call; the hybrid requires diarization, so \"google:chirp_2+names\" is not supported",
+      description: "STT backend when --audio is used: google, google:chirp_2, google:chirp_3, gemini, deepgram, deepgram:nova-2, or deepgram:nova-3; add +names on a diarizing backend for Gemini speaker naming and/or +cleanup on any backend for high-confidence text-only corrections",
     })
     .option("gemini-segment-seconds", {
       type: "number",
@@ -855,21 +858,20 @@ async function main() {
         if (!Number.isFinite(argv.geminiSegmentSeconds) || argv.geminiSegmentSeconds <= 0) {
           throw new Error("--gemini-segment-seconds must be a positive number");
         }
-        if (argv.sttModel !== "gemini") {
+        if (parseSttModel(argv.sttModel).baseSttModel !== "gemini") {
           throw new Error("--gemini-segment-seconds requires --stt-model gemini");
         }
       }
       // Validate --stt-model
       {
-        const hasNames = argv.sttModel.endsWith("+names");
-        const base = hasNames ? argv.sttModel.slice(0, -"+names".length) : argv.sttModel;
+        const { baseSttModel: base, hybridNames: hasNames } = parseSttModel(argv.sttModel);
         const validBases = new Set(["google", "google:chirp_2", "google:chirp_3", "gemini", "deepgram", "deepgram:nova-2", "deepgram:nova-3"]);
         const namesCapableBases = new Set(["google", "google:chirp_3", "deepgram", "deepgram:nova-2", "deepgram:nova-3"]);
         if (hasNames && !namesCapableBases.has(base)) {
           throw new Error(`--stt-model "${argv.sttModel}" is invalid: the "+names" hybrid requires chirp_3 diarization and is only supported with "google", "google:chirp_3", "deepgram", "deepgram:nova-2", or "deepgram:nova-3" (e.g. "google:chirp_3+names", "deepgram:nova-3+names"); chirp_2 does not produce speaker labels to map`);
         }
         if (!validBases.has(base)) {
-          throw new Error(`--stt-model "${argv.sttModel}" is invalid; must be one of: google, google:chirp_2, google:chirp_3, gemini, deepgram, deepgram:nova-2, deepgram:nova-3, or a diarizing one of those suffixed with "+names"`);
+          throw new Error(`--stt-model "${argv.sttModel}" is invalid; must be one of: google, google:chirp_2, google:chirp_3, gemini, deepgram, deepgram:nova-2, deepgram:nova-3, optionally suffixed with "+cleanup", or a diarizing one suffixed with "+names" or "+names+cleanup"`);
         }
       }
       return true;
@@ -964,9 +966,11 @@ async function main() {
       initializeGemini(apiKey);
     }
 
-    // --stt-model gemini (or a "+names" hybrid, which uses Gemini for speaker
-    // name mapping) requires GEMINI_API_KEY, even when using claude for minutes
-    if ((sttModel === "gemini" || (sttModel && sttModel.endsWith("+names"))) && provider === "claude") {
+    // Gemini STT and text-only hybrid passes require GEMINI_API_KEY, even when
+    // Claude generates the minutes.
+    const parsedSttModel = parseSttModel(sttModel);
+    const needsGemini = parsedSttModel.baseSttModel === "gemini" || parsedSttModel.hybridNames || parsedSttModel.cleanup;
+    if (needsGemini && provider === "claude") {
       const geminiKey = process.env.GEMINI_API_KEY;
       if (!geminiKey) {
         console.error(`Error: GEMINI_API_KEY is required for --stt-model ${sttModel}`);

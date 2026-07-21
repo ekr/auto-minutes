@@ -15,11 +15,11 @@ import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-function runCli(args) {
+function runCli(args, env = {}) {
   return spawnSync(process.execPath, ['src/index.js', ...args], {
     encoding: 'utf-8',
     timeout: 15000,
-    env: { ...process.env, GEMINI_API_KEY: '' },
+    env: { ...process.env, GEMINI_API_KEY: '', ...env },
   });
 }
 
@@ -67,6 +67,29 @@ test('rejects a bogus deepgram variant', () => {
 
   expect(result.status).toBe(1);
   expect(result.stderr).toContain('--stt-model "deepgram:foo+bar" is invalid');
+});
+
+test.each(['deepgram:nova-3+cleanup', 'gemini+cleanup', 'google:chirp_2+cleanup', 'deepgram:nova-3+names+cleanup'])(
+  'accepts cleanup model %s past CLI validation',
+  sttModel => {
+    const result = runCli(['--preview', '123:6LO', '--audio', '--stt-model', sttModel]);
+    expect(result.stderr).not.toMatch(/--stt-model ".*" is invalid/);
+  },
+);
+
+test('still rejects +names on chirp_2 when composed with cleanup', () => {
+  const result = runCli(['--preview', '123:6LO', '--audio', '--stt-model', 'google:chirp_2+names+cleanup']);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('the "+names" hybrid requires chirp_3 diarization');
+});
+
+test('cleanup requires GEMINI_API_KEY when Claude generates minutes', () => {
+  const result = runCli(
+    ['--preview', '123:6LO', '--audio', '--model', 'claude', '--stt-model', 'deepgram+cleanup'],
+    { ANTHROPIC_API_KEY: 'test-key' },
+  );
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('GEMINI_API_KEY is required for --stt-model deepgram+cleanup');
 });
 
 test('--amend requires --comments', () => {
