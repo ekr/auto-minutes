@@ -54,10 +54,11 @@ export async function amendCachedSessions({
       } catch {
         // Live context is optional and must never prevent an amendment.
       }
-      const liveHasContent = context && (
-        context.slidesAndBluesheet || context.wgDocuments?.length > 0
+      const liveHasSlidesAndBluesheet = context && (
+        context.slidesAndBluesheet?.slides?.length > 0
+        || context.slidesAndBluesheet?.bluesheet
       );
-      if (!liveHasContent) {
+      if (!liveHasSlidesAndBluesheet) {
         let metadata = null;
         try {
           metadata = await loadMetadata(meetingId, session.sessionId);
