@@ -28,6 +28,7 @@ const {
   assertTranscriptSubstantial,
   generateMinutes,
   amendMinutes,
+  initializeClaude,
   initializeGemini,
   extractParticipantNames,
 } = await import('./generator.js');
@@ -216,6 +217,35 @@ describe('amendMinutes', () => {
 
     const result = await amendMinutes('# Minutes', 'Fix typo', '6LO', false, 'gemini-test');
     expect(result.usage).toEqual({ model: 'gemini-test', inputTokens: 123, outputTokens: 45 });
+  });
+
+  test('sends a Claude amendment request and maps its response and usage', async () => {
+    initializeClaude('fake-api-key');
+    mockCreate.mockResolvedValue({
+      content: [{ text: '# Claude revised minutes' }],
+      usage: { input_tokens: 321, output_tokens: 54 },
+    });
+
+    const result = await amendMinutes(
+      '# Existing minutes\n\n## Summary\nOld text',
+      'Replace Old with New.',
+      '6LO',
+      false,
+      'claude-test',
+    );
+
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    const request = mockCreate.mock.calls[0][0];
+    expect(request.model).toBe('claude-test');
+    expect(request.max_tokens).toBe(4096);
+    expect(request.messages).toHaveLength(1);
+    expect(request.messages[0].role).toBe('user');
+    expect(request.messages[0].content).toContain('# Existing minutes');
+    expect(request.messages[0].content).toContain('Replace Old with New.');
+    expect(result).toEqual({
+      text: '# Claude revised minutes',
+      usage: { model: 'claude-test', inputTokens: 321, outputTokens: 54 },
+    });
   });
 });
 
