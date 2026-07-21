@@ -1,6 +1,6 @@
 import fsPromises from "fs/promises";
 import { existsSync } from "fs";
-import { amendMinutes, splitAmendComments, getTranscriptCorrections } from "./generator.js";
+import { amendMinutes, splitAmendComments, getTranscriptCorrections, filterTranscriptCorrections } from "./generator.js";
 import { recordUsage } from "./accounting.js";
 import { getCachedMetadata, getCachedMinutes, loadCacheManifest, saveCachedMinutes } from "./publisher.js";
 import { fetchContextForSession } from "./session-context.js";
@@ -33,6 +33,7 @@ export async function amendCachedSessions({
 
   const splitComments = dependencies.splitAmendComments ?? splitAmendComments;
   const getCorrections = dependencies.getTranscriptCorrections ?? getTranscriptCorrections;
+  const filterCorrections = dependencies.filterTranscriptCorrections ?? filterTranscriptCorrections;
   const normalize = dependencies.normalizeCorrections ?? normalizeCorrections;
   const apply = dependencies.applyCorrections ?? applyCorrections;
   const getTranscriptPath = dependencies.getTranscriptCachePath ?? getTranscriptCachePath;
@@ -131,7 +132,22 @@ export async function amendCachedSessions({
             if (rawCorrections?.usage) {
               addUsage(rawCorrections.usage);
             }
-            const corrections = normalize(rawCorrections);
+            const candidateCorrections = normalize(rawCorrections);
+            let corrections = candidateCorrections;
+            if (candidateCorrections.length > 0) {
+              const filteredCorrections = await filterCorrections(
+                candidateCorrections,
+                transcriptInstructions,
+                group.sessionName,
+                verbose,
+                modelName,
+              );
+              if (filteredCorrections?.usage) {
+                addUsage(filteredCorrections.usage);
+              }
+              corrections = normalize(filteredCorrections);
+            }
+
             const { text: updatedTranscript, applied } = apply(transcriptText, corrections);
             if (applied && applied.length > 0) {
               await fsWriteFile(cachePath, updatedTranscript, "utf8");

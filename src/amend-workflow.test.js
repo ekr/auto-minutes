@@ -15,7 +15,8 @@ function makeDependencies(overrides = {}) {
       minutesInstructions: comments,
     })),
     getTranscriptCorrections: jest.fn().mockResolvedValue([]),
-    normalizeCorrections: jest.fn((raw) => raw || []),
+    filterTranscriptCorrections: jest.fn((corrections) => Promise.resolve(corrections)),
+    normalizeCorrections: jest.fn((raw) => (Array.isArray(raw) ? raw.map(({ from, to }) => ({ from, to })) : [])),
     applyCorrections: jest.fn((transcript, corrections) => ({
       text: transcript,
       appliedCount: 0,
@@ -494,6 +495,69 @@ test('handles transcript instructions and rewrites existing cached transcript, p
     '- "Bob Smith" → "Rob Smith"',
   );
 });
+
+test('runs filterTranscriptCorrections pass to filter out over-aggressive transcript edits', async () => {
+  const filteredResult = [{ from: 'Bob Smith', to: 'Rob Smith' }];
+  filteredResult.usage = { model: 'test', inputTokens: 4, outputTokens: 2 };
+  const filterMock = jest.fn().mockResolvedValue(filteredResult);
+
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: 'Fix Bob to Rob',
+      minutesInstructions: 'Update minutes writeup',
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing minutes'),
+    existsSync: jest.fn().mockReturnValue(true),
+    readFile: jest.fn().mockResolvedValue('Bob Smith discussed 6lo.'),
+    getTranscriptCorrections: jest.fn().mockResolvedValue([
+      { from: 'Bob Smith', to: 'Rob Smith' },
+      { from: '6lo', to: '6LO' },
+    ]),
+    filterTranscriptCorrections: filterMock,
+    normalizeCorrections: jest.fn(raw => (Array.isArray(raw) ? raw.map(({ from, to }) => ({ from, to })) : [])),
+    applyCorrections: jest.fn().mockReturnValue({
+      text: 'Rob Smith discussed 6lo.',
+      appliedCount: 1,
+      applied: [{ from: 'Bob Smith', to: 'Rob Smith' }],
+    }),
+    writeFile: jest.fn().mockResolvedValue(),
+    amendMinutes: jest.fn().mockResolvedValue({
+      text: '# Revised minutes',
+    }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix Bob to Rob and update writeup',
+    dependencies,
+  });
+
+  expect(dependencies.filterTranscriptCorrections).toHaveBeenCalledWith(
+    [
+      { from: 'Bob Smith', to: 'Rob Smith' },
+      { from: '6lo', to: '6LO' },
+    ],
+    'Fix Bob to Rob',
+    '6LO',
+    false,
+    null,
+  );
+  expect(dependencies.applyCorrections).toHaveBeenCalledWith(
+    'Bob Smith discussed 6lo.',
+    [{ from: 'Bob Smith', to: 'Rob Smith' }],
+  );
+  expect(dependencies.recordUsage).toHaveBeenCalledWith({
+    model: 'test',
+    inputTokens: 4,
+    outputTokens: 2,
+  });
+});
+
 
 test('downloads transcript when no cached transcript exists and applies corrections', async () => {
   const dependencies = makeDependencies({

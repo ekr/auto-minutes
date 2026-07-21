@@ -30,6 +30,7 @@ const {
   amendMinutes,
   splitAmendComments,
   getTranscriptCorrections,
+  filterTranscriptCorrections,
   initializeClaude,
   initializeGemini,
   extractParticipantNames,
@@ -502,6 +503,55 @@ describe('getTranscriptCorrections', () => {
     expect(result.usage).toBeNull();
   });
 });
+
+describe('filterTranscriptCorrections', () => {
+  beforeEach(() => {
+    mockGenerateContent.mockReset();
+    mockCreate.mockReset();
+    initializeGemini('fake-api-key');
+  });
+
+  test('filters out unwanted corrections and attaches usage', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify([
+          { from: 'Bob Smith', to: 'Rob Smith' },
+        ]),
+        usageMetadata: { promptTokenCount: 40, candidatesTokenCount: 15 },
+      },
+    });
+
+    const proposed = [
+      { from: 'Bob Smith', to: 'Rob Smith' },
+      { from: 'unwanted WG fix', to: 'desired WG' },
+    ];
+    const result = await filterTranscriptCorrections(proposed, 'Fix Bob Smith to Rob Smith', '6LO');
+    expect(Array.isArray(result)).toBe(true);
+    expect([...result]).toEqual([{ from: 'Bob Smith', to: 'Rob Smith' }]);
+    expect(result.usage).toEqual({ model: 'gemini-3.5-flash', inputTokens: 40, outputTokens: 15 });
+    const prompt = mockGenerateContent.mock.calls[0][0];
+    expect(prompt).toContain('REQUESTED TRANSCRIPT EDITS:');
+    expect(prompt).toContain('Fix Bob Smith to Rob Smith');
+    expect(prompt).toContain('PROPOSED TRANSCRIPT CORRECTIONS (DIFF):');
+    expect(prompt).toContain('- "Bob Smith" → "Rob Smith"');
+  });
+
+  test('returns empty array when input corrections array is empty', async () => {
+    const result = await filterTranscriptCorrections([], 'Fix Bob Smith to Rob Smith', '6LO');
+    expect([...result]).toEqual([]);
+    expect(result.usage).toBeNull();
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+
+  test('returns empty array when instructions are empty', async () => {
+    const proposed = [{ from: 'Bob Smith', to: 'Rob Smith' }];
+    const result = await filterTranscriptCorrections(proposed, '', '6LO');
+    expect([...result]).toEqual([{ from: 'Bob Smith', to: 'Rob Smith' }]);
+    expect(result.usage).toBeNull();
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+});
+
 
 describe('extractParticipantNames', () => {
   test('returns an empty array when bluesheet is null/undefined/empty', () => {
