@@ -6,10 +6,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { extractParticipantNames, activeDraftNames } from "./generator.js";
 
-export function buildCleanupReference(context, sessionName = null) {
+export function buildCleanupReference(context) {
+  if (!context) return "";
   const sections = [];
-  if (sessionName) sections.push(`Working group / session name:\n${sessionName}`);
-  if (!context) return sections.join("\n\n");
   const names = extractParticipantNames(context?.slidesAndBluesheet?.bluesheet);
   if (names.length) sections.push(`Participant names:\n${names.join("\n")}`);
   const drafts = activeDraftNames(context?.wgDocuments || []).map(doc => doc.Name).filter(Boolean);
