@@ -1128,6 +1128,42 @@ describe('transcribeSession deepgram dispatch', () => {
     expect(mockWriteFile).toHaveBeenCalled();
   });
 
+  test('applies "+cleanup" before caching while preserving backend usage and recording cleanup usage separately', async () => {
+    mockExistsSync.mockImplementation((p) => p === getAudioCachePath(sessionId));
+    mockSpawn.mockImplementation(() => makeMockChild({ stdout: '1800' })); // 30 minutes of audio
+    mockFetch.mockReset().mockImplementation(async (url) => {
+      if (typeof url === 'string' && url.startsWith('https://api.deepgram.com/')) {
+        return makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY });
+      }
+      return makeChunkResponse();
+    });
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify([{ from: 'Hello there', to: 'Hello TLS' }]),
+        usageMetadata: { promptTokenCount: 55, candidatesTokenCount: 7 },
+      },
+    });
+
+    const result = await transcribeSession(session, 'deepgram:nova-3+cleanup', 'fake-gemini-key');
+
+    const cleanedTranscript = '[00:00:00] Speaker 0: Hello TLS,\n[00:00:05] Speaker 1: Hi';
+    expect(result).toEqual({
+      text: cleanedTranscript,
+      usage: { model: 'deepgram:nova-3', audioSeconds: 1800, inputTokens: 0, outputTokens: 0 },
+    });
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      getTranscriptCachePath(sessionId),
+      cleanedTranscript,
+      'utf-8',
+    );
+    expect(mockRecordUsage).toHaveBeenCalledTimes(1);
+    expect(mockRecordUsage).toHaveBeenCalledWith({
+      inputTokens: 55,
+      outputTokens: 7,
+      model: 'gemini-3.5-flash',
+    });
+  });
+
   test('deepgram without "+names" produces "Speaker N" labels and zero token usage', async () => {
     mockExistsSync.mockImplementation((p) => p === getAudioCachePath(sessionId));
     mockSpawn.mockImplementation(() => makeMockChild({ stdout: '900' })); // 15 minutes of audio
