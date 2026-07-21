@@ -238,6 +238,60 @@ test('falls back to cached context when live slides and bluesheet are empty', as
   );
 });
 
+test('combines cached slides and bluesheet with live WG documents', async () => {
+  const metadata = {
+    slides: [{ title: 'Cached slides', url: 'https://example.test/cached' }],
+    bluesheetText: 'John Doe\tExample Org',
+  };
+  const wgDocuments = [{
+    Name: 'draft-ietf-6lo-example',
+    Title: 'Example',
+    'Status in the IETF process': 'I-D Exists',
+  }];
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: 'IETF126-6LO-20250721-0900' }],
+    }]),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing'),
+    fetchContextForSession: jest.fn().mockResolvedValue({
+      slidesAndBluesheet: { slides: [], bluesheet: null },
+      wgDocuments,
+    }),
+    getCachedMetadata: jest.fn().mockResolvedValue(metadata),
+    amendMinutes: jest.fn().mockResolvedValue({
+      text: '# Revised',
+      usage: { model: 'gemini-test', inputTokens: 10, outputTokens: 5 },
+    }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 126,
+    groupName: '6LO',
+    comments: 'Fix it',
+    dependencies,
+  });
+
+  expect(dependencies.getCachedMetadata).toHaveBeenCalledWith(
+    126,
+    'IETF126-6LO-20250721-0900',
+  );
+  expect(dependencies.amendMinutes).toHaveBeenCalledWith(
+    '# Existing',
+    'Fix it',
+    '6LO',
+    false,
+    null,
+    {
+      slidesAndBluesheet: {
+        slides: metadata.slides,
+        bluesheet: metadata.bluesheetText,
+      },
+      wgDocuments,
+    },
+  );
+});
+
 test.each([
   ['missing', jest.fn().mockResolvedValue(null)],
   ['unreadable', jest.fn().mockRejectedValue(new Error('invalid metadata'))],
