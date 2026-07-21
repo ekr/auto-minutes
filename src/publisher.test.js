@@ -2,7 +2,7 @@
  * Tests for publisher utilities
  */
 
-import { extractDraftsFromTranscript, addInlineDraftLinks, saveMinutes } from './publisher.js';
+import { extractDraftsFromTranscript, addInlineDraftLinks, buildAmendIssueUrl, saveMinutes } from './publisher.js';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
@@ -100,6 +100,32 @@ describe('addInlineDraftLinks', () => {
   });
 });
 
+describe('buildAmendIssueUrl', () => {
+  test('returns prefilled issue URL for numeric meetingId', () => {
+    const url = buildAmendIssueUrl(126, 'CURRENT');
+    expect(url).toBe(
+      'https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&session_selector=126%3ACURRENT'
+    );
+  });
+
+  test('returns prefilled issue URL for date-string meetingId', () => {
+    const url = buildAmendIssueUrl('2026-07-08', 'CBOR');
+    expect(url).toBe(
+      'https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&session_selector=2026-07-08%3ACBOR'
+    );
+  });
+
+  test('returns null when meetingId is null or undefined', () => {
+    expect(buildAmendIssueUrl(null, 'X')).toBeNull();
+    expect(buildAmendIssueUrl(undefined, 'X')).toBeNull();
+  });
+
+  test('returns null when sessionName is empty or missing', () => {
+    expect(buildAmendIssueUrl(126, '')).toBeNull();
+    expect(buildAmendIssueUrl(126, null)).toBeNull();
+  });
+});
+
 describe('saveMinutes', () => {
   let outputDir;
 
@@ -134,5 +160,30 @@ describe('saveMinutes', () => {
     await saveMinutes('Test Session', content, outputDir);
     const mdContent = await fs.readFile(path.join(outputDir, 'test-session.md'), 'utf-8');
     expect(mdContent).toContain('Summary');
+  });
+
+  test('includes Suggest a correction link when meetingId is numeric', async () => {
+    const content = '# [Test Session](../wg/test-session.html)\n\n## Summary\n\nThe group discussed things.';
+    await saveMinutes('CURRENT', content, outputDir, [], null, 126);
+    const mdContent = await fs.readFile(path.join(outputDir, 'current.md'), 'utf-8');
+    expect(mdContent).toContain(
+      '[Suggest a correction](https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&session_selector=126%3ACURRENT)'
+    );
+  });
+
+  test('includes Suggest a correction link when meetingId is date string', async () => {
+    const content = '# [Test Session](../wg/test-session.html)\n\n## Summary\n\nThe group discussed things.';
+    await saveMinutes('CBOR', content, outputDir, [], null, '2026-07-08');
+    const mdContent = await fs.readFile(path.join(outputDir, 'cbor.md'), 'utf-8');
+    expect(mdContent).toContain(
+      '[Suggest a correction](https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&session_selector=2026-07-08%3ACBOR)'
+    );
+  });
+
+  test('omits Suggest a correction link when meetingId is null', async () => {
+    const content = '# [Test Session](../wg/test-session.html)\n\n## Summary\n\nThe group discussed things.';
+    await saveMinutes('Test Session', content, outputDir, [], null, null);
+    const mdContent = await fs.readFile(path.join(outputDir, 'test-session.md'), 'utf-8');
+    expect(mdContent).not.toContain('Suggest a correction');
   });
 });

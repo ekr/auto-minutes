@@ -11,6 +11,9 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const AMEND_ISSUE_REPO = "ietf-minutes/ietf-minutes-data";
+const AMEND_ISSUE_TEMPLATE = "amend-minutes.yml";
+
 /**
  * Sanitize a session name to create a valid filename
  * @param {string} sessionName - Name of the session
@@ -395,6 +398,19 @@ export async function deleteCacheDir(meetingId) {
 }
 
 /**
+ * Build the prefilled amend-minutes issue URL for a session, or null if unavailable.
+ * @param {number|string} meetingId - IETF meeting number or date string
+ * @param {string} sessionName - Name of the session
+ * @returns {string|null} Prefilled GitHub issue URL or null
+ */
+export function buildAmendIssueUrl(meetingId, sessionName) {
+  if (meetingId == null || !sessionName) return null;
+  const selector = `${meetingId}:${sessionName}`;
+  const params = new URLSearchParams({ template: AMEND_ISSUE_TEMPLATE, session_selector: selector });
+  return `https://github.com/${AMEND_ISSUE_REPO}/issues/new?${params.toString()}`;
+}
+
+/**
  * Save minutes to the output directory
  * @param {string} sessionName - Name of the session
  * @param {string} content - The markdown content
@@ -452,6 +468,11 @@ export async function saveMinutes(
     // which can carry a per-session suffix (e.g. agenda-126-hackathon-sessa).
     const materialsUrl = `https://datatracker.ietf.org/meeting/${meetingId}/session/${sanitizedName}`;
     header += ` | [Session Materials](${materialsUrl})`;
+  }
+
+  const amendUrl = buildAmendIssueUrl(meetingId, sessionName);
+  if (amendUrl) {
+    header += ` | [Suggest a correction](${amendUrl})`;
   }
 
   // Extract draft names from the LLM-generated content before linkifying, so the
