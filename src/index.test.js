@@ -92,6 +92,20 @@ test('cleanup requires GEMINI_API_KEY when Claude generates minutes', () => {
   expect(result.stderr).toContain('GEMINI_API_KEY is required for --stt-model deepgram+cleanup');
 });
 
+test.each(['--preview', '--summarize'])(
+  '%s without --audio does not parse a null STT model',
+  action => {
+    const result = runCli([action, 'invalid', '--model', 'claude'], {
+      ANTHROPIC_API_KEY: 'test-key',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).not.toContain("Cannot read properties of null (reading 'endsWith')");
+    expect(result.stderr).not.toContain('GEMINI_API_KEY is required for --stt-model');
+    expect(result.stderr).toContain('Invalid');
+  },
+);
+
 test('--amend requires --comments', () => {
   const result = runCli(['--amend', '123:6LO']);
   expect(result.status).toBe(1);

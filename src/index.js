@@ -968,8 +968,9 @@ async function main() {
 
     // Gemini STT and text-only hybrid passes require GEMINI_API_KEY, even when
     // Claude generates the minutes.
-    const parsedSttModel = parseSttModel(sttModel);
-    const needsGemini = parsedSttModel.baseSttModel === "gemini" || parsedSttModel.hybridNames || parsedSttModel.cleanup;
+    const parsedSttModel = sttModel ? parseSttModel(sttModel) : null;
+    const needsGemini = parsedSttModel
+      && (parsedSttModel.baseSttModel === "gemini" || parsedSttModel.hybridNames || parsedSttModel.cleanup);
     if (needsGemini && provider === "claude") {
       const geminiKey = process.env.GEMINI_API_KEY;
       if (!geminiKey) {
