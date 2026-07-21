@@ -11,6 +11,9 @@
  */
 
 import { spawnSync } from 'child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 
 function runCli(args) {
   return spawnSync(process.execPath, ['src/index.js', ...args], {
@@ -64,4 +67,50 @@ test('rejects a bogus deepgram variant', () => {
 
   expect(result.status).toBe(1);
   expect(result.stderr).toContain('--stt-model "deepgram:foo+bar" is invalid');
+});
+
+test('--amend requires --comments', () => {
+  const result = runCli(['--amend', '123:6LO']);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('--amend requires --comments <file>');
+});
+
+test('--comments requires --amend', () => {
+  const result = runCli(['--comments', 'comments.txt', '--output']);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('--comments requires --amend <selector>');
+});
+
+test('--amend requires a WG-scoped selector', () => {
+  const result = runCli(['--amend', '123', '--comments', 'comments.txt']);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('--amend requires a WG selector (NUMBER:GROUP or YYYY-MM-DD:GROUP)');
+});
+
+test('--amend cannot be combined with --summarize', () => {
+  const result = runCli(['--amend', '123:6LO', '--comments', 'comments.txt', '--summarize', '123']);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain('--amend cannot be combined with --summarize');
+});
+
+test('--amend rejects a nonexistent comments file before API initialization', () => {
+  const missingPath = 'definitely-does-not-exist-comments.txt';
+  const result = runCli(['--amend', '123:6LO', '--comments', missingPath]);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain(`--comments '${missingPath}' does not exist`);
+});
+
+test('--amend rejects a whitespace-only comments file before API initialization', () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'auto-minutes-comments-'));
+  const commentsPath = join(tempDir, 'comments.txt');
+  writeFileSync(commentsPath, '  \n\t');
+
+  try {
+    const result = runCli(['--amend', '123:6LO', '--comments', commentsPath]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Cannot amend minutes: comments are empty');
+    expect(result.stderr).not.toContain('GEMINI_API_KEY not found in environment');
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });

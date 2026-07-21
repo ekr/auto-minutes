@@ -27,6 +27,8 @@ const {
   transcriptWordCount,
   assertTranscriptSubstantial,
   generateMinutes,
+  amendMinutes,
+  initializeClaude,
   initializeGemini,
   extractParticipantNames,
 } = await import('./generator.js');
@@ -158,6 +160,92 @@ describe('generateMinutes', () => {
     );
     expect(mockGenerateContent).not.toHaveBeenCalled();
     expect(mockCreate).not.toHaveBeenCalled();
+  });
+});
+
+describe('amendMinutes', () => {
+  beforeEach(() => {
+    mockGenerateContent.mockReset();
+    mockCreate.mockReset();
+    initializeGemini('fake-api-key');
+  });
+
+  test('sends both existing minutes and reviewer comments to the model', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => '# Revised minutes',
+        usageMetadata: { promptTokenCount: 42, candidatesTokenCount: 7 },
+      },
+    });
+
+    await amendMinutes('# Existing minutes\n\n## Summary\nOld text', 'Correct the decision to Foo.', '6LO');
+
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+    const prompt = mockGenerateContent.mock.calls[0][0];
+    expect(prompt).toContain('# Existing minutes');
+    expect(prompt).toContain('Correct the decision to Foo.');
+    expect(prompt).toContain('Output only the revised minutes.');
+  });
+
+  test.each([
+    ['', 'a comment', 'existing minutes are empty'],
+    ['# Minutes', '  \n', 'comments are empty'],
+  ])('rejects empty inputs before calling the API', async (minutes, comments, message) => {
+    await expect(amendMinutes(minutes, comments, '6LO')).rejects.toThrow(message);
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+
+  test('strips a surrounding Markdown code fence', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => '```markdown\n# Revised minutes\n```',
+        usageMetadata: {},
+      },
+    });
+
+    const result = await amendMinutes('# Minutes', 'Fix typo', '6LO');
+    expect(result.text).toBe('# Revised minutes');
+  });
+
+  test('returns populated token usage', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => '# Revised minutes',
+        usageMetadata: { promptTokenCount: 123, candidatesTokenCount: 45 },
+      },
+    });
+
+    const result = await amendMinutes('# Minutes', 'Fix typo', '6LO', false, 'gemini-test');
+    expect(result.usage).toEqual({ model: 'gemini-test', inputTokens: 123, outputTokens: 45 });
+  });
+
+  test('sends a Claude amendment request and maps its response and usage', async () => {
+    initializeClaude('fake-api-key');
+    mockCreate.mockResolvedValue({
+      content: [{ text: '# Claude revised minutes' }],
+      usage: { input_tokens: 321, output_tokens: 54 },
+    });
+
+    const result = await amendMinutes(
+      '# Existing minutes\n\n## Summary\nOld text',
+      'Replace Old with New.',
+      '6LO',
+      false,
+      'claude-test',
+    );
+
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    const request = mockCreate.mock.calls[0][0];
+    expect(request.model).toBe('claude-test');
+    expect(request.max_tokens).toBe(4096);
+    expect(request.messages).toHaveLength(1);
+    expect(request.messages[0].role).toBe('user');
+    expect(request.messages[0].content).toContain('# Existing minutes');
+    expect(request.messages[0].content).toContain('Replace Old with New.');
+    expect(result).toEqual({
+      text: '# Claude revised minutes',
+      usage: { model: 'claude-test', inputTokens: 321, outputTokens: 54 },
+    });
   });
 });
 
