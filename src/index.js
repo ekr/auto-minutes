@@ -10,7 +10,8 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
+import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange } from "./scraper.js";
+import { fetchContextForSession, sessionSlugFromId } from "./session-context.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
 import { amendCachedSessions } from "./amend-workflow.js";
 import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript } from "./transcriber.js";
@@ -44,62 +45,6 @@ const SUPPORTED_MEDIA_EXTENSIONS = new Set([".mp4", ".mov", ".mkv", ".webm", ".m
 
 // Global verbose flag
 let verbose = false;
-
-/**
- * Extract the session slug from a session ID.
- * Session ID format: IETF{N}-{SLUG...}-{YYYYMMDD}-{HHMM}
- * The slug can contain hyphens (e.g., "rtg-area"), so we strip the IETF prefix
- * and the trailing date/time components.
- * @param {string} sessionId - e.g. "IETF124-PRIVACYPASS-20251105-1700"
- * @returns {string} Lowercase slug, e.g. "privacypass" or "rtg-area"
- */
-function sessionSlugFromId(sessionId) {
-  const parts = sessionId.split('-');
-  // parts[0] = "IETF124", last two = "YYYYMMDD", "HHMM"
-  return parts.slice(1, -2).join('-').toLowerCase();
-}
-
-/**
- * Fetch slides/bluesheet and WG documents for a session in parallel.
- * Supports both regular IETF meetings (numeric ID) and interim meetings
- * (meetingSlug present on the session object, e.g. "interim-2026-dnssd-01").
- * Returns null gracefully when fetches fail.
- * @param {Object} session - Session object with sessionId (and optionally meetingSlug) property
- * @returns {Promise<{slidesAndBluesheet: Object|null, wgDocuments: Array}>}
- */
-async function fetchContextForSession(session) {
-  let meetingIdentifier;
-  let sessionSlug;
-
-  const meetingMatch = session.sessionId.match(/^IETF(\d+)-/);
-  if (meetingMatch) {
-    meetingIdentifier = parseInt(meetingMatch[1], 10);
-    sessionSlug = sessionSlugFromId(session.sessionId);
-  } else if (session.meetingSlug) {
-    // Interim session: use the stored meeting slug and derive group from session name
-    meetingIdentifier = session.meetingSlug;
-    sessionSlug = session.sessionName.toLowerCase();
-  } else {
-    return { slidesAndBluesheet: null, wgDocuments: [] };
-  }
-
-  const [slidesResult, docsResult] = await Promise.allSettled([
-    fetchSessionSlidesAndBluesheet(meetingIdentifier, sessionSlug),
-    fetchWorkingGroupDocuments(sessionSlug),
-  ]);
-
-  if (verbose && slidesResult.status === 'rejected') {
-    console.log(`    [context] Could not fetch slides/bluesheet: ${slidesResult.reason?.message}`);
-  }
-  if (verbose && docsResult.status === 'rejected') {
-    console.log(`    [context] Could not fetch WG documents: ${docsResult.reason?.message}`);
-  }
-
-  return {
-    slidesAndBluesheet: slidesResult.status === 'fulfilled' ? slidesResult.value : null,
-    wgDocuments: docsResult.status === 'fulfilled' ? docsResult.value : [],
-  };
-}
 
 /**
  * Run async tasks with a concurrency limit
@@ -156,7 +101,7 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
   // Fetch slides, bluesheet, and WG documents for LLM context (before transcription
   // so context can be used by Gemini STT to identify speakers by name)
   console.log(`  Fetching context (slides, bluesheet, WG docs): ${session.sessionId}`);
-  const context = await fetchContextForSession(session);
+  const context = await fetchContextForSession(session, verbose);
 
   // Report context results immediately so the user sees them without
   // waiting for transcription. The metadata is persisted later, only if
@@ -1109,7 +1054,7 @@ async function main() {
         // Fetch slides, bluesheet, and WG documents for context (no cache in preview)
         // Fetched before transcription so context can help Gemini STT identify speakers
         console.log("  Fetching context (slides, bluesheet, WG docs)...");
-        const context = await fetchContextForSession(session);
+        const context = await fetchContextForSession(session, verbose);
 
         // Report context results immediately so the user sees them before
         // transcription begins. (Preview mode intentionally does not cache.)
