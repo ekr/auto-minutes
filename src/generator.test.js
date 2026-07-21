@@ -32,6 +32,7 @@ const {
   initializeGemini,
   extractParticipantNames,
   buildContextPrompt,
+  describeContextMaterials,
 } = await import('./generator.js');
 
 describe('buildContextPrompt poll and chat context', () => {
@@ -490,5 +491,97 @@ describe('extractParticipantNames', () => {
     ].join('\n');
 
     expect(extractParticipantNames(bluesheet)).toEqual(['Jane Smith']);
+  });
+});
+
+describe('describeContextMaterials', () => {
+  test('returns expected string for full context + transcript', () => {
+    const context = {
+      polls: [
+        { text: 'Poll 1' },
+        { text: 'Poll 2' },
+        { text: 'Poll 3' },
+      ],
+      slidesAndBluesheet: {
+        slides: new Array(7).fill({ title: 'Slide' }),
+        bluesheet: 'attendees.\n' + Array.from({ length: 140 }, (_, i) => `Person ${i}\tOrg`).join('\n'),
+      },
+      chat: new Array(204).fill({ author: 'User', text: 'Msg' }),
+      wgDocuments: Array.from({ length: 38 }, (_, i) => ({
+        Name: `draft-ietf-wg-doc${i}`,
+        Title: `Doc ${i}`,
+        'Status in the IETF process': 'Active',
+      })),
+    };
+    const transcript = new Array(12345).fill('word').join(' ');
+
+    const summary = describeContextMaterials(context, transcript);
+    expect(summary).toBe('transcript: 12,345 words, 3 polls, 7 slides, 204 chat messages, 38 WG drafts, 140 participants');
+  });
+
+  test('returns expected string for partial context (e.g. only slides)', () => {
+    const context = {
+      slidesAndBluesheet: {
+        slides: [{ title: 'Intro' }, { title: 'Architecture' }],
+      },
+    };
+    expect(describeContextMaterials(context)).toBe('2 slides');
+  });
+
+  test('handles null context with and without transcript', () => {
+    expect(describeContextMaterials(null)).toBe('no material');
+    expect(describeContextMaterials(null, 'hello world test')).toBe('transcript: 3 words');
+    expect(describeContextMaterials(null, '')).toBe('no material');
+  });
+
+  test('formats singular vs plural counts correctly (n=1 vs n=2)', () => {
+    const context1 = {
+      polls: [{ text: 'Poll 1' }],
+      slidesAndBluesheet: {
+        slides: [{ title: 'Slide 1' }],
+        bluesheet: 'attendees.\nAlice Smith\tOrg',
+      },
+      chat: [{ author: 'User', text: 'Msg' }],
+      wgDocuments: [{ Name: 'draft-ietf-test', Title: 'Draft', 'Status in the IETF process': 'Active' }],
+    };
+    expect(describeContextMaterials(context1, 'word')).toBe(
+      'transcript: 1 words, 1 poll, 1 slide, 1 chat message, 1 WG draft, 1 participant'
+    );
+
+    const context2 = {
+      polls: [{ text: 'Poll 1' }, { text: 'Poll 2' }],
+      slidesAndBluesheet: {
+        slides: [{ title: 'Slide 1' }, { title: 'Slide 2' }],
+        bluesheet: 'attendees.\nAlice Smith\tOrg\nBob Jones\tOrg',
+      },
+      chat: [{ author: 'User', text: 'Msg 1' }, { author: 'User 2', text: 'Msg 2' }],
+      wgDocuments: [
+        { Name: 'draft-ietf-test1', Title: 'Draft 1', 'Status in the IETF process': 'Active' },
+        { Name: 'draft-ietf-test2', Title: 'Draft 2', 'Status in the IETF process': 'Active' },
+      ],
+    };
+    expect(describeContextMaterials(context2, 'word word')).toBe(
+      'transcript: 2 words, 2 polls, 2 slides, 2 chat messages, 2 WG drafts, 2 participants'
+    );
+  });
+
+  test('counts WG drafts using activeDraftNames (filters out inactive drafts)', () => {
+    const context = {
+      wgDocuments: [
+        { Name: 'draft-ietf-active', Title: 'Active Draft', 'Status in the IETF process': 'Active' },
+        { Name: 'draft-ietf-rfc', Title: 'Published RFC', 'Status in the IETF process': 'RFC Published' },
+        { Name: 'draft-individual-foo', Title: 'Individual Draft', 'Status in the IETF process': 'Active' },
+      ],
+    };
+    expect(describeContextMaterials(context)).toBe('1 WG draft');
+  });
+
+  test('counts participants using extractParticipantNames', () => {
+    const context = {
+      slidesAndBluesheet: {
+        bluesheet: 'Bluesheet for IETF-124\nattendees.\nJane Smith\tOrg\nJane Smith\tOrg (duplicate)\nJohn Doe\tOrg',
+      },
+    };
+    expect(describeContextMaterials(context)).toBe('2 participants');
   });
 });

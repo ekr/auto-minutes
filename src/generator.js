@@ -271,6 +271,52 @@ export function buildContextPrompt(context, sessionName) {
 }
 
 /**
+ * Summarize what context materials (and optionally transcript) are being provided into a prompt.
+ * @param {Object|null} context - Pre-fetched session context
+ * @param {string|null} transcript - Meeting transcript (optional)
+ * @returns {string} Human-readable concise summary of materials
+ */
+export function describeContextMaterials(context, transcript = null) {
+  const parts = [];
+
+  if (typeof transcript === "string" && transcript.trim() !== "") {
+    const words = transcriptWordCount(transcript);
+    parts.push(`transcript: ${words.toLocaleString()} words`);
+  }
+
+  const { slidesAndBluesheet = null, wgDocuments = [], polls = [], chat = [] } = context || {};
+
+  if (Array.isArray(polls) && polls.length > 0) {
+    const n = polls.length;
+    parts.push(`${n} ${n === 1 ? "poll" : "polls"}`);
+  }
+
+  if (slidesAndBluesheet?.slides && Array.isArray(slidesAndBluesheet.slides) && slidesAndBluesheet.slides.length > 0) {
+    const n = slidesAndBluesheet.slides.length;
+    parts.push(`${n} ${n === 1 ? "slide" : "slides"}`);
+  }
+
+  if (Array.isArray(chat) && chat.length > 0) {
+    const n = chat.length;
+    parts.push(`${n} ${n === 1 ? "chat message" : "chat messages"}`);
+  }
+
+  const activeDrafts = activeDraftNames(wgDocuments);
+  if (activeDrafts.length > 0) {
+    const n = activeDrafts.length;
+    parts.push(`${n} ${n === 1 ? "WG draft" : "WG drafts"}`);
+  }
+
+  const participants = extractParticipantNames(slidesAndBluesheet?.bluesheet);
+  if (participants.length > 0) {
+    const n = participants.length;
+    parts.push(`${n} ${n === 1 ? "participant" : "participants"}`);
+  }
+
+  return parts.length > 0 ? parts.join(", ") : "no material";
+}
+
+/**
  * Generate meeting minutes from a transcript using the configured model
  * @param {string} transcript - The meeting transcript text (JSON format)
  * @param {string} sessionName - Name of the session
@@ -290,6 +336,8 @@ export async function generateMinutes(transcript, sessionName, verbose = false, 
   const wgLink = `../wg/${sanitizedName}.html`;
 
   const contextBlock = buildContextPrompt(context, sessionName);
+
+  console.log(`  Prompt materials: ${describeContextMaterials(context, transcript)}`);
 
   const prompt = `You are an expert technical writer for the IETF. Convert the following meeting transcript into well-structured meeting minutes in Markdown format. It should contain an account of the discussion including any decisions made.
 
@@ -413,6 +461,9 @@ export async function amendMinutes(existingMinutes, comments, sessionName, verbo
   }
 
   const contextBlock = buildContextPrompt(context, sessionName);
+
+  console.log(`  Prompt materials: ${describeContextMaterials(context)}`);
+
   const contextGuardrails = contextBlock
     ? `
 
