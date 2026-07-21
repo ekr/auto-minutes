@@ -55,7 +55,9 @@ export async function amendCachedSessions({
         // Live context is optional and must never prevent an amendment.
       }
       const liveHasContent = context && (
-        context.slidesAndBluesheet || context.wgDocuments?.length > 0
+        context.slidesAndBluesheet?.slides?.length > 0
+        || context.slidesAndBluesheet?.bluesheet
+        || context.wgDocuments?.length > 0
       );
       if (!liveHasContent) {
         let metadata = null;
