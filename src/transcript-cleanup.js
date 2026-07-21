@@ -18,7 +18,7 @@ export function buildCleanupReference(context) {
   return sections.join("\n\n");
 }
 
-function parseJson(text) {
+export function parseJson(text) {
   let value = text.trim();
   const fence = value.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
   if (fence) value = fence[1].trim();
@@ -68,7 +68,7 @@ export function normalizeCorrections(raw) {
   for (const entry of entries) {
     if (!entry || typeof entry.from !== "string" || typeof entry.to !== "string") continue;
     const { from, to } = entry;
-    if (!from.trim() || !to.trim() || from === to || from.length < 3 || seen.has(from)) continue;
+    if (!from.trim() || (to !== "" && !to.trim()) || from === to || from.length < 3 || seen.has(from)) continue;
     seen.add(from);
     result.push({ from, to });
     if (result.length === 200) break;
@@ -79,10 +79,12 @@ export function normalizeCorrections(raw) {
 export function applyCorrections(transcript, corrections) {
   let text = transcript;
   let appliedCount = 0;
+  const applied = [];
   for (const { from, to } of corrections) {
     if (!text.includes(from)) continue;
     text = text.split(from).join(to);
     appliedCount += 1;
+    applied.push({ from, to });
   }
-  return { text, appliedCount };
+  return { text, appliedCount, applied };
 }

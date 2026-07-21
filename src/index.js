@@ -605,7 +605,7 @@ async function main() {
     })
     .option("amend", {
       type: "string",
-      description: "Amend cached minutes for a WG (NUMBER:GROUP or YYYY-MM-DD:GROUP)",
+      description: "Amend cached minutes and/or transcript for a WG (NUMBER:GROUP or YYYY-MM-DD:GROUP)",
     })
     .option("comments", {
       type: "string",

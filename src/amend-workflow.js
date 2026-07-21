@@ -1,7 +1,12 @@
-import { amendMinutes } from "./generator.js";
+import fsPromises from "fs/promises";
+import { existsSync } from "fs";
+import { amendMinutes, splitAmendComments, getTranscriptCorrections } from "./generator.js";
 import { recordUsage } from "./accounting.js";
 import { getCachedMetadata, getCachedMinutes, loadCacheManifest, saveCachedMinutes } from "./publisher.js";
 import { fetchContextForSession } from "./session-context.js";
+import { normalizeCorrections, applyCorrections } from "./transcript-cleanup.js";
+import { getTranscriptCachePath } from "./transcriber.js";
+import { downloadTranscript } from "./scraper.js";
 
 /**
  * Amend every cached session belonging to one WG.
@@ -26,6 +31,17 @@ export async function amendCachedSessions({
   const addUsage = dependencies.recordUsage ?? recordUsage;
   const logger = dependencies.logger ?? console;
 
+  const splitComments = dependencies.splitAmendComments ?? splitAmendComments;
+  const getCorrections = dependencies.getTranscriptCorrections ?? getTranscriptCorrections;
+  const normalize = dependencies.normalizeCorrections ?? normalizeCorrections;
+  const apply = dependencies.applyCorrections ?? applyCorrections;
+  const getTranscriptPath = dependencies.getTranscriptCachePath ?? getTranscriptCachePath;
+  const download = dependencies.downloadTranscript ?? downloadTranscript;
+
+  const fsReadFile = dependencies.readFile ?? dependencies.fs?.readFile ?? fsPromises.readFile;
+  const fsWriteFile = dependencies.writeFile ?? dependencies.fs?.writeFile ?? fsPromises.writeFile;
+  const fsExistsSync = dependencies.existsSync ?? dependencies.fs?.existsSync ?? existsSync;
+
   let sessionGroups;
   try {
     sessionGroups = await loadManifest(meetingId);
@@ -40,6 +56,20 @@ export async function amendCachedSessions({
     const available = sessionGroups.map(candidate => candidate.sessionName).sort().join(", ");
     throw new Error(`No cached minutes for ${groupName} in ${meetingId}; run --summarize first. Available: ${available || "none"}`);
   }
+
+  let splitResult = null;
+  try {
+    splitResult = await splitComments(comments, group.sessionName, verbose, modelName);
+    if (splitResult?.usage) {
+      addUsage(splitResult.usage);
+    }
+  } catch (error) {
+    logger.error(`Could not split amend comments: ${error.message}`);
+    splitResult = { transcriptInstructions: "", minutesInstructions: comments };
+  }
+
+  const transcriptInstructions = splitResult?.transcriptInstructions ?? "";
+  const minutesInstructions = splitResult?.minutesInstructions ?? "";
 
   const failures = [];
   for (const session of group.sessions) {
@@ -77,10 +107,62 @@ export async function amendCachedSessions({
           };
         }
       }
-      const result = await reviseMinutes(existingMinutes, comments, group.sessionName, verbose, modelName, context);
-      await saveMinutes(meetingId, session.sessionId, result.text);
-      addUsage(result.usage);
-      logger.log(`Amended: ${session.sessionId}`);
+
+      let transcriptChanges = null;
+      if (transcriptInstructions && transcriptInstructions.trim()) {
+        try {
+          const cachePath = getTranscriptPath(session.sessionId);
+          let transcriptText;
+          if (fsExistsSync(cachePath)) {
+            transcriptText = await fsReadFile(cachePath, "utf8");
+          } else {
+            transcriptText = await download({ ...session, sessionName: group.sessionName });
+          }
+
+          if (transcriptText) {
+            const rawCorrections = await getCorrections(
+              transcriptText,
+              transcriptInstructions,
+              group.sessionName,
+              context,
+              verbose,
+              modelName,
+            );
+            if (rawCorrections?.usage) {
+              addUsage(rawCorrections.usage);
+            }
+            const corrections = normalize(rawCorrections);
+            const { text: updatedTranscript, applied } = apply(transcriptText, corrections);
+            if (applied && applied.length > 0) {
+              await fsWriteFile(cachePath, updatedTranscript, "utf8");
+              transcriptChanges = applied
+                .map(({ from, to }) => (to ? `- "${from}" → "${to}"` : `- removed: "${from}"`))
+                .join("\n");
+            }
+          }
+        } catch (tError) {
+          logger.error(`Transcript step failed for ${session.sessionId}: ${tError.message}`);
+        }
+      }
+
+      if ((minutesInstructions && minutesInstructions.trim()) || transcriptChanges) {
+        const result = await reviseMinutes(
+          existingMinutes,
+          minutesInstructions,
+          group.sessionName,
+          verbose,
+          modelName,
+          context,
+          transcriptChanges,
+        );
+        await saveMinutes(meetingId, session.sessionId, result.text);
+        if (result?.usage) {
+          addUsage(result.usage);
+        }
+        logger.log(`Amended: ${session.sessionId}`);
+      } else {
+        logger.log(`Skipped amending ${session.sessionId}: no minutes instructions or transcript changes`);
+      }
     } catch (error) {
       failures.push(session.sessionId);
       logger.error(`Could not amend ${session.sessionId}: ${error.message}`);

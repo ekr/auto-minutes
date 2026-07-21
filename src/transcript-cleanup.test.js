@@ -53,7 +53,7 @@ test('applyCorrections replaces every literal occurrence and skips absent source
     { from: 'a.b', to: 'QUIC' },
     { from: 'absent', to: 'unused' },
   ]);
-  expect(result).toEqual({ text: 'QUIC then QUIC', appliedCount: 1 });
+  expect(result).toEqual({ text: 'QUIC then QUIC', appliedCount: 1, applied: [{ from: 'a.b', to: 'QUIC' }] });
 });
 
 test.each([
