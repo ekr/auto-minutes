@@ -79,24 +79,28 @@ describe('session poll and chat materials', () => {
       .mockResolvedValueOnce(makeResponse({ body: JSON.stringify([{ text: 'Newest poll', yes: 4 }]) }));
 
     await expect(fetchSessionPolls(124, 'IETF124-CBOR-20251107-0930')).resolves.toEqual([
-      { text: 'Newest poll', yes: 4 },
+      { text: 'Newest poll', options: [{ label: 'yes', count: 4 }] },
     ]);
     expect(mockFetch.mock.calls[1][0]).toContain('name__startswith=polls-124-cbor');
     expect(mockFetch.mock.calls[2][0]).toContain('/materials/polls-124-cbor-202511070945');
   });
 
-  test('does not run the prefix fallback for a valid empty material', async () => {
+  test('does not run the datatracker prefix fallback for a valid empty material (falls back to Meetecho)', async () => {
     mockFetch.mockResolvedValue(makeResponse({ body: '[]' }));
 
     await expect(fetchSessionPolls(124, 'IETF124-CBOR-20251107-0930')).resolves.toEqual([]);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch.mock.calls[0][0]).toContain('/materials/polls-124-cbor-202511070930');
+    expect(mockFetch.mock.calls[1][0]).toContain('meetecho-player.ietf.org/playout/polls/IETF124-CBOR-20251107-0930');
   });
 
-  test('does not run the prefix fallback for a non-404 fetch failure', async () => {
+  test('does not run the datatracker prefix fallback for a non-404 fetch failure (falls back to Meetecho)', async () => {
     mockFetch.mockResolvedValue(makeResponse({ ok: false, status: 503, statusText: 'Service Unavailable' }));
 
     await expect(fetchSessionPolls(124, 'IETF124-CBOR-20251107-0930')).resolves.toEqual([]);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch.mock.calls[0][0]).toContain('/materials/polls-124-cbor-202511070930');
+    expect(mockFetch.mock.calls[1][0]).toContain('meetecho-player.ietf.org/playout/polls/IETF124-CBOR-20251107-0930');
   });
 });
 

@@ -96,17 +96,156 @@ async function fetchSessionMaterialWithFallback(kind, meetingIdentifier, session
   }
 }
 
-export async function fetchSessionPolls(meetingIdentifier, sessionId, meetingSlug) {
-  return fetchSessionMaterialWithFallback('polls', meetingIdentifier, sessionId, meetingSlug);
+
+
+
+/**
+ * Normalize poll data from Datatracker or Meetecho into a single shape:
+ * { text, options: [ { label, count } ], total }
+ * @param {Object} raw - Raw poll object
+ * @returns {Object|null} Normalized poll or null if text is missing
+ */
+export function normalizePoll(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const text = (raw.text || '').trim();
+  if (!text) return null;
+
+  let options = [];
+  let total;
+
+  if (Array.isArray(raw.options)) {
+    options = raw.options.map(opt => ({
+      label: opt.label,
+      count: opt.count,
+    }));
+    total = raw.total;
+  } else if (raw.results && typeof raw.results === 'object') {
+    options = Object.values(raw.results).map(r => ({
+      label: r.text || r.value || '',
+      count: r.count,
+    }));
+    total = raw.totals;
+  } else {
+    const keys = ['yes', 'no', 'no_opinion'];
+    for (const key of keys) {
+      if (raw[key] !== undefined && raw[key] !== null) {
+        options.push({
+          label: key.replace(/_/g, ' '),
+          count: raw[key],
+        });
+      }
+    }
+    total = raw.present_when_poll_closed;
+  }
+
+  const result = { text, options };
+  if (total !== undefined && total !== null) {
+    result.total = total;
+  }
+  return result;
 }
 
+/**
+ * Fetch poll results from Meetecho recording player.
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<Array>} Array of normalized poll objects or []
+ */
+export async function fetchMeetechoPolls(sessionId) {
+  if (!sessionId) return [];
+  const url = `https://meetecho-player.ietf.org/playout/polls/${sessionId}`;
+  try {
+    const response = await ietfFetch(url);
+    const text = await response.text();
+    const data = JSON.parse(text);
+    if (!Array.isArray(data)) return [];
+    return data.map(normalizePoll).filter(Boolean);
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Fetch chat messages from Meetecho recording player.
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<Array>} Array of chat objects {author, text, time} or []
+ */
+export async function fetchMeetechoChat(sessionId) {
+  if (!sessionId) return [];
+  const url = `https://meetecho-player.ietf.org/playout/sessions/${sessionId}`;
+  try {
+    const response = await ietfFetch(url);
+    const text = await response.text();
+    const data = JSON.parse(text);
+    if (!data || !Array.isArray(data.messages)) return [];
+
+    const startDatetime = data.start_datetime;
+    const startMs = startDatetime ? Date.parse(startDatetime) : NaN;
+
+    return data.messages.map(msg => {
+      let time = null;
+      if (!isNaN(startMs) && typeof msg.dtime === 'number') {
+        time = new Date(startMs + msg.dtime).toISOString();
+      }
+      const rawText = msg.text || '';
+      const strippedText = cheerio.load(rawText).text().trim();
+      const obj = {
+        author: msg.author || '',
+        text: strippedText,
+      };
+      if (time) {
+        obj.time = time;
+      }
+      return obj;
+    });
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Fetch session poll results from datatracker materials with fallback to Meetecho.
+ * @param {string|number} meetingIdentifier - Meeting identifier (e.g., 124 or "interim-2024-netmod-02")
+ * @param {string} sessionId - Session ID
+ * @param {string} [meetingSlug] - Optional meeting slug
+ * @returns {Promise<Array>} Array of normalized poll objects or []
+ */
+export async function fetchSessionPolls(meetingIdentifier, sessionId, meetingSlug) {
+  const polls = await fetchSessionMaterialWithFallback('polls', meetingIdentifier, sessionId, meetingSlug);
+  const normalized = Array.isArray(polls) ? polls.map(normalizePoll).filter(Boolean) : [];
+  if (normalized.length > 0) {
+    return normalized;
+  }
+
+  if (sessionId) {
+    return fetchMeetechoPolls(sessionId);
+  }
+
+  return [];
+}
+
+/**
+ * Fetch session chat log from datatracker materials with fallback to Meetecho.
+ * @param {string|number} meetingIdentifier - Meeting identifier (e.g., 124 or "interim-2024-netmod-02")
+ * @param {string} sessionId - Session ID
+ * @param {string} [meetingSlug] - Optional meeting slug
+ * @returns {Promise<Array>} Array of chat message objects {author, time, text} or []
+ */
 export async function fetchSessionChatlog(meetingIdentifier, sessionId, meetingSlug) {
-  const messages = await fetchSessionMaterialWithFallback('chatlog', meetingIdentifier, sessionId, meetingSlug);
-  return messages.map(message => ({
-    author: message?.author ?? '',
-    time: message?.time ?? '',
-    text: cheerio.load(String(message?.text ?? '')).text().trim(),
-  }));
+  const rawChat = await fetchSessionMaterialWithFallback('chatlog', meetingIdentifier, sessionId, meetingSlug);
+
+  if (Array.isArray(rawChat) && rawChat.length > 0) {
+    return rawChat.map(msg => ({
+      author: msg?.author || '',
+      time: msg?.time || '',
+      text: cheerio.load(String(msg?.text || '')).text().trim(),
+    }));
+  }
+
+  if (sessionId) {
+    return fetchMeetechoChat(sessionId);
+  }
+
+  return [];
 }
 
 /**
