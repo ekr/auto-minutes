@@ -11,6 +11,7 @@ src/
   index.js          — CLI entry point, orchestration, session resolution
   scraper.js        — IETF datatracker / Meetecho fetching
   generator.js      — LLM minutes generation (Gemini / Claude)
+  session-context.js — parallel context fetching and cache metadata shaping
   transcriber.js    — Audio download, STT transcription (Gemini / Google Cloud STT / Deepgram)
   speaker-names.js  — Gemini speaker-label→name mapping (shared by transcriber.js and transcribe-diarize.js)
   session-context.js — Shared live slides, bluesheet, and WG-document context fetching
@@ -24,7 +25,7 @@ src/
 CLI args
   → session resolution (scraper.js: datatracker / Meetecho agenda)
   → per-session pipeline (index.js: generateSessionMinutes)
-      → context fetch: slides, bluesheet, WG docs (scraper.js)
+      → context fetch: slides, bluesheet, WG docs, polls, and chat (scraper.js)
       → audio acquisition (transcriber.js):
           - default: download HLS stream from Meetecho via ffmpeg → cache/audio/<id>.mp3
           - --audio-file: convert local file via ffmpeg → cache/audio/<id>.mp3
@@ -76,9 +77,11 @@ Under `-j` concurrency, multiple sessions run "concurrently" on a single JS thre
 
 ### Minutes generation
 
-Supports Gemini and Claude models, selected via `--model`. Context (slides, bluesheet, WG documents) is fetched before transcription so it can be used by Gemini STT for speaker identification.
+Supports Gemini and Claude models, selected via `--model`. Context is fetched before transcription: slides, bluesheets, and WG documents provide reference data, while datatracker poll JSON provides authoritative poll results and normalized chat JSON supplements the transcript as session record. Chat prompt rendering is capped at 800 messages / 40,000 characters. Material lookup first uses the session-derived document name, then falls back to the newest datatracker API prefix match.
 
-Cached minutes can also be revised with `--amend NUMBER:GROUP --comments FILE` (or a date-based interim selector). This path resolves sessions exclusively from the cache manifest, then uses the shared live context fetch to send each session's slides, bluesheet, and active working-group documents to the selected LLM alongside the raw cached minutes and reviewer comments. If live context is empty or unavailable, amend falls back to cached slide/bluesheet metadata. Interim cache manifests do not retain the datatracker meeting slug, so interim amendments use that fallback. Amend overwrites only the raw minutes file and does not use transcripts or modify cache manifests and metadata; the normal output and build stages consume the revision unchanged.
+The material prefix fallback runs only after the exact session-derived URL returns HTTP 404. Valid empty materials, malformed responses, and other fetch failures remain empty rather than risking attribution of another session's polls or chat.
+
+Cached minutes can also be revised with `--amend NUMBER:GROUP --comments FILE` (or a date-based interim selector). This path resolves sessions exclusively from the cache manifest, then uses the shared live context fetch to send each session's slides, bluesheet, active working-group documents, polls, and chat to the selected LLM alongside the raw cached minutes and reviewer comments. If live context is empty or unavailable, amend falls back to cached slide/bluesheet/poll/chat metadata. Interim cache manifests do not retain the datatracker meeting slug, so interim amendments use that fallback. Amend overwrites only the raw minutes file and does not use transcripts or modify cache manifests and metadata; the normal output and build stages consume the revision unchanged.
 
 ### Transcript validation (defense in depth)
 

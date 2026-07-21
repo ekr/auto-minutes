@@ -25,10 +25,88 @@ async function ietfFetch(url) {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+    const error = new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+    error.status = response.status;
+    throw error;
   }
 
   return response;
+}
+
+/**
+ * Build the datatracker material name associated with a session.
+ */
+export function buildMaterialDocName(kind, sessionId, meetingSlug) {
+  if (kind !== 'polls' && kind !== 'chatlog') return null;
+  const match = typeof sessionId === 'string'
+    ? sessionId.match(/^IETF(\d+)-(.+)-(\d{8})-(\d{4})$/i)
+    : null;
+  if (match) {
+    return `${kind}-${match[1]}-${match[2].toLowerCase()}-${match[3]}${match[4]}`;
+  }
+
+  const interimMatch = typeof sessionId === 'string'
+    ? sessionId.match(/-(\d{8})-(\d{4})$/)
+    : null;
+  if (meetingSlug && interimMatch) {
+    return `${kind}-${meetingSlug}-${interimMatch[1]}${interimMatch[2]}`;
+  }
+  return null;
+}
+
+async function fetchSessionMaterialJsonResult(meetingIdentifier, docName) {
+  if (!meetingIdentifier || !docName) return { data: [], notFound: false };
+  try {
+    const response = await ietfFetch(`https://datatracker.ietf.org/meeting/${meetingIdentifier}/materials/${docName}`);
+    const parsed = JSON.parse(await response.text());
+    return { data: Array.isArray(parsed) ? parsed : [], notFound: false };
+  } catch (error) {
+    return { data: [], notFound: error?.status === 404 };
+  }
+}
+
+/** Fetch and parse a JSON-array meeting material, failing soft. */
+export async function fetchSessionMaterialJson(meetingIdentifier, docName) {
+  return (await fetchSessionMaterialJsonResult(meetingIdentifier, docName)).data;
+}
+
+async function fetchSessionMaterialWithFallback(kind, meetingIdentifier, sessionId, meetingSlug) {
+  const docName = buildMaterialDocName(kind, sessionId, meetingSlug);
+  if (!docName) return [];
+  const exact = await fetchSessionMaterialJsonResult(meetingIdentifier, docName);
+  if (!exact.notFound) return exact.data;
+
+  const prefix = docName.replace(/-\d{12}$/, '');
+  try {
+    const params = new URLSearchParams({
+      type: kind,
+      name__startswith: prefix,
+      format: 'json',
+      order_by: '-time',
+    });
+    const response = await ietfFetch(`https://datatracker.ietf.org/api/v1/doc/document/?${params}`);
+    const data = JSON.parse(await response.text());
+    const matches = Array.isArray(data?.objects) ? data.objects : [];
+    const newest = matches
+      .filter(item => typeof item?.name === 'string')
+      .sort((a, b) => String(b.time || b.name).localeCompare(String(a.time || a.name)))[0];
+    return newest ? fetchSessionMaterialJson(meetingIdentifier, newest.name) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchSessionPolls(meetingIdentifier, sessionId, meetingSlug) {
+  return fetchSessionMaterialWithFallback('polls', meetingIdentifier, sessionId, meetingSlug);
+}
+
+export async function fetchSessionChatlog(meetingIdentifier, sessionId, meetingSlug) {
+  const messages = await fetchSessionMaterialWithFallback('chatlog', meetingIdentifier, sessionId, meetingSlug);
+  return messages.map(message => ({
+    author: message?.author ?? '',
+    time: message?.time ?? '',
+    text: cheerio.load(String(message?.text ?? '')).text().trim(),
+  }));
 }
 
 /**

@@ -119,7 +119,12 @@ test('reconstructs cached slides and bluesheet context for each amendment', asyn
       sessions: [{ sessionId: '6lo-1' }],
     }]),
     getCachedMinutes: jest.fn().mockResolvedValue('# Existing'),
-    getCachedMetadata: jest.fn().mockResolvedValue({ slides, bluesheetText }),
+    getCachedMetadata: jest.fn().mockResolvedValue({
+      slides,
+      bluesheetText,
+      polls: [{ text: 'Adopt?', yes: 10, no: 2 }],
+      chat: [{ author: 'Alice', text: 'Correction' }],
+    }),
     amendMinutes: jest.fn().mockResolvedValue({
       text: '# Revised',
       usage: { model: 'gemini-test', inputTokens: 10, outputTokens: 5 },
@@ -142,6 +147,8 @@ test('reconstructs cached slides and bluesheet context for each amendment', asyn
     {
       slidesAndBluesheet: { slides, bluesheet: bluesheetText },
       wgDocuments: [],
+      polls: [{ text: 'Adopt?', yes: 10, no: 2 }],
+      chat: [{ author: 'Alice', text: 'Correction' }],
     },
   );
 });
@@ -184,6 +191,8 @@ test('falls back to cached context when live context fetch throws', async () => 
         bluesheet: metadata.bluesheetText,
       },
       wgDocuments: [],
+      polls: [],
+      chat: [],
     },
   );
   expect(dependencies.saveCachedMinutes).toHaveBeenCalledWith(126, 'IETF126-6LO-20250721-0900', '# Revised');
@@ -234,6 +243,8 @@ test('falls back to cached context when live slides and bluesheet are empty', as
         bluesheet: metadata.bluesheetText,
       },
       wgDocuments: [],
+      polls: [],
+      chat: [],
     },
   );
 });
@@ -288,6 +299,8 @@ test('combines cached slides and bluesheet with live WG documents', async () => 
         bluesheet: metadata.bluesheetText,
       },
       wgDocuments,
+      polls: [],
+      chat: [],
     },
   );
 });

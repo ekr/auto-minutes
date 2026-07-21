@@ -11,7 +11,7 @@ import fetch from "node-fetch";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange } from "./scraper.js";
-import { fetchContextForSession, sessionSlugFromId } from "./session-context.js";
+import { fetchContextForSession, saveContextMetadata, sessionSlugFromId } from "./session-context.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
 import { amendCachedSessions } from "./amend-workflow.js";
 import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript, parseSttModel } from "./transcriber.js";
@@ -31,7 +31,6 @@ import {
   loadCacheManifest,
   getCachedMeetingIds,
   sanitizeSessionName,
-  saveCacheMetadata,
   getCachedMetadata,
   deleteCachedMinutes,
   deleteCachedManifest,
@@ -115,6 +114,8 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
       console.log(`  Fetched bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
     }
   }
+  console.log(`  Fetched ${context.polls.length} poll(s)`);
+  console.log(`  Fetched ${context.chat.length} chat message(s)`);
 
   // Download transcript - from local file, audio (via STT), or text
   let transcript;
@@ -138,12 +139,7 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
     return { minutes: "", wasGenerated: false, reason: error.message, recordingUnavailable: isRecordingUnavailable(error.message) };
   }
 
-  if (context.slidesAndBluesheet) {
-    await saveCacheMetadata(meetingNumber, session.sessionId, {
-      slides: context.slidesAndBluesheet.slides || [],
-      bluesheetText: context.slidesAndBluesheet.bluesheet || null,
-    });
-  }
+  await saveContextMetadata(meetingNumber, session.sessionId, context);
 
   // Generate minutes using LLM
   console.log(`  Generating minutes with LLM: ${session.sessionId}`);
@@ -1071,6 +1067,8 @@ async function main() {
             console.log(`  Fetched bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
           }
         }
+        console.log(`  Fetched ${context.polls.length} poll(s)`);
+        console.log(`  Fetched ${context.chat.length} chat message(s)`);
 
         // Download transcript (no cache) - from local file, audio, or text
         let transcript;

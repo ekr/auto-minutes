@@ -72,6 +72,8 @@ export async function amendCachedSessions({
               bluesheet: metadata.bluesheetText || null,
             },
             wgDocuments: context?.wgDocuments || [],
+            polls: metadata.polls || [],
+            chat: metadata.chat || [],
           };
         }
       }
