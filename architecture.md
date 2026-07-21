@@ -13,6 +13,7 @@ src/
   generator.js      — LLM minutes generation (Gemini / Claude)
   transcriber.js    — Audio download, STT transcription (Gemini / Google Cloud STT / Deepgram)
   speaker-names.js  — Gemini speaker-label→name mapping (shared by transcriber.js and transcribe-diarize.js)
+  session-context.js — Shared live slides, bluesheet, and WG-document context fetching
   publisher.js      — File system output, cache management, index generation
   accounting.js     — Token and audio (STT) usage tracking and cost summary
 ```
@@ -77,7 +78,7 @@ Under `-j` concurrency, multiple sessions run "concurrently" on a single JS thre
 
 Supports Gemini and Claude models, selected via `--model`. Context (slides, bluesheet, WG documents) is fetched before transcription so it can be used by Gemini STT for speaker identification.
 
-Cached minutes can also be revised with `--amend NUMBER:GROUP --comments FILE` (or a date-based interim selector). This path resolves sessions exclusively from the cache manifest, sends each session's raw cached minutes, reviewer comments, and any cached slide/bluesheet reference data to the selected LLM, and overwrites only the raw minutes file. It does not fetch session data, use transcripts, or modify cache manifests and metadata; working-group documents are not part of the cached amend context. The normal output and build stages consume the revision unchanged.
+Cached minutes can also be revised with `--amend NUMBER:GROUP --comments FILE` (or a date-based interim selector). This path resolves sessions exclusively from the cache manifest, then uses the shared live context fetch to send each session's slides, bluesheet, and active working-group documents to the selected LLM alongside the raw cached minutes and reviewer comments. If live context is empty or unavailable, amend falls back to cached slide/bluesheet metadata. Interim cache manifests do not retain the datatracker meeting slug, so interim amendments use that fallback. Amend overwrites only the raw minutes file and does not use transcripts or modify cache manifests and metadata; the normal output and build stages consume the revision unchanged.
 
 ### Transcript validation (defense in depth)
 
