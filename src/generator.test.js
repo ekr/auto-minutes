@@ -42,7 +42,7 @@ describe('buildContextPrompt poll and chat context', () => {
     }] }, 'CBOR');
     expect(prompt).toContain('Session Polls:');
     expect(prompt).toContain('Should the WG adopt this draft?');
-    expect(prompt).toContain('yes: 10, no: 2, no opinion: 9, present when poll closed: 31');
+    expect(prompt).toContain('yes: 10, no: 2, no opinion: 9 (total: 31)');
     expect(prompt).toContain('authoritative recorded results');
     expect(prompt).toContain('do not invent polls');
   });
@@ -307,7 +307,6 @@ describe('buildContextPrompt', () => {
     expect(prompt).toContain('… (chat truncated)');
     expect(prompt).toContain('User799: Message line 799');
     expect(prompt).not.toContain('User805: Message line 805');
->>>>>>> f42c211 (feat: Meetecho fallback for polls & chat on in-progress meetings)
   });
 });
 

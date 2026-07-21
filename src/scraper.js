@@ -97,35 +97,7 @@ async function fetchSessionMaterialWithFallback(kind, meetingIdentifier, session
 }
 
 
-/**
- * Derive datatracker material document name for polls or chatlog.
- * @param {'polls'|'chatlog'} kind - Material kind
- * @param {string} sessionId - Session ID (e.g., "IETF124-CBOR-20251107-0930")
- * @param {string} [meetingSlug] - Meeting slug for interim sessions (e.g., "interim-2024-netmod-02")
- * @returns {string|null} Document name or null
- */
-export function buildMaterialDocName(kind, sessionId, meetingSlug) {
-  if (!sessionId) return null;
 
-  const ietfMatch = sessionId.match(/^IETF(\d+)-(.+)-(\d{8})-(\d{4})$/i);
-  if (ietfMatch) {
-    const [, num, slug, date, time] = ietfMatch;
-    return `${kind}-${num}-${slug.toLowerCase()}-${date}${time}`;
-  }
-
-  // Interim session (no numeric IETF meeting number):
-  const dtMatch = sessionId.match(/[-_]?(\d{8})[-_]?(\d{4})$/);
-  if (dtMatch && meetingSlug) {
-    const [, date, time] = dtMatch;
-    return `${kind}-${meetingSlug}-${date}${time}`;
-  }
-
-  if (meetingSlug) {
-    return `${kind}-${meetingSlug}`;
-  }
-
-  return null;
-}
 
 /**
  * Normalize poll data from Datatracker or Meetecho into a single shape:
@@ -238,36 +210,7 @@ export async function fetchMeetechoChat(sessionId) {
  * @returns {Promise<Array>} Array of normalized poll objects or []
  */
 export async function fetchSessionPolls(meetingIdentifier, sessionId, meetingSlug) {
-  const docName = buildMaterialDocName('polls', sessionId, meetingSlug);
-  let polls = docName ? await fetchSessionMaterialJson(meetingIdentifier, docName) : [];
-
-  if (!Array.isArray(polls) || polls.length === 0) {
-    try {
-      const ietfMatch = sessionId ? sessionId.match(/^IETF(\d+)-(.+)-(\d{8})-(\d{4})$/i) : null;
-      let prefix = null;
-      if (ietfMatch) {
-        prefix = `polls-${ietfMatch[1]}-${ietfMatch[2].toLowerCase()}`;
-      } else if (meetingSlug) {
-        prefix = `polls-${meetingSlug}`;
-      }
-
-      if (prefix) {
-        const url = `https://datatracker.ietf.org/api/v1/doc/document/?type=polls&name__startswith=${prefix}&format=json`;
-        const response = await ietfFetch(url);
-        const data = await response.json();
-        if (data && Array.isArray(data.objects) && data.objects.length > 0) {
-          const sorted = [...data.objects].sort((a, b) => (b.name || '').localeCompare(a.name || ''));
-          const newestName = sorted[0].name;
-          if (newestName) {
-            polls = await fetchSessionMaterialJson(meetingIdentifier, newestName);
-          }
-        }
-      }
-    } catch (e) {
-      // Fallback soft failure
-    }
-  }
-
+  const polls = await fetchSessionMaterialWithFallback('polls', meetingIdentifier, sessionId, meetingSlug);
   const normalized = Array.isArray(polls) ? polls.map(normalizePoll).filter(Boolean) : [];
   if (normalized.length > 0) {
     return normalized;
@@ -288,41 +231,13 @@ export async function fetchSessionPolls(meetingIdentifier, sessionId, meetingSlu
  * @returns {Promise<Array>} Array of chat message objects {author, time, text} or []
  */
 export async function fetchSessionChatlog(meetingIdentifier, sessionId, meetingSlug) {
-  const docName = buildMaterialDocName('chatlog', sessionId, meetingSlug);
-  let rawChat = docName ? await fetchSessionMaterialJson(meetingIdentifier, docName) : [];
-
-  if (!Array.isArray(rawChat) || rawChat.length === 0) {
-    try {
-      const ietfMatch = sessionId ? sessionId.match(/^IETF(\d+)-(.+)-(\d{8})-(\d{4})$/i) : null;
-      let prefix = null;
-      if (ietfMatch) {
-        prefix = `chatlog-${ietfMatch[1]}-${ietfMatch[2].toLowerCase()}`;
-      } else if (meetingSlug) {
-        prefix = `chatlog-${meetingSlug}`;
-      }
-
-      if (prefix) {
-        const url = `https://datatracker.ietf.org/api/v1/doc/document/?type=chatlog&name__startswith=${prefix}&format=json`;
-        const response = await ietfFetch(url);
-        const data = await response.json();
-        if (data && Array.isArray(data.objects) && data.objects.length > 0) {
-          const sorted = [...data.objects].sort((a, b) => (b.name || '').localeCompare(a.name || ''));
-          const newestName = sorted[0].name;
-          if (newestName) {
-            rawChat = await fetchSessionMaterialJson(meetingIdentifier, newestName);
-          }
-        }
-      }
-    } catch (e) {
-      // Fallback soft failure
-    }
-  }
+  const rawChat = await fetchSessionMaterialWithFallback('chatlog', meetingIdentifier, sessionId, meetingSlug);
 
   if (Array.isArray(rawChat) && rawChat.length > 0) {
     return rawChat.map(msg => ({
-      author: msg.author || '',
-      time: msg.time || '',
-      text: cheerio.load(msg.text || '').text().trim(),
+      author: msg?.author || '',
+      time: msg?.time || '',
+      text: cheerio.load(String(msg?.text || '')).text().trim(),
     }));
   }
 
