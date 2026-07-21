@@ -11,7 +11,8 @@ import fetch from "node-fetch";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
-import { initializeClaude, generateMinutes, amendMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
+import { initializeClaude, generateMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
+import { amendCachedSessions } from "./amend-workflow.js";
 import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript } from "./transcriber.js";
 import { recordUsage, printSummary } from "./accounting.js";
 import { isRecordingUnavailable, shouldExitNonZero } from "./skip-classifier.js";
@@ -1318,34 +1319,15 @@ async function main() {
       const parsed = parseSummarizeArg(argv.amend);
       const meetingId = parsed.meetingNumber ?? parsed.date;
 
-      let sessionGroups;
-      try {
-        sessionGroups = await loadCacheManifest(meetingId);
-      } catch {
-        throw new Error(`No cached minutes for ${meetingId}; run --summarize first`);
-      }
-
-      const group = sessionGroups.find(
-        candidate => candidate.sessionName.toLowerCase() === parsed.group.toLowerCase(),
-      );
-      if (!group) {
-        const available = sessionGroups.map(candidate => candidate.sessionName).sort().join(", ");
-        throw new Error(`No cached minutes for ${parsed.group} in ${meetingId}; run --summarize first. Available: ${available || "none"}`);
-      }
-
       console.log(`\n=== AMEND STAGE: ${parsed.group} (${meetingId}) ===`);
       console.log(`Using model: ${modelName}`);
-      for (const session of group.sessions) {
-        try {
-          const existingMinutes = await getCachedMinutes(meetingId, session.sessionId);
-          const result = await amendMinutes(existingMinutes, amendComments, group.sessionName, verbose, modelName);
-          await saveCachedMinutes(meetingId, session.sessionId, result.text);
-          recordUsage(result.usage);
-          console.log(`Amended: ${session.sessionId}`);
-        } catch (error) {
-          console.error(`Could not amend ${session.sessionId}: ${error.message}`);
-        }
-      }
+      await amendCachedSessions({
+        meetingId,
+        groupName: parsed.group,
+        comments: amendComments,
+        verbose,
+        modelName,
+      });
     }
 
     // OUTPUT STAGE: Generate markdown output files from cache for ALL meetings
