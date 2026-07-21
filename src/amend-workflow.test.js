@@ -10,6 +10,23 @@ function makeDependencies(overrides = {}) {
       slidesAndBluesheet: null,
       wgDocuments: [],
     }),
+    splitAmendComments: jest.fn((comments) => Promise.resolve({
+      transcriptInstructions: '',
+      minutesInstructions: comments,
+    })),
+    getTranscriptCorrections: jest.fn().mockResolvedValue([]),
+    filterTranscriptCorrections: jest.fn((corrections) => Promise.resolve(corrections)),
+    normalizeCorrections: jest.fn((raw) => (Array.isArray(raw) ? raw.map(({ from, to }) => ({ from, to })) : [])),
+    applyCorrections: jest.fn((transcript, corrections) => ({
+      text: transcript,
+      appliedCount: 0,
+      applied: [],
+    })),
+    getTranscriptCachePath: jest.fn((sessionId) => `cache/transcripts/${sessionId}.md`),
+    downloadTranscript: jest.fn().mockResolvedValue('Downloaded transcript'),
+    readFile: jest.fn().mockResolvedValue('Cached transcript text'),
+    writeFile: jest.fn().mockResolvedValue(),
+    existsSync: jest.fn().mockReturnValue(true),
     amendMinutes: jest.fn(),
     saveCachedMinutes: jest.fn(),
     recordUsage: jest.fn(),
@@ -106,7 +123,7 @@ test('uses full live context including WG documents for an amendment', async () 
   );
   expect(dependencies.getCachedMetadata).not.toHaveBeenCalled();
   expect(dependencies.amendMinutes).toHaveBeenCalledWith(
-    '# Existing', 'Correct it', '6LO', true, null, liveContext,
+    '# Existing', 'Correct it', '6LO', true, null, liveContext, null,
   );
 });
 
@@ -150,6 +167,7 @@ test('reconstructs cached slides and bluesheet context for each amendment', asyn
       polls: [{ text: 'Adopt?', yes: 10, no: 2 }],
       chat: [{ author: 'Alice', text: 'Correction' }],
     },
+    null,
   );
 });
 
@@ -194,6 +212,7 @@ test('falls back to cached context when live context fetch throws', async () => 
       polls: [],
       chat: [],
     },
+    null,
   );
   expect(dependencies.saveCachedMinutes).toHaveBeenCalledWith(126, 'IETF126-6LO-20250721-0900', '# Revised');
 });
@@ -246,6 +265,7 @@ test('falls back to cached context when live slides and bluesheet are empty', as
       polls: [],
       chat: [],
     },
+    null,
   );
 });
 
@@ -302,6 +322,7 @@ test('combines cached slides and bluesheet with live WG documents', async () => 
       polls: [],
       chat: [],
     },
+    null,
   );
 });
 
@@ -331,7 +352,7 @@ test.each([
 
   expect(dependencies.amendMinutes).toHaveBeenCalledWith(
     '# Existing', 'Fix it', '6LO', false, null,
-    { slidesAndBluesheet: null, wgDocuments: [] },
+    { slidesAndBluesheet: null, wgDocuments: [] }, null,
   );
 });
 
@@ -421,4 +442,246 @@ test('continues after a session fails, then reports the partial failure', async 
   expect(dependencies.saveCachedMinutes).toHaveBeenCalledWith(123, 'good', '# Revised good');
   expect(dependencies.logger.error).toHaveBeenCalledWith('Could not amend bad: cache read failed');
   expect(dependencies.logger.log).toHaveBeenCalledWith('Amended: good');
+});
+
+test('handles transcript instructions and rewrites existing cached transcript, passing diff to amendMinutes', async () => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: 'Fix Bob to Rob',
+      minutesInstructions: 'Update minutes writeup',
+      usage: { model: 'test', inputTokens: 5, outputTokens: 2 },
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing minutes'),
+    existsSync: jest.fn().mockReturnValue(true),
+    readFile: jest.fn().mockResolvedValue('Bob Smith discussed QUIC.'),
+    getTranscriptCorrections: jest.fn().mockResolvedValue([{ from: 'Bob Smith', to: 'Rob Smith' }]),
+    normalizeCorrections: jest.fn(raw => raw),
+    applyCorrections: jest.fn().mockReturnValue({
+      text: 'Rob Smith discussed QUIC.',
+      appliedCount: 1,
+      applied: [{ from: 'Bob Smith', to: 'Rob Smith' }],
+    }),
+    writeFile: jest.fn().mockResolvedValue(),
+    amendMinutes: jest.fn().mockResolvedValue({
+      text: '# Revised minutes',
+      usage: { model: 'test', inputTokens: 10, outputTokens: 5 },
+    }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix Bob to Rob and update writeup',
+    dependencies,
+  });
+
+  expect(dependencies.readFile).toHaveBeenCalledWith('cache/transcripts/6lo-1.md', 'utf8');
+  expect(dependencies.writeFile).toHaveBeenCalledWith(
+    'cache/transcripts/6lo-1.md',
+    'Rob Smith discussed QUIC.',
+    'utf8',
+  );
+  expect(dependencies.amendMinutes).toHaveBeenCalledWith(
+    '# Existing minutes',
+    'Update minutes writeup',
+    '6LO',
+    false,
+    null,
+    expect.anything(),
+    '- "Bob Smith" → "Rob Smith"',
+  );
+});
+
+test('runs filterTranscriptCorrections pass to filter out over-aggressive transcript edits', async () => {
+  const filteredResult = [{ from: 'Bob Smith', to: 'Rob Smith' }];
+  filteredResult.usage = { model: 'test', inputTokens: 4, outputTokens: 2 };
+  const filterMock = jest.fn().mockResolvedValue(filteredResult);
+
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: 'Fix Bob to Rob',
+      minutesInstructions: 'Update minutes writeup',
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing minutes'),
+    existsSync: jest.fn().mockReturnValue(true),
+    readFile: jest.fn().mockResolvedValue('Bob Smith discussed 6lo.'),
+    getTranscriptCorrections: jest.fn().mockResolvedValue([
+      { from: 'Bob Smith', to: 'Rob Smith' },
+      { from: '6lo', to: '6LO' },
+    ]),
+    filterTranscriptCorrections: filterMock,
+    normalizeCorrections: jest.fn(raw => (Array.isArray(raw) ? raw.map(({ from, to }) => ({ from, to })) : [])),
+    applyCorrections: jest.fn().mockReturnValue({
+      text: 'Rob Smith discussed 6lo.',
+      appliedCount: 1,
+      applied: [{ from: 'Bob Smith', to: 'Rob Smith' }],
+    }),
+    writeFile: jest.fn().mockResolvedValue(),
+    amendMinutes: jest.fn().mockResolvedValue({
+      text: '# Revised minutes',
+    }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix Bob to Rob and update writeup',
+    dependencies,
+  });
+
+  expect(dependencies.filterTranscriptCorrections).toHaveBeenCalledWith(
+    [
+      { from: 'Bob Smith', to: 'Rob Smith' },
+      { from: '6lo', to: '6LO' },
+    ],
+    'Fix Bob to Rob',
+    '6LO',
+    false,
+    null,
+  );
+  expect(dependencies.applyCorrections).toHaveBeenCalledWith(
+    'Bob Smith discussed 6lo.',
+    [{ from: 'Bob Smith', to: 'Rob Smith' }],
+  );
+  expect(dependencies.recordUsage).toHaveBeenCalledWith({
+    model: 'test',
+    inputTokens: 4,
+    outputTokens: 2,
+  });
+});
+
+
+test('downloads transcript when no cached transcript exists and applies corrections', async () => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1', recordingUrl: 'http://example.test' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: 'Fix Bob to Rob',
+      minutesInstructions: '',
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing minutes'),
+    existsSync: jest.fn().mockReturnValue(false),
+    downloadTranscript: jest.fn().mockResolvedValue('Downloaded Bob Smith transcript.'),
+    getTranscriptCorrections: jest.fn().mockResolvedValue([{ from: 'Bob Smith', to: 'Rob Smith' }]),
+    normalizeCorrections: jest.fn(raw => raw),
+    applyCorrections: jest.fn().mockReturnValue({
+      text: 'Downloaded Rob Smith transcript.',
+      appliedCount: 1,
+      applied: [{ from: 'Bob Smith', to: 'Rob Smith' }],
+    }),
+    writeFile: jest.fn().mockResolvedValue(),
+    amendMinutes: jest.fn().mockResolvedValue({
+      text: '# Revised minutes',
+      usage: { model: 'test', inputTokens: 10, outputTokens: 5 },
+    }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix transcript only',
+    dependencies,
+  });
+
+  expect(dependencies.downloadTranscript).toHaveBeenCalledWith({
+    sessionId: '6lo-1',
+    sessionName: '6LO',
+    recordingUrl: 'http://example.test',
+  });
+  expect(dependencies.writeFile).toHaveBeenCalledWith(
+    'cache/transcripts/6lo-1.md',
+    'Downloaded Rob Smith transcript.',
+    'utf8',
+  );
+  expect(dependencies.amendMinutes).toHaveBeenCalledWith(
+    '# Existing minutes',
+    '',
+    '6LO',
+    false,
+    null,
+    expect.anything(),
+    '- "Bob Smith" → "Rob Smith"',
+  );
+});
+
+test('skips transcript step when transcriptInstructions is empty', async () => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: '',
+      minutesInstructions: 'Only edit minutes',
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing minutes'),
+    amendMinutes: jest.fn().mockResolvedValue({
+      text: '# Revised minutes',
+      usage: { model: 'test', inputTokens: 10, outputTokens: 5 },
+    }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Only edit minutes',
+    dependencies,
+  });
+
+  expect(dependencies.readFile).not.toHaveBeenCalled();
+  expect(dependencies.downloadTranscript).not.toHaveBeenCalled();
+  expect(dependencies.amendMinutes).toHaveBeenCalledWith(
+    '# Existing minutes',
+    'Only edit minutes',
+    '6LO',
+    false,
+    null,
+    expect.anything(),
+    null,
+  );
+});
+
+test('splits comments once across multiple sessions in a WG', async () => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }, { sessionId: '6lo-2' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: 'Fix Bob to Rob',
+      minutesInstructions: 'Fix minutes',
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing'),
+    existsSync: jest.fn().mockReturnValue(true),
+    readFile: jest.fn().mockResolvedValue('Bob Smith'),
+    getTranscriptCorrections: jest.fn().mockResolvedValue([{ from: 'Bob Smith', to: 'Rob Smith' }]),
+    normalizeCorrections: jest.fn(raw => raw),
+    applyCorrections: jest.fn().mockReturnValue({
+      text: 'Rob Smith',
+      appliedCount: 1,
+      applied: [{ from: 'Bob Smith', to: 'Rob Smith' }],
+    }),
+    amendMinutes: jest.fn().mockResolvedValue({ text: '# Revised' }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix Bob and fix minutes',
+    dependencies,
+  });
+
+  expect(dependencies.splitAmendComments).toHaveBeenCalledTimes(1);
+  expect(dependencies.getTranscriptCorrections).toHaveBeenCalledTimes(2);
+  expect(dependencies.amendMinutes).toHaveBeenCalledTimes(2);
 });

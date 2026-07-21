@@ -28,6 +28,9 @@ const {
   assertTranscriptSubstantial,
   generateMinutes,
   amendMinutes,
+  splitAmendComments,
+  getTranscriptCorrections,
+  filterTranscriptCorrections,
   initializeClaude,
   initializeGemini,
   extractParticipantNames,
@@ -423,7 +426,132 @@ describe('amendMinutes', () => {
       usage: { model: 'claude-test', inputTokens: 321, outputTokens: 54 },
     });
   });
+
+  test('includes transcriptChanges block and accepts empty comments when transcriptChanges is set', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => '# Revised minutes',
+        usageMetadata: {},
+      },
+    });
+
+    const result = await amendMinutes('# Existing minutes', '', '6LO', false, null, null, '- "Bob Smith" → "Rob Smith"');
+    expect(result.text).toBe('# Revised minutes');
+    const prompt = mockGenerateContent.mock.calls[0][0];
+    expect(prompt).toContain('TRANSCRIPT CORRECTIONS:');
+    expect(prompt).toContain('The transcript was corrected as follows; reflect these corrections in the minutes where they appear:');
+    expect(prompt).toContain('- "Bob Smith" → "Rob Smith"');
+  });
 });
+
+describe('splitAmendComments', () => {
+  beforeEach(() => {
+    mockGenerateContent.mockReset();
+    mockCreate.mockReset();
+    initializeGemini('fake-api-key');
+  });
+
+  test('parses the two buckets from model JSON response', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify({
+          transcriptInstructions: 'Fix Bob Smith to Rob Smith',
+          minutesInstructions: 'Add action item for Rob',
+        }),
+        usageMetadata: { promptTokenCount: 50, candidatesTokenCount: 20 },
+      },
+    });
+
+    const result = await splitAmendComments('Fix Bob Smith and add action item', '6LO');
+    expect(result.transcriptInstructions).toBe('Fix Bob Smith to Rob Smith');
+    expect(result.minutesInstructions).toBe('Add action item for Rob');
+    expect(result.usage).toEqual({ model: 'gemini-3.5-flash', inputTokens: 50, outputTokens: 20 });
+  });
+
+  test('returns empty instructions when comments input is empty', async () => {
+    const result = await splitAmendComments('', '6LO');
+    expect(result).toEqual({ transcriptInstructions: '', minutesInstructions: '', usage: null });
+  });
+});
+
+describe('getTranscriptCorrections', () => {
+  beforeEach(() => {
+    mockGenerateContent.mockReset();
+    mockCreate.mockReset();
+    initializeGemini('fake-api-key');
+  });
+
+  test('returns {from,to}[] and attaches usage', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify([
+          { from: 'Bob Smith', to: 'Rob Smith' },
+        ]),
+        usageMetadata: { promptTokenCount: 30, candidatesTokenCount: 10 },
+      },
+    });
+
+    const result = await getTranscriptCorrections('Bob Smith spoke', 'Fix Bob Smith to Rob Smith', '6LO');
+    expect(Array.isArray(result)).toBe(true);
+    expect([...result]).toEqual([{ from: 'Bob Smith', to: 'Rob Smith' }]);
+    expect(result.usage).toEqual({ model: 'gemini-3.5-flash', inputTokens: 30, outputTokens: 10 });
+  });
+
+  test('returns empty array when instructions are empty', async () => {
+    const result = await getTranscriptCorrections('Bob Smith spoke', '', '6LO');
+    expect([...result]).toEqual([]);
+    expect(result.usage).toBeNull();
+  });
+});
+
+describe('filterTranscriptCorrections', () => {
+  beforeEach(() => {
+    mockGenerateContent.mockReset();
+    mockCreate.mockReset();
+    initializeGemini('fake-api-key');
+  });
+
+  test('filters out unwanted corrections and attaches usage', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify([
+          { from: 'Bob Smith', to: 'Rob Smith' },
+        ]),
+        usageMetadata: { promptTokenCount: 40, candidatesTokenCount: 15 },
+      },
+    });
+
+    const proposed = [
+      { from: 'Bob Smith', to: 'Rob Smith' },
+      { from: 'unwanted WG fix', to: 'desired WG' },
+    ];
+    const result = await filterTranscriptCorrections(proposed, 'Fix Bob Smith to Rob Smith', '6LO');
+    expect(Array.isArray(result)).toBe(true);
+    expect([...result]).toEqual([{ from: 'Bob Smith', to: 'Rob Smith' }]);
+    expect(result.usage).toEqual({ model: 'gemini-3.5-flash', inputTokens: 40, outputTokens: 15 });
+    const prompt = mockGenerateContent.mock.calls[0][0];
+    expect(prompt).toContain('REQUESTED TRANSCRIPT EDITS:');
+    expect(prompt).toContain('Fix Bob Smith to Rob Smith');
+    expect(prompt).toContain('PROPOSED TRANSCRIPT CORRECTIONS (DIFF):');
+    expect(prompt).toContain('- "Bob Smith" → "Rob Smith"');
+  });
+
+  test('returns empty array when input corrections array is empty', async () => {
+    const result = await filterTranscriptCorrections([], 'Fix Bob Smith to Rob Smith', '6LO');
+    expect([...result]).toEqual([]);
+    expect(result.usage).toBeNull();
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+
+  test('returns empty array when instructions are empty', async () => {
+    const proposed = [{ from: 'Bob Smith', to: 'Rob Smith' }];
+    const result = await filterTranscriptCorrections(proposed, '', '6LO');
+    expect([...result]).toEqual([{ from: 'Bob Smith', to: 'Rob Smith' }]);
+    expect(result.usage).toBeNull();
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+});
+
 
 describe('extractParticipantNames', () => {
   test('returns an empty array when bluesheet is null/undefined/empty', () => {

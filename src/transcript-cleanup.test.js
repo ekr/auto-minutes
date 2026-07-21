@@ -12,6 +12,7 @@ const {
   getCorrectionsFromGemini,
   normalizeCorrections,
   applyCorrections,
+  parseJson,
 } = await import('./transcript-cleanup.js');
 
 test('buildCleanupReference includes names, active drafts, and slide titles', () => {
@@ -53,7 +54,7 @@ test('applyCorrections replaces every literal occurrence and skips absent source
     { from: 'a.b', to: 'QUIC' },
     { from: 'absent', to: 'unused' },
   ]);
-  expect(result).toEqual({ text: 'QUIC then QUIC', appliedCount: 1 });
+  expect(result).toEqual({ text: 'QUIC then QUIC', appliedCount: 1, applied: [{ from: 'a.b', to: 'QUIC' }] });
 });
 
 test.each([
@@ -72,4 +73,41 @@ test.each([
   expect(usage).toEqual({ inputTokens: 40, outputTokens: 8, model: 'gemini-3.5-flash' });
   const contents = mockGenerateContent.mock.calls.at(-1)[0];
   expect(contents.some(item => item.fileData)).toBe(false);
+});
+
+describe('parseJson', () => {
+  test('parses clean JSON objects and arrays', () => {
+    expect(parseJson('{"a": 1}')).toEqual({ a: 1 });
+    expect(parseJson('[1, 2, 3]')).toEqual([1, 2, 3]);
+  });
+
+  test('parses JSON with extra trailing brace (the feared Gemini extra brace)', () => {
+    const raw = `{\n  "transcriptInstructions": "Usama Saleem is actually Muhammad Usama Sardar",\n  "minutesInstructions": ""\n}\n}`;
+    expect(parseJson(raw)).toEqual({
+      transcriptInstructions: "Usama Saleem is actually Muhammad Usama Sardar",
+      minutesInstructions: "",
+    });
+  });
+
+  test('parses markdown code blocks with extra trailing brace', () => {
+    const raw = '```json\n{\n  "transcriptInstructions": "foo",\n  "minutesInstructions": "bar"\n}\n}\n```';
+    expect(parseJson(raw)).toEqual({
+      transcriptInstructions: "foo",
+      minutesInstructions: "bar",
+    });
+  });
+
+  test('parses JSON arrays with extra trailing bracket', () => {
+    const raw = '[{"from":"quick","to":"QUIC"}]]';
+    expect(parseJson(raw)).toEqual([{ from: 'quick', to: 'QUIC' }]);
+  });
+
+  test('parses JSON with surrounding non-JSON text', () => {
+    const raw = 'Here is your JSON response:\n{"key": "value"}\nHope this helps!';
+    expect(parseJson(raw)).toEqual({ key: 'value' });
+  });
+
+  test('throws on unparseable non-JSON text', () => {
+    expect(() => parseJson('no json here')).toThrow(SyntaxError);
+  });
 });
