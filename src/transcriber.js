@@ -950,12 +950,37 @@ const DEEPGRAM_LISTEN_URL = "https://api.deepgram.com/v1/listen";
 // Cap on total keyterms sent to Deepgram, to keep the request URL a sane size.
 const MAX_DEEPGRAM_KEYTERMS = 100;
 
+// Deepgram rejects requests whose keyterms sum to more than 500 tokens across
+// all keyterms ("Keyterm limit exceeded"). We don't have Deepgram's tokenizer,
+// so we estimate conservatively and stay under a safety margin below 500.
+const DEEPGRAM_KEYTERM_TOKEN_BUDGET = 450;
+
+/**
+ * Conservatively estimate how many tokens Deepgram will count for a keyterm.
+ * Deepgram appears to split on whitespace and hyphens (e.g. draft names like
+ * `draft-ietf-foo-bar`) and may break long words into sub-word pieces, so we
+ * over-count rather than risk exceeding the hard limit.
+ * @param {string} term
+ * @returns {number} Estimated token count (at least 1)
+ */
+function estimateKeytermTokens(term) {
+  const segments = term.split(/[\s-]+/).filter(Boolean);
+  let tokens = 0;
+  for (const segment of segments) {
+    tokens += Math.max(1, Math.ceil(segment.length / 6));
+  }
+  return Math.max(1, tokens);
+}
+
 /**
  * Build a deduped (case-insensitive), capped list of domain keyterms for
  * Deepgram keyterm boosting, seeded from the session's bluesheet participant
- * names and active draft names.
+ * names and active draft names. The list is capped both by term count
+ * (MAX_DEEPGRAM_KEYTERMS) and by estimated total tokens
+ * (DEEPGRAM_KEYTERM_TOKEN_BUDGET) so the request stays under Deepgram's
+ * 500-token keyterm limit.
  * @param {Object|null} context - Pre-fetched session context
- * @returns {string[]} Keyterms, capped to MAX_DEEPGRAM_KEYTERMS
+ * @returns {string[]} Keyterms, capped by count and estimated token budget
  */
 export function buildDeepgramKeyterms(context) {
   const participantNames = extractParticipantNames(context?.slidesAndBluesheet?.bluesheet);
@@ -963,11 +988,17 @@ export function buildDeepgramKeyterms(context) {
 
   const seen = new Set();
   const keyterms = [];
+  let tokenBudget = DEEPGRAM_KEYTERM_TOKEN_BUDGET;
   for (const term of [...participantNames, ...draftNames]) {
     const key = term.toLowerCase();
     if (seen.has(key)) continue;
+    const tokens = estimateKeytermTokens(term);
+    // Skip (don't stop) terms that don't fit, so shorter later terms can still
+    // be included once budget runs low.
+    if (tokens > tokenBudget) continue;
     seen.add(key);
     keyterms.push(term);
+    tokenBudget -= tokens;
     if (keyterms.length >= MAX_DEEPGRAM_KEYTERMS) break;
   }
   return keyterms;

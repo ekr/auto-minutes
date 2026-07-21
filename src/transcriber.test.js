@@ -809,6 +809,33 @@ describe('buildDeepgramKeyterms', () => {
     expect(keyterms).toHaveLength(100);
   });
 
+  test('caps the combined list by estimated token budget, staying under Deepgram\'s 500-token limit', () => {
+    // Long hyphenated draft names are token-heavy: Deepgram counts tokens
+    // across all keyterms, and 100 of these would blow past the 500 limit.
+    const wgDocuments = Array.from({ length: 100 }, (_, i) => ({
+      Name: `draft-ietf-very-long-working-group-document-number-${i}`,
+      Title: `Doc ${i}`,
+      'Status in the IETF process': 'Active',
+    }));
+
+    const keyterms = buildDeepgramKeyterms({ wgDocuments });
+
+    // Fewer than the 100-count cap, because the token budget kicks in first.
+    expect(keyterms.length).toBeLessThan(100);
+    expect(keyterms.length).toBeGreaterThan(0);
+
+    // Estimate tokens the same conservative way the implementation does and
+    // confirm we stay comfortably under Deepgram's hard 500-token limit.
+    const totalTokens = keyterms.reduce((sum, term) => {
+      const segTokens = term
+        .split(/[\s-]+/)
+        .filter(Boolean)
+        .reduce((s, seg) => s + Math.max(1, Math.ceil(seg.length / 6)), 0);
+      return sum + Math.max(1, segTokens);
+    }, 0);
+    expect(totalTokens).toBeLessThanOrEqual(500);
+  });
+
   test('returns an empty list when context is null', () => {
     expect(buildDeepgramKeyterms(null)).toEqual([]);
   });
