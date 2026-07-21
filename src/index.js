@@ -754,6 +754,11 @@ async function main() {
       default: false,
       description: "Skip the minimum-word-count check on transcripts (for legitimately short sessions)",
     })
+    .option("ignore-failures", {
+      type: "boolean",
+      default: false,
+      description: "Exit 0 even when sessions are skipped due to genuine failures (transcription/API errors); skipped sessions are still reported",
+    })
     .check((argv) => {
       if (!argv.summarize && !argv.output && !argv.build && !argv.pages && !argv.preview && !argv.uncache && !argv.uncacheRemote) {
         throw new Error(
@@ -1393,7 +1398,11 @@ async function main() {
     }
 
     if (shouldExitNonZero(allSkipped)) {
-      process.exitCode = 1;
+      if (argv.ignoreFailures) {
+        console.log("\n--ignore-failures set: exiting 0 despite skipped session failures above.");
+      } else {
+        process.exitCode = 1;
+      }
     }
   } catch (error) {
     console.error("Error:", error.message);
