@@ -15,6 +15,7 @@ import fetch from "node-fetch";
 import { downloadTranscript } from "./scraper.js";
 import { buildContextPrompt, assertTranscriptPresent, transcriptWordCount, extractParticipantNames, activeDraftNames } from "./generator.js";
 import { getSpeakerMapFromGemini, normalizeSpeakerMap, applySpeakerMap, formatOffset, parseOffset } from "./speaker-names.js";
+import { buildCleanupReference, getCorrectionsFromGemini, normalizeCorrections, applyCorrections } from "./transcript-cleanup.js";
 import { recordUsage } from "./accounting.js";
 
 const AUDIO_CACHE_DIR = path.join("cache", "audio");
@@ -1310,14 +1311,27 @@ async function downloadSessionAudio(session, verbose = false) {
 }
 
 /**
- * Parse a "+names" hybrid suffix off an --stt-model string.
- * @param {string} sttModel - e.g. "google:chirp_3+names", "google", "gemini"
- * @returns {{baseSttModel: string, hybridNames: boolean}}
+ * Parse "+names" and "+cleanup" suffixes off an --stt-model string.
+ * @returns {{baseSttModel: string, hybridNames: boolean, cleanup: boolean}}
  */
 export function parseSttModel(sttModel) {
-  const hybridNames = sttModel.endsWith("+names");
-  const baseSttModel = hybridNames ? sttModel.slice(0, -"+names".length) : sttModel;
-  return { baseSttModel, hybridNames };
+  let baseSttModel = sttModel;
+  let hybridNames = false;
+  let cleanup = false;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    if (baseSttModel.endsWith("+cleanup")) {
+      cleanup = true;
+      baseSttModel = baseSttModel.slice(0, -"+cleanup".length);
+      changed = true;
+    } else if (baseSttModel.endsWith("+names")) {
+      hybridNames = true;
+      baseSttModel = baseSttModel.slice(0, -"+names".length);
+      changed = true;
+    }
+  }
+  return { baseSttModel, hybridNames, cleanup };
 }
 
 /**
@@ -1347,11 +1361,24 @@ export async function applyNameHybrid(chirpTranscript, apiKey, context, verbose 
   }
 }
 
+export async function applyCleanupHybrid(transcript, apiKey, context, verbose = false) {
+  try {
+    const usage = { inputTokens: 0, outputTokens: 0, model: "gemini-3.5-flash" };
+    const raw = await getCorrectionsFromGemini(apiKey, "gemini-3.5-flash", transcript, buildCleanupReference(context), verbose, usage);
+    const { text, appliedCount } = applyCorrections(transcript, normalizeCorrections(raw));
+    if (verbose) console.log(`    [Transcribe] Applied ${appliedCount} transcript cleanup correction(s)`);
+    return { text, usage };
+  } catch (error) {
+    console.warn(`  Warning: transcript cleanup failed (${error.message}); keeping transcript unchanged`);
+    return { text: transcript, usage: undefined };
+  }
+}
+
 /**
  * Full pipeline: fetch audio stream, download (with cache), transcribe (with cache)
  * @param {Object} session - Session object with sessionId
- * @param {string} sttModel - STT model: "gemini", "google", "google:chirp_2", "google:chirp_3", "deepgram", "deepgram:nova-2", "deepgram:nova-3", or a "+names" hybrid of a diarizing backend (e.g. "google:chirp_3+names", "deepgram:nova-3+names"); chirp_2 has no diarization, so "+names" is not meaningful with it
- * @param {string} apiKey - Gemini API key (required for sttModel "gemini" or a "+names" hybrid)
+ * @param {string} sttModel - STT model, optionally suffixed with "+cleanup" and, for diarizing backends, "+names"
+ * @param {string} apiKey - Gemini API key (required for "gemini", "+names", or "+cleanup")
  * @param {boolean} verbose - Whether to log verbose output
  * @param {Object} context - Pre-fetched session context (optional, passed to Gemini STT and the "+names" hybrid)
  * @param {string|null} localAudioPath - Path to a local audio/video file to use instead of Meetecho (optional)
@@ -1508,6 +1535,14 @@ export async function transcribeSession(session, sttModel, apiKey, verbose = fal
         console.warn(`  Warning: Audio transcript appears truncated (${audioWords} words vs ${officialWordCount} official, ratio ${ratio.toFixed(2)})`);
       }
     }
+  }
+
+  const { cleanup } = parseSttModel(sttModel);
+  if (cleanup) {
+    console.log("  Cleaning up transcript with Gemini (text-only, no audio upload)...");
+    const result = await applyCleanupHybrid(transcript, apiKey, context, verbose);
+    transcript = result.text;
+    if (result.usage) recordUsage(result.usage);
   }
 
   // Validate before caching so a failed/empty transcription can never poison the cache.

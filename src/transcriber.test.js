@@ -146,6 +146,7 @@ const {
   parseSttModel,
   formatDiarizedTranscript,
   applyNameHybrid,
+  applyCleanupHybrid,
   transcribeAudioDeepgram,
   formatDeepgramTranscript,
   buildDeepgramKeyterms,
@@ -559,26 +560,32 @@ describe('transcribeAudio upload wiring', () => {
 
 describe('parseSttModel', () => {
   test('plain google model has no hybrid suffix', () => {
-    expect(parseSttModel('google')).toEqual({ baseSttModel: 'google', hybridNames: false });
+    expect(parseSttModel('google')).toEqual({ baseSttModel: 'google', hybridNames: false, cleanup: false });
   });
 
   test('gemini model has no hybrid suffix', () => {
-    expect(parseSttModel('gemini')).toEqual({ baseSttModel: 'gemini', hybridNames: false });
+    expect(parseSttModel('gemini')).toEqual({ baseSttModel: 'gemini', hybridNames: false, cleanup: false });
   });
 
   test('strips "+names" and keeps the chirp variant intact', () => {
-    expect(parseSttModel('google:chirp_3+names')).toEqual({ baseSttModel: 'google:chirp_3', hybridNames: true });
-    expect(parseSttModel('google:chirp_2+names')).toEqual({ baseSttModel: 'google:chirp_2', hybridNames: true });
-    expect(parseSttModel('google+names')).toEqual({ baseSttModel: 'google', hybridNames: true });
+    expect(parseSttModel('google:chirp_3+names')).toEqual({ baseSttModel: 'google:chirp_3', hybridNames: true, cleanup: false });
+    expect(parseSttModel('google:chirp_2+names')).toEqual({ baseSttModel: 'google:chirp_2', hybridNames: true, cleanup: false });
+    expect(parseSttModel('google+names')).toEqual({ baseSttModel: 'google', hybridNames: true, cleanup: false });
   });
 
   test('strips "+names" and keeps the deepgram variant intact', () => {
-    expect(parseSttModel('deepgram:nova-3+names')).toEqual({ baseSttModel: 'deepgram:nova-3', hybridNames: true });
-    expect(parseSttModel('deepgram+names')).toEqual({ baseSttModel: 'deepgram', hybridNames: true });
+    expect(parseSttModel('deepgram:nova-3+names')).toEqual({ baseSttModel: 'deepgram:nova-3', hybridNames: true, cleanup: false });
+    expect(parseSttModel('deepgram+names')).toEqual({ baseSttModel: 'deepgram', hybridNames: true, cleanup: false });
   });
 
   test('plain deepgram model has no hybrid suffix', () => {
-    expect(parseSttModel('deepgram:nova-3')).toEqual({ baseSttModel: 'deepgram:nova-3', hybridNames: false });
+    expect(parseSttModel('deepgram:nova-3')).toEqual({ baseSttModel: 'deepgram:nova-3', hybridNames: false, cleanup: false });
+  });
+
+  test('parses cleanup alone and with names in either order', () => {
+    expect(parseSttModel('deepgram:nova-3+cleanup')).toEqual({ baseSttModel: 'deepgram:nova-3', hybridNames: false, cleanup: true });
+    expect(parseSttModel('deepgram:nova-3+names+cleanup')).toEqual({ baseSttModel: 'deepgram:nova-3', hybridNames: true, cleanup: true });
+    expect(parseSttModel('deepgram:nova-3+cleanup+names')).toEqual({ baseSttModel: 'deepgram:nova-3', hybridNames: true, cleanup: true });
   });
 });
 
@@ -713,6 +720,20 @@ describe('applyNameHybrid', () => {
     errorSpy.mockRestore();
     jest.useRealTimers();
   }, 15000);
+});
+
+describe('applyCleanupHybrid', () => {
+  test('fails soft and returns the byte-for-byte original transcript', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockGenerateContent.mockRejectedValueOnce(new Error('gemini unavailable'));
+    const original = '[00:00:01] Speaker 1: um, draft eye tea eff.';
+
+    const result = await applyCleanupHybrid(original, 'fake-key', null, false);
+
+    expect(result).toEqual({ text: original, usage: undefined });
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
 });
 
 function makeDeepgramResponse({ ok = true, status = 200, statusText = 'OK', body = {} } = {}) {
@@ -1105,6 +1126,42 @@ describe('transcribeSession deepgram dispatch', () => {
     expect(result.usage).toEqual({ model: 'deepgram:nova-3', audioSeconds: 1800, inputTokens: 0, outputTokens: 0 });
     expect(mockRecordUsage).toHaveBeenCalledWith({ inputTokens: 40, outputTokens: 8, model: 'gemini-3.5-flash' });
     expect(mockWriteFile).toHaveBeenCalled();
+  });
+
+  test('applies "+cleanup" before caching while preserving backend usage and recording cleanup usage separately', async () => {
+    mockExistsSync.mockImplementation((p) => p === getAudioCachePath(sessionId));
+    mockSpawn.mockImplementation(() => makeMockChild({ stdout: '1800' })); // 30 minutes of audio
+    mockFetch.mockReset().mockImplementation(async (url) => {
+      if (typeof url === 'string' && url.startsWith('https://api.deepgram.com/')) {
+        return makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY });
+      }
+      return makeChunkResponse();
+    });
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify([{ from: 'Hello there', to: 'Hello TLS' }]),
+        usageMetadata: { promptTokenCount: 55, candidatesTokenCount: 7 },
+      },
+    });
+
+    const result = await transcribeSession(session, 'deepgram:nova-3+cleanup', 'fake-gemini-key');
+
+    const cleanedTranscript = '[00:00:00] Speaker 0: Hello TLS,\n[00:00:05] Speaker 1: Hi';
+    expect(result).toEqual({
+      text: cleanedTranscript,
+      usage: { model: 'deepgram:nova-3', audioSeconds: 1800, inputTokens: 0, outputTokens: 0 },
+    });
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      getTranscriptCachePath(sessionId),
+      cleanedTranscript,
+      'utf-8',
+    );
+    expect(mockRecordUsage).toHaveBeenCalledTimes(1);
+    expect(mockRecordUsage).toHaveBeenCalledWith({
+      inputTokens: 55,
+      outputTokens: 7,
+      model: 'gemini-3.5-flash',
+    });
   });
 
   test('deepgram without "+names" produces "Speaker N" labels and zero token usage', async () => {
