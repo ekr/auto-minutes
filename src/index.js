@@ -10,7 +10,7 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments } from "./scraper.js";
+import { fetchSessionsFromProceedings, fetchSessionsFromAgenda, downloadTranscript, fetchSessionsWithValidation, fetchCurrentMeetingNumber, fetchInterimSession, fetchAllInterimSessions, fetchInterimSessionsInRange, fetchSessionSlidesAndBluesheet, fetchWorkingGroupDocuments, fetchSessionPolls, fetchSessionChatlog } from "./scraper.js";
 import { initializeClaude, generateMinutes, setGenerationTimeout, assertTranscriptPresent, assertTranscriptSubstantial } from "./generator.js";
 import { amendCachedSessions } from "./amend-workflow.js";
 import { transcribeSession, getTranscriptCachePath, getAudioCachePath, prepareLocalTranscript, parseSttModel } from "./transcriber.js";
@@ -65,7 +65,7 @@ function sessionSlugFromId(sessionId) {
  * (meetingSlug present on the session object, e.g. "interim-2026-dnssd-01").
  * Returns null gracefully when fetches fail.
  * @param {Object} session - Session object with sessionId (and optionally meetingSlug) property
- * @returns {Promise<{slidesAndBluesheet: Object|null, wgDocuments: Array}>}
+ * @returns {Promise<{slidesAndBluesheet: Object|null, wgDocuments: Array, polls: Array, chat: Array}>}
  */
 async function fetchContextForSession(session) {
   let meetingIdentifier;
@@ -80,12 +80,14 @@ async function fetchContextForSession(session) {
     meetingIdentifier = session.meetingSlug;
     sessionSlug = session.sessionName.toLowerCase();
   } else {
-    return { slidesAndBluesheet: null, wgDocuments: [] };
+    return { slidesAndBluesheet: null, wgDocuments: [], polls: [], chat: [] };
   }
 
-  const [slidesResult, docsResult] = await Promise.allSettled([
+  const [slidesResult, docsResult, pollsResult, chatResult] = await Promise.allSettled([
     fetchSessionSlidesAndBluesheet(meetingIdentifier, sessionSlug),
     fetchWorkingGroupDocuments(sessionSlug),
+    fetchSessionPolls(meetingIdentifier, session.sessionId, session.meetingSlug),
+    fetchSessionChatlog(meetingIdentifier, session.sessionId, session.meetingSlug),
   ]);
 
   if (verbose && slidesResult.status === 'rejected') {
@@ -94,10 +96,14 @@ async function fetchContextForSession(session) {
   if (verbose && docsResult.status === 'rejected') {
     console.log(`    [context] Could not fetch WG documents: ${docsResult.reason?.message}`);
   }
+  if (verbose && pollsResult.status === 'rejected') console.log(`    [context] Could not fetch polls: ${pollsResult.reason?.message}`);
+  if (verbose && chatResult.status === 'rejected') console.log(`    [context] Could not fetch chat: ${chatResult.reason?.message}`);
 
   return {
     slidesAndBluesheet: slidesResult.status === 'fulfilled' ? slidesResult.value : null,
     wgDocuments: docsResult.status === 'fulfilled' ? docsResult.value : [],
+    polls: pollsResult.status === 'fulfilled' ? pollsResult.value : [],
+    chat: chatResult.status === 'fulfilled' ? chatResult.value : [],
   };
 }
 
@@ -170,6 +176,8 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
       console.log(`  Fetched bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
     }
   }
+  console.log(`  Fetched ${context.polls.length} poll(s)`);
+  console.log(`  Fetched ${context.chat.length} chat message(s)`);
 
   // Download transcript - from local file, audio (via STT), or text
   let transcript;
@@ -193,12 +201,12 @@ async function generateSessionMinutes(meetingNumber, session, sttModel = null, m
     return { minutes: "", wasGenerated: false, reason: error.message, recordingUnavailable: isRecordingUnavailable(error.message) };
   }
 
-  if (context.slidesAndBluesheet) {
-    await saveCacheMetadata(meetingNumber, session.sessionId, {
-      slides: context.slidesAndBluesheet.slides || [],
-      bluesheetText: context.slidesAndBluesheet.bluesheet || null,
-    });
-  }
+  await saveCacheMetadata(meetingNumber, session.sessionId, {
+    slides: context.slidesAndBluesheet?.slides || [],
+    bluesheetText: context.slidesAndBluesheet?.bluesheet || null,
+    polls: context.polls || [],
+    chat: context.chat || [],
+  });
 
   // Generate minutes using LLM
   console.log(`  Generating minutes with LLM: ${session.sessionId}`);
@@ -1126,6 +1134,8 @@ async function main() {
             console.log(`  Fetched bluesheet (${context.slidesAndBluesheet.bluesheet.length} chars)`);
           }
         }
+        console.log(`  Fetched ${context.polls.length} poll(s)`);
+        console.log(`  Fetched ${context.chat.length} chat message(s)`);
 
         // Download transcript (no cache) - from local file, audio, or text
         let transcript;

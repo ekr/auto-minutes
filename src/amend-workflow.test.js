@@ -72,7 +72,12 @@ test('reconstructs cached slides and bluesheet context for each amendment', asyn
       sessions: [{ sessionId: '6lo-1' }],
     }]),
     getCachedMinutes: jest.fn().mockResolvedValue('# Existing'),
-    getCachedMetadata: jest.fn().mockResolvedValue({ slides, bluesheetText }),
+    getCachedMetadata: jest.fn().mockResolvedValue({
+      slides,
+      bluesheetText,
+      polls: [{ text: 'Adopt?', yes: 10, no: 2 }],
+      chat: [{ author: 'Alice', text: 'Correction' }],
+    }),
     amendMinutes: jest.fn().mockResolvedValue({
       text: '# Revised',
       usage: { model: 'gemini-test', inputTokens: 10, outputTokens: 5 },
@@ -95,6 +100,8 @@ test('reconstructs cached slides and bluesheet context for each amendment', asyn
     {
       slidesAndBluesheet: { slides, bluesheet: bluesheetText },
       wgDocuments: [],
+      polls: [{ text: 'Adopt?', yes: 10, no: 2 }],
+      chat: [{ author: 'Alice', text: 'Correction' }],
     },
   );
 });

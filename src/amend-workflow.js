@@ -56,6 +56,8 @@ export async function amendCachedSessions({
               bluesheet: metadata.bluesheetText || null,
             },
             wgDocuments: [],
+            polls: metadata.polls || [],
+            chat: metadata.chat || [],
           }
         : null;
       const result = await reviseMinutes(existingMinutes, comments, group.sessionName, verbose, modelName, context);

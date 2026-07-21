@@ -31,7 +31,46 @@ const {
   initializeClaude,
   initializeGemini,
   extractParticipantNames,
+  buildContextPrompt,
 } = await import('./generator.js');
+
+describe('buildContextPrompt poll and chat context', () => {
+  test('renders authoritative poll questions and available counts', () => {
+    const prompt = buildContextPrompt({ polls: [{
+      text: 'Should the WG adopt this draft?', yes: 10, no: 2,
+      no_opinion: 9, present_when_poll_closed: 31,
+    }] }, 'CBOR');
+    expect(prompt).toContain('Session Polls:');
+    expect(prompt).toContain('Should the WG adopt this draft?');
+    expect(prompt).toContain('yes: 10, no: 2, no opinion: 9, present when poll closed: 31');
+    expect(prompt).toContain('authoritative recorded results');
+    expect(prompt).toContain('do not invent polls');
+  });
+
+  test('renders chat messages and their record guardrail', () => {
+    const prompt = buildContextPrompt({ chat: [{ author: 'Alice', text: 'The link is corrected.' }] }, 'CBOR');
+    expect(prompt).toContain('Session Chat Log:');
+    expect(prompt).toContain('Alice: The link is corrected.');
+    expect(prompt).toContain('part of the session record');
+    expect(prompt).toContain('not a license to invent content');
+  });
+
+  test('omits poll and chat sections when neither has entries', () => {
+    const prompt = buildContextPrompt({}, 'CBOR');
+    expect(prompt).not.toContain('Session Polls:');
+    expect(prompt).not.toContain('Session Chat Log:');
+  });
+
+  test('caps rendered chat and marks truncation', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const chat = Array.from({ length: 801 }, (_, i) => ({ author: `A${i}`, text: 'message' }));
+    const prompt = buildContextPrompt({ chat }, 'CBOR');
+    expect(prompt).toContain('… (chat truncated)');
+    expect(prompt).not.toContain('A800: message');
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
 
 describe('assertTranscriptPresent', () => {
   test('throws on an empty string', () => {
@@ -160,6 +199,15 @@ describe('generateMinutes', () => {
     );
     expect(mockGenerateContent).not.toHaveBeenCalled();
     expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  test('uses authoritative poll guardrails and removes the permissive old phrasing', async () => {
+    mockGenerateContent.mockResolvedValue({ response: { text: () => '# Minutes', usageMetadata: {} } });
+    initializeGemini('fake-api-key');
+    await generateMinutes('A substantial transcript.', 'Test Session');
+    const prompt = mockGenerateContent.mock.calls[0][0];
+    expect(prompt).toContain('if no poll data is provided, do not state specific poll outcomes or vote counts');
+    expect(prompt).not.toContain("It's OK to say things like \"a poll of the room was taken\"");
   });
 });
 

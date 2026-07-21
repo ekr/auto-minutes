@@ -17,7 +17,13 @@ jest.unstable_mockModule('node-fetch', () => ({
   default: mockFetch,
 }));
 
-const { downloadTranscript } = await import('./scraper.js');
+const {
+  buildMaterialDocName,
+  downloadTranscript,
+  fetchSessionChatlog,
+  fetchSessionMaterialJson,
+  fetchSessionPolls,
+} = await import('./scraper.js');
 const { prepareLocalTranscript, fetchCloudflareVideoId } = await import('./transcriber.js');
 const { isRecordingUnavailable } = await import('./skip-classifier.js');
 
@@ -30,6 +36,55 @@ function makeResponse({ ok = true, status = 200, statusText = 'OK', contentType 
     text: async () => body,
   };
 }
+
+describe('session poll and chat materials', () => {
+  beforeEach(() => mockFetch.mockReset());
+
+  test.each([
+    ['polls', 'IETF124-CBOR-20251107-0930', undefined, 'polls-124-cbor-202511070930'],
+    ['chatlog', 'IETF124-CBOR-20251107-0930', undefined, 'chatlog-124-cbor-202511070930'],
+    ['polls', 'IETF112-RTG-AREA-20211112-1200', undefined, 'polls-112-rtg-area-202111121200'],
+    ['polls', 'INTERIM-NETMOD-20240206-0900', 'interim-2024-netmod-02', 'polls-interim-2024-netmod-02-202402060900'],
+  ])('buildMaterialDocName builds %s names', (kind, sessionId, meetingSlug, expected) => {
+    expect(buildMaterialDocName(kind, sessionId, meetingSlug)).toBe(expected);
+  });
+
+  test('fetchSessionMaterialJson returns a JSON array', async () => {
+    const polls = [{ text: 'Adopt?', yes: 10, no: 2 }];
+    mockFetch.mockResolvedValue(makeResponse({ body: JSON.stringify(polls) }));
+    await expect(fetchSessionMaterialJson(124, 'polls-124-cbor-202511070930')).resolves.toEqual(polls);
+  });
+
+  test('fetchSessionMaterialJson returns [] for an HTML 404', async () => {
+    mockFetch.mockResolvedValue(makeResponse({ ok: false, status: 404, statusText: 'Not Found', contentType: 'text/html', body: '<html>missing</html>' }));
+    await expect(fetchSessionMaterialJson(124, 'polls-missing')).resolves.toEqual([]);
+  });
+
+  test('fetchSessionChatlog strips HTML from message text', async () => {
+    mockFetch.mockResolvedValue(makeResponse({ body: JSON.stringify([
+      { author: 'Alice', time: '2025-11-07T09:31:00Z', text: '<p>hi</p>' },
+    ]) }));
+    await expect(fetchSessionChatlog(124, 'IETF124-CBOR-20251107-0930')).resolves.toEqual([
+      { author: 'Alice', time: '2025-11-07T09:31:00Z', text: 'hi' },
+    ]);
+  });
+
+  test('falls back to the newest API prefix match when the exact material is missing', async () => {
+    mockFetch
+      .mockResolvedValueOnce(makeResponse({ ok: false, status: 404, statusText: 'Not Found' }))
+      .mockResolvedValueOnce(makeResponse({ body: JSON.stringify({ objects: [
+        { name: 'polls-124-cbor-202511070900', time: '2025-11-07T09:00:00Z' },
+        { name: 'polls-124-cbor-202511070945', time: '2025-11-07T09:45:00Z' },
+      ] }) }))
+      .mockResolvedValueOnce(makeResponse({ body: JSON.stringify([{ text: 'Newest poll', yes: 4 }]) }));
+
+    await expect(fetchSessionPolls(124, 'IETF124-CBOR-20251107-0930')).resolves.toEqual([
+      { text: 'Newest poll', yes: 4 },
+    ]);
+    expect(mockFetch.mock.calls[1][0]).toContain('name__startswith=polls-124-cbor');
+    expect(mockFetch.mock.calls[2][0]).toContain('/materials/polls-124-cbor-202511070945');
+  });
+});
 
 describe('downloadTranscript', () => {
   const session = { sessionId: 'IETF126-DISPATCH-20260720-0700' };
