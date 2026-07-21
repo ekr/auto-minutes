@@ -11,6 +11,7 @@ src/
   index.js          — CLI entry point, orchestration, session resolution
   scraper.js        — IETF datatracker / Meetecho fetching
   generator.js      — LLM minutes generation (Gemini / Claude)
+  session-context.js — parallel context fetching and cache metadata shaping
   transcriber.js    — Audio download, STT transcription (Gemini / Google Cloud STT / Deepgram)
   speaker-names.js  — Gemini speaker-label→name mapping (shared by transcriber.js and transcribe-diarize.js)
   publisher.js      — File system output, cache management, index generation

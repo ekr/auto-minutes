@@ -70,6 +70,25 @@ describe('buildContextPrompt poll and chat context', () => {
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  test('caps chat by rendered character count before the message limit', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const chat = [
+      { author: 'Alice', text: 'x'.repeat(39000) },
+      { author: 'Bob', text: `later-${'y'.repeat(2000)}` },
+      { author: 'Carol', text: 'also omitted' },
+    ];
+    const prompt = buildContextPrompt({ chat }, 'CBOR');
+
+    expect(prompt).toContain('Alice:');
+    expect(prompt).not.toContain('later-');
+    expect(prompt).not.toContain('also omitted');
+    expect(prompt).toContain('… (chat truncated)');
+    expect(warn).toHaveBeenCalledWith(
+      'Session chat context truncated to 800 messages / 40,000 characters',
+    );
+    warn.mockRestore();
+  });
 });
 
 describe('assertTranscriptPresent', () => {
