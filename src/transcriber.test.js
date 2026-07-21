@@ -988,6 +988,80 @@ describe('transcribeAudioDeepgram', () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
+
+  function makeKeytermLimitResponse() {
+    return makeDeepgramResponse({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      body: { err_msg: 'Keyterm limit exceeded. The maximum number of tokens across all keyterms is 500.' },
+    });
+  }
+
+  test('retries with a halved keyterm list on a "Keyterm limit exceeded" 400', async () => {
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeKeytermLimitResponse())
+      .mockImplementationOnce(async () => makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY }));
+
+    const promise = transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, ['a', 'b', 'c', 'd']);
+    await jest.runAllTimersAsync();
+    const transcript = await promise;
+
+    expect(transcript).toContain('Speaker 0');
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const secondUrl = mockFetch.mock.calls[1][0];
+    expect(new URL(secondUrl).searchParams.getAll('keyterm')).toEqual(['a', 'b']);
+  });
+
+  test('keeps halving down to zero keyterms then succeeds, never skipping the session', async () => {
+    mockFetch.mockReset().mockImplementation(async (url) => {
+      const hasKeyterms = new URL(url).searchParams.getAll('keyterm').length > 0;
+      return hasKeyterms ? makeKeytermLimitResponse() : makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY });
+    });
+
+    const promise = transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, ['a', 'b', 'c']);
+    await jest.runAllTimersAsync();
+    const transcript = await promise;
+
+    expect(transcript).toContain('Speaker 0');
+    const lastUrl = mockFetch.mock.calls[mockFetch.mock.calls.length - 1][0];
+    expect(new URL(lastUrl).searchParams.getAll('keyterm')).toEqual([]);
+  });
+
+  test('a different 400 error does not trigger keyterm reduction and surfaces as-is', async () => {
+    mockFetch.mockReset().mockImplementation(async () => makeDeepgramResponse({
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      body: { err_msg: 'Invalid model' },
+    }));
+
+    const promise = transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, ['a', 'b']);
+    const assertion = expect(promise).rejects.toThrow('[400 Bad Request]');
+    await jest.runAllTimersAsync();
+    await assertion;
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(new URL(mockFetch.mock.calls[0][0]).searchParams.getAll('keyterm')).toEqual(['a', 'b']);
+  });
+
+  test('preserves transient (5xx) retry behavior at each keyterm-count level within the reduction loop', async () => {
+    mockFetch
+      .mockReset()
+      .mockImplementationOnce(async () => makeKeytermLimitResponse())
+      .mockImplementationOnce(async () => makeDeepgramResponse({ ok: false, status: 503, statusText: 'Service Unavailable' }))
+      .mockImplementationOnce(async () => makeDeepgramResponse({ body: DEEPGRAM_TRANSCRIPT_BODY }));
+
+    const promise = transcribeAudioDeepgram('/tmp/fake.mp3', 'nova-3', false, ['a', 'b']);
+    await jest.runAllTimersAsync();
+    const transcript = await promise;
+
+    expect(transcript).toContain('Speaker 0');
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+    const keytermsByCall = mockFetch.mock.calls.map(([url]) => new URL(url).searchParams.getAll('keyterm'));
+    expect(keytermsByCall).toEqual([['a', 'b'], ['a'], ['a']]);
+  });
 });
 
 describe('transcribeSession deepgram dispatch', () => {

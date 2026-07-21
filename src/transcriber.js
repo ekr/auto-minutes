@@ -1037,11 +1037,32 @@ export function formatDeepgramTranscript(words) {
 }
 
 /**
+ * Detect Deepgram's "Keyterm limit exceeded" 400 response (the total estimated
+ * tokens across all keyterms exceeded Deepgram's real tokenizer limit). Distinct
+ * from the transient 5xx/429/network errors withUploadRetry already retries —
+ * those are retried in place, this one requires resending with fewer keyterms.
+ * @param {Error} error
+ * @returns {boolean}
+ */
+function isKeytermLimitError(error) {
+  if (!error) return false;
+  const message = typeof error.message === "string" ? error.message : "";
+  return error.status === 400 && /keyterm limit exceeded/i.test(message);
+}
+
+/**
  * Transcribe an audio file using Deepgram's prerecorded (batch) API.
  * Sends the whole file as the request body in a single call (no chunking,
  * no GCS bucket); Deepgram returns word-level timestamps and diarization
  * together, which are formatted into the same "[HH:MM:SS] Speaker N: ..."
  * shape produced by the chirp backend.
+ *
+ * The token-budget cap in buildDeepgramKeyterms only estimates Deepgram's
+ * tokenizer, so it can still under-count and trigger a "Keyterm limit
+ * exceeded" 400. Rather than model the tokenizer more precisely, on that
+ * specific error this halves the keyterm list and retries, repeating until
+ * the request succeeds or the list is empty — an empty list can't exceed the
+ * limit, so a session is never skipped for this reason.
  * @param {string} audioPath - Path to the local audio file
  * @param {string} model - Deepgram model name (e.g. "nova-3", "nova-2")
  * @param {boolean} verbose - Whether to log verbose output
@@ -1055,43 +1076,63 @@ export async function transcribeAudioDeepgram(audioPath, model = "nova-3", verbo
   }
 
   const { size: fileSize } = fs.statSync(audioPath);
-
-  const params = new URLSearchParams();
-  params.set("model", model);
-  params.set("diarize", "true");
-  params.set("punctuate", "true");
-  params.set("smart_format", "true");
   // nova-3 introduced the `keyterm` param; earlier models use `keywords`.
   const keytermParam = model.startsWith("nova-3") ? "keyterm" : "keywords";
-  for (const term of keyterms) {
-    params.append(keytermParam, term);
-  }
 
-  if (verbose) {
-    console.log(`    [Deepgram] POST ${DEEPGRAM_LISTEN_URL} model=${model}, ${keyterms.length} keyterm(s)`);
-  }
-
-  const data = await withUploadRetry(async () => {
-    // Stream the file from disk rather than buffering it in memory: a Readable is
-    // single-use, so it must be created fresh on every retry attempt (a re-sent
-    // stream from a prior attempt would be empty/consumed).
-    const body = fs.createReadStream(audioPath);
-    const response = await fetch(`${DEEPGRAM_LISTEN_URL}?${params.toString()}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Token ${apiKey}`,
-        "Content-Type": "audio/mpeg",
-        "Content-Length": String(fileSize),
-      },
-      body,
-    });
-
-    if (!response.ok) {
-      throw uploadHttpError(response, await response.text().catch(() => ""));
+  const attemptWithKeyterms = (activeKeyterms) => {
+    const params = new URLSearchParams();
+    params.set("model", model);
+    params.set("diarize", "true");
+    params.set("punctuate", "true");
+    params.set("smart_format", "true");
+    for (const term of activeKeyterms) {
+      params.append(keytermParam, term);
     }
 
-    return response.json();
-  }, "Deepgram transcription");
+    if (verbose) {
+      console.log(`    [Deepgram] POST ${DEEPGRAM_LISTEN_URL} model=${model}, ${activeKeyterms.length} keyterm(s)`);
+    }
+
+    return withUploadRetry(async () => {
+      // Stream the file from disk rather than buffering it in memory: a Readable is
+      // single-use, so it must be created fresh on every retry attempt (a re-sent
+      // stream from a prior attempt would be empty/consumed).
+      const body = fs.createReadStream(audioPath);
+      const response = await fetch(`${DEEPGRAM_LISTEN_URL}?${params.toString()}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Token ${apiKey}`,
+          "Content-Type": "audio/mpeg",
+          "Content-Length": String(fileSize),
+        },
+        body,
+      });
+
+      if (!response.ok) {
+        throw uploadHttpError(response, await response.text().catch(() => ""));
+      }
+
+      return response.json();
+    }, "Deepgram transcription");
+  };
+
+  let activeKeyterms = keyterms;
+  let data;
+  while (true) {
+    try {
+      data = await attemptWithKeyterms(activeKeyterms);
+      break;
+    } catch (error) {
+      if (!isKeytermLimitError(error) || activeKeyterms.length === 0) {
+        throw error;
+      }
+      const reduced = activeKeyterms.slice(0, Math.floor(activeKeyterms.length / 2));
+      if (verbose) {
+        console.log(`    [Deepgram] Keyterm limit exceeded; retrying with ${reduced.length} keyterms`);
+      }
+      activeKeyterms = reduced;
+    }
+  }
 
   const alt = data?.results?.channels?.[0]?.alternatives?.[0];
   if (!alt) {
