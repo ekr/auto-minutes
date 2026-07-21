@@ -5,6 +5,7 @@ function makeDependencies(overrides = {}) {
   return {
     loadCacheManifest: jest.fn(),
     getCachedMinutes: jest.fn(),
+    getCachedMetadata: jest.fn().mockResolvedValue(null),
     amendMinutes: jest.fn(),
     saveCachedMinutes: jest.fn(),
     recordUsage: jest.fn(),
@@ -45,6 +46,10 @@ test('amends every cached session using case-insensitive WG matching without cha
     [123, '6lo-1'],
     [123, '6lo-2'],
   ]);
+  expect(dependencies.getCachedMetadata.mock.calls).toEqual([
+    [123, '6lo-1'],
+    [123, '6lo-2'],
+  ]);
   expect(dependencies.saveCachedMinutes.mock.calls).toEqual([
     [123, '6lo-1', '# First\n\nAmended: Correct both sessions'],
     [123, '6lo-2', '# Second\n\nAmended: Correct both sessions'],
@@ -56,6 +61,71 @@ test('amends every cached session using case-insensitive WG matching without cha
     ['Amended: 6lo-2'],
   ]);
   expect(manifest).toEqual(originalManifest);
+});
+
+test('reconstructs cached slides and bluesheet context for each amendment', async () => {
+  const bluesheetText = '2 attendees.\n\nJane Smith\tExample Corp\nJohn Doe\tExample Org';
+  const slides = [{ title: 'Protocol Updates', url: 'https://example.test/slides' }];
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing'),
+    getCachedMetadata: jest.fn().mockResolvedValue({ slides, bluesheetText }),
+    amendMinutes: jest.fn().mockResolvedValue({
+      text: '# Revised',
+      usage: { model: 'gemini-test', inputTokens: 10, outputTokens: 5 },
+    }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Correct the speaker name',
+    dependencies,
+  });
+
+  expect(dependencies.amendMinutes).toHaveBeenCalledWith(
+    '# Existing',
+    'Correct the speaker name',
+    '6LO',
+    false,
+    null,
+    {
+      slidesAndBluesheet: { slides, bluesheet: bluesheetText },
+      wgDocuments: [],
+    },
+  );
+});
+
+test.each([
+  ['missing', jest.fn().mockResolvedValue(null)],
+  ['unreadable', jest.fn().mockRejectedValue(new Error('invalid metadata'))],
+])('uses null context when cached metadata is %s', async (_description, getCachedMetadata) => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing'),
+    getCachedMetadata,
+    amendMinutes: jest.fn().mockResolvedValue({
+      text: '# Revised',
+      usage: { model: 'gemini-test', inputTokens: 10, outputTokens: 5 },
+    }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix it',
+    dependencies,
+  });
+
+  expect(dependencies.amendMinutes).toHaveBeenCalledWith(
+    '# Existing', 'Fix it', '6LO', false, null, null,
+  );
 });
 
 test('reports a missing manifest as cached minutes that must be summarized first', async () => {

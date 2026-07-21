@@ -76,7 +76,7 @@ Under `-j` concurrency, multiple sessions run "concurrently" on a single JS thre
 
 Supports Gemini and Claude models, selected via `--model`. Context (slides, bluesheet, WG documents) is fetched before transcription so it can be used by Gemini STT for speaker identification.
 
-Cached minutes can also be revised with `--amend NUMBER:GROUP --comments FILE` (or a date-based interim selector). This path resolves sessions exclusively from the cache manifest, sends each session's raw cached minutes and the same reviewer comments to the selected LLM, and overwrites only the raw minutes file. It does not fetch session data, use transcripts, or modify cache manifests and metadata, so the normal output and build stages consume the revision unchanged.
+Cached minutes can also be revised with `--amend NUMBER:GROUP --comments FILE` (or a date-based interim selector). This path resolves sessions exclusively from the cache manifest, sends each session's raw cached minutes, reviewer comments, and any cached slide/bluesheet reference data to the selected LLM, and overwrites only the raw minutes file. It does not fetch session data, use transcripts, or modify cache manifests and metadata; working-group documents are not part of the cached amend context. The normal output and build stages consume the revision unchanged.
 
 ### Transcript validation (defense in depth)
 
