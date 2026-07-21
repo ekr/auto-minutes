@@ -93,7 +93,32 @@ test('reports an absent WG and lists groups available in the manifest', async ()
   expect(dependencies.getCachedMinutes).not.toHaveBeenCalled();
 });
 
-test('continues amending later sessions after one session fails', async () => {
+test('fails when a manifest session has no cached minutes file', async () => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: 'missing' }],
+    }]),
+    getCachedMinutes: jest.fn().mockRejectedValue(
+      new Error("ENOENT: no such file or directory, open 'cache/minutes/ietf123/missing.md'"),
+    ),
+  });
+
+  await expect(amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix it',
+    dependencies,
+  })).rejects.toThrow('Failed to amend 1 session(s): missing');
+
+  expect(dependencies.amendMinutes).not.toHaveBeenCalled();
+  expect(dependencies.saveCachedMinutes).not.toHaveBeenCalled();
+  expect(dependencies.logger.error).toHaveBeenCalledWith(
+    expect.stringContaining('Could not amend missing: ENOENT'),
+  );
+});
+
+test('continues after a session fails, then reports the partial failure', async () => {
   const dependencies = makeDependencies({
     loadCacheManifest: jest.fn().mockResolvedValue([{
       sessionName: '6LO',
@@ -108,12 +133,12 @@ test('continues amending later sessions after one session fails', async () => {
     }),
   });
 
-  await amendCachedSessions({
+  await expect(amendCachedSessions({
     meetingId: 123,
     groupName: '6LO',
     comments: 'Fix it',
     dependencies,
-  });
+  })).rejects.toThrow('Failed to amend 1 session(s): bad');
 
   expect(dependencies.getCachedMinutes).toHaveBeenNthCalledWith(2, 123, 'good');
   expect(dependencies.saveCachedMinutes).toHaveBeenCalledWith(123, 'good', '# Revised good');

@@ -38,6 +38,7 @@ export async function amendCachedSessions({
     throw new Error(`No cached minutes for ${groupName} in ${meetingId}; run --summarize first. Available: ${available || "none"}`);
   }
 
+  const failures = [];
   for (const session of group.sessions) {
     try {
       const existingMinutes = await loadMinutes(meetingId, session.sessionId);
@@ -46,7 +47,14 @@ export async function amendCachedSessions({
       addUsage(result.usage);
       logger.log(`Amended: ${session.sessionId}`);
     } catch (error) {
+      failures.push(session.sessionId);
       logger.error(`Could not amend ${session.sessionId}: ${error.message}`);
     }
+  }
+
+  if (failures.length > 0) {
+    throw new Error(
+      `Failed to amend ${failures.length} session(s): ${failures.join(", ")}`,
+    );
   }
 }
