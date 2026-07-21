@@ -77,7 +77,7 @@ Under `-j` concurrency, multiple sessions run "concurrently" on a single JS thre
 
 ### Minutes generation
 
-Supports Gemini and Claude models, selected via `--model`. Context is fetched before transcription: slides, bluesheets, and WG documents provide reference data, while datatracker poll JSON provides authoritative poll results and normalized chat JSON supplements the transcript as session record. Chat prompt rendering is capped at 800 messages / 40,000 characters. Material lookup first uses the session-derived document name, then falls back to the newest datatracker API prefix match.
+Supports Gemini and Claude models, selected via `--model`. Context (slides, bluesheet, WG documents, polls, chatlog) is fetched before transcription so it can be used by Gemini STT for speaker identification and injected into minutes prompts. Datatracker materials provide authoritative recorded poll questions and vote tallies, while session chatlogs provide supplementary record of typed discussion. For in-progress or recent meetings where datatracker materials are not yet ingested, polls and chat fall back seamlessly to Meetecho recording player endpoints. Chat prompt rendering is capped at 800 messages / 40,000 characters. Material lookup first uses the session-derived document name, then falls back to the newest datatracker API prefix match.
 
 The material prefix fallback runs only after the exact session-derived URL returns HTTP 404. Valid empty materials, malformed responses, and other fetch failures remain empty rather than risking attribution of another session's polls or chat.
 
