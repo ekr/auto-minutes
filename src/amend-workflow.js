@@ -158,6 +158,12 @@ export async function amendCachedSessions({
           }
         } catch (tError) {
           logger.error(`Transcript step failed for ${session.sessionId}: ${tError.message}`);
+          // A transcript-processing error (e.g. an LLM API 503) means the requested
+          // amendment did not happen. Propagate it so this session is recorded as a
+          // failure and the command exits non-zero, instead of silently falling
+          // through to the "no changes" skip below and letting the caller (the
+          // GitHub Action) close the issue as a success.
+          throw tError;
         }
       }
 
