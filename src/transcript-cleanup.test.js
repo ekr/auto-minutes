@@ -37,7 +37,7 @@ test('normalizeCorrections filters invalid entries, deduplicates, and caps at 20
     { from: 'ab', to: 'cd' },
     { from: 'same', to: 'same' },
     valid[0],
-    { from: valid[0].from, to: 'duplicate' },
+    { from: valid[0].from, to: valid[0].to },
     ...valid.slice(1),
   ]);
   expect(result).toHaveLength(200);
@@ -49,12 +49,65 @@ test('normalizeCorrections tolerates a wrapping object', () => {
     .toEqual([{ from: 'wrong', to: 'right' }]);
 });
 
-test('applyCorrections replaces every literal occurrence and skips absent sources', () => {
-  const result = applyCorrections('a.b then a.b', [
-    { from: 'a.b', to: 'QUIC' },
-    { from: 'absent', to: 'unused' },
+test('applyCorrections respects word boundaries (does not rewrite "it\'s" or "let\'s" for "t\'s", replaces standalone)', () => {
+  const result = applyCorrections("it's time for let's go and t's here", [
+    { from: "t's", to: "TEAS" },
   ]);
-  expect(result).toEqual({ text: 'QUIC then QUIC', appliedCount: 1, applied: [{ from: 'a.b', to: 'QUIC' }] });
+  expect(result.text).toBe("it's time for let's go and TEAS here");
+  expect(result.appliedCount).toBe(1);
+  expect(result.applied).toEqual([{ from: "t's", to: "TEAS" }]);
+});
+
+test('normalizeCorrections and applyCorrections handle common-word guard and context anchoring', () => {
+  // Global common word without context is dropped
+  const unanchored = normalizeCorrections([{ from: 'cache', to: 'CACH' }]);
+  expect(unanchored).toEqual([]);
+
+  // Common word with context is kept and anchored
+  const contextStr = 'the complete SNP is called cache';
+  const anchored = normalizeCorrections([{ from: 'cache', to: 'CACH', context: contextStr }]);
+  expect(anchored).toEqual([{ from: 'cache', to: 'CACH', context: contextStr }]);
+
+  const transcript = 'We need to clear the cache. the complete SNP is called cache. Also cache management.';
+  const appliedResult = applyCorrections(transcript, anchored);
+  expect(appliedResult.text).toBe('We need to clear the cache. the complete SNP is called CACH. Also cache management.');
+  expect(appliedResult.appliedCount).toBe(1);
+  expect(appliedResult.applied).toEqual(anchored);
+});
+
+test('normalizeCorrections drops conflicting entries mapping to distinct targets', () => {
+  const raw = [
+    { from: 'FlexAlgo', to: 'flex-algo' },
+    { from: 'FlexAlgo', to: 'Flex-Algo' },
+    { from: 'OSFPF', to: 'OSPF' },
+  ];
+  const normalized = normalizeCorrections(raw);
+  expect(normalized).toEqual([{ from: 'OSFPF', to: 'OSPF' }]);
+});
+
+test('normalizeCorrections drops entries failing the charset guard', () => {
+  const raw = [
+    { from: "Ying Zheng's", to: "Ying镇's" },
+    { from: 'Francois', to: 'François' },
+  ];
+  const normalized = normalizeCorrections(raw);
+  expect(normalized).toEqual([{ from: 'Francois', to: 'François' }]);
+});
+
+test('applyCorrections handles distinctive term replacements as regressions', () => {
+  const raw = [
+    { from: 'ISIS', to: 'IS-IS' },
+    { from: 'OSFPF', to: 'OSPF' },
+    { from: 'CS and P', to: 'CSNP' },
+  ];
+  const normalized = normalizeCorrections(raw);
+  expect(normalized).toHaveLength(3);
+
+  const transcript = 'The ISIS protocol and OSFPF router with CS and P packets.';
+  const result = applyCorrections(transcript, normalized);
+  expect(result.text).toBe('The IS-IS protocol and OSPF router with CSNP packets.');
+  expect(result.appliedCount).toBe(3);
+  expect(result.applied).toHaveLength(3);
 });
 
 test.each([
@@ -111,3 +164,4 @@ describe('parseJson', () => {
     expect(() => parseJson('no json here')).toThrow(SyntaxError);
   });
 });
+
