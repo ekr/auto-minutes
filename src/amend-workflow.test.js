@@ -1,5 +1,6 @@
 import { jest } from '@jest/globals';
 import { amendCachedSessions } from './amend-workflow.js';
+import { applyLiteralCorrections as realApplyLiteralCorrections } from './transcript-cleanup.js';
 
 function makeDependencies(overrides = {}) {
   return {
@@ -16,12 +17,14 @@ function makeDependencies(overrides = {}) {
     })),
     getTranscriptCorrections: jest.fn().mockResolvedValue([]),
     filterTranscriptCorrections: jest.fn((corrections) => Promise.resolve(corrections)),
+    filterMinutesCorrections: jest.fn((corrections) => Promise.resolve(corrections)),
     normalizeCorrections: jest.fn((raw) => (Array.isArray(raw) ? raw.map(({ from, to }) => ({ from, to })) : [])),
     applyCorrections: jest.fn((transcript, corrections) => ({
       text: transcript,
       appliedCount: 0,
       applied: [],
     })),
+    applyLiteralCorrections: jest.fn((text, corrections) => ({ text, applied: [] })),
     getTranscriptCachePath: jest.fn((sessionId) => `cache/transcripts/${sessionId}.md`),
     downloadTranscript: jest.fn().mockResolvedValue('Downloaded transcript'),
     readFile: jest.fn().mockResolvedValue('Cached transcript text'),
@@ -123,7 +126,7 @@ test('uses full live context including WG documents for an amendment', async () 
   );
   expect(dependencies.getCachedMetadata).not.toHaveBeenCalled();
   expect(dependencies.amendMinutes).toHaveBeenCalledWith(
-    '# Existing', 'Correct it', '6LO', true, null, liveContext, null,
+    '# Existing', 'Correct it', '6LO', true, null, liveContext,
   );
 });
 
@@ -167,7 +170,6 @@ test('reconstructs cached slides and bluesheet context for each amendment', asyn
       polls: [{ text: 'Adopt?', yes: 10, no: 2 }],
       chat: [{ author: 'Alice', text: 'Correction' }],
     },
-    null,
   );
 });
 
@@ -212,7 +214,6 @@ test('falls back to cached context when live context fetch throws', async () => 
       polls: [],
       chat: [],
     },
-    null,
   );
   expect(dependencies.saveCachedMinutes).toHaveBeenCalledWith(126, 'IETF126-6LO-20250721-0900', '# Revised');
 });
@@ -265,7 +266,6 @@ test('falls back to cached context when live slides and bluesheet are empty', as
       polls: [],
       chat: [],
     },
-    null,
   );
 });
 
@@ -322,7 +322,6 @@ test('combines cached slides and bluesheet with live WG documents', async () => 
       polls: [],
       chat: [],
     },
-    null,
   );
 });
 
@@ -352,7 +351,7 @@ test.each([
 
   expect(dependencies.amendMinutes).toHaveBeenCalledWith(
     '# Existing', 'Fix it', '6LO', false, null,
-    { slidesAndBluesheet: null, wgDocuments: [] }, null,
+    { slidesAndBluesheet: null, wgDocuments: [] },
   );
 });
 
@@ -444,7 +443,7 @@ test('continues after a session fails, then reports the partial failure', async 
   expect(dependencies.logger.log).toHaveBeenCalledWith('Amended: good');
 });
 
-test('handles transcript instructions and rewrites existing cached transcript, passing diff to amendMinutes', async () => {
+test('handles transcript instructions and rewrites existing cached transcript, calling amendMinutes only for the explicit minutes instructions', async () => {
   const dependencies = makeDependencies({
     loadCacheManifest: jest.fn().mockResolvedValue([{
       sessionName: '6LO',
@@ -492,7 +491,13 @@ test('handles transcript instructions and rewrites existing cached transcript, p
     false,
     null,
     expect.anything(),
-    '- "Bob Smith" → "Rob Smith"',
+  );
+  expect(dependencies.filterMinutesCorrections).toHaveBeenCalledWith(
+    [{ from: 'Bob Smith', to: 'Rob Smith' }],
+    'Fix Bob to Rob',
+    '6LO',
+    false,
+    null,
   );
 });
 
@@ -559,7 +564,7 @@ test('runs filterTranscriptCorrections pass to filter out over-aggressive transc
 });
 
 
-test('downloads transcript when no cached transcript exists and applies corrections', async () => {
+test('downloads transcript when no cached transcript exists, applies the correction to the minutes deterministically, and never calls amendMinutes', async () => {
   const dependencies = makeDependencies({
     loadCacheManifest: jest.fn().mockResolvedValue([{
       sessionName: '6LO',
@@ -569,7 +574,7 @@ test('downloads transcript when no cached transcript exists and applies correcti
       transcriptInstructions: 'Fix Bob to Rob',
       minutesInstructions: '',
     }),
-    getCachedMinutes: jest.fn().mockResolvedValue('# Existing minutes'),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing minutes\n\nBob Smith discussed QUIC.'),
     existsSync: jest.fn().mockReturnValue(false),
     downloadTranscript: jest.fn().mockResolvedValue('Downloaded Bob Smith transcript.'),
     getTranscriptCorrections: jest.fn().mockResolvedValue([{ from: 'Bob Smith', to: 'Rob Smith' }]),
@@ -580,10 +585,7 @@ test('downloads transcript when no cached transcript exists and applies correcti
       applied: [{ from: 'Bob Smith', to: 'Rob Smith' }],
     }),
     writeFile: jest.fn().mockResolvedValue(),
-    amendMinutes: jest.fn().mockResolvedValue({
-      text: '# Revised minutes',
-      usage: { model: 'test', inputTokens: 10, outputTokens: 5 },
-    }),
+    applyLiteralCorrections: jest.fn(realApplyLiteralCorrections),
   });
 
   await amendCachedSessions({
@@ -603,14 +605,11 @@ test('downloads transcript when no cached transcript exists and applies correcti
     'Downloaded Rob Smith transcript.',
     'utf8',
   );
-  expect(dependencies.amendMinutes).toHaveBeenCalledWith(
-    '# Existing minutes',
-    '',
-    '6LO',
-    false,
-    null,
-    expect.anything(),
-    '- "Bob Smith" → "Rob Smith"',
+  expect(dependencies.amendMinutes).not.toHaveBeenCalled();
+  expect(dependencies.saveCachedMinutes).toHaveBeenCalledWith(
+    123,
+    '6lo-1',
+    '# Existing minutes\n\nRob Smith discussed QUIC.',
   );
 });
 
@@ -647,7 +646,6 @@ test('skips transcript step when transcriptInstructions is empty', async () => {
     false,
     null,
     expect.anything(),
-    null,
   );
 });
 
@@ -755,5 +753,151 @@ test('resolves without failure when the transcript step runs cleanly but yields 
   expect(dependencies.logger.error).not.toHaveBeenCalled();
   expect(dependencies.logger.log).toHaveBeenCalledWith(
     'Skipped amending 6lo-1: no minutes instructions or transcript changes',
+  );
+});
+
+test('propagates a transcript-only name correction to the minutes as a deterministic substitution, never invoking amendMinutes', async () => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: 'Martin Thompson should be spelled Thomson',
+      minutesInstructions: '',
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue(
+      '# 6LO\n\n## Summary\nMartin Thompson gave an update. Later, Martin Thompson answered questions.',
+    ),
+    existsSync: jest.fn().mockReturnValue(true),
+    readFile: jest.fn().mockResolvedValue('Martin Thompson spoke about routing.'),
+    getTranscriptCorrections: jest.fn().mockResolvedValue([
+      { line: 1, from: 'Martin Thompson', to: 'Martin Thomson' },
+    ]),
+    normalizeCorrections: jest.fn(raw => raw),
+    applyCorrections: jest.fn().mockReturnValue({
+      text: 'Martin Thomson spoke about routing.',
+      appliedCount: 1,
+      applied: [{ line: 1, from: 'Martin Thompson', to: 'Martin Thomson' }],
+    }),
+    writeFile: jest.fn().mockResolvedValue(),
+    applyLiteralCorrections: jest.fn(realApplyLiteralCorrections),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Martin Thompson should be spelled Thomson',
+    dependencies,
+  });
+
+  expect(dependencies.amendMinutes).not.toHaveBeenCalled();
+  expect(dependencies.filterMinutesCorrections).toHaveBeenCalledWith(
+    [{ from: 'Martin Thompson', to: 'Martin Thomson' }],
+    'Martin Thompson should be spelled Thomson',
+    '6LO',
+    false,
+    null,
+  );
+  expect(dependencies.saveCachedMinutes).toHaveBeenCalledWith(
+    123,
+    '6lo-1',
+    '# 6LO\n\n## Summary\nMartin Thomson gave an update. Later, Martin Thomson answered questions.',
+  );
+  expect(dependencies.logger.log).toHaveBeenCalledWith('Amended: 6lo-1');
+});
+
+test('does not apply a minutes correction that filterMinutesCorrections strips out', async () => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: 'Fix the name',
+      minutesInstructions: '',
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue('# 6LO\n\nMartin Thompson gave an update.'),
+    existsSync: jest.fn().mockReturnValue(true),
+    readFile: jest.fn().mockResolvedValue('Martin Thompson spoke.'),
+    getTranscriptCorrections: jest.fn().mockResolvedValue([
+      { line: 1, from: 'Martin Thompson', to: 'Martin Thomson' },
+    ]),
+    normalizeCorrections: jest.fn(raw => raw),
+    applyCorrections: jest.fn().mockReturnValue({
+      text: 'Martin Thomson spoke.',
+      appliedCount: 1,
+      applied: [{ line: 1, from: 'Martin Thompson', to: 'Martin Thomson' }],
+    }),
+    writeFile: jest.fn().mockResolvedValue(),
+    filterMinutesCorrections: jest.fn().mockResolvedValue([]),
+    applyLiteralCorrections: jest.fn(realApplyLiteralCorrections),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix the name',
+    dependencies,
+  });
+
+  expect(dependencies.applyLiteralCorrections).not.toHaveBeenCalled();
+  expect(dependencies.amendMinutes).not.toHaveBeenCalled();
+  expect(dependencies.saveCachedMinutes).not.toHaveBeenCalled();
+  expect(dependencies.logger.log).toHaveBeenCalledWith(
+    'Skipped amending 6lo-1: no minutes instructions or transcript changes',
+  );
+});
+
+test('applies the deterministic minutes correction after amendMinutes runs, so it is authoritative regardless of the LLM output', async () => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: 'Fix Martin Thompson to Thomson',
+      minutesInstructions: 'Add a Next Steps section',
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue('# 6LO\n\nMartin Thompson gave an update.'),
+    existsSync: jest.fn().mockReturnValue(true),
+    readFile: jest.fn().mockResolvedValue('Martin Thompson spoke.'),
+    getTranscriptCorrections: jest.fn().mockResolvedValue([
+      { line: 1, from: 'Martin Thompson', to: 'Martin Thomson' },
+    ]),
+    normalizeCorrections: jest.fn(raw => raw),
+    applyCorrections: jest.fn().mockReturnValue({
+      text: 'Martin Thomson spoke.',
+      appliedCount: 1,
+      applied: [{ line: 1, from: 'Martin Thompson', to: 'Martin Thomson' }],
+    }),
+    writeFile: jest.fn().mockResolvedValue(),
+    applyLiteralCorrections: jest.fn(realApplyLiteralCorrections),
+    amendMinutes: jest.fn().mockResolvedValue({
+      // Simulates the LLM revision leaving the (still-wrong) name untouched.
+      text: '# 6LO\n\nMartin Thompson gave an update.\n\n## Next Steps\nFollow up.',
+      usage: { model: 'test', inputTokens: 10, outputTokens: 5 },
+    }),
+  });
+
+  await amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix name and add next steps',
+    dependencies,
+  });
+
+  expect(dependencies.amendMinutes).toHaveBeenCalledWith(
+    '# 6LO\n\nMartin Thompson gave an update.',
+    'Add a Next Steps section',
+    '6LO',
+    false,
+    null,
+    expect.anything(),
+  );
+  expect(dependencies.saveCachedMinutes).toHaveBeenCalledWith(
+    123,
+    '6lo-1',
+    '# 6LO\n\nMartin Thomson gave an update.\n\n## Next Steps\nFollow up.',
   );
 });

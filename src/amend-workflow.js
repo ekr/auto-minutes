@@ -1,10 +1,10 @@
 import fsPromises from "fs/promises";
 import { existsSync } from "fs";
-import { amendMinutes, splitAmendComments, getTranscriptCorrections, filterTranscriptCorrections } from "./generator.js";
+import { amendMinutes, splitAmendComments, getTranscriptCorrections, filterTranscriptCorrections, filterMinutesCorrections } from "./generator.js";
 import { recordUsage } from "./accounting.js";
 import { getCachedMetadata, getCachedMinutes, loadCacheManifest, saveCachedMinutes } from "./publisher.js";
 import { fetchContextForSession } from "./session-context.js";
-import { normalizeCorrections, applyCorrections } from "./transcript-cleanup.js";
+import { normalizeCorrections, applyCorrections, applyLiteralCorrections } from "./transcript-cleanup.js";
 import { getTranscriptCachePath } from "./transcriber.js";
 import { downloadTranscript } from "./scraper.js";
 
@@ -34,8 +34,10 @@ export async function amendCachedSessions({
   const splitComments = dependencies.splitAmendComments ?? splitAmendComments;
   const getCorrections = dependencies.getTranscriptCorrections ?? getTranscriptCorrections;
   const filterCorrections = dependencies.filterTranscriptCorrections ?? filterTranscriptCorrections;
+  const filterMinutesCorr = dependencies.filterMinutesCorrections ?? filterMinutesCorrections;
   const normalize = dependencies.normalizeCorrections ?? normalizeCorrections;
   const apply = dependencies.applyCorrections ?? applyCorrections;
+  const applyLiteral = dependencies.applyLiteralCorrections ?? applyLiteralCorrections;
   const getTranscriptPath = dependencies.getTranscriptCachePath ?? getTranscriptCachePath;
   const download = dependencies.downloadTranscript ?? downloadTranscript;
 
@@ -109,7 +111,7 @@ export async function amendCachedSessions({
         }
       }
 
-      let transcriptChanges = null;
+      let transcriptCorrectionsApplied = [];
       if (transcriptInstructions && transcriptInstructions.trim()) {
         try {
           const cachePath = getTranscriptPath(session.sessionId);
@@ -151,9 +153,7 @@ export async function amendCachedSessions({
             const { text: updatedTranscript, applied } = apply(transcriptText, corrections);
             if (applied && applied.length > 0) {
               await fsWriteFile(cachePath, updatedTranscript, "utf8");
-              transcriptChanges = applied
-                .map(({ from, to }) => (to ? `- "${from}" → "${to}"` : `- removed: "${from}"`))
-                .join("\n");
+              transcriptCorrectionsApplied = applied;
             }
           }
         } catch (tError) {
@@ -167,20 +167,57 @@ export async function amendCachedSessions({
         }
       }
 
-      if ((minutesInstructions && minutesInstructions.trim()) || transcriptChanges) {
+      // The transcript correction(s) propagate to the minutes as the SAME minimal,
+      // deterministic word-boundary substitution — never as an LLM re-derivation.
+      const seenMinutesCorrections = new Set();
+      const proposedMinutesCorrections = [];
+      for (const { from, to } of transcriptCorrectionsApplied) {
+        const key = `${from} ${to}`;
+        if (seenMinutesCorrections.has(key)) continue;
+        seenMinutesCorrections.add(key);
+        proposedMinutesCorrections.push({ from, to });
+      }
+
+      let minutesCorrections = [];
+      if (proposedMinutesCorrections.length > 0) {
+        const filteredMinutesCorrections = await filterMinutesCorr(
+          proposedMinutesCorrections,
+          transcriptInstructions,
+          group.sessionName,
+          verbose,
+          modelName,
+        );
+        if (filteredMinutesCorrections?.usage) {
+          addUsage(filteredMinutesCorrections.usage);
+        }
+        minutesCorrections = Array.isArray(filteredMinutesCorrections) ? filteredMinutesCorrections : [];
+      }
+
+      let newMinutes = existingMinutes;
+
+      // The heavyweight LLM revision only runs for explicit reviewer minutes instructions,
+      // never as a side effect of a transcript correction.
+      if (minutesInstructions && minutesInstructions.trim()) {
         const result = await reviseMinutes(
-          existingMinutes,
+          newMinutes,
           minutesInstructions,
           group.sessionName,
           verbose,
           modelName,
           context,
-          transcriptChanges,
         );
-        await saveMinutes(meetingId, session.sessionId, result.text);
+        newMinutes = result.text;
         if (result?.usage) {
           addUsage(result.usage);
         }
+      }
+
+      if (minutesCorrections.length > 0) {
+        newMinutes = applyLiteral(newMinutes, minutesCorrections).text;
+      }
+
+      if (newMinutes !== existingMinutes) {
+        await saveMinutes(meetingId, session.sessionId, newMinutes);
         logger.log(`Amended: ${session.sessionId}`);
       } else {
         logger.log(`Skipped amending ${session.sessionId}: no minutes instructions or transcript changes`);

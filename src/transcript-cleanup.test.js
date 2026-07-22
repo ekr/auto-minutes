@@ -11,7 +11,9 @@ const {
   buildCleanupReference,
   getCorrectionsFromGemini,
   normalizeCorrections,
+  normalizeMinutesCorrections,
   applyCorrections,
+  applyLiteralCorrections,
   splitUnits,
   numberUnits,
   parseJson,
@@ -167,6 +169,76 @@ describe('applyCorrections', () => {
       'the CSNP was sent',
     ]);
     expect(result.appliedCount).toBe(3);
+  });
+});
+
+describe('normalizeMinutesCorrections', () => {
+  test('filters invalid entries, deduplicates by from, and caps at 200', () => {
+    const valid = Array.from({ length: 205 }, (_, i) => ({ from: `wrong-${i}`, to: `right-${i}` }));
+    const result = normalizeMinutesCorrections([
+      null,
+      { from: '', to: 'x' },
+      { from: 'a', to: 'cd' },
+      { from: 'same', to: 'same' },
+      valid[0],
+      { from: valid[0].from, to: 'duplicate' },
+      ...valid.slice(1),
+    ]);
+    expect(result).toHaveLength(200);
+    expect(result[0]).toEqual(valid[0]);
+  });
+
+  test('tolerates a wrapping object', () => {
+    expect(normalizeMinutesCorrections({ corrections: [{ from: 'wrong', to: 'right' }] }))
+      .toEqual([{ from: 'wrong', to: 'right' }]);
+  });
+
+  test('drops corrections whose "to" introduces a non-Latin script not present in "from"', () => {
+    const result = normalizeMinutesCorrections([
+      { from: "Ying Zheng's", to: "Ying镇's" },
+      { from: 'Bob', to: 'Rob' },
+    ]);
+    expect(result).toEqual([{ from: 'Bob', to: 'Rob' }]);
+  });
+});
+
+describe('applyLiteralCorrections', () => {
+  test('applies a {from,to} globally with word boundaries', () => {
+    const result = applyLiteralCorrections('Martin Thompson spoke. Later, Thompson replied.', [
+      { from: 'Thompson', to: 'Thomson' },
+    ]);
+    expect(result.text).toBe('Martin Thomson spoke. Later, Thomson replied.');
+    expect(result.applied).toEqual([{ from: 'Thompson', to: 'Thomson' }]);
+  });
+
+  test('does not match a substring embedded in another word', () => {
+    const result = applyLiteralCorrections('Thompsonville is not Thompson', [
+      { from: 'Thompson', to: 'Thomson' },
+    ]);
+    expect(result.text).toBe('Thompsonville is not Thomson');
+  });
+
+  test('leaves text untouched and reports no applied entries when "from" is absent', () => {
+    const result = applyLiteralCorrections('Nothing to see here', [
+      { from: 'Thompson', to: 'Thomson' },
+    ]);
+    expect(result.text).toBe('Nothing to see here');
+    expect(result.applied).toEqual([]);
+  });
+
+  test('applies multiple corrections in sequence', () => {
+    const result = applyLiteralCorrections('Bob and Alice', [
+      { from: 'Bob', to: 'Rob' },
+      { from: 'Alice', to: 'Eve' },
+    ]);
+    expect(result.text).toBe('Rob and Eve');
+    expect(result.applied).toEqual([{ from: 'Bob', to: 'Rob' }, { from: 'Alice', to: 'Eve' }]);
+  });
+
+  test('treats a null/empty "to" as deletion', () => {
+    const result = applyLiteralCorrections('hello filler word', [{ from: 'filler', to: '' }]);
+    expect(result.text).toBe('hello  word');
+    expect(result.applied).toEqual([{ from: 'filler', to: '' }]);
   });
 });
 
