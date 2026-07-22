@@ -685,3 +685,75 @@ test('splits comments once across multiple sessions in a WG', async () => {
   expect(dependencies.getTranscriptCorrections).toHaveBeenCalledTimes(2);
   expect(dependencies.amendMinutes).toHaveBeenCalledTimes(2);
 });
+
+test('fails the whole run when the transcript step throws (e.g. an LLM API error), instead of silently skipping', async () => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: 'Fix Bob to Rob',
+      minutesInstructions: '',
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing minutes'),
+    existsSync: jest.fn().mockReturnValue(true),
+    readFile: jest.fn().mockResolvedValue('Bob Smith discussed QUIC.'),
+    getTranscriptCorrections: jest.fn().mockRejectedValue(
+      new Error('[GoogleGenerativeAI Error]: ... [503 Service Unavailable] The service is currently unavailable.'),
+    ),
+  });
+
+  await expect(amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix Bob to Rob',
+    dependencies,
+  })).rejects.toThrow('Failed to amend 1 session(s): 6lo-1');
+
+  expect(dependencies.amendMinutes).not.toHaveBeenCalled();
+  expect(dependencies.saveCachedMinutes).not.toHaveBeenCalled();
+  expect(dependencies.logger.error).toHaveBeenCalledWith(
+    expect.stringContaining('Transcript step failed for 6lo-1: [GoogleGenerativeAI Error]'),
+  );
+  expect(dependencies.logger.error).toHaveBeenCalledWith(
+    expect.stringContaining('Could not amend 6lo-1:'),
+  );
+});
+
+test('resolves without failure when the transcript step runs cleanly but yields no changes and there are no minutes instructions', async () => {
+  const dependencies = makeDependencies({
+    loadCacheManifest: jest.fn().mockResolvedValue([{
+      sessionName: '6LO',
+      sessions: [{ sessionId: '6lo-1' }],
+    }]),
+    splitAmendComments: jest.fn().mockResolvedValue({
+      transcriptInstructions: 'Fix Bob to Rob',
+      minutesInstructions: '',
+    }),
+    getCachedMinutes: jest.fn().mockResolvedValue('# Existing minutes'),
+    existsSync: jest.fn().mockReturnValue(true),
+    readFile: jest.fn().mockResolvedValue('Bob Smith discussed QUIC.'),
+    getTranscriptCorrections: jest.fn().mockResolvedValue([]),
+    normalizeCorrections: jest.fn().mockReturnValue([]),
+    applyCorrections: jest.fn().mockReturnValue({
+      text: 'Bob Smith discussed QUIC.',
+      appliedCount: 0,
+      applied: [],
+    }),
+  });
+
+  await expect(amendCachedSessions({
+    meetingId: 123,
+    groupName: '6LO',
+    comments: 'Fix Bob to Rob',
+    dependencies,
+  })).resolves.toBeUndefined();
+
+  expect(dependencies.amendMinutes).not.toHaveBeenCalled();
+  expect(dependencies.saveCachedMinutes).not.toHaveBeenCalled();
+  expect(dependencies.logger.error).not.toHaveBeenCalled();
+  expect(dependencies.logger.log).toHaveBeenCalledWith(
+    'Skipped amending 6lo-1: no minutes instructions or transcript changes',
+  );
+});
