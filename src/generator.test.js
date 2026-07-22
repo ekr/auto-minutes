@@ -481,11 +481,11 @@ describe('getTranscriptCorrections', () => {
     initializeGemini('fake-api-key');
   });
 
-  test('returns {from,to}[] and attaches usage', async () => {
+  test('returns {line,from,to}[] and attaches usage', async () => {
     mockGenerateContent.mockResolvedValue({
       response: {
         text: () => JSON.stringify([
-          { from: 'Bob Smith', to: 'Rob Smith' },
+          { line: 1, from: 'Bob Smith', to: 'Rob Smith' },
         ]),
         usageMetadata: { promptTokenCount: 30, candidatesTokenCount: 10 },
       },
@@ -493,8 +493,11 @@ describe('getTranscriptCorrections', () => {
 
     const result = await getTranscriptCorrections('Bob Smith spoke', 'Fix Bob Smith to Rob Smith', '6LO');
     expect(Array.isArray(result)).toBe(true);
-    expect([...result]).toEqual([{ from: 'Bob Smith', to: 'Rob Smith' }]);
+    expect([...result]).toEqual([{ line: 1, from: 'Bob Smith', to: 'Rob Smith' }]);
     expect(result.usage).toEqual({ model: 'gemini-3.5-flash', inputTokens: 30, outputTokens: 10 });
+    const prompt = mockGenerateContent.mock.calls.at(-1)[0];
+    expect(prompt).toContain('NUMBERED TRANSCRIPT:');
+    expect(prompt).toContain('1: Bob Smith spoke');
   });
 
   test('returns empty array when instructions are empty', async () => {
@@ -515,25 +518,25 @@ describe('filterTranscriptCorrections', () => {
     mockGenerateContent.mockResolvedValue({
       response: {
         text: () => JSON.stringify([
-          { from: 'Bob Smith', to: 'Rob Smith' },
+          { line: 1, from: 'Bob Smith', to: 'Rob Smith' },
         ]),
         usageMetadata: { promptTokenCount: 40, candidatesTokenCount: 15 },
       },
     });
 
     const proposed = [
-      { from: 'Bob Smith', to: 'Rob Smith' },
-      { from: 'unwanted WG fix', to: 'desired WG' },
+      { line: 1, from: 'Bob Smith', to: 'Rob Smith' },
+      { line: 2, from: 'unwanted WG fix', to: 'desired WG' },
     ];
     const result = await filterTranscriptCorrections(proposed, 'Fix Bob Smith to Rob Smith', '6LO');
     expect(Array.isArray(result)).toBe(true);
-    expect([...result]).toEqual([{ from: 'Bob Smith', to: 'Rob Smith' }]);
+    expect([...result]).toEqual([{ line: 1, from: 'Bob Smith', to: 'Rob Smith' }]);
     expect(result.usage).toEqual({ model: 'gemini-3.5-flash', inputTokens: 40, outputTokens: 15 });
     const prompt = mockGenerateContent.mock.calls[0][0];
     expect(prompt).toContain('REQUESTED TRANSCRIPT EDITS:');
     expect(prompt).toContain('Fix Bob Smith to Rob Smith');
     expect(prompt).toContain('PROPOSED TRANSCRIPT CORRECTIONS (DIFF):');
-    expect(prompt).toContain('- "Bob Smith" → "Rob Smith"');
+    expect(prompt).toContain('- line 1: "Bob Smith" → "Rob Smith"');
   });
 
   test('returns empty array when input corrections array is empty', async () => {
@@ -544,9 +547,9 @@ describe('filterTranscriptCorrections', () => {
   });
 
   test('returns empty array when instructions are empty', async () => {
-    const proposed = [{ from: 'Bob Smith', to: 'Rob Smith' }];
+    const proposed = [{ line: 1, from: 'Bob Smith', to: 'Rob Smith' }];
     const result = await filterTranscriptCorrections(proposed, '', '6LO');
-    expect([...result]).toEqual([{ from: 'Bob Smith', to: 'Rob Smith' }]);
+    expect([...result]).toEqual([{ line: 1, from: 'Bob Smith', to: 'Rob Smith' }]);
     expect(result.usage).toBeNull();
     expect(mockGenerateContent).not.toHaveBeenCalled();
   });

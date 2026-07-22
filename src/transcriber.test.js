@@ -1139,7 +1139,7 @@ describe('transcribeSession deepgram dispatch', () => {
     });
     mockGenerateContent.mockResolvedValue({
       response: {
-        text: () => JSON.stringify([{ from: 'Hello there', to: 'Hello TLS' }]),
+        text: () => JSON.stringify([{ line: 1, from: 'Hello there', to: 'Hello TLS' }]),
         usageMetadata: { promptTokenCount: 55, candidatesTokenCount: 7 },
       },
     });
