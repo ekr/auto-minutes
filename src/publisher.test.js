@@ -167,8 +167,16 @@ describe('saveMinutes', () => {
     await saveMinutes('CURRENT', content, outputDir, [], null, 126);
     const mdContent = await fs.readFile(path.join(outputDir, 'current.md'), 'utf-8');
     expect(mdContent).toContain(
-      '[Suggest a correction](https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+126%3ACURRENT&session_selector=126%3ACURRENT)'
+      '<div class="suggest-correction"><a href="https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+126%3ACURRENT&session_selector=126%3ACURRENT">✎ Suggest a correction</a></div>'
     );
+    // The block must sit between the header row and the content body so CSS
+    // float: right pulls it onto the Session Date/Time line that starts `content`.
+    const headerIdx = mdContent.indexOf('[Markdown Version]');
+    const divIdx = mdContent.indexOf('<div class="suggest-correction">');
+    const contentIdx = mdContent.indexOf('## Summary');
+    expect(headerIdx).toBeGreaterThanOrEqual(0);
+    expect(headerIdx).toBeLessThan(divIdx);
+    expect(divIdx).toBeLessThan(contentIdx);
   });
 
   test('includes Suggest a correction link when meetingId is date string', async () => {
@@ -176,8 +184,14 @@ describe('saveMinutes', () => {
     await saveMinutes('CBOR', content, outputDir, [], null, '2026-07-08');
     const mdContent = await fs.readFile(path.join(outputDir, 'cbor.md'), 'utf-8');
     expect(mdContent).toContain(
-      '[Suggest a correction](https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+2026-07-08%3ACBOR&session_selector=2026-07-08%3ACBOR)'
+      '<div class="suggest-correction"><a href="https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+2026-07-08%3ACBOR&session_selector=2026-07-08%3ACBOR">✎ Suggest a correction</a></div>'
     );
+    const headerIdx = mdContent.indexOf('[Markdown Version]');
+    const divIdx = mdContent.indexOf('<div class="suggest-correction">');
+    const contentIdx = mdContent.indexOf('## Summary');
+    expect(headerIdx).toBeGreaterThanOrEqual(0);
+    expect(headerIdx).toBeLessThan(divIdx);
+    expect(divIdx).toBeLessThan(contentIdx);
   });
 
   test('omits Suggest a correction link when meetingId is null', async () => {
