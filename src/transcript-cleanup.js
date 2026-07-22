@@ -59,9 +59,34 @@ function escapeRegExp(str) {
  * @param {string} to
  * @returns {string}
  */
-function wordBoundaryReplace(text, from, to) {
+export function wordBoundaryReplace(text, from, to) {
   const re = new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(from)}(?![A-Za-z0-9])`, "g");
   return text.replace(re, to);
+}
+
+/**
+ * Apply {from, to} corrections globally (word-boundary matched) across a
+ * plain string, e.g. meeting minutes Markdown. Unlike applyCorrections, this
+ * is not line-anchored: each correction is applied everywhere it matches in
+ * `text`. A correction whose `from` does not occur anywhere is a no-op.
+ * @param {string} text
+ * @param {Array<{from: string, to: string}>} corrections
+ * @returns {{ text: string, applied: Array<{from: string, to: string}> }}
+ */
+export function applyLiteralCorrections(text, corrections) {
+  let result = text;
+  const applied = [];
+
+  for (const { from, to } of corrections || []) {
+    if (typeof from !== "string" || !from) continue;
+    const replacement = typeof to === "string" ? to : "";
+    const updated = wordBoundaryReplace(result, from, replacement);
+    if (updated === result) continue;
+    result = updated;
+    applied.push({ from, to: replacement });
+  }
+
+  return { text: result, applied };
 }
 
 export function buildCleanupReference(context) {
@@ -200,6 +225,33 @@ export function normalizeCorrections(raw) {
     if (seen.has(key)) continue;
     seen.add(key);
     result.push({ line, from, to });
+    if (result.length === 200) break;
+  }
+  return result;
+}
+
+/**
+ * Validate and dedupe {from, to} corrections that carry no line number (minutes
+ * corrections, applied globally rather than to one transcript line).
+ * @param {*} raw
+ * @returns {Array<{from: string, to: string}>}
+ */
+export function normalizeMinutesCorrections(raw) {
+  let entries = raw;
+  if (!Array.isArray(entries) && entries && typeof entries === "object") {
+    entries = Array.isArray(entries.corrections) ? entries.corrections : Object.values(entries).find(Array.isArray);
+  }
+  if (!Array.isArray(entries)) return [];
+  const seen = new Set();
+  const result = [];
+  for (const entry of entries) {
+    if (!entry || typeof entry.from !== "string" || typeof entry.to !== "string") continue;
+    const { from, to } = entry;
+    if (!from.trim() || (to !== "" && !to.trim()) || from === to || from.length < 2) continue;
+    if (!NON_LATIN_SCRIPT_RE.test(from) && NON_LATIN_SCRIPT_RE.test(to)) continue;
+    if (seen.has(from)) continue;
+    seen.add(from);
+    result.push({ from, to });
     if (result.length === 200) break;
   }
   return result;

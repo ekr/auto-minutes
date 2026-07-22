@@ -31,6 +31,7 @@ const {
   splitAmendComments,
   getTranscriptCorrections,
   filterTranscriptCorrections,
+  filterMinutesCorrections,
   initializeClaude,
   initializeGemini,
   extractParticipantNames,
@@ -427,20 +428,9 @@ describe('amendMinutes', () => {
     });
   });
 
-  test('includes transcriptChanges block and accepts empty comments when transcriptChanges is set', async () => {
-    mockGenerateContent.mockResolvedValue({
-      response: {
-        text: () => '# Revised minutes',
-        usageMetadata: {},
-      },
-    });
-
-    const result = await amendMinutes('# Existing minutes', '', '6LO', false, null, null, '- "Bob Smith" → "Rob Smith"');
-    expect(result.text).toBe('# Revised minutes');
-    const prompt = mockGenerateContent.mock.calls[0][0];
-    expect(prompt).toContain('TRANSCRIPT CORRECTIONS:');
-    expect(prompt).toContain('The transcript was corrected as follows; reflect these corrections in the minutes where they appear:');
-    expect(prompt).toContain('- "Bob Smith" → "Rob Smith"');
+  test('rejects empty comments even when a context is provided', async () => {
+    await expect(amendMinutes('# Existing minutes', '', '6LO', false, null, null)).rejects.toThrow('comments are empty');
+    expect(mockGenerateContent).not.toHaveBeenCalled();
   });
 });
 
@@ -550,6 +540,54 @@ describe('filterTranscriptCorrections', () => {
     const proposed = [{ line: 1, from: 'Bob Smith', to: 'Rob Smith' }];
     const result = await filterTranscriptCorrections(proposed, '', '6LO');
     expect([...result]).toEqual([{ line: 1, from: 'Bob Smith', to: 'Rob Smith' }]);
+    expect(result.usage).toBeNull();
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+});
+
+describe('filterMinutesCorrections', () => {
+  beforeEach(() => {
+    mockGenerateContent.mockReset();
+    mockCreate.mockReset();
+    initializeGemini('fake-api-key');
+  });
+
+  test('filters out unwanted corrections and attaches usage', async () => {
+    mockGenerateContent.mockResolvedValue({
+      response: {
+        text: () => JSON.stringify([
+          { from: 'Martin Thompson', to: 'Martin Thomson' },
+        ]),
+        usageMetadata: { promptTokenCount: 40, candidatesTokenCount: 15 },
+      },
+    });
+
+    const proposed = [
+      { from: 'Martin Thompson', to: 'Martin Thomson' },
+      { from: 'unwanted extra content', to: 'invented content' },
+    ];
+    const result = await filterMinutesCorrections(proposed, 'Fix Martin Thompson to Thomson', '6LO');
+    expect(Array.isArray(result)).toBe(true);
+    expect([...result]).toEqual([{ from: 'Martin Thompson', to: 'Martin Thomson' }]);
+    expect(result.usage).toEqual({ model: 'gemini-3.5-flash', inputTokens: 40, outputTokens: 15 });
+    const prompt = mockGenerateContent.mock.calls[0][0];
+    expect(prompt).toContain('REQUESTED EDITS:');
+    expect(prompt).toContain('Fix Martin Thompson to Thomson');
+    expect(prompt).toContain('PROPOSED MINUTES CORRECTIONS (DIFF):');
+    expect(prompt).toContain('- "Martin Thompson" → "Martin Thomson"');
+  });
+
+  test('returns empty array when input corrections array is empty', async () => {
+    const result = await filterMinutesCorrections([], 'Fix Martin Thompson to Thomson', '6LO');
+    expect([...result]).toEqual([]);
+    expect(result.usage).toBeNull();
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+
+  test('returns empty array when instructions are empty', async () => {
+    const proposed = [{ from: 'Martin Thompson', to: 'Martin Thomson' }];
+    const result = await filterMinutesCorrections(proposed, '', '6LO');
+    expect([...result]).toEqual([{ from: 'Martin Thompson', to: 'Martin Thomson' }]);
     expect(result.usage).toBeNull();
     expect(mockGenerateContent).not.toHaveBeenCalled();
   });
