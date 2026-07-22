@@ -94,6 +94,47 @@ test('normalizeCorrections drops entries failing the charset guard', () => {
   expect(normalized).toEqual([{ from: 'Francois', to: 'François' }]);
 });
 
+test('normalizeCorrections drops common words when context does not contain from or equals from', () => {
+  const noMatch = normalizeCorrections([{ from: 'cache', to: 'CACH', context: 'some phrase without target' }]);
+  expect(noMatch).toEqual([]);
+
+  const exactMatch = normalizeCorrections([{ from: 'cache', to: 'CACH', context: 'cache' }]);
+  expect(exactMatch).toEqual([]);
+
+  const paddedMatch = normalizeCorrections([{ from: 'cache', to: 'CACH', context: ' cache ' }]);
+  expect(paddedMatch).toEqual([]);
+});
+
+test('applyCorrections does not perform unanchored replacement when context is invalid or missing from text', () => {
+  const transcript = 'We need to clear the cache everywhere.';
+
+  // Invalid context (does not contain 'from')
+  const res1 = applyCorrections(transcript, [
+    { from: 'cache', to: 'CACH', context: 'unrelated context phrase' },
+  ]);
+  expect(res1.text).toBe(transcript);
+  expect(res1.appliedCount).toBe(0);
+  expect(res1.applied).toEqual([]);
+
+  // Missing context (contains 'from' but context phrase is not in transcript)
+  const res2 = applyCorrections(transcript, [
+    { from: 'cache', to: 'CACH', context: 'the complete SNP is called cache' },
+  ]);
+  expect(res2.text).toBe(transcript);
+  expect(res2.appliedCount).toBe(0);
+  expect(res2.applied).toEqual([]);
+});
+
+test('applyCorrections avoids substring over-replacement when applying anchored context', () => {
+  const transcript = 'We need to clear the caches.';
+  const res = applyCorrections(transcript, [
+    { from: 'cache', to: 'CACH', context: 'the cache' },
+  ]);
+  expect(res.text).toBe('We need to clear the caches.');
+  expect(res.appliedCount).toBe(0);
+  expect(res.applied).toEqual([]);
+});
+
 test('applyCorrections handles distinctive term replacements as regressions', () => {
   const raw = [
     { from: 'ISIS', to: 'IS-IS' },

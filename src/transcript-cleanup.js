@@ -179,7 +179,8 @@ export function normalizeCorrections(raw) {
   for (const entry of entries) {
     if (!entry || typeof entry.from !== "string" || typeof entry.to !== "string") continue;
     const { from, to } = entry;
-    const context = (typeof entry.context === "string" && entry.context.trim()) ? entry.context : undefined;
+    const rawContext = (typeof entry.context === "string" && entry.context.trim()) ? entry.context : undefined;
+    const context = (rawContext && rawContext.includes(from) && rawContext.trim() !== from.trim()) ? rawContext : undefined;
 
     if (!from.trim() || (to !== "" && !to.trim()) || from === to || from.length < 3) continue;
 
@@ -243,14 +244,17 @@ export function applyCorrections(transcript, corrections) {
   for (const correction of corrections) {
     const { from, to, context } = correction;
 
-    if (context && typeof context === "string" && context.includes(from)) {
-      if (!text.includes(context)) continue;
+    if (context && typeof context === "string") {
+      if (!context.includes(from) || !text.includes(context)) continue;
 
-      const { newText: newContext, matched } = replaceWordBoundary(context, from, to);
-      if (matched && newContext !== context && text.includes(context)) {
-        text = text.split(context).join(newContext);
-        appliedCount += 1;
-        applied.push(correction);
+      const { newText: newContext, matched: contextMatched } = replaceWordBoundary(context, from, to);
+      if (contextMatched && newContext !== context && text.includes(context)) {
+        const { newText, matched } = replaceWordBoundary(text, context, newContext);
+        if (matched) {
+          text = newText;
+          appliedCount += 1;
+          applied.push(correction);
+        }
       }
     } else {
       if (!text.includes(from)) continue;
