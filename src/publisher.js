@@ -475,16 +475,16 @@ export async function saveMinutes(
   }
 
   const amendUrl = buildAmendIssueUrl(meetingId, sessionName);
-  if (amendUrl) {
-    header += ` | [Suggest a correction](${amendUrl})`;
-  }
+  const suggestCorrectionBlock = amendUrl
+    ? `<div class="suggest-correction"><a href="${amendUrl}">✎ Suggest a correction</a></div>\n\n`
+    : '';
 
   // Extract draft names from the LLM-generated content before linkifying, so the
   // "Related Documents" section lists every draft regardless of surrounding context.
   const draftMatches = content.match(/\bdraft-[a-zA-Z0-9-]+\b/gi) || [];
   const allDrafts = new Set(draftMatches.map(d => d.toLowerCase()));
 
-  let contentWithLinks = `${header}\n\n${content}`;
+  let contentWithLinks = `${header}\n\n${suggestCorrectionBlock}${content}`;
 
   // Add inline draft links to the content
   contentWithLinks = addInlineDraftLinks(contentWithLinks);

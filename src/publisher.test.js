@@ -167,7 +167,7 @@ describe('saveMinutes', () => {
     await saveMinutes('CURRENT', content, outputDir, [], null, 126);
     const mdContent = await fs.readFile(path.join(outputDir, 'current.md'), 'utf-8');
     expect(mdContent).toContain(
-      '[Suggest a correction](https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+126%3ACURRENT&session_selector=126%3ACURRENT)'
+      '<div class="suggest-correction"><a href="https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+126%3ACURRENT&session_selector=126%3ACURRENT">✎ Suggest a correction</a></div>'
     );
   });
 
@@ -176,7 +176,7 @@ describe('saveMinutes', () => {
     await saveMinutes('CBOR', content, outputDir, [], null, '2026-07-08');
     const mdContent = await fs.readFile(path.join(outputDir, 'cbor.md'), 'utf-8');
     expect(mdContent).toContain(
-      '[Suggest a correction](https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+2026-07-08%3ACBOR&session_selector=2026-07-08%3ACBOR)'
+      '<div class="suggest-correction"><a href="https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+2026-07-08%3ACBOR&session_selector=2026-07-08%3ACBOR">✎ Suggest a correction</a></div>'
     );
   });
 
