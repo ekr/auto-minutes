@@ -162,42 +162,69 @@ describe('saveMinutes', () => {
     expect(mdContent).toContain('Summary');
   });
 
-  test('includes Suggest a correction link when meetingId is numeric', async () => {
+  test('includes Suggest a correction link beside the Session Date/Time value when meetingId is numeric', async () => {
+    const content = '**Session Date/Time:** Monday, March 3, 2026, 09:00 UTC\n\n# [Test Session](../wg/test-session.html)\n\n## Summary\n\nThe group discussed things.';
+    await saveMinutes('CURRENT', content, outputDir, [], null, 126);
+    const mdContent = await fs.readFile(path.join(outputDir, 'current.md'), 'utf-8');
+
+    expect(mdContent).toContain('<div class="session-meta"');
+    expect(mdContent).toContain('<strong>Session Date/Time:</strong> Monday, March 3, 2026, 09:00 UTC');
+    expect(mdContent).toContain(
+      '<a class="suggest-correction" href="https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+126%3ACURRENT&session_selector=126%3ACURRENT">✎ Suggest a correction</a>'
+    );
+
+    // Both live inside the same session-meta block, which sits between the header row and the content body.
+    const headerIdx = mdContent.indexOf('[Markdown Version]');
+    const metaIdx = mdContent.indexOf('<div class="session-meta"');
+    const dateIdx = mdContent.indexOf('<strong>Session Date/Time:</strong>');
+    const correctionIdx = mdContent.indexOf('<a class="suggest-correction"');
+    const metaCloseIdx = mdContent.indexOf('</div>', metaIdx);
+    const contentIdx = mdContent.indexOf('## Summary');
+    expect(headerIdx).toBeGreaterThanOrEqual(0);
+    expect(headerIdx).toBeLessThan(metaIdx);
+    expect(metaIdx).toBeLessThan(dateIdx);
+    expect(dateIdx).toBeLessThan(correctionIdx);
+    expect(correctionIdx).toBeLessThan(metaCloseIdx);
+    expect(metaCloseIdx).toBeLessThan(contentIdx);
+
+    // The date value must not be duplicated elsewhere in the output.
+    const dateOccurrences = mdContent.split('Monday, March 3, 2026, 09:00 UTC').length - 1;
+    expect(dateOccurrences).toBe(1);
+  });
+
+  test('includes Suggest a correction link beside the Session Date/Time value when meetingId is date string', async () => {
+    const content = '**Session Date/Time:** Tuesday, July 8, 2026, 14:00 UTC\n\n# [Test Session](../wg/test-session.html)\n\n## Summary\n\nThe group discussed things.';
+    await saveMinutes('CBOR', content, outputDir, [], null, '2026-07-08');
+    const mdContent = await fs.readFile(path.join(outputDir, 'cbor.md'), 'utf-8');
+
+    expect(mdContent).toContain('<div class="session-meta"');
+    expect(mdContent).toContain('<strong>Session Date/Time:</strong> Tuesday, July 8, 2026, 14:00 UTC');
+    expect(mdContent).toContain(
+      '<a class="suggest-correction" href="https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+2026-07-08%3ACBOR&session_selector=2026-07-08%3ACBOR">✎ Suggest a correction</a>'
+    );
+
+    const dateOccurrences = mdContent.split('Tuesday, July 8, 2026, 14:00 UTC').length - 1;
+    expect(dateOccurrences).toBe(1);
+  });
+
+  test('emits a right-aligned correction link with no Session Date/Time line', async () => {
     const content = '# [Test Session](../wg/test-session.html)\n\n## Summary\n\nThe group discussed things.';
     await saveMinutes('CURRENT', content, outputDir, [], null, 126);
     const mdContent = await fs.readFile(path.join(outputDir, 'current.md'), 'utf-8');
-    expect(mdContent).toContain(
-      '<div class="suggest-correction"><a href="https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+126%3ACURRENT&session_selector=126%3ACURRENT">✎ Suggest a correction</a></div>'
-    );
-    // The block must sit between the header row and the content body so CSS
-    // float: right pulls it onto the Session Date/Time line that starts `content`.
-    const headerIdx = mdContent.indexOf('[Markdown Version]');
-    const divIdx = mdContent.indexOf('<div class="suggest-correction">');
-    const contentIdx = mdContent.indexOf('## Summary');
-    expect(headerIdx).toBeGreaterThanOrEqual(0);
-    expect(headerIdx).toBeLessThan(divIdx);
-    expect(divIdx).toBeLessThan(contentIdx);
-  });
 
-  test('includes Suggest a correction link when meetingId is date string', async () => {
-    const content = '# [Test Session](../wg/test-session.html)\n\n## Summary\n\nThe group discussed things.';
-    await saveMinutes('CBOR', content, outputDir, [], null, '2026-07-08');
-    const mdContent = await fs.readFile(path.join(outputDir, 'cbor.md'), 'utf-8');
+    expect(mdContent).toContain('<div class="session-meta" style="display:flex;justify-content:flex-end">');
     expect(mdContent).toContain(
-      '<div class="suggest-correction"><a href="https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+2026-07-08%3ACBOR&session_selector=2026-07-08%3ACBOR">✎ Suggest a correction</a></div>'
+      '<a class="suggest-correction" href="https://github.com/ietf-minutes/ietf-minutes-data/issues/new?template=amend-minutes.yml&title=%5BAmendment%5D%3A+126%3ACURRENT&session_selector=126%3ACURRENT">✎ Suggest a correction</a>'
     );
-    const headerIdx = mdContent.indexOf('[Markdown Version]');
-    const divIdx = mdContent.indexOf('<div class="suggest-correction">');
-    const contentIdx = mdContent.indexOf('## Summary');
-    expect(headerIdx).toBeGreaterThanOrEqual(0);
-    expect(headerIdx).toBeLessThan(divIdx);
-    expect(divIdx).toBeLessThan(contentIdx);
+    expect(mdContent).not.toContain('Session Date/Time');
   });
 
   test('omits Suggest a correction link when meetingId is null', async () => {
-    const content = '# [Test Session](../wg/test-session.html)\n\n## Summary\n\nThe group discussed things.';
+    const content = '**Session Date/Time:** Monday, March 3, 2026, 09:00 UTC\n\n# [Test Session](../wg/test-session.html)\n\n## Summary\n\nThe group discussed things.';
     await saveMinutes('Test Session', content, outputDir, [], null, null);
     const mdContent = await fs.readFile(path.join(outputDir, 'test-session.md'), 'utf-8');
     expect(mdContent).not.toContain('Suggest a correction');
+    // Date line is left as plain markdown, unchanged.
+    expect(mdContent).toContain('**Session Date/Time:** Monday, March 3, 2026, 09:00 UTC');
   });
 });

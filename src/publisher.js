@@ -475,16 +475,37 @@ export async function saveMinutes(
   }
 
   const amendUrl = buildAmendIssueUrl(meetingId, sessionName);
-  const suggestCorrectionBlock = amendUrl
-    ? `<div class="suggest-correction"><a href="${amendUrl}">✎ Suggest a correction</a></div>\n\n`
-    : '';
+
+  // When a correction link is available, combine it with the leading Session
+  // Date/Time line (if present) into a single flex row so the link sits beside
+  // the date instead of relying on a float landing on a neighboring block.
+  let bodyContent = content;
+  let sessionMetaBlock = '';
+
+  if (amendUrl) {
+    const dateLineMatch = content.match(/^\*\*Session Date\/Time:\*\* (.+?)\r?\n/);
+    if (dateLineMatch) {
+      const dateValue = dateLineMatch[1];
+      bodyContent = content.slice(dateLineMatch[0].length).replace(/^\r?\n/, '');
+      sessionMetaBlock =
+        `<div class="session-meta" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0.5rem">\n` +
+        `<span><strong>Session Date/Time:</strong> ${dateValue}</span>\n` +
+        `<a class="suggest-correction" href="${amendUrl}">✎ Suggest a correction</a>\n` +
+        `</div>\n\n`;
+    } else {
+      sessionMetaBlock =
+        `<div class="session-meta" style="display:flex;justify-content:flex-end">\n` +
+        `<a class="suggest-correction" href="${amendUrl}">✎ Suggest a correction</a>\n` +
+        `</div>\n\n`;
+    }
+  }
 
   // Extract draft names from the LLM-generated content before linkifying, so the
   // "Related Documents" section lists every draft regardless of surrounding context.
   const draftMatches = content.match(/\bdraft-[a-zA-Z0-9-]+\b/gi) || [];
   const allDrafts = new Set(draftMatches.map(d => d.toLowerCase()));
 
-  let contentWithLinks = `${header}\n\n${suggestCorrectionBlock}${content}`;
+  let contentWithLinks = `${header}\n\n${sessionMetaBlock}${bodyContent}`;
 
   // Add inline draft links to the content
   contentWithLinks = addInlineDraftLinks(contentWithLinks);
