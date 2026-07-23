@@ -21,3 +21,5 @@ Fix the interim-meeting scraper so a datatracker meeting record with multiple Me
 ## Decisions
 
 Implemented as designed: `scrapeInterimSessionIds` returns all deduped Meetecho links in page order, and `fetchInterimSession`, `fetchAllInterimSessions`, and `fetchInterimSessionsInRange` each fan out over the array. Single-link behavior is unchanged. New tests cover the two-link, single-link, and duplicate-link cases via the exported functions (`src/scraper-interim-sessions.test.js`), since the scrape helper itself is private. Full suite passes (343 tests).
+
+
