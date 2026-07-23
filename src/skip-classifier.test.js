@@ -73,6 +73,24 @@ describe('isRecordingUnavailable', () => {
     expect(isRecordingUnavailable('Cannot generate minutes for Test WG: transcript has no entries')).toBe(false);
   });
 
+  test('classifies a probed-unavailable recording stream as benign', () => {
+    expect(
+      isRecordingUnavailable(
+        'Recording stream for IETF126-DIEM-20260723-1200 is unavailable (ffmpeg download exited with code 8)'
+      )
+    ).toBe(true);
+  });
+
+  test('classifies a persistent ffmpeg download failure as benign, with or without stderr text', () => {
+    expect(isRecordingUnavailable('ffmpeg download exited with code 8')).toBe(true);
+    expect(isRecordingUnavailable('ffmpeg download exited with code 1: some stderr output')).toBe(true);
+  });
+
+  test('does not classify an ffmpeg split or convert failure as benign', () => {
+    expect(isRecordingUnavailable('ffmpeg split exited with code 1')).toBe(false);
+    expect(isRecordingUnavailable('ffmpeg convert exited with code 1')).toBe(false);
+  });
+
   test('does not classify a session-info auth failure as benign', () => {
     expect(isRecordingUnavailable('Failed to fetch session info: 401 Unauthorized')).toBe(false);
   });
@@ -96,6 +114,13 @@ describe('shouldExitNonZero', () => {
     const allSkipped = [
       { sessionName: 'wg1', reason: 'Failed to fetch session info: 404 Not Found', recordingUnavailable: true },
       { sessionName: 'wg2', reason: 'No Cloudflare video found for session X', recordingUnavailable: true },
+    ];
+    expect(shouldExitNonZero(allSkipped)).toBe(false);
+  });
+
+  test('returns false when the only skip is an isolated ffmpeg-download failure', () => {
+    const allSkipped = [
+      { sessionName: 'diem', reason: 'ffmpeg download exited with code 8', recordingUnavailable: true },
     ];
     expect(shouldExitNonZero(allSkipped)).toBe(false);
   });

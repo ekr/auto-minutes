@@ -308,6 +308,107 @@ describe('transcribeSession', () => {
     expect(result.text.trim().split(/\s+/).length).toBe(11000);
     expect(mockWriteFile).toHaveBeenCalled();
   });
+
+  // Neither the audio nor the transcript is cached here, so transcribeSession must
+  // actually go through downloadSessionAudio's fetch-video-id -> fetch-manifest ->
+  // ffmpeg-download chain (unlike the tests above, which short-circuit via a cached
+  // audio file). This is what lets us exercise the probe-based reclassification of a
+  // persistent ffmpeg download failure into a clear "stream is unavailable" error.
+  // Uses real timers: downloadSessionAudio calls downloadAudio with production
+  // retry defaults (no way to inject a fast retryBaseMs through transcribeSession's
+  // public signature), so this pays the real ~3s retry backoff. See the note on
+  // the 'downloadAudio' describe block below for why fake timers aren't used here.
+  describe('when audio download fails persistently', () => {
+    beforeEach(() => {
+      mockExistsSync.mockReturnValue(false);
+      mockSpawn.mockImplementation(() => makeMockChild({ code: 8 }));
+    });
+
+    test('reclassifies as "Recording stream ... is unavailable" when the stream probe 404s', async () => {
+      mockFetch.mockImplementation(async (url) => {
+        if (typeof url === 'string' && url.includes('meetecho-player.ietf.org')) {
+          return { ok: true, json: async () => ({ videos: [{ type: 3, src: 'vid123' }] }) };
+        }
+        if (typeof url === 'string' && url.includes('videodelivery.net')) {
+          // First call is getAudioStreamUrl's playlist fetch (fail -> fall back to
+          // the master URL); second call is probeStreamUnavailable's probe of that
+          // same master URL, which we make 404 to mark the stream unavailable.
+          return { ok: false, status: 404, statusText: 'Not Found', text: async () => '' };
+        }
+        throw new Error(`Unexpected fetch url in test: ${url}`);
+      });
+
+      await expect(transcribeSession(session, 'gemini', 'fake-key')).rejects.toThrow(
+        new RegExp(`Recording stream for ${sessionId} is unavailable \\(ffmpeg download exited with code 8\\)`),
+      );
+
+      expect(mockSpawn).toHaveBeenCalledTimes(3); // DOWNLOAD_AUDIO_MAX_ATTEMPTS
+    }, 15000);
+
+    test('leaves the raw ffmpeg error alone when the stream probe succeeds (still benign via the classifier)', async () => {
+      mockFetch.mockImplementation(async (url) => {
+        if (typeof url === 'string' && url.includes('meetecho-player.ietf.org')) {
+          return { ok: true, json: async () => ({ videos: [{ type: 3, src: 'vid123' }] }) };
+        }
+        if (typeof url === 'string' && url.includes('videodelivery.net')) {
+          return { ok: true, text: async () => '#EXTM3U\nsome playlist content' };
+        }
+        throw new Error(`Unexpected fetch url in test: ${url}`);
+      });
+
+      await expect(transcribeSession(session, 'gemini', 'fake-key')).rejects.toThrow(
+        /^ffmpeg download exited with code 8$/,
+      );
+    }, 15000);
+
+    test('reclassifies as "Recording stream ... is unavailable" when the stream probe returns an empty playlist', async () => {
+      mockFetch.mockImplementation(async (url) => {
+        if (typeof url === 'string' && url.includes('meetecho-player.ietf.org')) {
+          return { ok: true, json: async () => ({ videos: [{ type: 3, src: 'vid123' }] }) };
+        }
+        if (typeof url === 'string' && url.includes('videodelivery.net')) {
+          // Both getAudioStreamUrl's playlist fetch and probeStreamUnavailable's probe
+          // succeed at the HTTP level but return a whitespace-only body, which
+          // probeStreamUnavailable must still treat as "unavailable".
+          return { ok: true, text: async () => '   \n  ' };
+        }
+        throw new Error(`Unexpected fetch url in test: ${url}`);
+      });
+
+      await expect(transcribeSession(session, 'gemini', 'fake-key')).rejects.toThrow(
+        new RegExp(`Recording stream for ${sessionId} is unavailable \\(ffmpeg download exited with code 8\\)`),
+      );
+
+      expect(mockSpawn).toHaveBeenCalledTimes(3); // DOWNLOAD_AUDIO_MAX_ATTEMPTS
+    }, 15000);
+
+    test('reclassifies as "Recording stream ... is unavailable" when the stream probe fetch throws', async () => {
+      // getAudioStreamUrl's own playlist fetch must succeed (it isn't guarded by a
+      // try/catch, so a throw there would fail before ffmpeg is even attempted);
+      // only probeStreamUnavailable's later fetch of the same URL throws, simulating
+      // a network failure that the probe must catch and treat as "unavailable".
+      let videodeliveryCalls = 0;
+      mockFetch.mockImplementation(async (url) => {
+        if (typeof url === 'string' && url.includes('meetecho-player.ietf.org')) {
+          return { ok: true, json: async () => ({ videos: [{ type: 3, src: 'vid123' }] }) };
+        }
+        if (typeof url === 'string' && url.includes('videodelivery.net')) {
+          videodeliveryCalls += 1;
+          if (videodeliveryCalls === 1) {
+            return { ok: true, text: async () => '#EXTM3U\nsome playlist content' };
+          }
+          throw new Error('network failure');
+        }
+        throw new Error(`Unexpected fetch url in test: ${url}`);
+      });
+
+      await expect(transcribeSession(session, 'gemini', 'fake-key')).rejects.toThrow(
+        new RegExp(`Recording stream for ${sessionId} is unavailable \\(ffmpeg download exited with code 8\\)`),
+      );
+
+      expect(mockSpawn).toHaveBeenCalledTimes(3); // DOWNLOAD_AUDIO_MAX_ATTEMPTS
+    }, 15000);
+  });
 });
 
 // These exercise runProcess (the async spawn-based child_process runner) indirectly
@@ -318,6 +419,7 @@ describe('downloadAudio (async spawn-based ffmpeg runner)', () => {
       downloadAudio('https://stream.example/audio.m3u8', '/tmp/out.mp3', false),
     ).resolves.toBeUndefined();
 
+    expect(mockSpawn).toHaveBeenCalledTimes(1);
     expect(mockSpawn).toHaveBeenCalledWith('ffmpeg', [
       '-hide_banner', '-loglevel', 'error',
       '-i', 'https://stream.example/audio.m3u8',
@@ -326,20 +428,53 @@ describe('downloadAudio (async spawn-based ffmpeg runner)', () => {
     ]);
   });
 
-  test('rejects with a clear error when ffmpeg exits non-zero', async () => {
-    mockSpawn.mockImplementation(() => makeMockChild({ code: 1 }));
-
-    await expect(
-      downloadAudio('https://stream.example/audio.m3u8', '/tmp/out.mp3'),
-    ).rejects.toThrow(/exited with code 1/);
-  });
-
-  test('rejects when the child process fails to spawn', async () => {
+  test('rejects when the child process fails to spawn (no retry loop involved)', async () => {
     mockSpawn.mockImplementation(() => makeMockChild({ spawnError: new Error('ENOENT') }));
 
     await expect(
       downloadAudio('https://stream.example/audio.m3u8', '/tmp/out.mp3'),
     ).rejects.toThrow(/failed to start/);
+  });
+
+  // Real timers with a near-zero injected retryBaseMs, rather than jest fake timers:
+  // the mock child process resolves via process.nextTick (matching real
+  // child_process.spawn), and interleaving that with fake-timer-driven setTimeout
+  // advancement is unreliable, so retry backoff is made testably fast via
+  // downloadAudio's retryOptions instead.
+  describe('retry on nonzero exit', () => {
+    test('retries a few times and succeeds once ffmpeg exits 0, removing the partial file before each attempt', async () => {
+      mockFs.unlinkSync.mockClear();
+      let attempts = 0;
+      mockSpawn.mockImplementation(() => {
+        attempts++;
+        return makeMockChild({ code: attempts < 3 ? 1 : 0 });
+      });
+      mockExistsSync.mockImplementation((p) => p === '/tmp/out.mp3');
+
+      const result = await downloadAudio(
+        'https://stream.example/audio.m3u8', '/tmp/out.mp3', false, { maxAttempts: 3, retryBaseMs: 1 },
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockSpawn).toHaveBeenCalledTimes(3);
+      // Once before every attempt (including the first), since a stale file could
+      // exist from a previous run of the whole pipeline too.
+      expect(mockFs.unlinkSync).toHaveBeenCalledTimes(3);
+      expect(mockFs.unlinkSync).toHaveBeenCalledWith('/tmp/out.mp3');
+    });
+
+    test('exhausts retries and rejects with the last ffmpeg error, cleaning up the partial file each time', async () => {
+      mockFs.unlinkSync.mockClear();
+      mockSpawn.mockImplementation(() => makeMockChild({ code: 1 }));
+      mockExistsSync.mockImplementation((p) => p === '/tmp/out.mp3');
+
+      await expect(
+        downloadAudio('https://stream.example/audio.m3u8', '/tmp/out.mp3', false, { maxAttempts: 3, retryBaseMs: 1 }),
+      ).rejects.toThrow(/ffmpeg download exited with code 1/);
+
+      expect(mockSpawn).toHaveBeenCalledTimes(3);
+      expect(mockFs.unlinkSync).toHaveBeenCalledTimes(3);
+    });
   });
 });
 

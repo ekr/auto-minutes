@@ -7,8 +7,14 @@
 /**
  * Whether a transcript/recording-fetch failure is a benign "not available
  * yet" condition (recording not published, no Cloudflare video, transcript
- * too short) rather than a genuine failure (auth/API errors, network issues,
- * etc).
+ * too short, audio stream/download unavailable) rather than a genuine failure
+ * (auth/API errors, network issues, etc).
+ *
+ * The ffmpeg-download pattern is intentionally narrow — it matches only the
+ * "ffmpeg download" label (src/transcriber.js's downloadAudio, after its
+ * retries are exhausted), NOT "ffmpeg split"/"ffmpeg convert" or other process
+ * failures, so a systemic ffmpeg problem (e.g. missing binary) affecting every
+ * session still fails the run via shouldExitNonZero.
  * @param {string} message - error.message from the transcript-fetch catch site
  * @returns {boolean}
  */
@@ -20,7 +26,9 @@ export function isRecordingUnavailable(message) {
     /^No Cloudflare video found for session/.test(message) ||
     /is only \d+ words \(minimum \d+\)/.test(message) ||
     /^Transcript for .* is not available yet/.test(message) ||
-    /^Transcript for .* is empty \(no words/.test(message)
+    /^Transcript for .* is empty \(no words/.test(message) ||
+    /^Recording stream for .* is unavailable/.test(message) ||
+    /^ffmpeg download exited with code \d+/.test(message)
   );
 }
 
