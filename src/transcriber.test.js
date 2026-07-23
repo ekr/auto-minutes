@@ -360,6 +360,54 @@ describe('transcribeSession', () => {
         /^ffmpeg download exited with code 8$/,
       );
     }, 15000);
+
+    test('reclassifies as "Recording stream ... is unavailable" when the stream probe returns an empty playlist', async () => {
+      mockFetch.mockImplementation(async (url) => {
+        if (typeof url === 'string' && url.includes('meetecho-player.ietf.org')) {
+          return { ok: true, json: async () => ({ videos: [{ type: 3, src: 'vid123' }] }) };
+        }
+        if (typeof url === 'string' && url.includes('videodelivery.net')) {
+          // Both getAudioStreamUrl's playlist fetch and probeStreamUnavailable's probe
+          // succeed at the HTTP level but return a whitespace-only body, which
+          // probeStreamUnavailable must still treat as "unavailable".
+          return { ok: true, text: async () => '   \n  ' };
+        }
+        throw new Error(`Unexpected fetch url in test: ${url}`);
+      });
+
+      await expect(transcribeSession(session, 'gemini', 'fake-key')).rejects.toThrow(
+        new RegExp(`Recording stream for ${sessionId} is unavailable \\(ffmpeg download exited with code 8\\)`),
+      );
+
+      expect(mockSpawn).toHaveBeenCalledTimes(3); // DOWNLOAD_AUDIO_MAX_ATTEMPTS
+    }, 15000);
+
+    test('reclassifies as "Recording stream ... is unavailable" when the stream probe fetch throws', async () => {
+      // getAudioStreamUrl's own playlist fetch must succeed (it isn't guarded by a
+      // try/catch, so a throw there would fail before ffmpeg is even attempted);
+      // only probeStreamUnavailable's later fetch of the same URL throws, simulating
+      // a network failure that the probe must catch and treat as "unavailable".
+      let videodeliveryCalls = 0;
+      mockFetch.mockImplementation(async (url) => {
+        if (typeof url === 'string' && url.includes('meetecho-player.ietf.org')) {
+          return { ok: true, json: async () => ({ videos: [{ type: 3, src: 'vid123' }] }) };
+        }
+        if (typeof url === 'string' && url.includes('videodelivery.net')) {
+          videodeliveryCalls += 1;
+          if (videodeliveryCalls === 1) {
+            return { ok: true, text: async () => '#EXTM3U\nsome playlist content' };
+          }
+          throw new Error('network failure');
+        }
+        throw new Error(`Unexpected fetch url in test: ${url}`);
+      });
+
+      await expect(transcribeSession(session, 'gemini', 'fake-key')).rejects.toThrow(
+        new RegExp(`Recording stream for ${sessionId} is unavailable \\(ffmpeg download exited with code 8\\)`),
+      );
+
+      expect(mockSpawn).toHaveBeenCalledTimes(3); // DOWNLOAD_AUDIO_MAX_ATTEMPTS
+    }, 15000);
   });
 });
 
