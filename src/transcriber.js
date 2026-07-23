@@ -202,19 +202,77 @@ function runProcess(command, args, { verbose = false, captureStdout = false, lab
   });
 }
 
+// ffmpeg download retry: a handful of attempts with short exponential backoff.
+// A single session's audio download failing (a flaky Cloudflare fetch, a transient
+// ffmpeg hiccup) must not need a manual re-run of the whole batch.
+const DOWNLOAD_AUDIO_MAX_ATTEMPTS = 3;
+const DOWNLOAD_AUDIO_RETRY_BASE_MS = 1000;
+
 /**
- * Download audio from an HLS stream to a local MP3 file using ffmpeg
+ * Download audio from an HLS stream to a local MP3 file using ffmpeg, retrying
+ * a few times with short backoff on any nonzero ffmpeg exit. Removes any partial
+ * output file before each attempt — ffmpeg refuses to write to an existing file,
+ * and a truncated file from a failed attempt must never be mistaken for a good
+ * download by the audio cache.
  * @param {string} streamUrl - HLS stream URL
  * @param {string} outputPath - Local file path for the MP3
  * @param {boolean} verbose - Whether to show ffmpeg output
+ * @param {{maxAttempts?: number, retryBaseMs?: number}} [retryOptions] - Override the
+ *   retry count/backoff base (tests only; production callers use the defaults).
  * @returns {Promise<void>}
  */
-export async function downloadAudio(streamUrl, outputPath, verbose = false) {
-  await runProcess(
-    "ffmpeg",
-    ["-hide_banner", "-loglevel", "error", "-i", streamUrl, "-vn", "-acodec", "libmp3lame", "-q:a", "2", outputPath],
-    { verbose, label: "ffmpeg download" },
-  );
+export async function downloadAudio(
+  streamUrl,
+  outputPath,
+  verbose = false,
+  { maxAttempts = DOWNLOAD_AUDIO_MAX_ATTEMPTS, retryBaseMs = DOWNLOAD_AUDIO_RETRY_BASE_MS } = {},
+) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    if (fs.existsSync(outputPath)) {
+      fs.unlinkSync(outputPath);
+    }
+    try {
+      await runProcess(
+        "ffmpeg",
+        ["-hide_banner", "-loglevel", "error", "-i", streamUrl, "-vn", "-acodec", "libmp3lame", "-q:a", "2", outputPath],
+        { verbose, label: "ffmpeg download" },
+      );
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt === maxAttempts) break;
+      const delay = retryBaseMs * 2 ** (attempt - 1);
+      console.log(
+        `    [Transcribe] ffmpeg download attempt ${attempt}/${maxAttempts} failed (${error.message}); retrying in ${delay}ms`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * Probe an HLS stream URL with a plain GET to distinguish a genuinely
+ * unavailable recording (4xx/5xx response, or an empty/unreachable playlist)
+ * from a transient ffmpeg failure. Only called after downloadAudio's retries
+ * are exhausted, to decide how to classify the final failure. Any error while
+ * probing (network failure, etc) is itself treated as "unavailable" — if we
+ * can't even fetch the stream, ffmpeg certainly can't either.
+ * @param {string} streamUrl - HLS stream URL
+ * @returns {Promise<boolean>} true if the stream appears unavailable
+ */
+async function probeStreamUnavailable(streamUrl) {
+  try {
+    const response = await fetch(streamUrl, {
+      headers: { 'User-Agent': 'ietf-auto-minutes/0.1 (+https://github.com/ekr/auto-minutes)' },
+    });
+    if (!response.ok) return true;
+    const body = await response.text();
+    return !body.trim();
+  } catch (_) {
+    return true;
+  }
 }
 
 /**
@@ -1292,7 +1350,14 @@ async function downloadSessionAudio(session, verbose = false) {
   const tempPath = path.join(os.tmpdir(), `auto-minutes-${randomUUID()}.mp3`);
   try {
     console.log(`  Downloading audio...`);
-    await downloadAudio(streamUrl, tempPath, verbose);
+    try {
+      await downloadAudio(streamUrl, tempPath, verbose);
+    } catch (error) {
+      if (await probeStreamUnavailable(streamUrl)) {
+        throw new Error(`Recording stream for ${session.sessionId} is unavailable (${error.message})`);
+      }
+      throw error;
+    }
 
     await fsPromises.mkdir(AUDIO_CACHE_DIR, { recursive: true });
     await fsPromises.copyFile(tempPath, cachePath);
