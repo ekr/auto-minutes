@@ -54,10 +54,10 @@ describe('parseCSVLine (RFC 4180)', () => {
   });
 });
 
-describe('IETF Scraper', () => {
-  // Use meeting 123 (local file available)
-  const MEETING_NUMBER = 123;
+// Recent completed meeting still listed on Meetecho's recordings index
+const MEETING_NUMBER = 126;
 
+describe('IETF Scraper', () => {
   test('fetchSessionsFromProceedings returns array of sessions', async () => {
     const sessions = await fetchSessionsFromProceedings(MEETING_NUMBER);
 
@@ -95,8 +95,6 @@ describe('IETF Scraper', () => {
 });
 
 describe('Meetecho Scraper', () => {
-  const MEETING_NUMBER = 123;
-
   test('fetchSessionsFromAgenda returns array of sessions', async () => {
     const sessions = await fetchSessionsFromAgenda(MEETING_NUMBER);
 
@@ -117,7 +115,7 @@ describe('Meetecho Scraper', () => {
     // Verify recording URL format
     expect(firstSession.recordingUrl).toMatch(/^https:\/\/meetecho-player\.ietf\.org\/playout\/\?session=/);
 
-    // Verify sessionId format (should be IETF123-...)
+    // Verify sessionId format (should be IETF126-...)
     expect(firstSession.sessionId).toMatch(/^IETF\d+-/);
 
     console.log(`Found ${sessions.length} sessions from Meetecho`);
@@ -164,7 +162,6 @@ describe('Session ID Validation', () => {
   });
 
   test('fetchSessionsWithValidation returns validation stats', async () => {
-    const MEETING_NUMBER = 123;
     const result = await fetchSessionsWithValidation(fetchSessionsFromProceedings, MEETING_NUMBER);
 
     expect(result).toHaveProperty('validSessions');
@@ -188,8 +185,6 @@ describe('Session ID Validation', () => {
   }, 30000);
 
   test('fetchSessionsWithValidation works with both fetch functions', async () => {
-    const MEETING_NUMBER = 123;
-
     // Test with proceedings
     const proceedingsResult = await fetchSessionsWithValidation(
       fetchSessionsFromProceedings,
@@ -209,7 +204,6 @@ describe('Session ID Validation', () => {
   }, 30000);
 
   test('fetchValidSessions returns only valid sessions', async () => {
-    const MEETING_NUMBER = 123;
     const validSessions = await fetchValidSessions(fetchSessionsFromProceedings, MEETING_NUMBER);
 
     expect(Array.isArray(validSessions)).toBe(true);
