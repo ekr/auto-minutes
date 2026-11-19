@@ -351,7 +351,11 @@ describe('downloadAudio (async spawn-based ffmpeg runner)', () => {
       'Error opening input file https://videodelivery.net/44f3260387211a8c802b4cefb2a86660/manifest/video.m3u8.\n' +
       'Error opening input files: Server returned 404 Not Found\n';
     mockSpawn.mockImplementation(() => makeMockChild({ stderr: ffmpegStderr, code: 8 }));
-    const writeSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const stderrWrites = [];
+    const writeSpy = jest.spyOn(process.stderr, 'write').mockImplementation((chunk) => {
+      stderrWrites.push(String(chunk));
+      return true;
+    });
 
     let thrown;
     try {
@@ -365,7 +369,7 @@ describe('downloadAudio (async spawn-based ffmpeg runner)', () => {
     expect(thrown).toBeDefined();
     expect(thrown.message).toContain('ffmpeg download exited with code 8:');
     expect(thrown.message).toContain('Server returned 404 Not Found');
-    expect(writeSpy).toHaveBeenCalled();
+    expect(stderrWrites.join('')).toContain('Server returned 404 Not Found');
     expect(isRecordingUnavailable(thrown.message)).toBe(true);
   });
 
