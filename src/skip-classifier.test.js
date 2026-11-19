@@ -28,6 +28,35 @@ describe('isRecordingUnavailable', () => {
     ).toBe(true);
   });
 
+  test('classifies a video-manifest 404 as benign', () => {
+    expect(
+      isRecordingUnavailable('Failed to fetch video manifest for session IETF127-TDD-20261118-1700: 404 Not Found')
+    ).toBe(true);
+  });
+
+  test('classifies an ffmpeg download 404 error as benign', () => {
+    expect(
+      isRecordingUnavailable(
+        'ffmpeg download exited with code 8: [in#0 @ 0x5ac825ce1c40] Error opening input: Server returned 404 Not Found\nError opening input file https://videodelivery.net/44f3260387211a8c802b4cefb2a86660/manifest/video.m3u8.'
+      )
+    ).toBe(true);
+  });
+
+  test('does not classify an ffmpeg download error without 404 as benign', () => {
+    expect(isRecordingUnavailable('ffmpeg download exited with code 8')).toBe(false);
+    expect(
+      isRecordingUnavailable(
+        'ffmpeg download exited with code 8: [in#0 @ 0x5ac825ce1c40] Error opening input: Server returned 503 Service Unavailable\nError opening input file https://videodelivery.net/abc404def/manifest/video.m3u8.'
+      )
+    ).toBe(false);
+  });
+
+  test('does not classify an ffmpeg convert error as benign', () => {
+    expect(
+      isRecordingUnavailable('ffmpeg convert exited with code 1: Error opening input file /tmp/missing.mp4: No such file or directory')
+    ).toBe(false);
+  });
+
   test('classifies an insufficient transcript as benign', () => {
     expect(
       isRecordingUnavailable('Transcript for Test WG is only 12 words (minimum 100); pass --allow-short-transcript to override')

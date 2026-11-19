@@ -123,6 +123,9 @@ export async function getAudioStreamUrl(sessionId) {
       'User-Agent': 'ietf-auto-minutes/0.1 (+https://github.com/ekr/auto-minutes)',
     },
   });
+  if (response.status === 404) {
+    throw new Error(`Failed to fetch video manifest for session ${sessionId}: ${response.status} ${response.statusText}`);
+  }
   if (!response.ok) {
     // Fall back to master URL if we can't fetch the playlist
     return masterUrl;
@@ -181,11 +184,12 @@ function runProcess(command, args, { verbose = false, captureStdout = false, lab
       child.stdout.pipe(process.stdout);
     }
 
-    if (verbose) {
-      child.stderr.pipe(process.stderr);
-    } else {
-      child.stderr.on("data", (chunk) => stderrChunks.push(chunk));
-    }
+    child.stderr.on("data", (chunk) => {
+      stderrChunks.push(chunk);
+      if (verbose) {
+        process.stderr.write(chunk);
+      }
+    });
 
     child.on("error", (error) => {
       reject(new Error(`${label} failed to start: ${error.message}`));

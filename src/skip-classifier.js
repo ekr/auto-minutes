@@ -16,8 +16,9 @@ export function isRecordingUnavailable(message) {
   if (!message) return false;
   return (
     /^Failed to fetch session info: 404/.test(message) ||
+    /^Failed to fetch video manifest for session .*: 404/.test(message) ||
     /^No videos found for session/.test(message) ||
-    /^Error opening input/.test(message) ||
+    /^ffmpeg download exited with code \d+:[\s\S]*(?:Server returned 404 Not Found|HTTP error 404\b)/.test(message) ||
     /^No Cloudflare video found for session/.test(message) ||
     /is only \d+ words \(minimum \d+\)/.test(message) ||
     /^Transcript for .* is not available yet/.test(message) ||
