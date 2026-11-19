@@ -51,7 +51,7 @@ jest.unstable_mockModule('fs/promises', () => ({
 
 // Fake child process: an EventEmitter with stdout/stderr EventEmitters, matching
 // the shape runProcess() (src/transcriber.js) consumes from child_process.spawn.
-function makeMockChild({ stdout = '', code = 0, spawnError = null } = {}) {
+function makeMockChild({ stdout = '', stderr = '', code = 0, spawnError = null } = {}) {
   const child = new EventEmitter();
   child.stdout = new EventEmitter();
   child.stdout.pipe = jest.fn();
@@ -63,6 +63,7 @@ function makeMockChild({ stdout = '', code = 0, spawnError = null } = {}) {
       return;
     }
     if (stdout) child.stdout.emit('data', Buffer.from(stdout));
+    if (stderr) child.stderr.emit('data', Buffer.from(stderr));
     child.emit('close', code);
   });
   return child;
@@ -137,6 +138,7 @@ jest.unstable_mockModule('node-fetch', () => ({
 const {
   transcribeAudio,
   transcribeSession,
+  getAudioStreamUrl,
   downloadAudio,
   prepareLocalAudio,
   getAudioCachePath,
@@ -151,6 +153,7 @@ const {
   formatDeepgramTranscript,
   buildDeepgramKeyterms,
 } = await import('./transcriber.js');
+const { isRecordingUnavailable } = await import('./skip-classifier.js');
 
 function makeStreamResult(chunkTexts, finishReason = 'STOP') {
   return {
@@ -340,6 +343,97 @@ describe('downloadAudio (async spawn-based ffmpeg runner)', () => {
     await expect(
       downloadAudio('https://stream.example/audio.m3u8', '/tmp/out.mp3'),
     ).rejects.toThrow(/failed to start/);
+  });
+
+  test('captures ffmpeg stderr in the error even in verbose mode and classifies 404 as recording-unavailable', async () => {
+    const ffmpegStderr =
+      '[in#0 @ 0x5ac825ce1c40] Error opening input: Server returned 404 Not Found\n' +
+      'Error opening input file https://videodelivery.net/44f3260387211a8c802b4cefb2a86660/manifest/video.m3u8.\n' +
+      'Error opening input files: Server returned 404 Not Found\n';
+    mockSpawn.mockImplementation(() => makeMockChild({ stderr: ffmpegStderr, code: 8 }));
+    const writeSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    let thrown;
+    try {
+      await downloadAudio('https://videodelivery.net/44f3260387211a8c802b4cefb2a86660/manifest/video.m3u8', '/tmp/out.mp3', true);
+    } catch (error) {
+      thrown = error;
+    } finally {
+      writeSpy.mockRestore();
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown.message).toContain('ffmpeg download exited with code 8:');
+    expect(thrown.message).toContain('Server returned 404 Not Found');
+    expect(writeSpy).toHaveBeenCalled();
+    expect(isRecordingUnavailable(thrown.message)).toBe(true);
+  });
+
+  test('does not classify an ffmpeg download 503 error as recording-unavailable even if URL contains 404', async () => {
+    const ffmpegStderr =
+      '[in#0 @ 0x5ac825ce1c40] Error opening input: Server returned 503 Service Unavailable\n' +
+      'Error opening input file https://videodelivery.net/abc404def/manifest/video.m3u8.\n';
+    mockSpawn.mockImplementation(() => makeMockChild({ stderr: ffmpegStderr, code: 8 }));
+
+    let thrown;
+    try {
+      await downloadAudio('https://videodelivery.net/abc404def/manifest/video.m3u8', '/tmp/out.mp3', false);
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(isRecordingUnavailable(thrown.message)).toBe(false);
+  });
+});
+
+describe('getAudioStreamUrl', () => {
+  const sessionId = 'IETF127-TDD-20261118-1700';
+
+  test('throws a recording-unavailable error when the Cloudflare video manifest returns 404', async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({ videos: [{ type: 3, src: '44f3260387211a8c802b4cefb2a86660' }] }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      });
+
+    let thrown;
+    try {
+      await getAudioStreamUrl(sessionId);
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown.message).toBe(
+      `Failed to fetch video manifest for session ${sessionId}: 404 Not Found`,
+    );
+    expect(isRecordingUnavailable(thrown.message)).toBe(true);
+  });
+
+  test('falls back to master URL on non-404 manifest fetch errors', async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: async () => ({ videos: [{ type: 3, src: 'abc123' }] }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        statusText: 'Service Unavailable',
+      });
+
+    const url = await getAudioStreamUrl(sessionId);
+    expect(url).toBe('https://videodelivery.net/abc123/manifest/video.m3u8');
   });
 });
 
