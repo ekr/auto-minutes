@@ -12,7 +12,7 @@ Statements made in IETF sessions are Contributions of their speakers under
 waives only the rights in this site's selection, arrangement, and generation of
 that material; it does not affect rights in the underlying Contributions, which
 remain with their speakers and are administered by the
-[IETF Trust](https://trustee.ietf.org/).
+[IETF IPMC](https://www.ietf-ipm.org/).
 
 The [source code](https://github.com/ekr/auto-minutes/) that generates
 this site is available on GitHub and is under a
